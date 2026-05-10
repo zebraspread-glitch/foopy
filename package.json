@@ -1,0 +1,45 @@
+{
+  "name": "foopy-starter",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbo",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "export": "next build && next export",
+    "cap:sync": "npm run export && npx cap sync",
+    "cap:ios": "npm run export && npx cap sync ios && npx cap open ios",
+    "cap:android": "npm run export && npx cap sync android && npx cap open android",
+    "scrape:footywire": "node scripts/scrapeFootywire.cjs",
+    "update-match-stats": "tsx scripts/updateMatchStats.ts",
+    "update-all": "tsx scripts/updateAll.ts",
+    "build:players": "node scripts/buildPlayerData.cjs",
+    "update:players": "node scripts/updatePlayerSeasonStats.cjs",
+    "fetch:stats": "node scripts/fetchSeasonStats.cjs",
+    "fetch:stats:force": "node scripts/fetchSeasonStats.cjs --force"
+  },
+  "dependencies": {
+    "@capacitor/cli": "^8.3.1",
+    "@capacitor/core": "^8.3.1",
+    "@capacitor/ios": "^8.3.1",
+    "@supabase/supabase-js": "^2.104.1",
+    "axios": "^1.15.2",
+    "cheerio": "^1.2.0",
+    "dotenv": "^17.4.2",
+    "lucide-react": "^0.468.0",
+    "next": "^16.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-easy-crop": "^5.5.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "eslint": "^9.17.0",
+    "eslint-config-next": "^16.0.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.7.2"
+  }
+}

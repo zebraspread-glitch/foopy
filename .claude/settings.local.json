@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(xargs grep *)",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(del \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\\\\app\\\\data\\\\match-stats.json.backup\")",
+      "Bash(del \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\\\\app\\\\data\\\\playerstats.json.backup\")",
+      "Bash(node -e \"const d=require\\('./app/data/game-stats.json'\\); const keys=Object.keys\\(d\\); console.log\\('Game count:', keys.length\\); console.log\\('Keys:', keys.slice\\(0,5\\)\\); const first=d[keys[0]]; console.log\\('Top-level keys of first entry:', Object.keys\\(first\\)\\); if\\(first.teams\\) console.log\\('teams[0] keys:', Object.keys\\(first.teams[0]\\)\\); if\\(first.playerStats\\) console.log\\('has playerStats'\\); if\\(first.teamStats\\) console.log\\('has teamStats:', JSON.stringify\\(first.teamStats[0]\\).slice\\(0,200\\)\\);\" --cwd \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\")",
+      "Bash(node -e \"const d=require\\('./app/data/game-stats.json'\\); const keys=Object.keys\\(d\\); console.log\\('Games:', keys.length, 'IDs:', keys.slice\\(0,5\\).join\\(','\\)\\); const first=d[keys[0]]; console.log\\('Keys:', Object.keys\\(first\\).join\\(','\\)\\); if\\(first.teams\\) { console.log\\('teams count:', first.teams.length\\); console.log\\('team entry keys:', Object.keys\\(first.teams[0]\\).join\\(','\\)\\); }\")",
+      "Bash(node -e \"const d=require\\('./app/data/players.json'\\); console.log\\('Players:', d.length\\); const p=d[0]; console.log\\('Keys:', Object.keys\\(p\\).join\\(','\\)\\); console.log\\('Sample:', JSON.stringify\\(p\\)\\);\")",
+      "Bash(npx tsc *)",
+      "Bash(npx next *)",
+      "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\(p.dependencies?.next || p.devDependencies?.next\\)\")",
+      "Bash(curl -s \"http://localhost:3000/api/album/sheldoncooper6\")",
+      "Bash(node -e \"const p = require\\('./app/data/players.json'\\); console.log\\('Total players:', p.length\\); console.log\\('Sample with apiSportsId:', p.filter\\(x => x.apiSportsId\\).length\\); console.log\\('First with stats:', JSON.stringify\\(p.find\\(x => x.games !== undefined\\)\\)\\)\")",
+      "Bash(dir \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\\\\public\\\\team-logos\")",
+      "Bash(dir \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\\\\public\\\\players\")",
+      "Bash(node -e ' *)",
+      "Bash(grep -n \"d1d5db\\\\|6b7280\\\\|2a2a2a\\\\|Rd \\\\${\" \"C:/Users/User/Downloads/foopy/app/components/GlobalSideDrawer.tsx\")",
+      "WebFetch(domain:api.squiggle.com.au)",
+      "Bash(curl -s 'https://ogdtvdvdtxohgyrhlgfk.supabase.co/rest/v1/live_game_feed?select=api_game_id&order=api_game_id' -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nZHR2ZHZkdHhvaGd5cmhsZ2ZrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzIwNTE1NywiZXhwIjoyMDkyNzgxMTU3fQ.9EiRVsoZyrctzVHrW8-H5aaBEmgNw_LPIZISH_SO14U' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nZHR2ZHZkdHhvaGd5cmhsZ2ZrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzIwNTE1NywiZXhwIjoyMDkyNzgxMTU3fQ.9EiRVsoZyrctzVHrW8-H5aaBEmgNw_LPIZISH_SO14U')",
+      "Bash(curl -s \"https://ogdtvdvdtxohgyrhlgfk.supabase.co/rest/v1/live_game_feed?select=api_game_id&order=api_game_id\" -H \"apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nZHR2ZHZkdHhvaGd5cmhsZ2ZrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzIwNTE1NywiZXhwIjoyMDkyNzgxMTU3fQ.9EiRVsoZyrctzVHrW8-H5aaBEmgNw_LPIZISH_SO14U\" -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nZHR2ZHZkdHhvaGd5cmhsZ2ZrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzIwNTE1NywiZXhwIjoyMDkyNzgxMTU3fQ.9EiRVsoZyrctzVHrW8-H5aaBEmgNw_LPIZISH_SO14U\")",
+      "Bash(node -e \"const d = require\\('./app/data/player-season-stats.json'\\); const pa = d.filter\\(p => p.team === 'Port Adelaide'\\).slice\\(0,5\\); console.log\\(JSON.stringify\\(pa.map\\(p => \\({id: p.id, name: p.name}\\)\\), null, 2\\)\\)\")"
+    ]
+  }
+}

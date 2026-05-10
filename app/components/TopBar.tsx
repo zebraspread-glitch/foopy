@@ -1,0 +1,82 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { Activity } from "lucide-react";
+import { supabase } from "@/app/lib/supabase";
+
+export default function TopBar() {
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    let userId: string | null = null;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    async function init() {
+      const { data } = await supabase.auth.getSession();
+      userId = data?.session?.user?.id ?? null;
+      if (!userId) return;
+
+      // Initial count
+      const { count } = await supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("read", false);
+      setUnread(count ?? 0);
+
+      // Realtime subscription
+      channel = supabase
+        .channel("notif-badge")
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
+          async () => {
+            const { count: c } = await supabase
+              .from("notifications")
+              .select("id", { count: "exact", head: true })
+              .eq("user_id", userId!)
+              .eq("read", false);
+            setUnread(c ?? 0);
+          }
+        )
+        .subscribe();
+    }
+
+    init();
+    return () => { channel?.unsubscribe(); };
+  }, []);
+
+  return (
+    <header className="app-header">
+      <Link href="/" className="app-logo-link">
+        <span className="app-logo-icon">
+          <Activity size={17} />
+        </span>
+        <span className="app-logo-text">Foopy</span>
+      </Link>
+
+      <Link href="/notifications" style={{ position: "relative", color: "inherit", display: "flex", alignItems: "center", padding: "4px 6px" }}>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#64748b" }}>
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+          <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+        </svg>
+        {unread > 0 && (
+          <span style={{
+            position: "absolute", top: 0, right: 0,
+            minWidth: 16, height: 16,
+            background: "#ef4444",
+            borderRadius: 999,
+            fontSize: 10, fontWeight: 800,
+            color: "#fff",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "0 3px",
+            lineHeight: 1,
+          }}>
+            {unread > 99 ? "99+" : unread}
+          </span>
+        )}
+      </Link>
+    </header>
+  );
+}

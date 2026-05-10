@@ -1,0 +1,1377 @@
+/* ============================================================
+   DESIGN TOKENS
+   ============================================================ */
+
+:root {
+  /* Surfaces */
+  --bg:           #000000;
+  --surface-1:    #080808;
+  --surface-2:    #0d0d0d;
+  --surface-3:    #111111;
+  --surface-4:    #1a1a1a;
+
+  /* Borders */
+  --border-1:     rgba(255,255,255,0.06);
+  --border-2:     rgba(255,255,255,0.10);
+  --border-3:     rgba(255,255,255,0.14);
+
+  /* Text */
+  --text-1:       #f8fafc;
+  --text-2:       #94a3b8;
+  --text-3:       #475569;
+  --text-4:       #334155;
+
+  /* Brand */
+  --blue:         #3b82f6;
+  --blue-dim:     rgba(59,130,246,0.15);
+  --indigo:       #6366f1;
+  --green:        #22c55e;
+  --red:          #ef4444;
+
+  /* Radii */
+  --r-sm:  10px;
+  --r-md:  14px;
+  --r-lg:  18px;
+  --r-xl:  22px;
+  --r-2xl: 28px;
+  --r-full: 999px;
+
+  /* Nav height — includes iOS home indicator */
+  --nav-h: calc(60px + env(safe-area-inset-bottom));
+
+  /* Springs */
+  --spring-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --spring-soft:   cubic-bezier(0.22, 1, 0.36, 1);
+  --spring-fast:   cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* ============================================================
+   BASE RESET
+   ============================================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  /* Eliminates 300ms tap delay on ALL elements */
+  touch-action: manipulation;
+}
+
+html {
+  height: 100%;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* Smooth rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Prevent scrollbar causing layout shift */
+  scrollbar-gutter: stable;
+}
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  /* True black for OLED screens */
+  background: #000;
+  color: var(--text-1);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+}
+
+body {
+  overflow-x: hidden;
+  /* Native rubber-band scroll on iOS, no bounce on Android */
+  overscroll-behavior-y: none;
+  overscroll-behavior-x: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Selective text selection */
+p, span, h1, h2, h3, h4, h5, h6, label, li {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+  /* Prevent images from being dragged */
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+/* ============================================================
+   BUTTON / INTERACTIVE — Native-speed feedback
+   ============================================================ */
+
+button {
+  cursor: pointer;
+  font: inherit;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+  /* Fast native-feel press */
+  transition:
+    transform  0.08s var(--spring-bounce),
+    opacity    0.08s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease,
+    color      0.15s ease;
+  will-change: transform;
+  /* Remove default button styles */
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  outline: none;
+  appearance: none;
+-webkit-appearance: none;
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.93);
+  opacity: 0.82;
+}
+
+button:disabled {
+  cursor: default;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* Hover only on devices that support it (not touch) */
+@media (hover: hover) {
+  button:hover:not(:disabled) {
+    opacity: 0.88;
+  }
+}
+
+input, select, textarea {
+  font: inherit;
+  /* 16px minimum prevents iOS from auto-zooming on focus */
+  font-size: max(16px, 1em);
+  appearance: none;
+-webkit-appearance: none;
+  appearance: none;
+  touch-action: manipulation;
+}
+
+/* Generic pressable link */
+a.pressable {
+  display: block;
+  transition:
+    transform  0.08s var(--spring-bounce),
+    opacity    0.08s ease;
+  will-change: transform;
+}
+
+a.pressable:active {
+  transform: scale(0.96);
+  opacity: 0.84;
+}
+
+/* ============================================================
+   VIEW TRANSITIONS API — Native-style route changes
+   ============================================================ */
+
+@supports (view-transition-name: root) {
+  ::view-transition-old(root) {
+    animation: vt-slide-out 0.2s var(--spring-fast) both;
+  }
+
+  ::view-transition-new(root) {
+    animation: vt-slide-in 0.22s var(--spring-soft) both;
+  }
+
+  @keyframes vt-slide-out {
+    to { opacity: 0; transform: translateX(-18px) scale(0.98); }
+  }
+
+  @keyframes vt-slide-in {
+    from { opacity: 0; transform: translateX(40px) scale(0.99); }
+    to   { opacity: 1; transform: translateX(0) scale(1); }
+  }
+}
+
+/* ============================================================
+   APP HEADER
+   ============================================================ */
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  background: rgba(0, 0, 0, 0.92);
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  border-bottom: 0.5px solid rgba(255,255,255,0.08);
+  will-change: transform;
+}
+
+/* First header on page needs top safe area */
+.app-header-top {
+  padding-top: env(safe-area-inset-top);
+  height: calc(56px + env(safe-area-inset-top));
+}
+
+.app-logo-link {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 20px;
+  font-weight: 950;
+  letter-spacing: -0.03em;
+  color: white;
+  text-decoration: none;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: opacity 0.1s ease;
+}
+
+.app-logo-link:active { opacity: 0.7; }
+
+.app-logo-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--blue) 0%, var(--indigo) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 2px 10px rgba(99,102,241,0.45);
+  flex-shrink: 0;
+}
+
+.app-logo-text {
+  font-size: 20px;
+  font-weight: 950;
+  letter-spacing: -0.04em;
+}
+
+/* ============================================================
+   BOTTOM NAV — iOS-native style
+   ============================================================ */
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: stretch;
+  background: rgba(6, 6, 6, 0.96);
+  backdrop-filter: blur(36px) saturate(220%);
+  -webkit-backdrop-filter: blur(36px) saturate(220%);
+  border-top: 0.5px solid rgba(255,255,255,0.10);
+  padding-bottom: env(safe-area-inset-bottom);
+  height: var(--nav-h);
+  /* Hardware accelerate the nav */
+  will-change: transform;
+  transform: translateZ(0);
+  /* Contain layout/paint — nav doesn't affect content above it */
+  contain: strict;
+}
+
+.tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 8px 4px 6px;
+  color: rgba(148, 163, 184, 0.45);
+  text-decoration: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+  transition:
+    color       0.12s ease,
+    transform   0.08s var(--spring-bounce);
+  position: relative;
+  outline: none;
+  /* Prevent text from being selectable on long-press */
+  -webkit-user-select: none;
+}
+
+.tab-item:active {
+  transform: scale(0.78);
+}
+
+.tab-active {
+  color: #fff;
+}
+
+.tab-icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 30px;
+  border-radius: 15px;
+  transition: background 0.18s ease, transform 0.15s var(--spring-bounce);
+}
+
+.tab-active .tab-icon-wrap {
+  background: rgba(59, 130, 246, 0.20);
+}
+
+/* Active indicator dot */
+.tab-active .tab-icon-wrap::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--blue);
+  opacity: 0.85;
+}
+
+.tab-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  margin-top: 5px;
+  line-height: 1;
+  transition: color 0.15s ease, font-weight 0.15s ease;
+}
+
+.tab-active .tab-label {
+  color: var(--blue);
+  font-weight: 700;
+}
+
+/* ============================================================
+   PAGE LAYOUT
+   ============================================================ */
+
+.page {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 20px 16px calc(90px + env(safe-area-inset-bottom));
+}
+
+.grid {
+  display: grid;
+  gap: 18px;
+}
+
+/* ============================================================
+   CARDS
+   ============================================================ */
+
+.card {
+  background: var(--surface-1);
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  transition:
+    transform  0.08s var(--spring-bounce),
+    opacity    0.08s ease,
+    box-shadow 0.15s ease;
+  will-change: transform;
+  /* Contain layout so cards don't cause repaints outside their bounds */
+  contain: layout style;
+}
+
+.card:active {
+  transform: scale(0.972);
+  opacity: 0.88;
+}
+
+/* Hover lift on mouse devices */
+@media (hover: hover) {
+  .card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 20px 50px rgba(0,0,0,.35);
+  }
+}
+
+/* Pressable list row — native-style touch feedback */
+.pressable-row {
+  transition:
+    background 0.12s ease,
+    transform  0.08s var(--spring-bounce);
+}
+
+.pressable-row:active {
+  background: rgba(255,255,255,0.04) !important;
+  transform: scale(0.99);
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: var(--r-md);
+  padding: 14px 20px;
+  background: rgba(255,255,255,0.07);
+  color: white;
+  font-weight: 800;
+  font-size: 15px;
+  border: 1px solid var(--border-3);
+  transition:
+    transform  0.08s var(--spring-bounce),
+    opacity    0.08s ease,
+    background 0.15s ease;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.button:active {
+  transform: scale(0.94);
+  opacity: 0.85;
+}
+
+.button.primary {
+  background: linear-gradient(135deg, var(--blue), var(--indigo));
+  border: none;
+  box-shadow: 0 4px 20px rgba(59,130,246,0.4);
+}
+
+.button.primary:active {
+  box-shadow: 0 2px 8px rgba(59,130,246,0.2);
+}
+
+/* ============================================================
+   STATUS PILL
+   ============================================================ */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 5px 11px;
+  font-size: 11px;
+  font-weight: 900;
+  background: rgba(24,201,95,0.12);
+  color: #7dffab;
+  border: 1px solid rgba(24,201,95,0.25);
+  letter-spacing: 0.03em;
+}
+
+/* ============================================================
+   TEXT
+   ============================================================ */
+
+.muted { color: var(--text-3); }
+
+.title {
+  font-size: clamp(26px, 6vw, 48px);
+  line-height: 0.95;
+  margin: 0;
+  letter-spacing: -0.05em;
+}
+
+/* ============================================================
+   ROUND SELECTOR
+   ============================================================ */
+
+.round-bar {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.round-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+  /* Prevent scroll from activating page transitions */
+  overscroll-behavior-x: contain;
+}
+
+.round-strip::-webkit-scrollbar { display: none; }
+
+.round-btn {
+  min-width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid var(--border-3) !important;
+  background: rgba(255,255,255,0.04) !important;
+  color: white !important;
+  font-weight: 900;
+  font-size: 13px;
+  transition:
+    transform  0.08s var(--spring-bounce),
+    background 0.15s ease;
+  scroll-snap-align: center;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.round-btn.active {
+  background: var(--blue) !important;
+  border-color: var(--blue) !important;
+}
+
+.arrow-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--border-3) !important;
+  background: rgba(255,255,255,0.04) !important;
+  display: grid;
+  place-items: center;
+  color: white !important;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+/* ============================================================
+   MATCH CARD
+   ============================================================ */
+
+.match-card {
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  min-height: 200px;
+}
+
+.match-info {
+  padding: 24px 20px;
+  border-right: 1px solid var(--border-1);
+  background: rgba(255,255,255,0.02);
+}
+
+.match-teams {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+}
+
+.team-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 22px;
+  position: relative;
+}
+
+.team-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.team-logo {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+}
+
+.team-name {
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.score-wrap { text-align: right; }
+
+.score {
+  font-size: 32px;
+  font-weight: 950;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.score.faded { opacity: 0.35; }
+
+.goals {
+  font-size: 15px;
+  opacity: 0.5;
+}
+
+.team-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+}
+
+/* ============================================================
+   TABLE
+   ============================================================ */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-1);
+}
+
+th {
+  color: var(--text-3);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 900;
+}
+
+/* ============================================================
+   FORM INPUTS
+   ============================================================ */
+
+input, select {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-2);
+  background: rgba(255,255,255,0.06);
+  color: var(--text-1);
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.2s ease;
+  outline: none;
+}
+
+input:focus, select:focus {
+  border-color: rgba(59,130,246,0.6);
+  background: rgba(255,255,255,0.07);
+  box-shadow: 0 0 0 4px rgba(59,130,246,0.14);
+}
+
+input::placeholder { color: var(--text-3); }
+
+textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-2);
+  background: rgba(255,255,255,0.06);
+  color: var(--text-1);
+  outline: none;
+  resize: none;
+  appearance: none;
+-webkit-appearance: none;
+  appearance: none;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.2s ease;
+}
+
+textarea:focus {
+  border-color: rgba(59,130,246,0.6);
+  background: rgba(255,255,255,0.07);
+  box-shadow: 0 0 0 4px rgba(59,130,246,0.14);
+}
+
+textarea::placeholder { color: var(--text-3); }
+
+/* ============================================================
+   SKELETON LOADING — faster, more visible
+   ============================================================ */
+
+@keyframes shimmer {
+  0%   { background-position: -800px 0; }
+  100% { background-position:  800px 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.03) 0%,
+    rgba(255,255,255,0.08) 40%,
+    rgba(255,255,255,0.12) 50%,
+    rgba(255,255,255,0.08) 60%,
+    rgba(255,255,255,0.03) 100%
+  );
+  background-size: 1600px 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+  border-radius: var(--r-lg);
+}
+
+/* Skeleton text line utility */
+.skeleton-line {
+  height: 14px;
+  border-radius: 6px;
+}
+
+/* ============================================================
+   SPINNER
+   ============================================================ */
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.08);
+  border-top-color: var(--blue);
+  animation: spin 0.6s linear infinite;
+  flex-shrink: 0;
+}
+
+.spinner-sm {
+  width: 18px;
+  height: 18px;
+  border-width: 2px;
+}
+
+/* ============================================================
+   BOTTOM SHEET
+   ============================================================ */
+
+@keyframes sheet-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.sheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: fade-in 0.18s ease;
+  display: flex;
+  align-items: flex-end;
+}
+
+.sheet {
+  width: 100%;
+  background: var(--surface-2);
+  border-radius: 22px 22px 0 0;
+  border: 1px solid var(--border-2);
+  border-bottom: none;
+  padding: 16px 20px calc(24px + env(safe-area-inset-bottom));
+  overflow-y: auto;
+  max-height: 82dvh;
+  animation: sheet-up 0.24s var(--spring-soft);
+}
+
+.sheet-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.18);
+  margin: 0 auto 18px;
+}
+
+/* ============================================================
+   PAGE ENTER ANIMATION — fast, native feel
+   ============================================================ */
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateX(32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.page-enter {
+  animation: page-in 0.22s var(--spring-soft) both;
+}
+
+/* Faster re-entry when returning to a cached page */
+.page-enter-fast {
+  animation: page-in 0.14s ease both;
+}
+
+/* No animation for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .page-enter {
+    animation: none;
+  }
+}
+
+/* ============================================================
+   PULL TO REFRESH INDICATOR
+   ============================================================ */
+
+.pull-indicator {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 16px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 90;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(20,20,20,0.95);
+  border: 1px solid var(--border-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+/* ============================================================
+   HORIZONTAL SCROLL STRIPS
+   ============================================================ */
+
+.scroll-x {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  gap: 10px;
+  padding: 4px 2px;
+}
+
+.scroll-x::-webkit-scrollbar { display: none; }
+
+.scroll-x > * {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   SCROLLBAR UTILITIES
+   ============================================================ */
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Desktop scrollbar */
+@media (hover: hover) {
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+  }
+}
+
+/* ============================================================
+   MOBILE OVERRIDES
+   ============================================================ */
+
+@media (max-width: 760px) {
+  .page {
+    padding: 16px 16px calc(90px + env(safe-area-inset-bottom));
+  }
+
+  .match-card {
+    grid-template-columns: 1fr;
+  }
+
+  .match-info {
+    border-right: none;
+    border-bottom: 1px solid var(--border-1);
+  }
+
+  .team-row {
+    padding: 16px 18px;
+  }
+
+  .score {
+    font-size: 26px;
+  }
+}
+
+/* ============================================================
+   NAV LEGACY
+   ============================================================ */
+
+.nav { display: none; }
+
+/* ============================================================
+   HARDWARE ACCELERATION HELPERS
+   ============================================================ */
+
+.gpu {
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* ============================================================
+   LIVE PULSE
+   ============================================================ */
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+.live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: live-pulse 1.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   NOTIFICATION BADGE
+   ============================================================ */
+
+.badge {
+  position: absolute;
+  top: -3px;
+  right: -5px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--red);
+  color: white;
+  font-size: 9px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 1.5px solid #000;
+  line-height: 1;
+}
+
+/* ============================================================
+   STAGGER ENTER — cards/rows that reveal in sequence
+   ============================================================ */
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stagger > *:nth-child(1)  { animation: fade-up 0.18s var(--spring-soft) both; }
+.stagger > *:nth-child(2)  { animation: fade-up 0.18s var(--spring-soft) 0.04s both; }
+.stagger > *:nth-child(3)  { animation: fade-up 0.18s var(--spring-soft) 0.08s both; }
+.stagger > *:nth-child(4)  { animation: fade-up 0.18s var(--spring-soft) 0.12s both; }
+.stagger > *:nth-child(5)  { animation: fade-up 0.18s var(--spring-soft) 0.16s both; }
+.stagger > *:nth-child(6)  { animation: fade-up 0.18s var(--spring-soft) 0.20s both; }
+.stagger > *:nth-child(n+7){ animation: fade-up 0.18s var(--spring-soft) 0.22s both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .stagger > * { animation: none; }
+}
+
+/* ============================================================
+   HEADER SAFE — sticky headers that respect the notch
+   ============================================================ */
+
+.header-safe {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: calc(56px + env(safe-area-inset-top));
+  padding-top: env(safe-area-inset-top);
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.92);
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  border-bottom: 0.5px solid rgba(255,255,255,0.08);
+  will-change: transform;
+}
+
+/* ============================================================
+   SECTION DIVIDER
+   ============================================================ */
+
+.section-title {
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0 4px;
+  margin-bottom: 8px;
+}
+
+/* ============================================================
+   INLINE PILL CHIP
+   ============================================================ */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--r-full);
+  font-size: 11px;
+  font-weight: 800;
+  border: 1px solid var(--border-2);
+  background: rgba(255,255,255,0.05);
+  color: var(--text-2);
+}
+
+/* ============================================================
+   SUCCESS FLASH — briefly highlights an action completed
+   ============================================================ */
+
+@keyframes success-flash {
+  0%   { box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
+  50%  { box-shadow: 0 0 0 8px rgba(34,197,94,0); }
+  100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+}
+
+.flash-success {
+  animation: success-flash 0.5s ease both;
+}
+
+/* ============================================================
+   SMOOTH IMAGE FADE-IN (non-disruptive — only on slow loads)
+   ============================================================ */
+
+img {
+  transition: opacity 0.15s ease;
+}
+
+/* ============================================================
+   BOTTOM SHEET SLIDE-UP — ensure consistent across browsers
+   ============================================================ */
+
+@supports not (view-transition-name: root) {
+  /* Fallback: soft fade when View Transitions aren't available */
+  .page-enter {
+    animation: page-in 0.18s ease both;
+  }
+}
+
+/* ============================================================
+   MOBILE MEDIA — text size and spacing tightening
+   ============================================================ */
+
+@media (max-width: 390px) {
+  .team-name {
+    font-size: 14px;
+  }
+  .score {
+    font-size: 22px;
+  }
+}
+
+/* ============================================================
+   XP SYSTEM ANIMATIONS
+   ============================================================ */
+
+@keyframes xpToastIn {
+  from { opacity: 0; transform: translateY(-16px) scale(0.9); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes levelUpPop {
+  0%   { transform: scale(0); opacity: 0; }
+  60%  { transform: scale(1.3); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ============================================================
+   POPUP / MODAL ENTRANCE
+   ============================================================ */
+
+@keyframes popup-in {
+  from { opacity: 0; transform: translate(-50%, -48%) scale(0.93); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(12px) scale(0.95); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0)    scale(1); }
+}
+
+@keyframes score-pop {
+  0%   { transform: scale(1);    color: #fff; }
+  25%  { transform: scale(1.35); color: #ffd700; text-shadow: 0 0 24px rgba(255,215,0,0.7), 0 0 48px rgba(255,215,0,0.35); }
+  60%  { transform: scale(1.1);  color: #fff;    text-shadow: 0 0 12px rgba(255,255,255,0.3); }
+  100% { transform: scale(1);    color: #fff;    text-shadow: none; }
+}
+
+@keyframes feed-event-in {
+  0%   { opacity: 0; transform: translateY(-18px) scale(0.96); }
+  60%  { opacity: 1; transform: translateY(2px)   scale(1.005); }
+  100% { opacity: 1; transform: translateY(0)     scale(1); }
+}
+
+@keyframes feed-event-glow {
+  0%   { box-shadow: 0 0 0   0   rgba(255,255,255,0); }
+  30%  { box-shadow: 0 0 22px 4px rgba(255,255,255,0.18); }
+  100% { box-shadow: 0 0 0   0   rgba(255,255,255,0); }
+}
+
+@keyframes livePulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 2px rgba(34,197,94,0.25); }
+  50%       { opacity: 0.55; box-shadow: 0 0 0 4px rgba(34,197,94,0.08); }
+}
+
+/* ============================================================
+   INPUT FOCUS RING — consistent across all pages
+   ============================================================ */
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  border-color: rgba(59, 130, 246, 0.65) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18) !important;
+}
+
+/* ============================================================
+   SECTION LABEL — used inside cards and sidebars
+   ============================================================ */
+
+.label-xs {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--text-3);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   DIVIDER
+   ============================================================ */
+
+.divider {
+  height: 1px;
+  background: var(--border-1);
+  margin: 0;
+}
+
+/* ============================================================
+   ICON BUTTON — circular tap target
+   ============================================================ */
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-2);
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background 0.12s ease, opacity 0.08s ease;
+}
+
+.icon-btn:active {
+  background: rgba(255,255,255,0.12);
+  opacity: 0.8;
+}
+
+/* ============================================================
+   AVATAR — standard sizes
+   ============================================================ */
+
+.avatar {
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  flex-shrink: 0;
+  background: var(--surface-3);
+}
+
+.avatar-sm  { width: 32px; height: 32px; }
+.avatar-md  { width: 44px; height: 44px; }
+.avatar-lg  { width: 56px; height: 56px; }
+.avatar-xl  { width: 72px; height: 72px; }
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 60px 24px;
+  text-align: center;
+  color: var(--text-3);
+}
+
+.empty-state-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-2);
+}
+
+.empty-state-sub {
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* ============================================================
+   STATUS BADGE — reusable across match pages
+   ============================================================ */
+
+.status-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  background: rgba(34,197,94,0.12);
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #4ade80;
+}
+
+.status-final {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  background: rgba(167,139,250,0.12);
+  border: 1px solid rgba(167,139,250,0.3);
+  color: #c4b5fd;
+}
+
+.status-upcoming {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-2);
+}
+
+/* ============================================================
+   BOTTOM NAV — refined active state
+   ============================================================ */
+
+/* Replace blue pill with white icon + coloured dot */
+.tab-active .tab-icon-wrap {
+  background: transparent !important;
+}
+
+.tab-active .tab-icon-wrap::after {
+  bottom: -4px;
+  width: 5px;
+  height: 5px;
+  background: #fff;
+  opacity: 1;
+}
+
+.tab-active {
+  color: #fff !important;
+}
+
+.tab-active .tab-label {
+  color: #fff !important;
+  font-weight: 800;
+}
+
+/* ============================================================
+   PULL-TO-REFRESH visible state
+   ============================================================ */
+
+.pull-indicator.visible {
+  opacity: 1;
+}
+
+/* ============================================================
+   GLOBAL MODAL BACKDROP BLUR
+   ============================================================ */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0,0,0,0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: overlay-in 0.18s ease both;
+}
+
+.modal-box {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 201;
+  width: min(400px, 90vw);
+  background: #141414;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 22px 20px 24px;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.8);
+  animation: popup-in 0.2s var(--spring-soft) both;
+  max-height: 80dvh;
+  overflow-y: auto;
+}

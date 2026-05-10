@@ -1,0 +1,6760 @@
+[
+  {
+    "id": "alex_neal_bullen",
+    "name": "Alex Neal-Bullen",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1079,
+    "eventIds": [
+      1079
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "riley_thilthorpe",
+    "name": "Riley Thilthorpe",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 994,
+    "eventIds": [
+      994
+    ],
+    "statsIds": [
+      1846
+    ]
+  },
+  {
+    "id": "hugh_bond",
+    "name": "Hugh Bond",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1822,
+    "eventIds": [
+      2076
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "ben_keays",
+    "name": "Ben Keays",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 983,
+    "eventIds": [
+      983
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "billy_dowling",
+    "name": "Billy Dowling",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1777,
+    "eventIds": [
+      1777
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "brayden_cook",
+    "name": "Brayden Cook",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1661,
+    "eventIds": [
+      1661
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "callum_ah_chee",
+    "name": "Callum Ah Chee",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 873,
+    "eventIds": [
+      873
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "charlie_edwards",
+    "name": "Charlie Edwards",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 2068,
+    "eventIds": [
+      2068
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "chayce_jones",
+    "name": "Chayce Jones",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1534,
+    "eventIds": [
+      1534
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "daniel_curtin",
+    "name": "Daniel Curtin",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1788,
+    "eventIds": [
+      1788
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "darcy_fogarty",
+    "name": "Darcy Fogarty",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 986,
+    "eventIds": [
+      986
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "finnbar_maley",
+    "name": "Finnbar Maley",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1886,
+    "eventIds": [
+      1955
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "isaac_cumming",
+    "name": "Isaac Cumming",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1840,
+    "eventIds": [
+      1126
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "izak_rankine",
+    "name": "Izak Rankine",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 990,
+    "eventIds": [
+      990
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jack_hutchinson",
+    "name": "Jack Hutchinson",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1822,
+    "eventIds": [
+      1822
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jake_soligo",
+    "name": "Jake Soligo",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 998,
+    "eventIds": [
+      998
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "james_borlase",
+    "name": "James Borlase",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1000,
+    "eventIds": [
+      1000
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "james_peatling",
+    "name": "James Peatling",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1660,
+    "eventIds": [
+      1660
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "joel_freijah",
+    "name": "Joel Freijah",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 1807,
+    "eventIds": [
+      1846
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jordan_dawson",
+    "name": "Jordan Dawson",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 982,
+    "eventIds": [
+      982
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jordon_butts",
+    "name": "Jordon Butts",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1615,
+    "eventIds": [
+      1615
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "josh_worrell",
+    "name": "Josh Worrell",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 992,
+    "eventIds": [
+      992
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "joshua_rachele",
+    "name": "Josh Rachele",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 997,
+    "eventIds": [
+      997
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "lachlan_mcandrew",
+    "name": "Lachlan McAndrew",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1831,
+    "eventIds": [
+      1831
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "luke_nankervis",
+    "name": "Luke Nankervis",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1002,
+    "eventIds": [
+      1002
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "luke_pedlar",
+    "name": "Luke Pedlar",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 995,
+    "eventIds": [
+      995
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "max_michalanney",
+    "name": "Max Michalanney",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1001,
+    "eventIds": [
+      1001
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "mitchell_hinge",
+    "name": "Mitchell Hinge",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 985,
+    "eventIds": [
+      985
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "reilly_obrien",
+    "name": "Reilly O'Brien",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 981,
+    "eventIds": [
+      981
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "rory_laird",
+    "name": "Rory Laird",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 979,
+    "eventIds": [
+      979
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "sam_berry",
+    "name": "Sam Berry",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 993,
+    "eventIds": [
+      993
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "taylor_walker",
+    "name": "Taylor Walker",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 116,
+    "eventIds": [
+      116
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "toby_murray",
+    "name": "Toby Murray",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1875,
+    "eventIds": [
+      1839
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "nick_murray",
+    "name": "Nick Murray",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1845,
+    "eventIds": [
+      1630
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "wayne_milera",
+    "name": "Wayne Milera",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 984,
+    "eventIds": [
+      984
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "zac_taylor",
+    "name": "Zac Taylor",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1819,
+    "eventIds": [
+      1819
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "bruce_reville",
+    "name": "Bruce Reville",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 1791,
+    "eventIds": [
+      1791
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "cameron_rayner",
+    "name": "Cam Rayner",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 879,
+    "eventIds": [
+      879
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "charlie_cameron",
+    "name": "Charlie Cameron",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 868,
+    "eventIds": [
+      868
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "cody_curtin",
+    "name": "Cody Curtin",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 2098,
+    "eventIds": [
+      1885
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "conor_mckenna",
+    "name": "Conor McKenna",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 871,
+    "eventIds": [
+      871
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "daniel_annable",
+    "name": "Daniel Annable",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 2035,
+    "eventIds": [
+      2035
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "darcy_fort",
+    "name": "Darcy Fort",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 882,
+    "eventIds": [
+      882
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "darcy_gardiner",
+    "name": "Darcy Gardiner",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 869,
+    "eventIds": [
+      869
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "darcy_wilmot",
+    "name": "Darcy Wilmot",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 887,
+    "eventIds": [
+      887
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "darragh_joyce",
+    "name": "Darragh Joyce",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 1519,
+    "eventIds": [
+      1519
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "dayne_zorko",
+    "name": "Dayne Zorko",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 707,
+    "eventIds": [
+      707
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "harris_andrews",
+    "name": "Harris Andrews",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 870,
+    "eventIds": [
+      870
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "hugh_mccluggage",
+    "name": "Hugh McCluggage",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 875,
+    "eventIds": [
+      875
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "james_tunstill",
+    "name": "James Tunstill",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 1689,
+    "eventIds": [
+      1689
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jarrod_berry",
+    "name": "Jarrod Berry",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 876,
+    "eventIds": [
+      876
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jaspa_fletcher",
+    "name": "Jaspa Fletcher",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 888,
+    "eventIds": [
+      888
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "josh_dunkley",
+    "name": "Josh Dunkley",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 874,
+    "eventIds": [
+      874
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "kai_lohmann",
+    "name": "Kai Lohmann",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 886,
+    "eventIds": [
+      886
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "keidean_coleman",
+    "name": "Keidean Coleman",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 884,
+    "eventIds": [
+      884
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "lachie_neale",
+    "name": "Lachie Neale",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 682,
+    "eventIds": [
+      682
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "levi_ashcroft",
+    "name": "Levi Ashcroft",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 1904,
+    "eventIds": [
+      1908
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "lincoln_mccarthy",
+    "name": "Lincoln McCarthy",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 719,
+    "eventIds": [
+      719
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "logan_morris",
+    "name": "Logan Morris",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 1769,
+    "eventIds": [
+      1769
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "noah_answerth",
+    "name": "Noah Answerth",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 1546,
+    "eventIds": [
+      1546
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "reece_torrent",
+    "name": "Reece Torrent",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 2053,
+    "eventIds": [
+      2053
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "ryan_lester",
+    "name": "Ryan Lester",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 144,
+    "eventIds": [
+      144
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "sam_draper",
+    "name": "Sam Draper",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 1597,
+    "eventIds": [
+      1597
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "sam_marshall",
+    "name": "Sam Marshall",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 1945,
+    "eventIds": [
+      1945
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "shadeau_brain",
+    "name": "Shadeau Brain",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 1803,
+    "eventIds": [
+      9999
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "ty_gallop",
+    "name": "Ty Gallop",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 1968,
+    "eventIds": [
+      1951
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "will_ashcroft",
+    "name": "Will Ashcroft",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 1830,
+    "eventIds": [
+      1709
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "will_mclachlan",
+    "name": "Will McLachlan",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 1883,
+    "eventIds": [
+      1883
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "zac_bailey",
+    "name": "Zac Bailey",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 881,
+    "eventIds": [
+      881
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "zane_zakostelsky",
+    "name": "Zane Zakostelsky",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 2034,
+    "eventIds": [
+      2046
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "adam_cerra",
+    "name": "Adam Cerra",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 1109,
+    "eventIds": [
+      1109
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "adam_saad",
+    "name": "Adam Saad",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 1099,
+    "eventIds": [
+      1099
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "ashton_moir",
+    "name": "Ashton Moir",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 1866,
+    "eventIds": [
+      1866
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "ben_ainsworth",
+    "name": "Ben Ainsworth",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 804,
+    "eventIds": [
+      804
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "blake_acres",
+    "name": "Blake Acres",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 1097,
+    "eventIds": [
+      1097
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "billy_wilson",
+    "name": "Billy Wilson",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 1870,
+    "eventIds": [
+      1870
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "brodie_kemp",
+    "name": "Brodie Kemp",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 1116,
+    "eventIds": [
+      1116
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "campbell_chesser",
+    "name": "Campbell Chesser",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 975,
+    "eventIds": [
+      975
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "cooper_lord",
+    "name": "Cooper Lord",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 1868,
+    "eventIds": [
+      1867
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "elijah_hollands",
+    "name": "Elijah Hollands",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 1699,
+    "eventIds": [
+      1699
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "flynn_young",
+    "name": "Flynn Young",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 1988,
+    "eventIds": [
+      9999
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "francis_evans",
+    "name": "Francis Evans",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 1021,
+    "eventIds": [
+      1021
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "george_hewett",
+    "name": "George Hewett",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 1098,
+    "eventIds": [
+      1098
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "harry_dean",
+    "name": "Harry Dean",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 2039,
+    "eventIds": [
+      2039
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "harry_mckay",
+    "name": "Harry McKay",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 1103,
+    "eventIds": [
+      1103
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "hudson_okeeffe",
+    "name": "Hudson O'Keeffe",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 1781,
+    "eventIds": [
+      1781
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "isaac_kako",
+    "name": "Isaac Kako",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 1898,
+    "eventIds": [
+      1906
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jacob_weitering",
+    "name": "Jacob Weitering",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 1104,
+    "eventIds": [
+      1104
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jagga_smith",
+    "name": "Jagga Smith",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 2031,
+    "eventIds": [
+      2058
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jordan_boyd",
+    "name": "Jordan Boyd",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 1672,
+    "eventIds": [
+      1672
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "lachie_fogarty",
+    "name": "Lachie Fogarty",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 1111,
+    "eventIds": [
+      1111
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "lachlan_cowan",
+    "name": "Lachlan Cowan",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 1707,
+    "eventIds": [
+      1707
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "lewis_young",
+    "name": "Lewis Young",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 1463,
+    "eventIds": [
+      1463
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "liam_reidy",
+    "name": "Liam Reidy",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 865,
+    "eventIds": [
+      865
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "marc_pittonet",
+    "name": "Marc Pittonet",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 1100,
+    "eventIds": [
+      1100
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "matthew_carroll",
+    "name": "Matthew Carroll",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 1940,
+    "eventIds": [
+      1985
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "matthew_cottrell",
+    "name": "Matthew Cottrell",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 1115,
+    "eventIds": [
+      1115
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "mitch_mcgovern",
+    "name": "Mitch McGovern",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 1105,
+    "eventIds": [
+      1105
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "nic_newman",
+    "name": "Nic Newman",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 1107,
+    "eventIds": [
+      1107
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "nick_haynes",
+    "name": "Nick Haynes",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 720,
+    "eventIds": [
+      720
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "oliver_florent",
+    "name": "Oliver Florent",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 1059,
+    "eventIds": [
+      1059
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "oliver_hollands",
+    "name": "Oliver Hollands",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 1120,
+    "eventIds": [
+      1120
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "patrick_cripps",
+    "name": "Patrick Cripps",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 1096,
+    "eventIds": [
+      1096
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "sam_walsh",
+    "name": "Sam Walsh",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 1114,
+    "eventIds": [
+      1114
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "talor_byrne",
+    "name": "Talor Byrne",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 2038,
+    "eventIds": [
+      2073
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "will_hayward",
+    "name": "Will Hayward",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 1061,
+    "eventIds": [
+      1061
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "zachary_williams",
+    "name": "Zac Williams",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 1214,
+    "eventIds": [
+      1214
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "angus_anderson",
+    "name": "Angus Anderson",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 2074,
+    "eventIds": [
+      1997
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "beau_mccreery",
+    "name": "Beau McCreery",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 1632,
+    "eventIds": [
+      1632
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "billy_frampton",
+    "name": "Billy Frampton",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 760,
+    "eventIds": [
+      760
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "brayden_maynard",
+    "name": "Brayden Maynard",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 755,
+    "eventIds": [
+      755
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "charlie_west",
+    "name": "Charlie West",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 1939,
+    "eventIds": [
+      1939
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "dan_houston",
+    "name": "Dan Houston",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 1009,
+    "eventIds": [
+      1009
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "daniel_mcstay",
+    "name": "Daniel McStay",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 1854,
+    "eventIds": [
+      752
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "darcy_cameron",
+    "name": "Darcy Cameron",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 758,
+    "eventIds": [
+      758
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "darcy_moore",
+    "name": "Darcy Moore",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 1363,
+    "eventIds": [
+      1363
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "edward_allan",
+    "name": "Edward Allan",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 1797,
+    "eventIds": [
+      769
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "harry_perryman",
+    "name": "Harry Perryman",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 1128,
+    "eventIds": [
+      1128
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "isaac_quaynor",
+    "name": "Isaac Quaynor",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 762,
+    "eventIds": [
+      762
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jack_buller",
+    "name": "Jack Buller",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 1977,
+    "eventIds": [
+      1727
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jack_crisp",
+    "name": "Jack Crisp",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 686,
+    "eventIds": [
+      686
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jamie_elliott",
+    "name": "Jamie Elliott",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 715,
+    "eventIds": [
+      715
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jeremy_howe",
+    "name": "Jeremy Howe",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 537,
+    "eventIds": [
+      537
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "joel_cochran",
+    "name": "Joel Cochran",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 2044,
+    "eventIds": [
+      2044
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jordan_de_goey",
+    "name": "Jordan de Goey",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 753,
+    "eventIds": [
+      753
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "josh_daicos",
+    "name": "Josh Daicos",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 757,
+    "eventIds": [
+      757
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "lachlan_schultz",
+    "name": "Lachie Schultz",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 851,
+    "eventIds": [
+      851
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "lachlan_sullivan",
+    "name": "Lachie Sullivan",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 1784,
+    "eventIds": [
+      1784
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "ned_long",
+    "name": "Ned Long",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 1838,
+    "eventIds": [
+      1704
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "nick_daicos",
+    "name": "Nick Daicos",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 1665,
+    "eventIds": [
+      1665
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "oscar_steene",
+    "name": "Oscar Steene",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 1974,
+    "eventIds": [
+      2070
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "patrick_lipinski",
+    "name": "Patrick Lipinski",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 759,
+    "eventIds": [
+      759
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "roan_steele",
+    "name": "Roan Steele",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 1995,
+    "eventIds": [
+      1830
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "scott_pendlebury",
+    "name": "Scott Pendlebury",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 156,
+    "eventIds": [
+      156
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "steele_sidebottom",
+    "name": "Steele Sidebottom",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 164,
+    "eventIds": [
+      164
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "tim_membrey",
+    "name": "Tim Membrey",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 893,
+    "eventIds": [
+      893
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "wil_parker",
+    "name": "Wil Parker",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 1816,
+    "eventIds": [
+      1816
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "william_hayes",
+    "name": "William Hayes",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": 1952,
+    "eventIds": [
+      1809
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "andrew_mcgrath",
+    "name": "Andrew McGrath",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 733,
+    "eventIds": [
+      733
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "archer_day_wicks",
+    "name": "Archer Day-Wicks",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 1927,
+    "eventIds": [
+      1965
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "archer_may",
+    "name": "Archer May",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 1992,
+    "eventIds": [
+      1860
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "archie_perkins",
+    "name": "Archie Perkins",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 741,
+    "eventIds": [
+      741
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "archie_roberts",
+    "name": "Archie Roberts",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 1779,
+    "eventIds": [
+      1779
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "ben_mckay",
+    "name": "Ben McKay",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 774,
+    "eventIds": [
+      774
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "brayden_fiorini",
+    "name": "Brayden Fiorini",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 803,
+    "eventIds": [
+      803
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "darcy_parish",
+    "name": "Darcy Parish",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 728,
+    "eventIds": [
+      728
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "dyson_sharp",
+    "name": "Dyson Sharp",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 2051,
+    "eventIds": [
+      2064
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "elijah_tsatas",
+    "name": "Elijah Tsatas",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 750,
+    "eventIds": [
+      750
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "hussien_el_achkar",
+    "name": "Hussien El Achkar",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 2049,
+    "eventIds": [
+      1903
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jacob_farrow",
+    "name": "Jacob Farrow",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 2050,
+    "eventIds": [
+      2050
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jade_gresham",
+    "name": "Jade Gresham",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 899,
+    "eventIds": [
+      899
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jaxon_prior",
+    "name": "Jaxon Prior",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 1629,
+    "eventIds": [
+      1629
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jayden_nguyen",
+    "name": "Jayden Nguyen",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 2020,
+    "eventIds": [
+      2034
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jordan_ridley",
+    "name": "Jordan Ridley",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 1821,
+    "eventIds": [
+      1821
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jye_caldwell",
+    "name": "Jye Caldwell",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 1567,
+    "eventIds": [
+      1567
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "kayle_gerreyn",
+    "name": "Kayle Gerreyn",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 2025,
+    "eventIds": [
+      2025
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "kyle_langford",
+    "name": "Kyle Langford",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 724,
+    "eventIds": [
+      724
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "lachlan_blakiston",
+    "name": "Lachlan Blakiston",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 1993,
+    "eventIds": [
+      2015
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "mason_redman",
+    "name": "Mason Redman",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 730,
+    "eventIds": [
+      730
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "matt_guelfi",
+    "name": "Matt Guelfi",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 1487,
+    "eventIds": [
+      1487
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "max_kondogiannis",
+    "name": "Max Kondogiannis",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 2048,
+    "eventIds": [
+      2048
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "nate_caddy",
+    "name": "Nate Caddy",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 1775,
+    "eventIds": [
+      1775
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "nic_martin",
+    "name": "Nic Martin",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 9999,
+    "eventIds": [
+      9999
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "nick_bryan",
+    "name": "Nick Bryan",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 1804,
+    "eventIds": [
+      1804
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "nikolas_cox",
+    "name": "Nik Cox",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 740,
+    "eventIds": [
+      740
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "peter_wright",
+    "name": "Peter Wright",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 1360,
+    "eventIds": [
+      1360
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "saad_el_hawli",
+    "name": "Saad El-Hawli",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 1881,
+    "eventIds": [
+      1964
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "sam_durham",
+    "name": "Sam Durham",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 742,
+    "eventIds": [
+      742
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "sullivan_robey",
+    "name": "Sullivan Robey",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 2080,
+    "eventIds": [
+      2080
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "thomas_edwards",
+    "name": "Thomas Edwards",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 1899,
+    "eventIds": [
+      1899
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "will_setterfield",
+    "name": "Will Setterfield",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 734 ,
+    "eventIds": [
+      734
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "xavier_duursma",
+    "name": "Xavier Duursma",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 1016,
+    "eventIds": [
+      1016
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "zach_merrett",
+    "name": "Zach Merrett",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 723,
+    "eventIds": [
+      723
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "zach_reid",
+    "name": "Zach Reid",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 1638,
+    "eventIds": [
+      1638
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "zak_johnson",
+    "name": "Zak Johnson",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 1959,
+    "eventIds": [
+      1959
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "alex_pearce",
+    "name": "Alex Pearce",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 845,
+    "eventIds": [
+      845
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "andrew_brayshaw",
+    "name": "Andrew Brayshaw",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 849,
+    "eventIds": [
+      849
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "bailey_banfield",
+    "name": "Bailey Banfield",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 1474,
+    "eventIds": [
+      1474
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "brandon_walker",
+    "name": "Brandon Walker",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 1651,
+    "eventIds": [
+      1651
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "brennan_cox",
+    "name": "Brennan Cox",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 847,
+    "eventIds": [
+      847
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "caleb_serong",
+    "name": "Caleb Serong",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 856,
+    "eventIds": [
+      856
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "christopher_scerri",
+    "name": "Christopher Scerri",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 2067,
+    "eventIds": [
+      1936
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "corey_wagner",
+    "name": "Corey Wagner",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 1793,
+    "eventIds": [
+      846
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "hayden_young",
+    "name": "Hayden Young",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 857,
+    "eventIds": [
+      857
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "heath_chapman",
+    "name": "Heath Chapman",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 1631,
+    "eventIds": [
+      1631
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "hugh_davies",
+    "name": "Hugh Davies",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 1772,
+    "eventIds": [
+      1772
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "isaiah_dudley",
+    "name": "Isaiah Dudley",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 1936,
+    "eventIds": [
+      1932
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jaeger_omeara",
+    "name": "Jaeger O'Meara",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 1183,
+    "eventIds": [
+      1183
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jeremy_sharp",
+    "name": "Jeremy Sharp",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 1605,
+    "eventIds": [
+      1605
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jordan_clark",
+    "name": "Jordan Clark",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 853,
+    "eventIds": [
+      853
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "josh_treacy",
+    "name": "Josh Treacy",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 859,
+    "eventIds": [
+      859
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "judd_mcvee",
+    "name": "Judd McVee",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 1091,
+    "eventIds": [
+      1091
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jye_amiss",
+    "name": "Jye Amiss",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 863,
+    "eventIds": [
+      863
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "karl_worner",
+    "name": "Karl Worner",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 862,
+    "eventIds": [
+      862
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "luke_jackson",
+    "name": "Luke Jackson",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 854,
+    "eventIds": [
+      854
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "luke_ryan",
+    "name": "Luke Ryan",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 848,
+    "eventIds": [
+      848
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "mason_cox",
+    "name": "Mason Cox",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 754,
+    "eventIds": [
+      754
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "matthew_johnson",
+    "name": "Matthew Johnson",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 864,
+    "eventIds": [
+      864
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "minairo_frederick",
+    "name": "Michael Frederick",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 855,
+    "eventIds": [
+      855
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "murphy_reid",
+    "name": "Murphy Reid",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 1903,
+    "eventIds": [
+      1907
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "nathan_odriscoll",
+    "name": "Nathan O'Driscoll",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 1860,
+    "eventIds": [
+      860
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "neil_erasmus",
+    "name": "Neil Erasmus",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 861,
+    "eventIds": [
+      861
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "oscar_mcdonald",
+    "name": "Oscar McDonald",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 1378,
+    "eventIds": [
+      1378
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "patrick_voss",
+    "name": "Patrick Voss",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 749,
+    "eventIds": [
+      749
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "sam_switkowski",
+    "name": "Sam Switkowski",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 850,
+    "eventIds": [
+      850
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "sean_darcy",
+    "name": "Sean Darcy",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 1457,
+    "eventIds": [
+      1457
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "shai_bolton",
+    "name": "Shai Bolton",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": 1036,
+    "eventIds": [
+      1036
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "bailey_smith",
+    "name": "Bailey Smith",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 1999,
+    "eventIds": [
+      1536
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "bradley_close",
+    "name": "Brad Close",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 1595,
+    "eventIds": [
+      1595
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "connor_osullivan",
+    "name": "Connor O'Sullivan",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 1778,
+    "eventIds": [
+      1778
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "george_stevens",
+    "name": "George Stevens",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 1950,
+    "eventIds": [
+      1950
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "gryan_miers",
+    "name": "Gryan Miers",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 924,
+    "eventIds": [
+      924
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jack_bowes",
+    "name": "Jack Bowes",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 920,
+    "eventIds": [
+      920
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jack_henry",
+    "name": "Jack Henry",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 1485,
+    "eventIds": [
+      1485
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jack_martin",
+    "name": "Jack Martin",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 1792,
+    "eventIds": [
+      1095
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jake_kolodjashnij",
+    "name": "Jake Kolodjashnij",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 916,
+    "eventIds": [
+      916
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "james_worpel",
+    "name": "James Worpel",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 826,
+    "eventIds": [
+      826
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jay_polkinghorne",
+    "name": "Jay Polkinghorne",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 1962,
+    "eventIds": [
+      1962
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jeremy_cameron",
+    "name": "Jeremy Cameron",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 648,
+    "eventIds": [
+      648
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jhye_clark",
+    "name": "Jhye Clark",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 1721,
+    "eventIds": [
+      1721
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "lawson_humphries",
+    "name": "Lawson Humphries",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 1834,
+    "eventIds": [
+      1813
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "lennox_hofmann",
+    "name": "Lennox Hofmann",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 2040,
+    "eventIds": [
+      2040
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "mark_blicavs",
+    "name": "Mark Blicavs",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 1196,
+    "eventIds": [
+      1196
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "mark_oconnor",
+    "name": "Mark O'Connor",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 922,
+    "eventIds": [
+      922
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "max_holmes",
+    "name": "Max Holmes",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 929,
+    "eventIds": [
+      929
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "mitch_knevitt",
+    "name": "Mitch Knevitt",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 931,
+    "eventIds": [
+      931
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "mitchell_edwards",
+    "name": "Mitchell Edwards",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 1911,
+    "eventIds": [
+      1911
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "oisin_mullin",
+    "name": "Oisin Mullin",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 934,
+    "eventIds": [
+      934
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "oliver_dempsey",
+    "name": "Oliver Dempsey",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 930,
+    "eventIds": [
+      930
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "oliver_henry",
+    "name": "Oliver Henry",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 926,
+    "eventIds": [
+      926
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "oliver_wiltshire",
+    "name": "Oliver Wiltshire",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 1951,
+    "eventIds": [
+      1957
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "patrick_dangerfield",
+    "name": "Patrick Dangerfield",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 127,
+    "eventIds": [
+      127
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "sam_de_koning",
+    "name": "Sam De Koning",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 927,
+    "eventIds": [
+      927
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "shannon_neale",
+    "name": "Shannon Neale",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 928,
+    "eventIds": [
+      928
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "shaun_mannagh",
+    "name": "Shaun Mannagh",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 1750,
+    "eventIds": [
+      1750
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "tanner_bruhn",
+    "name": "Tanner Bruhn",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 1626,
+    "eventIds": [
+      1626
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "tom_atkins",
+    "name": "Tom Atkins",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 925,
+    "eventIds": [
+      925
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "tom_stewart",
+    "name": "Tom Stewart",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 919,
+    "eventIds": [
+      919
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "zach_guthrie",
+    "name": "Zach Guthrie",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 917,
+    "eventIds": [
+      917
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "alex_davies",
+    "name": "Alex Davies",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 1795,
+    "eventIds": [
+      812
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "bailey_humphrey",
+    "name": "Bailey Humphrey",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 1715,
+    "eventIds": [
+      1715
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "ben_jepson",
+    "name": "Ben Jepson",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 1967,
+    "eventIds": [
+      1967
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "ben_king",
+    "name": "Ben King",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 1550,
+    "eventIds": [
+      1550
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "ben_long",
+    "name": "Ben Long",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 1440,
+    "eventIds": [
+      1440
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "bodhi_uwland",
+    "name": "Bodhi Uwland",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 1710,
+    "eventIds": [
+      1710
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "caleb_graham",
+    "name": "Caleb Graham",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 1894,
+    "eventIds": [
+      1894
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "charlie_ballard",
+    "name": "Charlie Ballard",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 805,
+    "eventIds": [
+      805
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "christian_petracca",
+    "name": "Christian Petracca",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 1082,
+    "eventIds": [
+      1082
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "daniel_rioli",
+    "name": "Daniel Rioli",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 1032,
+    "eventIds": [
+      1032
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "ethan_read",
+    "name": "Ethan Read",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 1773,
+    "eventIds": [
+      1773
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jake_rogers",
+    "name": "Jake Rogers",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 1783,
+    "eventIds": [
+      1783
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jamarra_ugle_hagan",
+    "name": "Jamarra Ugle-Hagan",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 955,
+    "eventIds": [
+      955
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jarrod_witts",
+    "name": "Jarrod Witts",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 796,
+    "eventIds": [
+      796
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jed_walter",
+    "name": "Jed Walter",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 1763,
+    "eventIds": [
+      1763
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "joel_jeffrey",
+    "name": "Joel Jeffrey",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 1659,
+    "eventIds": [
+      1659
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "john_noble",
+    "name": "John Noble",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 764,
+    "eventIds": [
+      764
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jy_farrar",
+    "name": "Jy Farrar",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 1975,
+    "eventIds": [
+      1621
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "lachie_weller",
+    "name": "Lachie Weller",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 1856,
+    "eventIds": [
+      1372
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "lachlan_gulbin",
+    "name": "Lachlan Gulbin",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 2030,
+    "eventIds": [
+      2077
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "leonardo_lombard",
+    "name": "Leonardo Lombard",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 1976,
+    "eventIds": [
+      1979
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "mac_andrew",
+    "name": "Mac Andrew",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 815,
+    "eventIds": [
+      815
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "matthew_rowell",
+    "name": "Matthew Rowell",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 809,
+    "eventIds": [
+      809
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "ned_moyle",
+    "name": "Ned Moyle",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 813,
+    "eventIds": [
+      813
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "nick_holman",
+    "name": "Nick Holman",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 1322,
+    "eventIds": [
+      1322
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "noah_anderson",
+    "name": "Noah Anderson",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 807,
+    "eventIds": [
+      807
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "oscar_adams",
+    "name": "Oscar Adams",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 1996,
+    "eventIds": [
+      9999
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "sam_clohesy",
+    "name": "Sam Clohesy",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 1762,
+    "eventIds": [
+      1762
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "sam_collins",
+    "name": "Sam Collins",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 800,
+    "eventIds": [
+      800
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "touk_miller",
+    "name": "Touk Miller",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 799,
+    "eventIds": [
+      799
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "wil_powell",
+    "name": "Wil Powell",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 1517,
+    "eventIds": [
+      1517
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "will_graham",
+    "name": "Will Graham",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 1739,
+    "eventIds": [
+      1739
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "zeke_uwland",
+    "name": "Zeke Uwland",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": 2032,
+    "eventIds": [
+      2036
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "aaron_cadman",
+    "name": "Aaron Cadman",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 1718,
+    "eventIds": [
+      1718
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "brent_daniels",
+    "name": "Brent Daniels",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 1130,
+    "eventIds": [
+      1130
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "callum_m_brown",
+    "name": "Callum Brown",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 1133,
+    "eventIds": [
+      1133
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "clayton_oliver",
+    "name": "Clayton Oliver",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 1081,
+    "eventIds": [
+      1081
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "connor_idun",
+    "name": "Connor Idun",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 1134,
+    "eventIds": [
+      1134
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "conor_stone",
+    "name": "Conor Stone",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 1800,
+    "eventIds": [
+      1800
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "finn_callaghan",
+    "name": "Finn Callaghan",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 1673,
+    "eventIds": [
+      1673
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "harrison_himmelberg",
+    "name": "Harry Himmelberg",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 1124,
+    "eventIds": [
+      1124
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "harrison_oliver",
+    "name": "Harrison Oliver",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 2099,
+    "eventIds": [
+      2099
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "harry_rowston",
+    "name": "Harry Rowston",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 1826,
+    "eventIds": [
+      1713
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "harvey_thomas",
+    "name": "Harvey Thomas",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 1742,
+    "eventIds": [
+      1742
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jack_buckley",
+    "name": "Jack Buckley",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 1129,
+    "eventIds": [
+      1129
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jake_riccardi",
+    "name": "Jake Riccardi",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 1138,
+    "eventIds": [
+      1138
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jake_stringer",
+    "name": "Jake Stringer",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 1209,
+    "eventIds": [
+      1209
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "james_leake",
+    "name": "James Leake",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 1873,
+    "eventIds": [
+      1873
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jayden_laverde",
+    "name": "Jayden Laverde",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 726,
+    "eventIds": [
+      726
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jesse_hogan",
+    "name": "Jesse Hogan",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 1122,
+    "eventIds": [
+      1122
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "joe_fonti",
+    "name": "Joe Fonti",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 1841,
+    "eventIds": [
+      1841
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "josaia_delana",
+    "name": "Josaia Delana",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 1958,
+    "eventIds": [
+      1958
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "kieren_briggs",
+    "name": "Kieren Briggs",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 1132,
+    "eventIds": [
+      1132
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "lachie_whitfield",
+    "name": "Lachie Whitfield",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 1121,
+    "eventIds": [
+      1121
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "lachlan_ash",
+    "name": "Lachie Ash",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 1136,
+    "eventIds": [
+      1136
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "leek_aleer",
+    "name": "Leek Aleer",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 1700,
+    "eventIds": [
+      1700
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "max_gruzewski",
+    "name": "Max Gruzewski",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 1776,
+    "eventIds": [
+      1776
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "nicholas_madden",
+    "name": "Nicholas Madden",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 1981,
+    "eventIds": [
+      1981
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "oliver_hannaford",
+    "name": "Oliver Hannaford",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 1902,
+    "eventIds": [
+      1902
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "phoenix_gothard",
+    "name": "Phoenix Gothard",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 2033,
+    "eventIds": [
+      2045
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "ryan_angwin",
+    "name": "Ryan Angwin",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 1139,
+    "eventIds": [
+      1139
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "stephen_coniglio",
+    "name": "Stephen Coniglio",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 649,
+    "eventIds": [
+      649
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "toby_bedford",
+    "name": "Toby Bedford",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 1135,
+    "eventIds": [
+      1135
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "toby_greene",
+    "name": "Toby Greene",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 651,
+    "eventIds": [
+      651
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "toby_mcmullin",
+    "name": "Toby McMullin",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 1141,
+    "eventIds": [
+      1141
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "xavier_ohalloran",
+    "name": "Xavier O'Halloran",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 1606,
+    "eventIds": [
+      1606
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "aidan_schubert",
+    "name": "Aidan Schubert",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 2095,
+    "eventIds": [
+      2095
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "bailey_macdonald",
+    "name": "Bailey Macdonald",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 1953,
+    "eventIds": [
+      1953
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "blake_hardwick",
+    "name": "Blake Hardwick",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 821,
+    "eventIds": [
+      821
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "bodie_ryan",
+    "name": "Bodie Ryan",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 2086,
+    "eventIds": [
+      2086
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "calsher_dear",
+    "name": "Calsher Dear",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 1790,
+    "eventIds": [
+      1790
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "cam_mackenzie",
+    "name": "Cam Mackenzie",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 840,
+    "eventIds": [
+      840
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "connor_macdonald",
+    "name": "Connor Macdonald",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 834,
+    "eventIds": [
+      834
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "connor_nash",
+    "name": "Connor Nash",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 823,
+    "eventIds": [
+      823
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "dylan_moore",
+    "name": "Dylan Moore",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 827,
+    "eventIds": [
+      827
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "finn_maginness",
+    "name": "Finn Maginness",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 830,
+    "eventIds": [
+      830
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "flynn_perez",
+    "name": "Flynn Perez",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 2041,
+    "eventIds": [
+      2041
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "harry_morrison",
+    "name": "Harry Morrison",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 822,
+    "eventIds": [
+      822
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jack_dalton",
+    "name": "Jack Dalton",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 2078,
+    "eventIds": [
+      2078
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jack_ginnivan",
+    "name": "Jack Ginnivan",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 766,
+    "eventIds": [
+      766
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jack_gunston",
+    "name": "Jack Gunston",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 498,
+    "eventIds": [
+      498
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jack_scrimshaw",
+    "name": "Jack Scrimshaw",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 824,
+    "eventIds": [
+      824
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jai_newcombe",
+    "name": "Jai Newcombe",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 833,
+    "eventIds": [
+      833
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "james_sicily",
+    "name": "James Sicily",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 818,
+    "eventIds": [
+      818
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jarman_impey",
+    "name": "Jarman Impey",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 820,
+    "eventIds": [
+      820
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "josh_battle",
+    "name": "Josh Battle",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 900,
+    "eventIds": [
+      900
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "josh_ward",
+    "name": "Josh Ward",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 836,
+    "eventIds": [
+      836
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "josh_weddle",
+    "name": "Josh Weddle",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 841,
+    "eventIds": [
+      841
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "karl_amon",
+    "name": "Karl Amon",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 819,
+    "eventIds": [
+      819
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "lloyd_meek",
+    "name": "Lloyd Meek",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 825,
+    "eventIds": [
+      825
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "mabior_chol",
+    "name": "Mabior Chol",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 801,
+    "eventIds": [
+      801
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "massimo_dambrosio",
+    "name": "Massimo D'Ambrosio",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 1693,
+    "eventIds": [
+      1693
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "matt_hill",
+    "name": "Matt Hill",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 2065,
+    "eventIds": [
+      2065
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "max_ramsden",
+    "name": "Max Ramsden",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 1720,
+    "eventIds": [
+      1720
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "mitch_lewis",
+    "name": "Mitch Lewis",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 1505,
+    "eventIds": [
+      1505
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "ned_reeves",
+    "name": "Ned Reeves",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 832,
+    "eventIds": [
+      832
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "nick_watson",
+    "name": "Nick Watson",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 1746,
+    "eventIds": [
+      1746
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "noah_mraz",
+    "name": "Noah Mraz",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 2042,
+    "eventIds": [
+      2042
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "sam_butler",
+    "name": "Sam Butler",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 1684,
+    "eventIds": [
+      1684
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "tom_barrass",
+    "name": "Tom Barrass",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 1370,
+    "eventIds": [
+      1370
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "william_mccabe",
+    "name": "William McCabe",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": 1983,
+    "eventIds": [
+      1983
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "andy_moniz_wakefield",
+    "name": "Andy Moniz-Wakefield",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 1843,
+    "eventIds": [
+      1843
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "bailey_laurie",
+    "name": "Bailey Laurie",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 1090,
+    "eventIds": [
+      1090
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "bayley_fritsch",
+    "name": "Bayley Fritsch",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 1084,
+    "eventIds": [
+      1084
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "blake_howes",
+    "name": "Blake Howes",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 1736,
+    "eventIds": [
+      1736
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "brody_mihocek",
+    "name": "Brody Mihocek",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 761,
+    "eventIds": [
+      761
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "caleb_windsor",
+    "name": "Caleb Windsor",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 1737,
+    "eventIds": [
+      1737
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "changkuoth_jiath",
+    "name": "Changkuoth Jiath",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 1811,
+    "eventIds": [
+      1811
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "christian_salem",
+    "name": "Christian Salem",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 1076,
+    "eventIds": [
+      1076
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "daniel_turner",
+    "name": "Daniel Turner",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 1092,
+    "eventIds": [
+      1092
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "ed_langdon",
+    "name": "Ed Langdon",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 1080,
+    "eventIds": [
+      1080
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "harrison_petty",
+    "name": "Harrison Petty",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 1520,
+    "eventIds": [
+      1520
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "harry_sharp",
+    "name": "Harry Sharp",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 885,
+    "eventIds": [
+      885
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "harvey_langford",
+    "name": "Harvey Langford",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 1891,
+    "eventIds": [
+      1931
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jack_henderson",
+    "name": "Jack Henderson",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 1893,
+    "eventIds": [
+      1893
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jack_steele",
+    "name": "Jack Steele",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 896,
+    "eventIds": [
+      896
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jacob_van_rooyen",
+    "name": "Jacob van Rooyen",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 1093,
+    "eventIds": [
+      1093
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jai_culley",
+    "name": "Jai Culley",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 1696,
+    "eventIds": [
+      1696
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jake_lever",
+    "name": "Jake Lever",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 1078,
+    "eventIds": [
+      1078
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jake_melksham",
+    "name": "Jake Melksham",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 1842,
+    "eventIds": [
+      296
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jed_adams",
+    "name": "Jed Adams",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 1948,
+    "eventIds": [
+      1948
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "kade_chandler",
+    "name": "Kade Chandler",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 1085,
+    "eventIds": [
+      1085
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "koltyn_tholstrup",
+    "name": "Koltyn Tholstrup",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 1755,
+    "eventIds": [
+      1755
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "kysaiah_pickett",
+    "name": "Kysaiah Pickett",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 1087,
+    "eventIds": [
+      1087
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "latrelle_pickett",
+    "name": "Latrelle Pickett",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 2056,
+    "eventIds": [
+      2026
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "luker_kentfield",
+    "name": "Luker Kentfield",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 2075,
+    "eventIds": [
+      2075
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "matthew_jefferson",
+    "name": "Matthew Jefferson",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 1861,
+    "eventIds": [
+      1913
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "max_gawn",
+    "name": "Max Gawn",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 538,
+    "eventIds": [
+      538
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "max_heath",
+    "name": "Max Heath",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 1849,
+    "eventIds": [
+      2004
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "paddy_cross",
+    "name": "Paddy Cross",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 2088,
+    "eventIds": [
+      2088
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "tom_mcdonald",
+    "name": "Tom McDonald",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 630,
+    "eventIds": [
+      630
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "tom_sparrow",
+    "name": "Tom Sparrow",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 1086,
+    "eventIds": [
+      1086
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "trent_rivers",
+    "name": "Trent Rivers",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 1088,
+    "eventIds": [
+      1088
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "xavier_lindsay",
+    "name": "Xavier Lindsay",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 1890,
+    "eventIds": [
+      1943
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "xavier_taylor",
+    "name": "Xavier Taylor",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 2087,
+    "eventIds": [
+      2087
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "aidan_corr",
+    "name": "Aidan Corr",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 770,
+    "eventIds": [
+      770
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "bailey_scott",
+    "name": "Bailey Scott",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 780,
+    "eventIds": [
+      780
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "caleb_daniel",
+    "name": "Caleb Daniel",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 939,
+    "eventIds": [
+      939
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "callum_coleman_jones",
+    "name": "Callum Coleman-Jones",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 1552,
+    "eventIds": [
+      1552
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "cameron_zurhaar",
+    "name": "Cameron Zurhaar",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 1462,
+    "eventIds": [
+      1462
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "charlie_comben",
+    "name": "Charlie Comben",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 1662,
+    "eventIds": [
+      1662
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "charlie_spargo",
+    "name": "Charlie Spargo",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 1493,
+    "eventIds": [
+      1493
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "colby_mckercher",
+    "name": "Colby McKercher",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 1748,
+    "eventIds": [
+      1748
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "cooper_trembath",
+    "name": "Cooper Trembath",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 2021,
+    "eventIds": [
+      1803
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "dylan_stephens",
+    "name": "Dylan Stephens",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 1068,
+    "eventIds": [
+      1068
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "finn_osullivan",
+    "name": "Finn O'Sullivan",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 1900,
+    "eventIds": [
+      1806
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "george_wardlaw",
+    "name": "George Wardlaw",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 1724,
+    "eventIds": [
+      1724
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "griffin_logue",
+    "name": "Griffin Logue",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 1855,
+    "eventIds": [
+      1855
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "harry_sheezel",
+    "name": "Harry Sheezel",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 793,
+    "eventIds": [
+      793
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jack_darling",
+    "name": "Jack Darling",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 286,
+    "eventIds": [
+      286
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jacob_konstanty",
+    "name": "Jacob Konstanty",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 1768,
+    "eventIds": [
+      1768
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jy_simpkin",
+    "name": "Jy Simpkin",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 776,
+    "eventIds": [
+      776
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "lachy_dovaston",
+    "name": "Lachy Dovaston",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 2054,
+    "eventIds": [
+      1988
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "luke_davies_uniacke",
+    "name": "Luke Davies-Uniacke",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 1475,
+    "eventIds": [
+      1475
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "luke_mcdonald",
+    "name": "Luke McDonald",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 1270,
+    "eventIds": [
+      1270
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "luke_parker",
+    "name": "Luke Parker",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 505,
+    "eventIds": [
+      505
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "luke_trainor",
+    "name": "Luke Trainor",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 1921,
+    "eventIds": [
+      1921
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "nick_larkey",
+    "name": "Nick Larkey",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 775,
+    "eventIds": [
+      775
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "paul_curtis",
+    "name": "Paul Curtis",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 790,
+    "eventIds": [
+      790
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "robert_hansen_jr",
+    "name": "Robert Hansen Jr",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 1733,
+    "eventIds": [
+      1733
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "toby_pink",
+    "name": "Toby Pink",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 1747,
+    "eventIds": [
+      1747
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "tom_blamires",
+    "name": "Tom Blamires",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 2055,
+    "eventIds": [
+      2071
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "tom_powell",
+    "name": "Tom Powell",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 788,
+    "eventIds": [
+      788
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "tristan_xerri",
+    "name": "Tristan Xerri",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 779,
+    "eventIds": [
+      779
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "wil_dawson",
+    "name": "Wil Dawson",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 1809,
+    "eventIds": [
+      9993
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "zac_banch",
+    "name": "Zac Banch",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 1987,
+    "eventIds": [
+      2016
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "zane_duursma",
+    "name": "Zane Duursma",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": 1749,
+    "eventIds": [
+      1749
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "aliir_aliir",
+    "name": "Aliir Aliir",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 1005,
+    "eventIds": [
+      1005
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "brandon_zerk_thatcher",
+    "name": "Brandon Zerk-Thatcher",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 736,
+    "eventIds": [
+      736
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "christian_moraes",
+    "name": "Christian Moraes",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 1917,
+    "eventIds": [
+      1917
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "connor_rozee",
+    "name": "Connor Rozee",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 1017,
+    "eventIds": [
+      1017
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "corey_durdin",
+    "name": "Corey Durdin",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 1117,
+    "eventIds": [
+      1117
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "dante_visentini",
+    "name": "Dante Visentini",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 1024,
+    "eventIds": [
+      1024
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "darcy_byrne_jones",
+    "name": "Darcy Byrne-Jones",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 1004,
+    "eventIds": [
+      1004
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "esava_ratugolea",
+    "name": "Esava Ratugolea",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 1480,
+    "eventIds": [
+      1480
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "ewan_mackinlay",
+    "name": "Ewan Mackinlay",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 1998,
+    "eventIds": [
+      1954
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jack_lukosius",
+    "name": "Jack Lukosius",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 1538,
+    "eventIds": [
+      1538
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jack_watkins",
+    "name": "Jack Watkins",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 2059,
+    "eventIds": [
+      1996
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jack_whitlock",
+    "name": "Jack Whitlock",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 2018,
+    "eventIds": [
+      1975
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jackson_mead",
+    "name": "Jackson Mead",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 1667,
+    "eventIds": [
+      1667
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jacob_wehr",
+    "name": "Jacob Wehr",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 1686,
+    "eventIds": [
+      1686
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jase_burgoyne",
+    "name": "Jase Burgoyne",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 1691,
+    "eventIds": [
+      1691
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jason_horne_francis",
+    "name": "Jason Horne-Francis",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 1025,
+    "eventIds": [
+      1025
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "joe_berry",
+    "name": "Joe Berry",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 1905,
+    "eventIds": [
+      1910
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "joe_richards",
+    "name": "Joe Richards",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 1774,
+    "eventIds": [
+      1774
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jordon_sweet",
+    "name": "Jordon Sweet",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 947,
+    "eventIds": [
+      947
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "josh_lai",
+    "name": "Josh Lai",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 2026,
+    "eventIds": [
+      9999
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "kane_farrell",
+    "name": "Kane Farrell",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 1013,
+    "eventIds": [
+      1013
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "lachlan_jones",
+    "name": "Lachie Jones",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 1022,
+    "eventIds": [
+      1022
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "logan_evans",
+    "name": "Logan Evans",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 1847,
+    "eventIds": [
+      1829
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "miles_bergman",
+    "name": "Miles Bergman",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 1020,
+    "eventIds": [
+      1020
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "mitch_zadow",
+    "name": "Mitch Zadow",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 2069,
+    "eventIds": [
+      2069
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "mitchell_georgiades",
+    "name": "Mitch Georgiades",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 1576,
+    "eventIds": [
+      1576
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "oliver_wines",
+    "name": "Ollie Wines",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 1003,
+    "eventIds": [
+      1003
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "ollie_lord",
+    "name": "Ollie Lord",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 1825,
+    "eventIds": [
+      1026
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "todd_marshall",
+    "name": "Todd Marshall",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 1011,
+    "eventIds": [
+      1011
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "will_brodie",
+    "name": "Will Brodie",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 1452,
+    "eventIds": [
+      1452
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "will_lorenz",
+    "name": "Will Lorenz",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 1835,
+    "eventIds": [
+      1835
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "willem_drew",
+    "name": "Willem Drew",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 1008,
+    "eventIds": [
+      1008
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "zak_butters",
+    "name": "Zak Butters",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 1015,
+    "eventIds": [
+      1015
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "ben_miller",
+    "name": "Ben Miller",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 1040,
+    "eventIds": [
+      1040
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "campbell_gray",
+    "name": "Campbell Gray",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 1933,
+    "eventIds": [
+      1933
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "dion_prestia",
+    "name": "Dion Prestia",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 385,
+    "eventIds": [
+      385
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "harry_armstrong",
+    "name": "Harry Armstrong",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 1877,
+    "eventIds": [
+      1920
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "hugo_ralphsmith",
+    "name": "Hugo Ralphsmith",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 1645,
+    "eventIds": [
+      1645
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jack_ross",
+    "name": "Jack Ross",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 1041,
+    "eventIds": [
+      1041
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jacob_hopper",
+    "name": "Jacob Hopper",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 1034,
+    "eventIds": [
+      1034
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "james_trezise",
+    "name": "James Trezise",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 1050,
+    "eventIds": [
+      1050
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jasper_alger",
+    "name": "Jasper Alger",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 1960,
+    "eventIds": [
+      1960
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jayden_short",
+    "name": "Jayden Short",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 1030,
+    "eventIds": [
+      1030
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jonty_faull",
+    "name": "Jonty Faull",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 1942,
+    "eventIds": [
+      1942
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jonty_faull",
+    "name": "Jonty Faull",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 1944,
+    "eventIds": [
+      1944
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "joshua_gibcus",
+    "name": "Joshua Gibcus",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 1664,
+    "eventIds": [
+      1664
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "kane_mcauliffe",
+    "name": "Kane McAuliffe",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 1767,
+    "eventIds": [
+      1767
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "liam_fawcett",
+    "name": "Liam Fawcett",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 1970,
+    "eventIds": [
+      1970
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "luke_trainor",
+    "name": "Luke Trainor",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 1878,
+    "eventIds": [
+      1878
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "maurice_rioli",
+    "name": "Maurice Rioli",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 1045,
+    "eventIds": [
+      1045
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "mykelti_lefau",
+    "name": "Mykelti Lefau",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 1764,
+    "eventIds": [
+      1764
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "nathan_broad",
+    "name": "Nathan Broad",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 1031,
+    "eventIds": [
+      1031
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "nick_vlastuin",
+    "name": "Nick Vlastuin",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 1028,
+    "eventIds": [
+      1028
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "noah_balta",
+    "name": "Noah Balta",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 1039,
+    "eventIds": [
+      1039
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "oliver_hayes_brown",
+    "name": "Oliver Hayes-Brown",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 2081,
+    "eventIds": [
+      2081
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "rhyan_mansell",
+    "name": "Rhyan Mansell",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 1044,
+    "eventIds": [
+      1044
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "sam_banks",
+    "name": "Sam Banks",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 1047,
+    "eventIds": [
+      1047
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "sam_cumming",
+    "name": "Sam Cumming",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 2091,
+    "eventIds": [
+      2091
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "sam_grlj",
+    "name": "Sam Grlj",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 2047,
+    "eventIds": [
+      2047
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "sam_lalor",
+    "name": "Sam Lalor",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 1879,
+    "eventIds": [
+      1815
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "samson_ryan",
+    "name": "Samson Ryan",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 1653,
+    "eventIds": [
+      1653
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "seth_campbell",
+    "name": "Seth Campbell",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 1741,
+    "eventIds": [
+      1741
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "steely_green",
+    "name": "Steely Green",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 1740,
+    "eventIds": [
+      1740
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "thomas_lynch",
+    "name": "Thomas Lynch",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 486,
+    "eventIds": [
+      486
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "tim_taranto",
+    "name": "Tim Taranto",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 1035,
+    "eventIds": [
+      1035
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "toby_nankervis",
+    "name": "Toby Nankervis",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 1029,
+    "eventIds": [
+      1029
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "tom_brown",
+    "name": "Tom Brown",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 1046,
+    "eventIds": [
+      1046
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "tom_burton",
+    "name": "Tom Burton",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 2093,
+    "eventIds": [
+      2093
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "tyler_sonsie",
+    "name": "Tyler Sonsie",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 1698,
+    "eventIds": [
+      1698
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "zane_peucker",
+    "name": "Zane Peucker",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 2066,
+    "eventIds": [
+      2066
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "alex_dodson",
+    "name": "Alex Dodson",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 2057,
+    "eventIds": [
+      2057
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "alixzander_tauru",
+    "name": "Alixzander Tauru",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 1994,
+    "eventIds": [
+      2000
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "angus_hastie",
+    "name": "Angus Hastie",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 1765,
+    "eventIds": [
+      1765
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "anthony_caminiti",
+    "name": "Anthony Caminiti",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 1711,
+    "eventIds": [
+      1711
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "bradley_hill",
+    "name": "Bradley Hill",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 689,
+    "eventIds": [
+      689
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "callum_wilkie",
+    "name": "Callum Wilkie",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 906,
+    "eventIds": [
+      906
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "charlie_banfield",
+    "name": "Charlie Banfield",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 2037,
+    "eventIds": [
+      2037
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "cooper_sharman",
+    "name": "Cooper Sharman",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 908,
+    "eventIds": [
+      908
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "dan_butler",
+    "name": "Dan Butler",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 895,
+    "eventIds": [
+      895
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "darcy_wilson",
+    "name": "Darcy Wilson",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 1751,
+    "eventIds": [
+      1751
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "dougal_howard",
+    "name": "Dougal Howard",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 1388,
+    "eventIds": [
+      1388
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "hugh_boxshall",
+    "name": "Hugh Boxshall",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 1896,
+    "eventIds": [
+      1999
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "hugo_garcia",
+    "name": "Hugo Garcia",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 1754,
+    "eventIds": [
+      1754
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "hunter_clark",
+    "name": "Hunter Clark",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 1820,
+    "eventIds": [
+      1820
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "isaac_keeler",
+    "name": "Isaac Keeler",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 1888,
+    "eventIds": [
+      1924
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jack_carroll",
+    "name": "Jack Carroll",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 1677,
+    "eventIds": [
+      1677
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jack_higgins",
+    "name": "Jack Higgins",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 902,
+    "eventIds": [
+      902
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jack_silvagni",
+    "name": "Jack Silvagni",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 1880,
+    "eventIds": [
+      1880
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jack_sinclair",
+    "name": "Jack Sinclair",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 897,
+    "eventIds": [
+      897
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jackson_macrae",
+    "name": "Jackson Macrae",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 1206,
+    "eventIds": [
+      1206
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "lance_collard",
+    "name": "Lance Collard",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 1753,
+    "eventIds": [
+      1753
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "liam_henry",
+    "name": "Liam Henry",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 858,
+    "eventIds": [
+      858
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "liam_oconnell",
+    "name": "Liam O'Connell",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 1889,
+    "eventIds": [
+      1889
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "liam_ryan",
+    "name": "Liam Ryan",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 1481,
+    "eventIds": [
+      1481
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "liam_stocker",
+    "name": "Liam Stocker",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 905,
+    "eventIds": [
+      905
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "marcus_windhager",
+    "name": "Marcus Windhager",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 912,
+    "eventIds": [
+      912
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "mason_wood",
+    "name": "Mason Wood",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 892,
+    "eventIds": [
+      892
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "mattaes_phillipou",
+    "name": "Mattaes Phillipou",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 913,
+    "eventIds": [
+      913
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "max_hall",
+    "name": "Max Hall",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 1844,
+    "eventIds": [
+      1853
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "mitch_owens",
+    "name": "Mitch Owens",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 910,
+    "eventIds": [
+      910
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "nasiah_wanganeen_milera",
+    "name": "Nasiah Wanganeen-Milera",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 911,
+    "eventIds": [
+      911
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "rowan_marshall",
+    "name": "Rowan Marshall",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 901,
+    "eventIds": [
+      901
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "sam_flanders",
+    "name": "Sam Flanders",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 810,
+    "eventIds": [
+      810
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "tom_de_koning",
+    "name": "Tom De Koning",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": 1112,
+    "eventIds": [
+      1112
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "angus_sheldrick",
+    "name": "Angus Sheldrick",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 1666,
+    "eventIds": [
+      1666
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "william_edwards",
+    "name": "William Edwards",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 1925,
+    "eventIds": [
+      9999
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "billy_cootee",
+    "name": "Billy Cootee",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 2085,
+    "eventIds": [
+      2085
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "brodie_grundy",
+    "name": "Brodie Grundy",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 1250,
+    "eventIds": [
+      1250
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "caiden_cleary",
+    "name": "Caiden Cleary",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 1782,
+    "eventIds": [
+      1782
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "callum_mills",
+    "name": "Callum Mills",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 1848,
+    "eventIds": [
+      1848
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "chad_warner",
+    "name": "Chad Warner",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 1069,
+    "eventIds": [
+      1069
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "charlie_curnow",
+    "name": "Charlie Curnow",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 1102,
+    "eventIds": [
+      1102
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "corey_warner",
+    "name": "Corey Warner",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 1716,
+    "eventIds": [
+      1716
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "dane_rampe",
+    "name": "Dane Rampe",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 1052,
+    "eventIds": [
+      1052
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "errol_gulden",
+    "name": "Errol Gulden",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 1071,
+    "eventIds": [
+      1071
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "harry_cunningham",
+    "name": "Harry Cunningham",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 658,
+    "eventIds": [
+      658
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "hayden_mclean",
+    "name": "Hayden McLean",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 1067,
+    "eventIds": [
+      1067
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "isaac_heeney",
+    "name": "Isaac Heeney",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 1053,
+    "eventIds": [
+      1053
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jai_serong",
+    "name": "Jai Serong",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 838,
+    "eventIds": [
+      838
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jake_lloyd",
+    "name": "Jake Lloyd",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 1051,
+    "eventIds": [
+      1051
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "james_jordon",
+    "name": "James Jordon",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 1622,
+    "eventIds": [
+      1622
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "james_rowbottom",
+    "name": "James Rowbottom",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 1065,
+    "eventIds": [
+      1065
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "joel_amartey",
+    "name": "Joel Amartey",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 1063,
+    "eventIds": [
+      1063
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "joel_hamling",
+    "name": "Joel Hamling",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 843,
+    "eventIds": [
+      843
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "justin_mcinerney",
+    "name": "Justin McInerney",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 1541,
+    "eventIds": [
+      1541
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "lewis_melican",
+    "name": "Lewis Melican",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 1054,
+    "eventIds": [
+      1054
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "logan_mcdonald",
+    "name": "Logan McDonald",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 1072,
+    "eventIds": [
+      1072
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "malcolm_rosas",
+    "name": "Malcolm Rosas",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 811,
+    "eventIds": [
+      811
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "matty_roberts",
+    "name": "Matty Roberts",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 1073,
+    "eventIds": [
+      1073
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "nick_blakey",
+    "name": "Nick Blakey",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 1064,
+    "eventIds": [
+      1064
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "peter_ladhams",
+    "name": "Peter Ladhams",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 1551,
+    "eventIds": [
+      1551
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "riley_bice",
+    "name": "Riley Bice",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 1882,
+    "eventIds": [
+      1882
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "samuel_wicks",
+    "name": "Sam Wicks",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 1066,
+    "eventIds": [
+      1066
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "tom_hanily",
+    "name": "Tom Hanily",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 1872,
+    "eventIds": [
+      1872
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "tom_mccartin",
+    "name": "Tom McCartin",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 1062,
+    "eventIds": [
+      1062
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "tom_papley",
+    "name": "Tom Papley",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": 1056,
+    "eventIds": [
+      1056
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "archer_reid",
+    "name": "Archer Reid",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 1857,
+    "eventIds": [
+      1925
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "bailey_j_williams",
+    "name": "Bailey J. Williams",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 969,
+    "eventIds": [
+      969
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "bo_allan",
+    "name": "Bo Allan",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 1930,
+    "eventIds": [
+      2072
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "brady_hough",
+    "name": "Brady Hough",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 972,
+    "eventIds": [
+      972
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "cooper_duff_tytler",
+    "name": "Cooper Duff-Tytler",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 2061,
+    "eventIds": [
+      2021
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "deven_robertson",
+    "name": "Deven Robertson",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 883,
+    "eventIds": [
+      883
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "elijah_hewett",
+    "name": "Elijah Hewett",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 1876,
+    "eventIds": [
+      1876
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "elliot_yeo",
+    "name": "Elliot Yeo",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 717,
+    "eventIds": [
+      717
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "finlay_macrae",
+    "name": "Finlay Macrae",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 765,
+    "eventIds": [
+      765
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "hamish_davis",
+    "name": "Hamish Davis",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 1947,
+    "eventIds": [
+      1949
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "harley_reid",
+    "name": "Harley Reid",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 1759,
+    "eventIds": [
+      1759
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "harry_edwards",
+    "name": "Harry Edwards",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 1600,
+    "eventIds": [
+      1600
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "harry_schoenberg",
+    "name": "Harry Schoenberg",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 1814,
+    "eventIds": [
+      991
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jack_graham",
+    "name": "Jack Graham",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 1037,
+    "eventIds": [
+      1037
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jack_williams",
+    "name": "Jack Williams",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 973,
+    "eventIds": [
+      973
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jacob_newton",
+    "name": "Jacob Newton",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 2029,
+    "eventIds": [
+      1844
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jake_waterman",
+    "name": "Jake Waterman",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 1482,
+    "eventIds": [
+      1482
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jamie_cripps",
+    "name": "Jamie Cripps",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 468,
+    "eventIds": [
+      468
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jobe_shanahan",
+    "name": "Jobe Shanahan",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 1978,
+    "eventIds": [
+      1807
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "josh_lindsay",
+    "name": "Josh Lindsay",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 2060,
+    "eventIds": [
+      2060
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "liam_baker",
+    "name": "Liam Baker",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 1038,
+    "eventIds": [
+      1038
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "liam_duggan",
+    "name": "Liam Duggan",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 960,
+    "eventIds": [
+      960
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "malakai_champion",
+    "name": "Malakai Champion",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 1991,
+    "eventIds": [
+      2096
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "matt_flynn",
+    "name": "Matt Flynn",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 1127,
+    "eventIds": [
+      1127
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "matthew_owies",
+    "name": "Matthew Owies",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 1113,
+    "eventIds": [
+      1113
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "milan_murdock",
+    "name": "Milan Murdock",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 2063,
+    "eventIds": [
+      2027
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "oscar_allen",
+    "name": "Oscar Allen",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 967,
+    "eventIds": [
+      967
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "reuben_ginbey",
+    "name": "Reuben Ginbey",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 1708,
+    "eventIds": [
+      1708
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "rhett_bazzo",
+    "name": "Rhett Bazzo",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 1989,
+    "eventIds": [
+      1989
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "ryan_maric",
+    "name": "Ryan Maric",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 978,
+    "eventIds": [
+      978
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "tim_kelly",
+    "name": "Tim Kelly",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 966,
+    "eventIds": [
+      966
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "tom_cole",
+    "name": "Tom Cole",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 961,
+    "eventIds": [
+      961
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "tom_gross",
+    "name": "Tom Gross",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 1946,
+    "eventIds": [
+      1946
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "tom_hanily",
+    "name": "Tom Hanily",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 1909,
+    "eventIds": [
+      1909
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "tom_mccarthy",
+    "name": "Tom McCarthy",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 1990,
+    "eventIds": [
+      1793
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "tylar_young",
+    "name": "Tylar Young",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 1048,
+    "eventIds": [
+      1048
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "willem_duursma",
+    "name": "Willem Duursma",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 2062,
+    "eventIds": [
+      2012
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "aaron_naughton",
+    "name": "Aaron Naughton",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 944,
+    "eventIds": [
+      944
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "adam_treloar",
+    "name": "Adam Treloar",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 679,
+    "eventIds": [
+      679
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "arthur_jones",
+    "name": "Arthur Jones",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 1714,
+    "eventIds": [
+      1714
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "bailey_dale",
+    "name": "Bailey Dale",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 938,
+    "eventIds": [
+      938
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "bailey_williams",
+    "name": "Bailey Williams",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 941,
+    "eventIds": [
+      941
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "buku_khamis",
+    "name": "Buku Khamis",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 1644,
+    "eventIds": [
+      1644
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "connor_budarick",
+    "name": "Connor Budarick",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 808,
+    "eventIds": [
+      808
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "cooper_hynes",
+    "name": "Cooper Hynes",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 1941,
+    "eventIds": [
+      1886
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "ed_richards",
+    "name": "Ed Richards",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 946,
+    "eventIds": [
+      946
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "harvey_gallagher",
+    "name": "Harvey Gallagher",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 1757,
+    "eventIds": [
+      1757
+    ],
+    "statsIds": []
+  },
+  
+  {
+    "id": "james_odonnell",
+    "name": "James O'Donnell",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 957,
+    "eventIds": [
+      957
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jedd_busslinger",
+    "name": "Jedd Busslinger",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 1823,
+    "eventIds": [
+      1823
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "jordan_croft",
+    "name": "Jordan Croft",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 2023,
+    "eventIds": [
+      1834
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "josh_dolan",
+    "name": "Josh Dolan",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 1884,
+    "eventIds": [
+      1884
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "lachie_jaques",
+    "name": "Lachie Jaques",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 1980,
+    "eventIds": [
+      1980
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "lachlan_bramble",
+    "name": "Lachlan Bramble",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 1652,
+    "eventIds": [
+      1652
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "lachlan_mcneil",
+    "name": "Lachlan McNeil",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 953,
+    "eventIds": [
+      953
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "lachlan_smith",
+    "name": "Lachlan Smith",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 1931,
+    "eventIds": [
+      1931
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "laitham_vandermeer",
+    "name": "Laitham Vandermeer",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 948,
+    "eventIds": [
+      948
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "louis_emmett",
+    "name": "Louis Emmett",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 2052,
+    "eventIds": [
+      2052
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "luke_cleary",
+    "name": "Luke Cleary",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 1806,
+    "eventIds": [
+      9999
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "luke_kennedy",
+    "name": "Luke Kennedy",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 2036,
+    "eventIds": [
+      9999
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "marcus_bontempelli",
+    "name": "Marcus Bontempelli",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 937,
+    "eventIds": [
+      937
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "matthew_kennedy",
+    "name": "Matthew Kennedy",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 1408,
+    "eventIds": [
+      1408
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "michael_sellwood",
+    "name": "Michael Sellwood",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 2012,
+    "eventIds": [
+      2012
+    ],
+    "statsIds": []
+  },
+  
+  {
+    "id": "nick_coffield",
+    "name": "Nick Coffield",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 904,
+    "eventIds": [
+      904
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "oskar_baker",
+    "name": "Oskar Baker",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 945,
+    "eventIds": [
+      945
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "rhylee_west",
+    "name": "Rhylee West",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 949,
+    "eventIds": [
+      949
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "rory_lobb",
+    "name": "Rory Lobb",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 936,
+    "eventIds": [
+      936
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "ryley_sanders",
+    "name": "Ryley Sanders",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 1756,
+    "eventIds": [
+      1756
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "sam_darcy",
+    "name": "Sam Darcy",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 1702,
+    "eventIds": [
+      1702
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "sam_davidson",
+    "name": "Sam Davidson",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 1885,
+    "eventIds": [
+      1912
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "thomas_liberatore",
+    "name": "Thomas Liberatore",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 309,
+    "eventIds": [
+      309
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "timothy_english",
+    "name": "Timothy English",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 942,
+    "eventIds": [
+      942
+    ],
+    "statsIds": []
+  },
+  {
+    "id": "will_lewis",
+    "name": "Will Lewis",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 2043,
+    "eventIds": [
+      2089
+    ],
+    "statsIds": []
+  }
+]
