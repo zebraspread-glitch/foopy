@@ -408,6 +408,7 @@ function foopyColor(value: number) {
 function TeamScore({ team, score, align = "left" }: { team: any; score: any; align?: "left" | "right" }) {
   const safeTeam = safeText(team, "");
   const displayScore = typeof score === "string" ? score : scoreText(score);
+  const isRecordScore = typeof displayScore === "string" && displayScore.includes("-");
   const accent = teamColor(safeTeam);
   const prevScore = useRef<any>(score);
   const [animKey, setAnimKey] = useState(0);
@@ -448,13 +449,14 @@ function TeamScore({ team, score, align = "left" }: { team: any; score: any; ali
       <div
         key={animKey}
         style={{
-          fontSize: "clamp(48px, 11vw, 78px)", fontWeight: 1000, color: "#fff",
+          fontSize: isRecordScore ? "clamp(42px, 8.6vw, 72px)" : "clamp(48px, 11vw, 78px)", fontWeight: 1000, color: "#fff",
           letterSpacing: 0, lineHeight: 0.88,
           textShadow: `0 16px 36px ${accent}40, 0 2px 12px rgba(0,0,0,.55)`,
           animation: animKey > 0 ? "score-pop 0.55s cubic-bezier(0.22,1,0.36,1) forwards" : undefined,
           display: "inline-block",
           fontVariantNumeric: "tabular-nums",
           transformOrigin: "center",
+          whiteSpace: "nowrap",
         }}
       >
         {displayScore}
