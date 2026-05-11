@@ -718,7 +718,7 @@ free_kicks?: {
                     fontWeight: isSelected ? 950 : isCurrent ? 850 : 750,
                   }}
                 >
-                  {round === 0 ? "Pre" : `R${round}`}
+                  {round === 0 ? "OR" : `R${round}`}
                 </span>
 
                 {(isSelected || isCurrent) && (
@@ -791,20 +791,6 @@ free_kicks?: {
                   }}
                 >
                   <aside style={infoStyle}>
-                    <div
-                      style={{
-                        ...statusStyle,
-                        background:
-                          status === "LIVE"
-                            ? "#18c95f"
-                            : status === "COMPLETED"
-                            ? "#4b5563"
-                            : "#2563eb",
-                      }}
-                    >
-                      {status}
-                    </div>
-
                     <div style={timeStyle}>{getTime(game, selectedRound !== currentRound)}</div>
                     <div style={venueStyle}>{game.venue || "Venue TBA"}</div>
                   </aside>
@@ -878,7 +864,6 @@ free_kicks?: {
                         awayGoalsText={isUpcoming ? "W-L" : `${game.agoals ?? 0}.${game.abehinds ?? 0}`}
                         homeColourLine={makeTeamGradient(homeStyle.colors)}
                         awayColourLine={makeTeamGradient(awayStyle.colors)}
-                        status={status}
                         timeText={getTime(game, selectedRound !== currentRound)}
                         venue={game.venue || "Venue TBA"}
                         homeLost={status === "COMPLETED" && (game.hscore ?? 0) < (game.ascore ?? 0)}
@@ -969,7 +954,6 @@ function MobileMatchRow({
   awayGoalsText,
   homeColourLine,
   awayColourLine,
-  status,
   timeText,
   venue,
   homeLost,
@@ -986,36 +970,18 @@ function MobileMatchRow({
   awayGoalsText: string;
   homeColourLine: string;
   awayColourLine: string;
-  status: string;
   timeText: string;
   venue: string;
   homeLost: boolean;
   awayLost: boolean;
   isUpcoming: boolean;
 }) {
-  const statusText = status === "LIVE" ? "LIVE" : status === "UPCOMING" ? "UPCOMING" : "COMPLETED";
-
   return (
     <div style={mobileMatchInnerStyle}>
       <div style={mobileMatchHeaderStyle}>
-        <span
-          style={{
-            ...mobileHeaderStatusStyle,
-            background:
-              status === "LIVE"
-                ? "rgba(34,197,94,.95)"
-                : status === "UPCOMING"
-                ? "rgba(37,99,235,.95)"
-                : "#4b5563",
-          }}
-        >
-          {statusText}
-        </span>
-
+        <div style={mobileVenueStyle}>{venue}</div>
         <strong style={mobileHeaderTimeStyle}>{isUpcoming ? timeText : "Full Time"}</strong>
       </div>
-
-      <div style={mobileVenueStyle}>{venue}</div>
 
       <div style={mobileTeamsStackStyle}>
         <MobileStackedTeamRow
@@ -1174,7 +1140,7 @@ const mobileMatchStyle: React.CSSProperties = {
 const mobileMatchInnerStyle: React.CSSProperties = {
   minHeight: "124px",
   display: "grid",
-  gridTemplateRows: "auto auto 1fr",
+  gridTemplateRows: "auto 1fr",
 };
 
 const mobileMatchHeaderStyle: React.CSSProperties = {
@@ -1182,20 +1148,8 @@ const mobileMatchHeaderStyle: React.CSSProperties = {
   alignItems: "center",
   justifyContent: "space-between",
   gap: "10px",
-  padding: "12px 14px 6px",
-};
-
-const mobileHeaderStatusStyle: React.CSSProperties = {
-  maxWidth: "112px",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-  padding: "4px 8px",
-  borderRadius: "999px",
-  color: "#ffffff",
-  fontSize: "9px",
-  fontWeight: 950,
-  letterSpacing: "0.05em",
+  padding: "9px 14px",
+  borderBottom: "1px solid rgba(255,255,255,.08)",
 };
 
 const mobileHeaderTimeStyle: React.CSSProperties = {
@@ -1210,14 +1164,13 @@ const mobileHeaderTimeStyle: React.CSSProperties = {
 };
 
 const mobileVenueStyle: React.CSSProperties = {
-  padding: "0 12px 10px",
+  minWidth: 0,
   color: "#9ca3af",
   fontSize: "11px",
   fontWeight: 750,
   whiteSpace: "nowrap",
   overflow: "hidden",
   textOverflow: "ellipsis",
-  borderBottom: "1px solid rgba(255,255,255,.08)",
 };
 
 const mobileTeamsStackStyle: React.CSSProperties = {
@@ -1420,32 +1373,29 @@ const infoStyle: React.CSSProperties = {
   gridTemplateColumns: "auto 1fr",
   alignItems: "center",
   columnGap: "10px",
-  rowGap: "6px",
-  padding: "16px 16px 14px",
+  padding: "11px 16px",
   background: "rgba(255,255,255,.02)",
   borderBottom: "1px solid rgba(255,255,255,.08)",
 };
 
-const statusStyle: React.CSSProperties = {
-  width: "fit-content",
-  padding: "5px 9px",
-  borderRadius: "999px",
-  fontSize: "10px",
-  fontWeight: 950,
-  color: "white",
-};
-
 const timeStyle: React.CSSProperties = {
-  fontSize: "15px",
+  gridColumn: "2",
+  justifySelf: "end",
+  fontSize: "14px",
   fontWeight: 950,
   textAlign: "right",
+  lineHeight: 1.1,
+  whiteSpace: "nowrap",
 };
 
 const venueStyle: React.CSSProperties = {
-  gridColumn: "1 / -1",
+  gridColumn: "1",
+  gridRow: "1",
+  minWidth: 0,
   color: "#9aa7b8",
-  fontSize: "12px",
+  fontSize: "11px",
   fontWeight: 650,
+  lineHeight: 1.15,
   whiteSpace: "nowrap",
   overflow: "hidden",
   textOverflow: "ellipsis",

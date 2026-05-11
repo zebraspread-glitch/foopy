@@ -8,7 +8,380 @@
     "eventIds": [
       1079
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--alex-neal-bullen"
+  },
+  {
+    "id": "archie_ludowyke",
+    "name": "Archie Ludowyke",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--archie-ludowyke"
+  },
+  {
+    "id": "ben_keays",
+    "name": "Ben Keays",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 983,
+    "eventIds": [
+      983
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--ben-keays"
+  },
+  {
+    "id": "billy_dowling",
+    "name": "Billy Dowling",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1777,
+    "eventIds": [
+      1777
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--billy-dowling"
+  },
+  {
+    "id": "brayden_cook",
+    "name": "Brayden Cook",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1661,
+    "eventIds": [
+      1661
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--brayden-cook"
+  },
+  {
+    "id": "callum_ah_chee",
+    "name": "Callum Ah Chee",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 873,
+    "eventIds": [
+      873
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--callum-ah-chee"
+  },
+  {
+    "id": "charlie_edwards",
+    "name": "Charlie Edwards",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 2068,
+    "eventIds": [
+      2068
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--charlie-edwards"
+  },
+  {
+    "id": "chayce_jones",
+    "name": "Chayce Jones",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1534,
+    "eventIds": [
+      1534
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--chayce-jones"
+  },
+  {
+    "id": "daniel_curtin",
+    "name": "Daniel Curtin",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1788,
+    "eventIds": [
+      1788
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--daniel-curtin"
+  },
+  {
+    "id": "darcy_fogarty",
+    "name": "Darcy Fogarty",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 986,
+    "eventIds": [
+      986
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--darcy-fogarty"
+  },
+  {
+    "id": "finnbar_maley",
+    "name": "Finnbar Maley",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1886,
+    "eventIds": [
+      1955
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--finnbar-maley"
+  },
+  {
+    "id": "hugh_bond",
+    "name": "Hugh Bond",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1822,
+    "eventIds": [
+      2076
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--hugh-bond"
+  },
+  {
+    "id": "indy_cotton",
+    "name": "Indy Cotton",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--indy-cotton"
+  },
+  {
+    "id": "isaac_cumming",
+    "name": "Isaac Cumming",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1840,
+    "eventIds": [
+      1126
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--isaac-cumming"
+  },
+  {
+    "id": "izak_rankine",
+    "name": "Izak Rankine",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 990,
+    "eventIds": [
+      990
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--izak-rankine"
+  },
+  {
+    "id": "jake_soligo",
+    "name": "Jake Soligo",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 998,
+    "eventIds": [
+      998
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--jake-soligo"
+  },
+  {
+    "id": "james_borlase",
+    "name": "James Borlase",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1000,
+    "eventIds": [
+      1000
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--james-borlase"
+  },
+  {
+    "id": "james_peatling",
+    "name": "James Peatling",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1660,
+    "eventIds": [
+      1660
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--james-peatling"
+  },
+  {
+    "id": "jordan_dawson",
+    "name": "Jordan Dawson",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 982,
+    "eventIds": [
+      982
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--jordan-dawson"
+  },
+  {
+    "id": "jordon_butts",
+    "name": "Jordon Butts",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1615,
+    "eventIds": [
+      1615
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--jordon-butts"
+  },
+  {
+    "id": "joshua_rachele",
+    "name": "Josh Rachele",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 997,
+    "eventIds": [
+      997
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--josh-rachele"
+  },
+  {
+    "id": "josh_worrell",
+    "name": "Josh Worrell",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 992,
+    "eventIds": [
+      992
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--josh-worrell"
+  },
+  {
+    "id": "lachlan_mcandrew",
+    "name": "Lachlan McAndrew",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1831,
+    "eventIds": [
+      1723
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--lachlan-mcandrew"
+  },
+  {
+    "id": "lachlan_sholl",
+    "name": "Lachlan Sholl",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--lachlan-sholl"
+  },
+  {
+    "id": "luke_nankervis",
+    "name": "Luke Nankervis",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1002,
+    "eventIds": [
+      1002
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--luke-nankervis"
+  },
+  {
+    "id": "luke_pedlar",
+    "name": "Luke Pedlar",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 995,
+    "eventIds": [
+      995
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--luke-pedlar"
+  },
+  {
+    "id": "mark_keane",
+    "name": "Mark Keane",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--mark-keane"
+  },
+  {
+    "id": "max_michalanney",
+    "name": "Max Michalanney",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1001,
+    "eventIds": [
+      1001
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--max-michalanney"
+  },
+  {
+    "id": "mitchell_hinge",
+    "name": "Mitchell Hinge",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 985,
+    "eventIds": [
+      985
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--mitchell-hinge"
+  },
+  {
+    "id": "mitchell_marsh",
+    "name": "Mitchell Marsh",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--mitchell-marsh"
+  },
+  {
+    "id": "nick_murray",
+    "name": "Nick Murray",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 1845,
+    "eventIds": [
+      1630
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--nick-murray"
+  },
+  {
+    "id": "oscar_ryan",
+    "name": "Oscar Ryan",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--oscar-ryan"
+  },
+  {
+    "id": "reilly_obrien",
+    "name": "Reilly O'Brien",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": 981,
+    "eventIds": [
+      981
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--reilly-o-brien"
   },
   {
     "id": "riley_thilthorpe",
@@ -21,304 +394,8 @@
     ],
     "statsIds": [
       1846
-    ]
-  },
-  {
-    "id": "hugh_bond",
-    "name": "Hugh Bond",
-    "team": "Adelaide",
-    "aliases": [],
-    "apiSportsId": 1822,
-    "eventIds": [
-      2076
     ],
-    "statsIds": []
-  },
-  {
-    "id": "ben_keays",
-    "name": "Ben Keays",
-    "team": "Adelaide",
-    "aliases": [],
-    "apiSportsId": 983,
-    "eventIds": [
-      983
-    ],
-    "statsIds": []
-  },
-  {
-    "id": "billy_dowling",
-    "name": "Billy Dowling",
-    "team": "Adelaide",
-    "aliases": [],
-    "apiSportsId": 1777,
-    "eventIds": [
-      1777
-    ],
-    "statsIds": []
-  },
-  {
-    "id": "brayden_cook",
-    "name": "Brayden Cook",
-    "team": "Adelaide",
-    "aliases": [],
-    "apiSportsId": 1661,
-    "eventIds": [
-      1661
-    ],
-    "statsIds": []
-  },
-  {
-    "id": "callum_ah_chee",
-    "name": "Callum Ah Chee",
-    "team": "Adelaide",
-    "aliases": [],
-    "apiSportsId": 873,
-    "eventIds": [
-      873
-    ],
-    "statsIds": []
-  },
-  {
-    "id": "charlie_edwards",
-    "name": "Charlie Edwards",
-    "team": "Adelaide",
-    "aliases": [],
-    "apiSportsId": 2068,
-    "eventIds": [
-      2068
-    ],
-    "statsIds": []
-  },
-  {
-    "id": "chayce_jones",
-    "name": "Chayce Jones",
-    "team": "Adelaide",
-    "aliases": [],
-    "apiSportsId": 1534,
-    "eventIds": [
-      1534
-    ],
-    "statsIds": []
-  },
-  {
-    "id": "daniel_curtin",
-    "name": "Daniel Curtin",
-    "team": "Adelaide",
-    "aliases": [],
-    "apiSportsId": 1788,
-    "eventIds": [
-      1788
-    ],
-    "statsIds": []
-  },
-  {
-    "id": "darcy_fogarty",
-    "name": "Darcy Fogarty",
-    "team": "Adelaide",
-    "aliases": [],
-    "apiSportsId": 986,
-    "eventIds": [
-      986
-    ],
-    "statsIds": []
-  },
-  {
-    "id": "finnbar_maley",
-    "name": "Finnbar Maley",
-    "team": "Adelaide",
-    "aliases": [],
-    "apiSportsId": 1886,
-    "eventIds": [
-      1955
-    ],
-    "statsIds": []
-  },
-  {
-    "id": "isaac_cumming",
-    "name": "Isaac Cumming",
-    "team": "Adelaide",
-    "aliases": [],
-    "apiSportsId": 1840,
-    "eventIds": [
-      1126
-    ],
-    "statsIds": []
-  },
-  {
-    "id": "izak_rankine",
-    "name": "Izak Rankine",
-    "team": "Adelaide",
-    "aliases": [],
-    "apiSportsId": 990,
-    "eventIds": [
-      990
-    ],
-    "statsIds": []
-  },
-  {
-    "id": "jack_hutchinson",
-    "name": "Jack Hutchinson",
-    "team": "Adelaide",
-    "aliases": [],
-    "apiSportsId": 1822,
-    "eventIds": [
-      1822
-    ],
-    "statsIds": []
-  },
-  {
-    "id": "jake_soligo",
-    "name": "Jake Soligo",
-    "team": "Adelaide",
-    "aliases": [],
-    "apiSportsId": 998,
-    "eventIds": [
-      998
-    ],
-    "statsIds": []
-  },
-  {
-    "id": "james_borlase",
-    "name": "James Borlase",
-    "team": "Adelaide",
-    "aliases": [],
-    "apiSportsId": 1000,
-    "eventIds": [
-      1000
-    ],
-    "statsIds": []
-  },
-  {
-    "id": "james_peatling",
-    "name": "James Peatling",
-    "team": "Adelaide",
-    "aliases": [],
-    "apiSportsId": 1660,
-    "eventIds": [
-      1660
-    ],
-    "statsIds": []
-  },
-  {
-    "id": "joel_freijah",
-    "name": "Joel Freijah",
-    "team": "Western Bulldogs",
-    "aliases": [],
-    "apiSportsId": 1807,
-    "eventIds": [
-      1846
-    ],
-    "statsIds": []
-  },
-  {
-    "id": "jordan_dawson",
-    "name": "Jordan Dawson",
-    "team": "Adelaide",
-    "aliases": [],
-    "apiSportsId": 982,
-    "eventIds": [
-      982
-    ],
-    "statsIds": []
-  },
-  {
-    "id": "jordon_butts",
-    "name": "Jordon Butts",
-    "team": "Adelaide",
-    "aliases": [],
-    "apiSportsId": 1615,
-    "eventIds": [
-      1615
-    ],
-    "statsIds": []
-  },
-  {
-    "id": "josh_worrell",
-    "name": "Josh Worrell",
-    "team": "Adelaide",
-    "aliases": [],
-    "apiSportsId": 992,
-    "eventIds": [
-      992
-    ],
-    "statsIds": []
-  },
-  {
-    "id": "joshua_rachele",
-    "name": "Josh Rachele",
-    "team": "Adelaide",
-    "aliases": [],
-    "apiSportsId": 997,
-    "eventIds": [
-      997
-    ],
-    "statsIds": []
-  },
-  {
-    "id": "lachlan_mcandrew",
-    "name": "Lachlan McAndrew",
-    "team": "Adelaide",
-    "aliases": [],
-    "apiSportsId": 1831,
-    "eventIds": [
-      1831
-    ],
-    "statsIds": []
-  },
-  {
-    "id": "luke_nankervis",
-    "name": "Luke Nankervis",
-    "team": "Adelaide",
-    "aliases": [],
-    "apiSportsId": 1002,
-    "eventIds": [
-      1002
-    ],
-    "statsIds": []
-  },
-  {
-    "id": "luke_pedlar",
-    "name": "Luke Pedlar",
-    "team": "Adelaide",
-    "aliases": [],
-    "apiSportsId": 995,
-    "eventIds": [
-      995
-    ],
-    "statsIds": []
-  },
-  {
-    "id": "max_michalanney",
-    "name": "Max Michalanney",
-    "team": "Adelaide",
-    "aliases": [],
-    "apiSportsId": 1001,
-    "eventIds": [
-      1001
-    ],
-    "statsIds": []
-  },
-  {
-    "id": "mitchell_hinge",
-    "name": "Mitchell Hinge",
-    "team": "Adelaide",
-    "aliases": [],
-    "apiSportsId": 985,
-    "eventIds": [
-      985
-    ],
-    "statsIds": []
-  },
-  {
-    "id": "reilly_obrien",
-    "name": "Reilly O'Brien",
-    "team": "Adelaide",
-    "aliases": [],
-    "apiSportsId": 981,
-    "eventIds": [
-      981
-    ],
-    "statsIds": []
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--riley-thilthorpe"
   },
   {
     "id": "rory_laird",
@@ -329,7 +406,8 @@
     "eventIds": [
       979
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--rory-laird"
   },
   {
     "id": "sam_berry",
@@ -340,7 +418,18 @@
     "eventIds": [
       993
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--sam-berry"
+  },
+  {
+    "id": "sid_draper",
+    "name": "Sid Draper",
+    "team": "Adelaide",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--sid-draper"
   },
   {
     "id": "taylor_walker",
@@ -351,7 +440,8 @@
     "eventIds": [
       116
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--taylor-walker"
   },
   {
     "id": "toby_murray",
@@ -362,18 +452,18 @@
     "eventIds": [
       1839
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--toby-murray"
   },
   {
-    "id": "nick_murray",
-    "name": "Nick Murray",
+    "id": "tyler_welsh",
+    "name": "Tyler Welsh",
     "team": "Adelaide",
     "aliases": [],
-    "apiSportsId": 1845,
-    "eventIds": [
-      1630
-    ],
-    "statsIds": []
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--tyler-welsh"
   },
   {
     "id": "wayne_milera",
@@ -384,7 +474,8 @@
     "eventIds": [
       984
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--wayne-milera"
   },
   {
     "id": "zac_taylor",
@@ -393,9 +484,20 @@
     "aliases": [],
     "apiSportsId": 1819,
     "eventIds": [
-      1819
+      1845
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-adelaide-crows--zac-taylor"
+  },
+  {
+    "id": "ben_murphy",
+    "name": "Ben Murphy",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--ben-murphy"
   },
   {
     "id": "bruce_reville",
@@ -406,18 +508,22 @@
     "eventIds": [
       1791
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--bruce-reville"
   },
   {
     "id": "cameron_rayner",
     "name": "Cam Rayner",
     "team": "Brisbane",
-    "aliases": [],
+    "aliases": [
+      "Cameron Rayner"
+    ],
     "apiSportsId": 879,
     "eventIds": [
       879
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--cameron-rayner"
   },
   {
     "id": "charlie_cameron",
@@ -428,7 +534,8 @@
     "eventIds": [
       868
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--charlie-cameron"
   },
   {
     "id": "cody_curtin",
@@ -439,7 +546,8 @@
     "eventIds": [
       1885
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--cody-curtin"
   },
   {
     "id": "conor_mckenna",
@@ -450,7 +558,8 @@
     "eventIds": [
       871
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--conor-mckenna"
   },
   {
     "id": "daniel_annable",
@@ -461,7 +570,8 @@
     "eventIds": [
       2035
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--daniel-annable"
   },
   {
     "id": "darcy_fort",
@@ -472,7 +582,8 @@
     "eventIds": [
       882
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--darcy-fort"
   },
   {
     "id": "darcy_gardiner",
@@ -483,7 +594,8 @@
     "eventIds": [
       869
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--darcy-gardiner"
   },
   {
     "id": "darcy_wilmot",
@@ -494,7 +606,8 @@
     "eventIds": [
       887
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--darcy-wilmot"
   },
   {
     "id": "darragh_joyce",
@@ -505,7 +618,8 @@
     "eventIds": [
       1519
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--darragh-joyce"
   },
   {
     "id": "dayne_zorko",
@@ -516,7 +630,18 @@
     "eventIds": [
       707
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--dayne-zorko"
+  },
+  {
+    "id": "eric_hipwood",
+    "name": "Eric Hipwood",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--eric-hipwood"
   },
   {
     "id": "harris_andrews",
@@ -527,7 +652,18 @@
     "eventIds": [
       870
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--harris-andrews"
+  },
+  {
+    "id": "henry_smith",
+    "name": "Henry Smith",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--henry-smith"
   },
   {
     "id": "hugh_mccluggage",
@@ -538,7 +674,18 @@
     "eventIds": [
       875
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--hugh-mccluggage"
+  },
+  {
+    "id": "jack_payne",
+    "name": "Jack Payne",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--jack-payne"
   },
   {
     "id": "james_tunstill",
@@ -549,7 +696,8 @@
     "eventIds": [
       1689
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--james-tunstill"
   },
   {
     "id": "jarrod_berry",
@@ -560,7 +708,8 @@
     "eventIds": [
       876
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--jarrod-berry"
   },
   {
     "id": "jaspa_fletcher",
@@ -571,7 +720,8 @@
     "eventIds": [
       888
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--jaspa-fletcher"
   },
   {
     "id": "josh_dunkley",
@@ -582,7 +732,8 @@
     "eventIds": [
       874
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--josh-dunkley"
   },
   {
     "id": "kai_lohmann",
@@ -593,7 +744,8 @@
     "eventIds": [
       886
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--kai-lohmann"
   },
   {
     "id": "keidean_coleman",
@@ -604,7 +756,18 @@
     "eventIds": [
       884
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--keidean-coleman"
+  },
+  {
+    "id": "koby_evans",
+    "name": "Koby Evans",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--koby-evans"
   },
   {
     "id": "lachie_neale",
@@ -615,7 +778,8 @@
     "eventIds": [
       682
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--lachie-neale"
   },
   {
     "id": "levi_ashcroft",
@@ -626,7 +790,8 @@
     "eventIds": [
       1908
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--levi-ashcroft"
   },
   {
     "id": "lincoln_mccarthy",
@@ -637,7 +802,8 @@
     "eventIds": [
       719
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--lincoln-mccarthy"
   },
   {
     "id": "logan_morris",
@@ -648,7 +814,28 @@
     "eventIds": [
       1769
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--logan-morris"
+  },
+  {
+    "id": "luke_beecken",
+    "name": "Luke Beecken",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--luke-beecken"
+  },
+  {
+    "id": "luke_lloyd",
+    "name": "Luke Lloyd",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--luke-lloyd"
   },
   {
     "id": "noah_answerth",
@@ -659,7 +846,20 @@
     "eventIds": [
       1546
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--noah-answerth"
+  },
+  {
+    "id": "oscar_allen",
+    "name": "Oscar Allen",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": 967,
+    "eventIds": [
+      967
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--oscar-allen"
   },
   {
     "id": "reece_torrent",
@@ -670,7 +870,8 @@
     "eventIds": [
       2053
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--reece-torrent"
   },
   {
     "id": "ryan_lester",
@@ -681,7 +882,8 @@
     "eventIds": [
       144
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--ryan-lester"
   },
   {
     "id": "sam_draper",
@@ -692,7 +894,8 @@
     "eventIds": [
       1597
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--sam-draper"
   },
   {
     "id": "sam_marshall",
@@ -703,7 +906,8 @@
     "eventIds": [
       1945
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--sam-marshall"
   },
   {
     "id": "shadeau_brain",
@@ -714,7 +918,28 @@
     "eventIds": [
       9999
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--shadeau-brain"
+  },
+  {
+    "id": "tai_hayes",
+    "name": "Tai Hayes",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--tai-hayes"
+  },
+  {
+    "id": "tom_doedee",
+    "name": "Tom Doedee",
+    "team": "Brisbane",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--tom-doedee"
   },
   {
     "id": "ty_gallop",
@@ -725,7 +950,8 @@
     "eventIds": [
       1951
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--ty-gallop"
   },
   {
     "id": "will_ashcroft",
@@ -736,7 +962,8 @@
     "eventIds": [
       1709
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--will-ashcroft"
   },
   {
     "id": "will_mclachlan",
@@ -747,7 +974,8 @@
     "eventIds": [
       1883
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--will-mclachlan"
   },
   {
     "id": "zac_bailey",
@@ -758,7 +986,8 @@
     "eventIds": [
       881
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--zac-bailey"
   },
   {
     "id": "zane_zakostelsky",
@@ -769,7 +998,8 @@
     "eventIds": [
       2046
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-brisbane-lions--zane-zakostelsky"
   },
   {
     "id": "adam_cerra",
@@ -780,7 +1010,8 @@
     "eventIds": [
       1109
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--adam-cerra"
   },
   {
     "id": "adam_saad",
@@ -791,7 +1022,8 @@
     "eventIds": [
       1099
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--adam-saad"
   },
   {
     "id": "ashton_moir",
@@ -802,7 +1034,8 @@
     "eventIds": [
       1866
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--ashton-moir"
   },
   {
     "id": "ben_ainsworth",
@@ -813,18 +1046,18 @@
     "eventIds": [
       804
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--ben-ainsworth"
   },
   {
-    "id": "blake_acres",
-    "name": "Blake Acres",
+    "id": "ben_camporeale",
+    "name": "Ben Camporeale",
     "team": "Carlton",
     "aliases": [],
-    "apiSportsId": 1097,
-    "eventIds": [
-      1097
-    ],
-    "statsIds": []
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--ben-camporeale"
   },
   {
     "id": "billy_wilson",
@@ -835,7 +1068,20 @@
     "eventIds": [
       1870
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--billy-wilson"
+  },
+  {
+    "id": "blake_acres",
+    "name": "Blake Acres",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": 1097,
+    "eventIds": [
+      1097
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--blake-acres"
   },
   {
     "id": "brodie_kemp",
@@ -846,7 +1092,8 @@
     "eventIds": [
       1116
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--brodie-kemp"
   },
   {
     "id": "campbell_chesser",
@@ -857,7 +1104,8 @@
     "eventIds": [
       975
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--campbell-chesser"
   },
   {
     "id": "cooper_lord",
@@ -868,7 +1116,8 @@
     "eventIds": [
       1867
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--cooper-lord"
   },
   {
     "id": "elijah_hollands",
@@ -879,7 +1128,8 @@
     "eventIds": [
       1699
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--elijah-hollands"
   },
   {
     "id": "flynn_young",
@@ -890,7 +1140,8 @@
     "eventIds": [
       9999
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--flynn-young"
   },
   {
     "id": "francis_evans",
@@ -901,7 +1152,8 @@
     "eventIds": [
       1021
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--francis-evans"
   },
   {
     "id": "george_hewett",
@@ -912,7 +1164,18 @@
     "eventIds": [
       1098
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--george-hewett"
+  },
+  {
+    "id": "harry_charleson",
+    "name": "Harry Charleson",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--harry-charleson"
   },
   {
     "id": "harry_dean",
@@ -923,7 +1186,8 @@
     "eventIds": [
       2039
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--harry-dean"
   },
   {
     "id": "harry_mckay",
@@ -934,7 +1198,18 @@
     "eventIds": [
       1103
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--harry-mckay"
+  },
+  {
+    "id": "harry_ofarrell",
+    "name": "Harry O'Farrell",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--harry-o-farrell"
   },
   {
     "id": "hudson_okeeffe",
@@ -945,18 +1220,18 @@
     "eventIds": [
       1781
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--hudson-o-keeffe"
   },
   {
-    "id": "isaac_kako",
-    "name": "Isaac Kako",
-    "team": "Essendon",
+    "id": "jack_ison",
+    "name": "Jack Ison",
+    "team": "Carlton",
     "aliases": [],
-    "apiSportsId": 1898,
-    "eventIds": [
-      1906
-    ],
-    "statsIds": []
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--jack-ison"
   },
   {
     "id": "jacob_weitering",
@@ -967,7 +1242,8 @@
     "eventIds": [
       1104
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--jacob-weitering"
   },
   {
     "id": "jagga_smith",
@@ -978,7 +1254,18 @@
     "eventIds": [
       2058
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--jagga-smith"
+  },
+  {
+    "id": "jesse_motlop",
+    "name": "Jesse Motlop",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--jesse-motlop"
   },
   {
     "id": "jordan_boyd",
@@ -989,18 +1276,22 @@
     "eventIds": [
       1672
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--jordan-boyd"
   },
   {
     "id": "lachie_fogarty",
     "name": "Lachie Fogarty",
     "team": "Carlton",
-    "aliases": [],
+    "aliases": [
+      "Lachlan Fogarty"
+    ],
     "apiSportsId": 1111,
     "eventIds": [
       1111
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--lachlan-fogarty"
   },
   {
     "id": "lachlan_cowan",
@@ -1011,7 +1302,8 @@
     "eventIds": [
       1707
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--lachlan-cowan"
   },
   {
     "id": "lewis_young",
@@ -1022,7 +1314,8 @@
     "eventIds": [
       1463
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--lewis-young"
   },
   {
     "id": "liam_reidy",
@@ -1033,7 +1326,18 @@
     "eventIds": [
       865
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--liam-reidy"
+  },
+  {
+    "id": "lucas_camporeale",
+    "name": "Lucas Camporeale",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--lucas-camporeale"
   },
   {
     "id": "marc_pittonet",
@@ -1044,29 +1348,46 @@
     "eventIds": [
       1100
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--marc-pittonet"
+  },
+  {
+    "id": "matt_duffy",
+    "name": "Matt Duffy",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--matt-duffy"
   },
   {
     "id": "matthew_carroll",
     "name": "Matthew Carroll",
     "team": "Carlton",
-    "aliases": [],
+    "aliases": [
+      "Matt Carroll"
+    ],
     "apiSportsId": 1940,
     "eventIds": [
       1985
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--matt-carroll"
   },
   {
     "id": "matthew_cottrell",
     "name": "Matthew Cottrell",
     "team": "Carlton",
-    "aliases": [],
+    "aliases": [
+      "Matt Cottrell"
+    ],
     "apiSportsId": 1115,
     "eventIds": [
       1115
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--matt-cottrell"
   },
   {
     "id": "mitch_mcgovern",
@@ -1077,7 +1398,8 @@
     "eventIds": [
       1105
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--mitch-mcgovern"
   },
   {
     "id": "nic_newman",
@@ -1088,7 +1410,8 @@
     "eventIds": [
       1107
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--nic-newman"
   },
   {
     "id": "nick_haynes",
@@ -1099,7 +1422,8 @@
     "eventIds": [
       720
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--nick-haynes"
   },
   {
     "id": "oliver_florent",
@@ -1110,7 +1434,8 @@
     "eventIds": [
       1059
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--oliver-florent"
   },
   {
     "id": "oliver_hollands",
@@ -1121,7 +1446,8 @@
     "eventIds": [
       1120
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--oliver-hollands"
   },
   {
     "id": "patrick_cripps",
@@ -1132,7 +1458,18 @@
     "eventIds": [
       1096
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--patrick-cripps"
+  },
+  {
+    "id": "rob_monahan",
+    "name": "Rob Monahan",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--rob-monahan"
   },
   {
     "id": "sam_walsh",
@@ -1143,7 +1480,8 @@
     "eventIds": [
       1114
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--sam-walsh"
   },
   {
     "id": "talor_byrne",
@@ -1154,7 +1492,18 @@
     "eventIds": [
       2073
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--talor-byrne"
+  },
+  {
+    "id": "wade_derksen",
+    "name": "Wade Derksen",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--wade-derksen"
   },
   {
     "id": "will_hayward",
@@ -1165,7 +1514,8 @@
     "eventIds": [
       1061
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--will-hayward"
   },
   {
     "id": "zachary_williams",
@@ -1179,6 +1529,16 @@
     "statsIds": []
   },
   {
+    "id": "zachary_williams",
+    "name": "Zachary Williams",
+    "team": "Carlton",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-carlton-blues--zachary-williams"
+  },
+  {
     "id": "angus_anderson",
     "name": "Angus Anderson",
     "team": "Collingwood",
@@ -1187,7 +1547,8 @@
     "eventIds": [
       1997
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--angus-anderson"
   },
   {
     "id": "beau_mccreery",
@@ -1198,7 +1559,8 @@
     "eventIds": [
       1632
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--beau-mccreery"
   },
   {
     "id": "billy_frampton",
@@ -1209,7 +1571,18 @@
     "eventIds": [
       760
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--billy-frampton"
+  },
+  {
+    "id": "bobby_hill",
+    "name": "Bobby Hill",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--ian-hill"
   },
   {
     "id": "brayden_maynard",
@@ -1220,7 +1593,8 @@
     "eventIds": [
       755
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--brayden-maynard"
   },
   {
     "id": "charlie_west",
@@ -1231,7 +1605,8 @@
     "eventIds": [
       1939
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--charlie-west"
   },
   {
     "id": "dan_houston",
@@ -1242,7 +1617,8 @@
     "eventIds": [
       1009
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--dan-houston"
   },
   {
     "id": "daniel_mcstay",
@@ -1253,7 +1629,8 @@
     "eventIds": [
       752
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--daniel-mcstay"
   },
   {
     "id": "darcy_cameron",
@@ -1264,7 +1641,8 @@
     "eventIds": [
       758
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--darcy-cameron"
   },
   {
     "id": "darcy_moore",
@@ -1275,7 +1653,8 @@
     "eventIds": [
       1363
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--darcy-moore"
   },
   {
     "id": "edward_allan",
@@ -1286,7 +1665,18 @@
     "eventIds": [
       769
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--edward-allan"
+  },
+  {
+    "id": "harry_demattia",
+    "name": "Harry Demattia",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--harry-demattia"
   },
   {
     "id": "harry_perryman",
@@ -1297,7 +1687,28 @@
     "eventIds": [
       1128
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--harry-perryman"
+  },
+  {
+    "id": "harvey_harrison",
+    "name": "Harvey Harrison",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--harvey-harrison"
+  },
+  {
+    "id": "iliro_smit",
+    "name": "Iliro Smit",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--iliro-smit"
   },
   {
     "id": "isaac_quaynor",
@@ -1308,7 +1719,8 @@
     "eventIds": [
       762
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--isaac-quaynor"
   },
   {
     "id": "jack_buller",
@@ -1319,7 +1731,8 @@
     "eventIds": [
       1727
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--jack-buller"
   },
   {
     "id": "jack_crisp",
@@ -1330,7 +1743,28 @@
     "eventIds": [
       686
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--jack-crisp"
+  },
+  {
+    "id": "jai_saxena",
+    "name": "Jai Saxena",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--jai-saxena"
+  },
+  {
+    "id": "jakob_ryan",
+    "name": "Jakob Ryan",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--jakob-ryan"
   },
   {
     "id": "jamie_elliott",
@@ -1341,7 +1775,8 @@
     "eventIds": [
       715
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--jamie-elliott-1"
   },
   {
     "id": "jeremy_howe",
@@ -1352,7 +1787,8 @@
     "eventIds": [
       537
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--jeremy-howe"
   },
   {
     "id": "joel_cochran",
@@ -1363,18 +1799,22 @@
     "eventIds": [
       2044
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--joel-cochran"
   },
   {
     "id": "jordan_de_goey",
     "name": "Jordan de Goey",
     "team": "Collingwood",
-    "aliases": [],
+    "aliases": [
+      "Jordan De Goey"
+    ],
     "apiSportsId": 753,
     "eventIds": [
       753
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--jordan-de-goey"
   },
   {
     "id": "josh_daicos",
@@ -1385,18 +1825,22 @@
     "eventIds": [
       757
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--josh-daicos"
   },
   {
     "id": "lachlan_schultz",
     "name": "Lachie Schultz",
     "team": "Collingwood",
-    "aliases": [],
+    "aliases": [
+      "Lachlan Schultz"
+    ],
     "apiSportsId": 851,
     "eventIds": [
       851
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--lachlan-schultz"
   },
   {
     "id": "lachlan_sullivan",
@@ -1407,7 +1851,8 @@
     "eventIds": [
       1784
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--lachie-sullivan"
   },
   {
     "id": "ned_long",
@@ -1418,7 +1863,8 @@
     "eventIds": [
       1704
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--ned-long"
   },
   {
     "id": "nick_daicos",
@@ -1429,7 +1875,18 @@
     "eventIds": [
       1665
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--nick-daicos"
+  },
+  {
+    "id": "noah_howes",
+    "name": "Noah Howes",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--noah-howes"
   },
   {
     "id": "oscar_steene",
@@ -1440,7 +1897,8 @@
     "eventIds": [
       2070
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--oscar-steene"
   },
   {
     "id": "patrick_lipinski",
@@ -1451,7 +1909,18 @@
     "eventIds": [
       759
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--patrick-lipinski"
+  },
+  {
+    "id": "reef_mcinnes",
+    "name": "Reef McInnes",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--reef-mcinnes"
   },
   {
     "id": "roan_steele",
@@ -1462,7 +1931,18 @@
     "eventIds": [
       1830
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--roan-steele"
+  },
+  {
+    "id": "samuel_swadling",
+    "name": "Samuel Swadling",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--samuel-swadling"
   },
   {
     "id": "scott_pendlebury",
@@ -1473,7 +1953,8 @@
     "eventIds": [
       156
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--scott-pendlebury"
   },
   {
     "id": "steele_sidebottom",
@@ -1484,7 +1965,18 @@
     "eventIds": [
       164
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--steele-sidebottom"
+  },
+  {
+    "id": "tew_jiath",
+    "name": "Tew Jiath",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--tew-jiath"
   },
   {
     "id": "tim_membrey",
@@ -1495,7 +1987,18 @@
     "eventIds": [
       893
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--tim-membrey"
+  },
+  {
+    "id": "tyan_prindable",
+    "name": "Tyan Prindable",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--tyan-prindable"
   },
   {
     "id": "wil_parker",
@@ -1506,18 +2009,32 @@
     "eventIds": [
       1816
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--wil-parker"
   },
   {
     "id": "william_hayes",
     "name": "William Hayes",
     "team": "Collingwood",
-    "aliases": [],
+    "aliases": [
+      "Will Hayes"
+    ],
     "apiSportsId": 1952,
     "eventIds": [
       1809
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--will-hayes-1"
+  },
+  {
+    "id": "zac_mccarthy",
+    "name": "Zac McCarthy",
+    "team": "Collingwood",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--zac-mccarthy"
   },
   {
     "id": "andrew_mcgrath",
@@ -1528,7 +2045,18 @@
     "eventIds": [
       733
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--andrew-mcgrath"
+  },
+  {
+    "id": "angus_clarke",
+    "name": "Angus Clarke",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--angus-clarke"
   },
   {
     "id": "archer_day_wicks",
@@ -1539,7 +2067,8 @@
     "eventIds": [
       1965
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--archer-day-wicks"
   },
   {
     "id": "archer_may",
@@ -1553,6 +2082,16 @@
     "statsIds": []
   },
   {
+    "id": "archie_may",
+    "name": "Archie May",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--archie-may"
+  },
+  {
     "id": "archie_perkins",
     "name": "Archie Perkins",
     "team": "Essendon",
@@ -1561,7 +2100,8 @@
     "eventIds": [
       741
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--archie-perkins"
   },
   {
     "id": "archie_roberts",
@@ -1572,7 +2112,8 @@
     "eventIds": [
       1779
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--archie-roberts"
   },
   {
     "id": "ben_mckay",
@@ -1583,7 +2124,8 @@
     "eventIds": [
       774
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--ben-mckay"
   },
   {
     "id": "brayden_fiorini",
@@ -1594,7 +2136,18 @@
     "eventIds": [
       803
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--brayden-fiorini"
+  },
+  {
+    "id": "cillian_bourke",
+    "name": "Cillian Bourke",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--cillian-bourke"
   },
   {
     "id": "darcy_parish",
@@ -1605,7 +2158,8 @@
     "eventIds": [
       728
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--darcy-parish"
   },
   {
     "id": "dyson_sharp",
@@ -1616,7 +2170,8 @@
     "eventIds": [
       2064
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--dyson-sharp"
   },
   {
     "id": "elijah_tsatas",
@@ -1627,7 +2182,18 @@
     "eventIds": [
       750
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--elijah-tsatas"
+  },
+  {
+    "id": "harrison_jones",
+    "name": "Harrison Jones",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--harrison-jones-1"
   },
   {
     "id": "hussien_el_achkar",
@@ -1638,7 +2204,20 @@
     "eventIds": [
       1903
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--hussien-el-achkar"
+  },
+  {
+    "id": "isaac_kako",
+    "name": "Isaac Kako",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": 1898,
+    "eventIds": [
+      1906
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--isaac-kako"
   },
   {
     "id": "jacob_farrow",
@@ -1649,7 +2228,8 @@
     "eventIds": [
       2050
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--jacob-farrow"
   },
   {
     "id": "jade_gresham",
@@ -1660,7 +2240,8 @@
     "eventIds": [
       899
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--jade-gresham"
   },
   {
     "id": "jaxon_prior",
@@ -1671,7 +2252,8 @@
     "eventIds": [
       1629
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--jaxon-prior"
   },
   {
     "id": "jayden_nguyen",
@@ -1682,7 +2264,8 @@
     "eventIds": [
       2034
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--jayden-nguyen"
   },
   {
     "id": "jordan_ridley",
@@ -1693,7 +2276,8 @@
     "eventIds": [
       1821
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--jordan-ridley"
   },
   {
     "id": "jye_caldwell",
@@ -1704,7 +2288,8 @@
     "eventIds": [
       1567
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--jye-caldwell"
   },
   {
     "id": "kayle_gerreyn",
@@ -1715,7 +2300,8 @@
     "eventIds": [
       2025
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--kayle-gerreyn"
   },
   {
     "id": "kyle_langford",
@@ -1726,7 +2312,8 @@
     "eventIds": [
       724
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--kyle-langford"
   },
   {
     "id": "lachlan_blakiston",
@@ -1737,7 +2324,28 @@
     "eventIds": [
       2015
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--lachlan-blakiston"
+  },
+  {
+    "id": "lewis_hayes",
+    "name": "Lewis Hayes",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--lewis-hayes"
+  },
+  {
+    "id": "liam_mcmahon",
+    "name": "Liam McMahon",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--liam-mcmahon"
   },
   {
     "id": "mason_redman",
@@ -1748,7 +2356,8 @@
     "eventIds": [
       730
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--mason-redman"
   },
   {
     "id": "matt_guelfi",
@@ -1759,7 +2368,8 @@
     "eventIds": [
       1487
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--matt-guelfi"
   },
   {
     "id": "max_kondogiannis",
@@ -1770,7 +2380,8 @@
     "eventIds": [
       2048
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--max-kondogiannis"
   },
   {
     "id": "nate_caddy",
@@ -1781,18 +2392,22 @@
     "eventIds": [
       1775
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--nate-caddy"
   },
   {
     "id": "nic_martin",
     "name": "Nic Martin",
     "team": "Essendon",
-    "aliases": [],
+    "aliases": [
+      "Nicholas Martin"
+    ],
     "apiSportsId": 9999,
     "eventIds": [
       9999
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--nicholas-martin"
   },
   {
     "id": "nick_bryan",
@@ -1803,7 +2418,8 @@
     "eventIds": [
       1804
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--nick-bryan"
   },
   {
     "id": "nikolas_cox",
@@ -1817,6 +2433,16 @@
     "statsIds": []
   },
   {
+    "id": "nikolas_cox",
+    "name": "Nikolas Cox",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--nikolas-cox"
+  },
+  {
     "id": "peter_wright",
     "name": "Peter Wright",
     "team": "Essendon",
@@ -1825,7 +2451,18 @@
     "eventIds": [
       1360
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--peter-wright"
+  },
+  {
+    "id": "rhys_unwin",
+    "name": "Rhys Unwin",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--rhys-unwin"
   },
   {
     "id": "saad_el_hawli",
@@ -1836,7 +2473,8 @@
     "eventIds": [
       1964
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--saad-el-hawli"
   },
   {
     "id": "sam_durham",
@@ -1847,7 +2485,8 @@
     "eventIds": [
       742
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--sam-durham"
   },
   {
     "id": "sullivan_robey",
@@ -1858,29 +2497,44 @@
     "eventIds": [
       2080
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--sullivan-robey"
   },
   {
     "id": "thomas_edwards",
     "name": "Thomas Edwards",
     "team": "Essendon",
-    "aliases": [],
+    "aliases": [
+      "Tom Edwards"
+    ],
     "apiSportsId": 1899,
     "eventIds": [
       1899
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--tom-edwards"
+  },
+  {
+    "id": "vigo_visentini",
+    "name": "Vigo Visentini",
+    "team": "Essendon",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--vigo-visentini"
   },
   {
     "id": "will_setterfield",
     "name": "Will Setterfield",
     "team": "Essendon",
     "aliases": [],
-    "apiSportsId": 734 ,
+    "apiSportsId": 734,
     "eventIds": [
       734
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--will-setterfield"
   },
   {
     "id": "xavier_duursma",
@@ -1891,18 +2545,22 @@
     "eventIds": [
       1016
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--xavier-duursma"
   },
   {
     "id": "zach_merrett",
     "name": "Zach Merrett",
     "team": "Essendon",
-    "aliases": [],
+    "aliases": [
+      "Zachary Merrett"
+    ],
     "apiSportsId": 723,
     "eventIds": [
       723
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--zachary-merrett"
   },
   {
     "id": "zach_reid",
@@ -1913,7 +2571,8 @@
     "eventIds": [
       1638
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--zach-reid"
   },
   {
     "id": "zak_johnson",
@@ -1924,7 +2583,28 @@
     "eventIds": [
       1959
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--zak-johnson"
+  },
+  {
+    "id": "adam_sweid",
+    "name": "Adam Sweid",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--adam-sweid"
+  },
+  {
+    "id": "aiden_riddle",
+    "name": "Aiden Riddle",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--aiden-riddle"
   },
   {
     "id": "alex_pearce",
@@ -1935,7 +2615,8 @@
     "eventIds": [
       845
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--alex-pearce"
   },
   {
     "id": "andrew_brayshaw",
@@ -1946,7 +2627,8 @@
     "eventIds": [
       849
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--andrew-brayshaw"
   },
   {
     "id": "bailey_banfield",
@@ -1957,7 +2639,8 @@
     "eventIds": [
       1474
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--bailey-banfield"
   },
   {
     "id": "brandon_walker",
@@ -1968,7 +2651,8 @@
     "eventIds": [
       1651
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--brandon-walker"
   },
   {
     "id": "brennan_cox",
@@ -1979,7 +2663,8 @@
     "eventIds": [
       847
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--brennan-cox"
   },
   {
     "id": "caleb_serong",
@@ -1990,7 +2675,28 @@
     "eventIds": [
       856
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--caleb-serong"
+  },
+  {
+    "id": "charlie_nicholls",
+    "name": "Charlie Nicholls",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--charlie-nicholls"
+  },
+  {
+    "id": "chris_scerri",
+    "name": "Chris Scerri",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--chris-scerri"
   },
   {
     "id": "christopher_scerri",
@@ -2004,6 +2710,16 @@
     "statsIds": []
   },
   {
+    "id": "cooper_simpson",
+    "name": "Cooper Simpson",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--cooper-simpson"
+  },
+  {
     "id": "corey_wagner",
     "name": "Corey Wagner",
     "team": "Fremantle",
@@ -2012,7 +2728,8 @@
     "eventIds": [
       846
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--corey-wagner"
   },
   {
     "id": "hayden_young",
@@ -2023,7 +2740,8 @@
     "eventIds": [
       857
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--hayden-young"
   },
   {
     "id": "heath_chapman",
@@ -2034,7 +2752,8 @@
     "eventIds": [
       1631
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--heath-chapman"
   },
   {
     "id": "hugh_davies",
@@ -2045,7 +2764,8 @@
     "eventIds": [
       1772
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--hugh-davies"
   },
   {
     "id": "isaiah_dudley",
@@ -2056,7 +2776,8 @@
     "eventIds": [
       1932
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--isaiah-dudley"
   },
   {
     "id": "jaeger_omeara",
@@ -2067,7 +2788,18 @@
     "eventIds": [
       1183
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--jaeger-o-meara"
+  },
+  {
+    "id": "jaren_carr",
+    "name": "Jaren Carr",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--jaren-carr"
   },
   {
     "id": "jeremy_sharp",
@@ -2078,7 +2810,8 @@
     "eventIds": [
       1605
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--jeremy-sharp"
   },
   {
     "id": "jordan_clark",
@@ -2089,7 +2822,18 @@
     "eventIds": [
       853
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--jordan-clark"
+  },
+  {
+    "id": "josh_draper",
+    "name": "Josh Draper",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--josh-draper"
   },
   {
     "id": "josh_treacy",
@@ -2100,7 +2844,8 @@
     "eventIds": [
       859
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--josh-treacy"
   },
   {
     "id": "judd_mcvee",
@@ -2111,7 +2856,8 @@
     "eventIds": [
       1091
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--judd-mcvee"
   },
   {
     "id": "jye_amiss",
@@ -2122,7 +2868,8 @@
     "eventIds": [
       863
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--jye-amiss"
   },
   {
     "id": "karl_worner",
@@ -2133,7 +2880,18 @@
     "eventIds": [
       862
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--karl-worner"
+  },
+  {
+    "id": "leon_kickett",
+    "name": "Leon Kickett",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--leon-kickett"
   },
   {
     "id": "luke_jackson",
@@ -2144,7 +2902,8 @@
     "eventIds": [
       854
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--luke-jackson"
   },
   {
     "id": "luke_ryan",
@@ -2155,7 +2914,8 @@
     "eventIds": [
       848
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--luke-ryan"
   },
   {
     "id": "mason_cox",
@@ -2166,18 +2926,22 @@
     "eventIds": [
       754
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--mason-cox"
   },
   {
     "id": "matthew_johnson",
     "name": "Matthew Johnson",
     "team": "Fremantle",
-    "aliases": [],
+    "aliases": [
+      "Matt Johnson"
+    ],
     "apiSportsId": 864,
     "eventIds": [
       864
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--matt-johnson-1"
   },
   {
     "id": "minairo_frederick",
@@ -2188,7 +2952,8 @@
     "eventIds": [
       855
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--minairo-frederick"
   },
   {
     "id": "murphy_reid",
@@ -2199,7 +2964,8 @@
     "eventIds": [
       1907
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--murphy-reid"
   },
   {
     "id": "nathan_odriscoll",
@@ -2210,7 +2976,8 @@
     "eventIds": [
       860
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--nathan-o-driscoll"
   },
   {
     "id": "neil_erasmus",
@@ -2221,7 +2988,18 @@
     "eventIds": [
       861
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--neil-erasmus"
+  },
+  {
+    "id": "ollie_murphy",
+    "name": "Ollie Murphy",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--ollie-murphy"
   },
   {
     "id": "oscar_mcdonald",
@@ -2232,7 +3010,8 @@
     "eventIds": [
       1378
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--oscar-mcdonald"
   },
   {
     "id": "patrick_voss",
@@ -2243,7 +3022,28 @@
     "eventIds": [
       749
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--patrick-voss"
+  },
+  {
+    "id": "ryda_luke",
+    "name": "Ryda Luke",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--ryda-luke"
+  },
+  {
+    "id": "sam_sturt",
+    "name": "Sam Sturt",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--sam-sturt"
   },
   {
     "id": "sam_switkowski",
@@ -2254,7 +3054,8 @@
     "eventIds": [
       850
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--sam-switkowski"
   },
   {
     "id": "sean_darcy",
@@ -2265,7 +3066,8 @@
     "eventIds": [
       1457
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--sean-darcy"
   },
   {
     "id": "shai_bolton",
@@ -2276,7 +3078,28 @@
     "eventIds": [
       1036
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--shai-bolton"
+  },
+  {
+    "id": "toby_whan",
+    "name": "Toby Whan",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--toby-whan"
+  },
+  {
+    "id": "tobyn_murray",
+    "name": "Tobyn Murray",
+    "team": "Fremantle",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-fremantle-dockers--tobyn-murray"
   },
   {
     "id": "bailey_smith",
@@ -2287,7 +3110,8 @@
     "eventIds": [
       1536
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--bailey-smith"
   },
   {
     "id": "bradley_close",
@@ -2301,6 +3125,26 @@
     "statsIds": []
   },
   {
+    "id": "bradley_close",
+    "name": "Bradley Close",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--bradley-close"
+  },
+  {
+    "id": "cillian_burke",
+    "name": "Cillian Burke",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--cillian-burke"
+  },
+  {
     "id": "connor_osullivan",
     "name": "Connor O'Sullivan",
     "team": "Geelong",
@@ -2309,7 +3153,8 @@
     "eventIds": [
       1778
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--connor-o-sullivan"
   },
   {
     "id": "george_stevens",
@@ -2320,7 +3165,8 @@
     "eventIds": [
       1950
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--george-stevens"
   },
   {
     "id": "gryan_miers",
@@ -2331,7 +3177,28 @@
     "eventIds": [
       924
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--gryan-miers"
+  },
+  {
+    "id": "harley_barker",
+    "name": "Harley Barker",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--harley-barker"
+  },
+  {
+    "id": "hunter_holmes",
+    "name": "Hunter Holmes",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--hunter-holmes"
   },
   {
     "id": "jack_bowes",
@@ -2342,7 +3209,8 @@
     "eventIds": [
       920
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--jack-bowes"
   },
   {
     "id": "jack_henry",
@@ -2353,7 +3221,8 @@
     "eventIds": [
       1485
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--jack-henry"
   },
   {
     "id": "jack_martin",
@@ -2364,7 +3233,18 @@
     "eventIds": [
       1095
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--jack-martin"
+  },
+  {
+    "id": "jacob_molier",
+    "name": "Jacob Molier",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--jacob-molier"
   },
   {
     "id": "jake_kolodjashnij",
@@ -2375,7 +3255,8 @@
     "eventIds": [
       916
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--jake-kolodjashnij"
   },
   {
     "id": "james_worpel",
@@ -2386,7 +3267,8 @@
     "eventIds": [
       826
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--james-worpel"
   },
   {
     "id": "jay_polkinghorne",
@@ -2397,7 +3279,18 @@
     "eventIds": [
       1962
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--jay-polkinghorne"
+  },
+  {
+    "id": "jed_bews",
+    "name": "Jed Bews",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--jed-bews"
   },
   {
     "id": "jeremy_cameron",
@@ -2408,7 +3301,18 @@
     "eventIds": [
       648
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--jeremy-cameron"
+  },
+  {
+    "id": "jesse_mellor",
+    "name": "Jesse Mellor",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--jesse-mellor"
   },
   {
     "id": "jhye_clark",
@@ -2419,7 +3323,28 @@
     "eventIds": [
       1721
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--jhye-clark"
+  },
+  {
+    "id": "joe_pike",
+    "name": "Joe Pike",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--joe-pike"
+  },
+  {
+    "id": "keighton_matofai_forbes",
+    "name": "Keighton Matofai-Forbes",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--keighton-matofai-forbes"
   },
   {
     "id": "lawson_humphries",
@@ -2430,7 +3355,18 @@
     "eventIds": [
       1813
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--lawson-humphries"
+  },
+  {
+    "id": "lennox_hoffman",
+    "name": "Lennox Hoffman",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--lennox-hoffman"
   },
   {
     "id": "lennox_hofmann",
@@ -2452,7 +3388,8 @@
     "eventIds": [
       1196
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--mark-blicavs"
   },
   {
     "id": "mark_oconnor",
@@ -2463,7 +3400,8 @@
     "eventIds": [
       922
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--mark-o-connor"
   },
   {
     "id": "max_holmes",
@@ -2474,7 +3412,8 @@
     "eventIds": [
       929
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--max-holmes"
   },
   {
     "id": "mitch_knevitt",
@@ -2496,7 +3435,28 @@
     "eventIds": [
       1911
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--mitchell-edwards"
+  },
+  {
+    "id": "mitchell_knevitt",
+    "name": "Mitchell Knevitt",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--mitchell-knevitt"
+  },
+  {
+    "id": "nick_driscoll",
+    "name": "Nick Driscoll",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--nick-driscoll"
   },
   {
     "id": "oisin_mullin",
@@ -2507,7 +3467,8 @@
     "eventIds": [
       934
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--oisin-mullin"
   },
   {
     "id": "oliver_dempsey",
@@ -2529,7 +3490,8 @@
     "eventIds": [
       926
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--oliver-henry"
   },
   {
     "id": "oliver_wiltshire",
@@ -2540,7 +3502,18 @@
     "eventIds": [
       1957
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--oliver-wiltshire"
+  },
+  {
+    "id": "ollie_dempsey",
+    "name": "Ollie Dempsey",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--ollie-dempsey"
   },
   {
     "id": "patrick_dangerfield",
@@ -2551,7 +3524,20 @@
     "eventIds": [
       127
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--patrick-dangerfield"
+  },
+  {
+    "id": "rhys_stanley",
+    "name": "Rhys Stanley",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": 423,
+    "eventIds": [
+      423
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--rhys-stanley"
   },
   {
     "id": "sam_de_koning",
@@ -2562,7 +3548,8 @@
     "eventIds": [
       927
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--sam-de-koning"
   },
   {
     "id": "shannon_neale",
@@ -2573,7 +3560,8 @@
     "eventIds": [
       928
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--shannon-neale"
   },
   {
     "id": "shaun_mannagh",
@@ -2584,7 +3572,8 @@
     "eventIds": [
       1750
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--shaun-mannagh"
   },
   {
     "id": "tanner_bruhn",
@@ -2595,7 +3584,18 @@
     "eventIds": [
       1626
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--tanner-bruhn"
+  },
+  {
+    "id": "toby_conway",
+    "name": "Toby Conway",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--toby-conway"
   },
   {
     "id": "tom_atkins",
@@ -2606,18 +3606,32 @@
     "eventIds": [
       925
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--tom-atkins"
   },
   {
     "id": "tom_stewart",
     "name": "Tom Stewart",
     "team": "Geelong",
-    "aliases": [],
+    "aliases": [
+      "Thomas Stewart"
+    ],
     "apiSportsId": 919,
     "eventIds": [
       919
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--thomas-stewart"
+  },
+  {
+    "id": "tyson_stengle",
+    "name": "Tyson Stengle",
+    "team": "Geelong",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--tyson-stengle"
   },
   {
     "id": "zach_guthrie",
@@ -2628,7 +3642,8 @@
     "eventIds": [
       917
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-geelong-cats--zach-guthrie"
   },
   {
     "id": "alex_davies",
@@ -2639,7 +3654,28 @@
     "eventIds": [
       812
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--alex-davies"
+  },
+  {
+    "id": "asher_eastham",
+    "name": "Asher Eastham",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--asher-eastham"
+  },
+  {
+    "id": "avery_thomas",
+    "name": "Avery Thomas",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--avery-thomas"
   },
   {
     "id": "bailey_humphrey",
@@ -2650,7 +3686,18 @@
     "eventIds": [
       1715
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--bailey-humphrey"
+  },
+  {
+    "id": "beau_addinsall",
+    "name": "Beau Addinsall",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--beau-addinsall"
   },
   {
     "id": "ben_jepson",
@@ -2661,7 +3708,8 @@
     "eventIds": [
       1967
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--ben-jepson"
   },
   {
     "id": "ben_king",
@@ -2672,7 +3720,8 @@
     "eventIds": [
       1550
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--ben-king"
   },
   {
     "id": "ben_long",
@@ -2683,7 +3732,8 @@
     "eventIds": [
       1440
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--ben-long"
   },
   {
     "id": "bodhi_uwland",
@@ -2694,7 +3744,8 @@
     "eventIds": [
       1710
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--bodhi-uwland"
   },
   {
     "id": "caleb_graham",
@@ -2705,7 +3756,18 @@
     "eventIds": [
       1894
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--caleb-graham"
+  },
+  {
+    "id": "caleb_lewis",
+    "name": "Caleb Lewis",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--caleb-lewis"
   },
   {
     "id": "charlie_ballard",
@@ -2716,7 +3778,8 @@
     "eventIds": [
       805
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--charlie-ballard"
   },
   {
     "id": "christian_petracca",
@@ -2727,7 +3790,18 @@
     "eventIds": [
       1082
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--christian-petracca"
+  },
+  {
+    "id": "cooper_bell",
+    "name": "Cooper Bell",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--cooper-bell"
   },
   {
     "id": "daniel_rioli",
@@ -2738,7 +3812,28 @@
     "eventIds": [
       1032
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--daniel-rioli"
+  },
+  {
+    "id": "dylan_patterson",
+    "name": "Dylan Patterson",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--dylan-patterson"
+  },
+  {
+    "id": "elliott_himmelberg",
+    "name": "Elliott Himmelberg",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--elliot-himmelberg"
   },
   {
     "id": "ethan_read",
@@ -2749,7 +3844,18 @@
     "eventIds": [
       1773
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--ethan-read"
+  },
+  {
+    "id": "jai_murray",
+    "name": "Jai Murray",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--jai-murray"
   },
   {
     "id": "jake_rogers",
@@ -2760,7 +3866,8 @@
     "eventIds": [
       1783
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--jake-rogers"
   },
   {
     "id": "jamarra_ugle_hagan",
@@ -2771,7 +3878,8 @@
     "eventIds": [
       955
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--jamarra-ugle-hagan"
   },
   {
     "id": "jarrod_witts",
@@ -2782,7 +3890,8 @@
     "eventIds": [
       796
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--jarrod-witts"
   },
   {
     "id": "jed_walter",
@@ -2793,7 +3902,8 @@
     "eventIds": [
       1763
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--jed-walter"
   },
   {
     "id": "joel_jeffrey",
@@ -2804,7 +3914,8 @@
     "eventIds": [
       1659
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--joel-jeffrey"
   },
   {
     "id": "john_noble",
@@ -2815,7 +3926,8 @@
     "eventIds": [
       764
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--john-noble"
   },
   {
     "id": "jy_farrar",
@@ -2826,18 +3938,32 @@
     "eventIds": [
       1621
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--jy-farrar"
+  },
+  {
+    "id": "koby_coulson",
+    "name": "Koby Coulson",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--koby-coulson"
   },
   {
     "id": "lachie_weller",
     "name": "Lachie Weller",
     "team": "Gold Coast",
-    "aliases": [],
+    "aliases": [
+      "Lachlan Weller"
+    ],
     "apiSportsId": 1856,
     "eventIds": [
       1372
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--lachlan-weller"
   },
   {
     "id": "lachlan_gulbin",
@@ -2848,7 +3974,18 @@
     "eventIds": [
       2077
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--lachlan-gulbin"
+  },
+  {
+    "id": "leo_lombard",
+    "name": "Leo Lombard",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--leo-lombard"
   },
   {
     "id": "leonardo_lombard",
@@ -2870,18 +4007,32 @@
     "eventIds": [
       815
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--mac-andrew"
   },
   {
     "id": "matthew_rowell",
     "name": "Matthew Rowell",
     "team": "Gold Coast",
-    "aliases": [],
+    "aliases": [
+      "Matt Rowell"
+    ],
     "apiSportsId": 809,
     "eventIds": [
       809
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--matt-rowell"
+  },
+  {
+    "id": "max_knobel",
+    "name": "Max Knobel",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--max-knobel"
   },
   {
     "id": "ned_moyle",
@@ -2892,18 +4043,22 @@
     "eventIds": [
       813
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--ned-moyle"
   },
   {
     "id": "nick_holman",
     "name": "Nick Holman",
     "team": "Gold Coast",
-    "aliases": [],
+    "aliases": [
+      "Nicholas Holman"
+    ],
     "apiSportsId": 1322,
     "eventIds": [
       1322
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--nicholas-holman"
   },
   {
     "id": "noah_anderson",
@@ -2914,7 +4069,8 @@
     "eventIds": [
       807
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--noah-anderson"
   },
   {
     "id": "oscar_adams",
@@ -2925,7 +4081,8 @@
     "eventIds": [
       9999
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--oscar-adams"
   },
   {
     "id": "sam_clohesy",
@@ -2936,18 +4093,22 @@
     "eventIds": [
       1762
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--sam-clohesy"
   },
   {
     "id": "sam_collins",
     "name": "Sam Collins",
     "team": "Gold Coast",
-    "aliases": [],
+    "aliases": [
+      "Samuel Collins"
+    ],
     "apiSportsId": 800,
     "eventIds": [
       800
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--samuel-collins"
   },
   {
     "id": "touk_miller",
@@ -2958,7 +4119,8 @@
     "eventIds": [
       799
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--touk-miller"
   },
   {
     "id": "wil_powell",
@@ -2969,7 +4131,8 @@
     "eventIds": [
       1517
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--wil-powell"
   },
   {
     "id": "will_graham",
@@ -2980,7 +4143,18 @@
     "eventIds": [
       1739
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--will-graham"
+  },
+  {
+    "id": "zak_evans",
+    "name": "Zak Evans",
+    "team": "Gold Coast",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--zak-evans"
   },
   {
     "id": "zeke_uwland",
@@ -2991,7 +4165,8 @@
     "eventIds": [
       2036
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-gold-coast-suns--zeke-uwland"
   },
   {
     "id": "aaron_cadman",
@@ -3002,7 +4177,8 @@
     "eventIds": [
       1718
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--aaron-cadman"
   },
   {
     "id": "brent_daniels",
@@ -3013,7 +4189,8 @@
     "eventIds": [
       1130
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--brent-daniels"
   },
   {
     "id": "callum_m_brown",
@@ -3024,7 +4201,8 @@
     "eventIds": [
       1133
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--callum-brown-1"
   },
   {
     "id": "clayton_oliver",
@@ -3035,7 +4213,18 @@
     "eventIds": [
       1081
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--clayton-oliver"
+  },
+  {
+    "id": "cody_angove",
+    "name": "Cody Angove",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--cody-angove"
   },
   {
     "id": "connor_idun",
@@ -3046,7 +4235,8 @@
     "eventIds": [
       1134
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--connor-idun"
   },
   {
     "id": "conor_stone",
@@ -3057,7 +4247,18 @@
     "eventIds": [
       1800
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--conor-stone"
+  },
+  {
+    "id": "darcy_jones",
+    "name": "Darcy Jones",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--darcy-jones"
   },
   {
     "id": "finn_callaghan",
@@ -3068,7 +4269,40 @@
     "eventIds": [
       1673
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--finn-callaghan"
+  },
+  {
+    "id": "finnegan_davis",
+    "name": "Finnegan Davis",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--finnegan-davis"
+  },
+  {
+    "id": "harrison_himmelberg",
+    "name": "Harrison Himmelberg",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--harrison-himmelberg"
+  },
+  {
+    "id": "harrison_oliver",
+    "name": "Harrison Oliver",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": 2099,
+    "eventIds": [
+      2099
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--harrison-oliver"
   },
   {
     "id": "harrison_himmelberg",
@@ -3082,17 +4316,6 @@
     "statsIds": []
   },
   {
-    "id": "harrison_oliver",
-    "name": "Harrison Oliver",
-    "team": "GWS",
-    "aliases": [],
-    "apiSportsId": 2099,
-    "eventIds": [
-      2099
-    ],
-    "statsIds": []
-  },
-  {
     "id": "harry_rowston",
     "name": "Harry Rowston",
     "team": "GWS",
@@ -3101,7 +4324,8 @@
     "eventIds": [
       1713
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--harry-rowston"
   },
   {
     "id": "harvey_thomas",
@@ -3112,7 +4336,8 @@
     "eventIds": [
       1742
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--harvey-thomas"
   },
   {
     "id": "jack_buckley",
@@ -3123,7 +4348,18 @@
     "eventIds": [
       1129
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--jack-buckley"
+  },
+  {
+    "id": "jack_ough",
+    "name": "Jack Ough",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--jack-ough"
   },
   {
     "id": "jake_riccardi",
@@ -3134,7 +4370,8 @@
     "eventIds": [
       1138
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--jake-riccardi"
   },
   {
     "id": "jake_stringer",
@@ -3145,7 +4382,8 @@
     "eventIds": [
       1209
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--jake-stringer"
   },
   {
     "id": "james_leake",
@@ -3156,7 +4394,8 @@
     "eventIds": [
       1873
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--james-leake"
   },
   {
     "id": "jayden_laverde",
@@ -3167,7 +4406,8 @@
     "eventIds": [
       726
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--jayden-laverde"
   },
   {
     "id": "jesse_hogan",
@@ -3178,7 +4418,8 @@
     "eventIds": [
       1122
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--jesse-hogan"
   },
   {
     "id": "joe_fonti",
@@ -3200,7 +4441,28 @@
     "eventIds": [
       1958
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--josaia-delana"
+  },
+  {
+    "id": "joseph_fonti",
+    "name": "Joseph Fonti",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--joseph-fonti"
+  },
+  {
+    "id": "joshua_kelly",
+    "name": "Joshua Kelly",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--joshua-kelly"
   },
   {
     "id": "kieren_briggs",
@@ -3211,7 +4473,22 @@
     "eventIds": [
       1132
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--kieren-briggs"
+  },
+  {
+    "id": "lachlan_ash",
+    "name": "Lachie Ash",
+    "team": "GWS",
+    "aliases": [
+      "Lachlan Ash"
+    ],
+    "apiSportsId": 1136,
+    "eventIds": [
+      1136
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--lachlan-ash"
   },
   {
     "id": "lachie_whitfield",
@@ -3222,18 +4499,8 @@
     "eventIds": [
       1121
     ],
-    "statsIds": []
-  },
-  {
-    "id": "lachlan_ash",
-    "name": "Lachie Ash",
-    "team": "GWS",
-    "aliases": [],
-    "apiSportsId": 1136,
-    "eventIds": [
-      1136
-    ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--lachie-whitfield"
   },
   {
     "id": "leek_aleer",
@@ -3244,7 +4511,18 @@
     "eventIds": [
       1700
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--leek-aleer"
+  },
+  {
+    "id": "logan_smith",
+    "name": "Logan Smith",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--logan-smith"
   },
   {
     "id": "max_gruzewski",
@@ -3255,18 +4533,32 @@
     "eventIds": [
       1776
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--max-gruzewski"
+  },
+  {
+    "id": "nathan_wardius",
+    "name": "Nathan Wardius",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--nathan-wardius"
   },
   {
     "id": "nicholas_madden",
     "name": "Nicholas Madden",
     "team": "GWS",
-    "aliases": [],
+    "aliases": [
+      "Nick Madden"
+    ],
     "apiSportsId": 1981,
     "eventIds": [
       1981
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--nick-madden"
   },
   {
     "id": "oliver_hannaford",
@@ -3277,7 +4569,18 @@
     "eventIds": [
       1902
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--oliver-hannaford"
+  },
+  {
+    "id": "oskar_taylor",
+    "name": "Oskar Taylor",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--oskar-taylor"
   },
   {
     "id": "phoenix_gothard",
@@ -3288,7 +4591,18 @@
     "eventIds": [
       2045
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--phoenix-gothard"
+  },
+  {
+    "id": "riley_hamilton",
+    "name": "Riley Hamilton",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--riley-hamilton"
   },
   {
     "id": "ryan_angwin",
@@ -3299,7 +4613,18 @@
     "eventIds": [
       1139
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--ryan-angwin"
+  },
+  {
+    "id": "sam_taylor",
+    "name": "Sam Taylor",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--sam-taylor"
   },
   {
     "id": "stephen_coniglio",
@@ -3310,7 +4635,8 @@
     "eventIds": [
       649
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--stephen-coniglio"
   },
   {
     "id": "toby_bedford",
@@ -3321,7 +4647,8 @@
     "eventIds": [
       1135
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--toby-bedford"
   },
   {
     "id": "toby_greene",
@@ -3332,7 +4659,8 @@
     "eventIds": [
       651
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--toby-greene"
   },
   {
     "id": "toby_mcmullin",
@@ -3343,7 +4671,18 @@
     "eventIds": [
       1141
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--toby-mcmullin"
+  },
+  {
+    "id": "tom_green",
+    "name": "Tom Green",
+    "team": "GWS",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--tom-green"
   },
   {
     "id": "xavier_ohalloran",
@@ -3354,7 +4693,8 @@
     "eventIds": [
       1606
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--xavier-o-halloran"
   },
   {
     "id": "aidan_schubert",
@@ -3365,7 +4705,8 @@
     "eventIds": [
       2095
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--aidan-schubert"
   },
   {
     "id": "bailey_macdonald",
@@ -3376,7 +4717,8 @@
     "eventIds": [
       1953
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--bailey-macdonald"
   },
   {
     "id": "blake_hardwick",
@@ -3387,7 +4729,8 @@
     "eventIds": [
       821
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--blake-hardwick"
   },
   {
     "id": "bodie_ryan",
@@ -3398,7 +4741,8 @@
     "eventIds": [
       2086
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--bodie-ryan"
   },
   {
     "id": "calsher_dear",
@@ -3409,29 +4753,56 @@
     "eventIds": [
       1790
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--calsher-dear"
   },
   {
     "id": "cam_mackenzie",
     "name": "Cam Mackenzie",
     "team": "Hawthorn",
-    "aliases": [],
+    "aliases": [
+      "Cameron Mackenzie"
+    ],
     "apiSportsId": 840,
     "eventIds": [
       840
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--cameron-mackenzie"
+  },
+  {
+    "id": "cameron_nairn",
+    "name": "Cameron Nairn",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--cameron-nairn"
+  },
+  {
+    "id": "cody_anderson",
+    "name": "Cody Anderson",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--cody-anderson"
   },
   {
     "id": "connor_macdonald",
     "name": "Connor Macdonald",
     "team": "Hawthorn",
-    "aliases": [],
+    "aliases": [
+      "Connor MacDonald"
+    ],
     "apiSportsId": 834,
     "eventIds": [
       834
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--connor-macdonald"
   },
   {
     "id": "connor_nash",
@@ -3445,6 +4816,16 @@
     "statsIds": []
   },
   {
+    "id": "conor_nash",
+    "name": "Conor Nash",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--conor-nash"
+  },
+  {
     "id": "dylan_moore",
     "name": "Dylan Moore",
     "team": "Hawthorn",
@@ -3453,7 +4834,8 @@
     "eventIds": [
       827
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--dylan-moore"
   },
   {
     "id": "finn_maginness",
@@ -3464,7 +4846,8 @@
     "eventIds": [
       830
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--finn-maginness"
   },
   {
     "id": "flynn_perez",
@@ -3475,7 +4858,8 @@
     "eventIds": [
       2041
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--flynn-perez"
   },
   {
     "id": "harry_morrison",
@@ -3486,7 +4870,18 @@
     "eventIds": [
       822
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--harry-morrison"
+  },
+  {
+    "id": "henry_hustwaite",
+    "name": "Henry Hustwaite",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--henry-hustwaite"
   },
   {
     "id": "jack_dalton",
@@ -3497,7 +4892,8 @@
     "eventIds": [
       2078
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--jack-dalton"
   },
   {
     "id": "jack_ginnivan",
@@ -3508,7 +4904,8 @@
     "eventIds": [
       766
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--jack-ginnivan"
   },
   {
     "id": "jack_gunston",
@@ -3519,7 +4916,8 @@
     "eventIds": [
       498
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--jack-gunston"
   },
   {
     "id": "jack_scrimshaw",
@@ -3530,7 +4928,8 @@
     "eventIds": [
       824
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--jack-scrimshaw"
   },
   {
     "id": "jai_newcombe",
@@ -3541,7 +4940,28 @@
     "eventIds": [
       833
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--jai-newcombe"
+  },
+  {
+    "id": "jaime_uhr_henry",
+    "name": "Jaime Uhr-Henry",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--jaime-uhr-henry"
+  },
+  {
+    "id": "james_blanck",
+    "name": "James Blanck",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--james-blanck"
   },
   {
     "id": "james_sicily",
@@ -3552,7 +4972,8 @@
     "eventIds": [
       818
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--james-sicily"
   },
   {
     "id": "jarman_impey",
@@ -3563,7 +4984,8 @@
     "eventIds": [
       820
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--jarman-impey"
   },
   {
     "id": "josh_battle",
@@ -3574,7 +4996,8 @@
     "eventIds": [
       900
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--josh-battle"
   },
   {
     "id": "josh_ward",
@@ -3585,18 +5008,22 @@
     "eventIds": [
       836
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--josh-ward"
   },
   {
     "id": "josh_weddle",
     "name": "Josh Weddle",
     "team": "Hawthorn",
-    "aliases": [],
+    "aliases": [
+      "Joshua Weddle"
+    ],
     "apiSportsId": 841,
     "eventIds": [
       841
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--joshua-weddle"
   },
   {
     "id": "karl_amon",
@@ -3607,7 +5034,8 @@
     "eventIds": [
       819
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--karl-amon"
   },
   {
     "id": "lloyd_meek",
@@ -3618,7 +5046,8 @@
     "eventIds": [
       825
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--lloyd-meek"
   },
   {
     "id": "mabior_chol",
@@ -3629,7 +5058,8 @@
     "eventIds": [
       801
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--mabior-chol"
   },
   {
     "id": "massimo_dambrosio",
@@ -3640,7 +5070,8 @@
     "eventIds": [
       1693
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--massimo-d-ambrosio"
   },
   {
     "id": "matt_hill",
@@ -3651,7 +5082,18 @@
     "eventIds": [
       2065
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--matt-hill"
+  },
+  {
+    "id": "matthew_leray",
+    "name": "Matthew LeRay",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--matthew-leray"
   },
   {
     "id": "max_ramsden",
@@ -3662,7 +5104,8 @@
     "eventIds": [
       1720
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--max-ramsden"
   },
   {
     "id": "mitch_lewis",
@@ -3676,6 +5119,16 @@
     "statsIds": []
   },
   {
+    "id": "mitchell_lewis",
+    "name": "Mitchell Lewis",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--mitchell-lewis"
+  },
+  {
     "id": "ned_reeves",
     "name": "Ned Reeves",
     "team": "Hawthorn",
@@ -3684,7 +5137,8 @@
     "eventIds": [
       832
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--ned-reeves"
   },
   {
     "id": "nick_watson",
@@ -3695,7 +5149,8 @@
     "eventIds": [
       1746
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--nick-watson"
   },
   {
     "id": "noah_mraz",
@@ -3706,7 +5161,18 @@
     "eventIds": [
       2042
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--noah-mraz"
+  },
+  {
+    "id": "ollie_greeves",
+    "name": "Ollie Greeves",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--ollie-greeves"
   },
   {
     "id": "sam_butler",
@@ -3717,7 +5183,8 @@
     "eventIds": [
       1684
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--sam-butler-1"
   },
   {
     "id": "tom_barrass",
@@ -3728,7 +5195,18 @@
     "eventIds": [
       1370
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--tom-barrass"
+  },
+  {
+    "id": "will_day",
+    "name": "Will Day",
+    "team": "Hawthorn",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--will-day"
   },
   {
     "id": "william_mccabe",
@@ -3739,7 +5217,18 @@
     "eventIds": [
       1983
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--william-mccabe"
+  },
+  {
+    "id": "aidan_johnson",
+    "name": "Aidan Johnson",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--aidan-johnson"
   },
   {
     "id": "andy_moniz_wakefield",
@@ -3748,9 +5237,10 @@
     "aliases": [],
     "apiSportsId": 1843,
     "eventIds": [
-      1843
+      2101
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--andy-moniz-wakefield"
   },
   {
     "id": "bailey_laurie",
@@ -3761,7 +5251,8 @@
     "eventIds": [
       1090
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--bailey-laurie"
   },
   {
     "id": "bayley_fritsch",
@@ -3772,7 +5263,8 @@
     "eventIds": [
       1084
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--bayley-fritsch"
   },
   {
     "id": "blake_howes",
@@ -3783,7 +5275,8 @@
     "eventIds": [
       1736
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--blake-howes"
   },
   {
     "id": "brody_mihocek",
@@ -3794,7 +5287,8 @@
     "eventIds": [
       761
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--brody-mihocek"
   },
   {
     "id": "caleb_windsor",
@@ -3805,7 +5299,8 @@
     "eventIds": [
       1737
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--caleb-windsor"
   },
   {
     "id": "changkuoth_jiath",
@@ -3816,7 +5311,8 @@
     "eventIds": [
       1811
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--changkuoth-jiath"
   },
   {
     "id": "christian_salem",
@@ -3827,7 +5323,8 @@
     "eventIds": [
       1076
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--christian-salem"
   },
   {
     "id": "daniel_turner",
@@ -3838,7 +5335,8 @@
     "eventIds": [
       1092
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--daniel-turner"
   },
   {
     "id": "ed_langdon",
@@ -3849,7 +5347,8 @@
     "eventIds": [
       1080
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--ed-langdon"
   },
   {
     "id": "harrison_petty",
@@ -3860,7 +5359,8 @@
     "eventIds": [
       1520
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--harrison-petty"
   },
   {
     "id": "harry_sharp",
@@ -3871,7 +5371,8 @@
     "eventIds": [
       885
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--harry-sharp"
   },
   {
     "id": "harvey_langford",
@@ -3882,7 +5383,8 @@
     "eventIds": [
       1931
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--harvey-langford"
   },
   {
     "id": "jack_henderson",
@@ -3893,7 +5395,8 @@
     "eventIds": [
       1893
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--jack-henderson"
   },
   {
     "id": "jack_steele",
@@ -3904,18 +5407,32 @@
     "eventIds": [
       896
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--jack-steele"
+  },
+  {
+    "id": "jack_viney",
+    "name": "Jack Viney",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--jack-viney"
   },
   {
     "id": "jacob_van_rooyen",
     "name": "Jacob van Rooyen",
     "team": "Melbourne",
-    "aliases": [],
+    "aliases": [
+      "Jacob Van Rooyen"
+    ],
     "apiSportsId": 1093,
     "eventIds": [
       1093
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--jacob-van-rooyen"
   },
   {
     "id": "jai_culley",
@@ -3926,7 +5443,20 @@
     "eventIds": [
       1696
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--jai-culley"
+  },
+  {
+    "id": "jake_bowey",
+    "name": "Jake Bowey",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": 1089,
+    "eventIds": [
+      1089
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--jake-bowey"
   },
   {
     "id": "jake_lever",
@@ -3937,7 +5467,8 @@
     "eventIds": [
       1078
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--jake-lever"
   },
   {
     "id": "jake_melksham",
@@ -3948,7 +5479,8 @@
     "eventIds": [
       296
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--jake-melksham"
   },
   {
     "id": "jed_adams",
@@ -3959,7 +5491,8 @@
     "eventIds": [
       1948
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--jed-adams"
   },
   {
     "id": "kade_chandler",
@@ -3970,7 +5503,18 @@
     "eventIds": [
       1085
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--kade-chandler"
+  },
+  {
+    "id": "kalani_white",
+    "name": "Kalani White",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--kalani-white"
   },
   {
     "id": "koltyn_tholstrup",
@@ -3981,7 +5525,8 @@
     "eventIds": [
       1755
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--koltyn-tholstrup"
   },
   {
     "id": "kysaiah_pickett",
@@ -3992,7 +5537,8 @@
     "eventIds": [
       1087
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--kysaiah-pickett"
   },
   {
     "id": "latrelle_pickett",
@@ -4003,7 +5549,8 @@
     "eventIds": [
       2026
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--latrelle-pickett"
   },
   {
     "id": "luker_kentfield",
@@ -4014,7 +5561,8 @@
     "eventIds": [
       2075
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--luker-kentfield"
   },
   {
     "id": "matthew_jefferson",
@@ -4025,7 +5573,8 @@
     "eventIds": [
       1913
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--matthew-jefferson"
   },
   {
     "id": "max_gawn",
@@ -4036,7 +5585,8 @@
     "eventIds": [
       538
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--max-gawn"
   },
   {
     "id": "max_heath",
@@ -4047,7 +5597,18 @@
     "eventIds": [
       2004
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--max-heath"
+  },
+  {
+    "id": "oscar_berry",
+    "name": "Oscar Berry",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--oscar-berry"
   },
   {
     "id": "paddy_cross",
@@ -4056,9 +5617,70 @@
     "aliases": [],
     "apiSportsId": 2088,
     "eventIds": [
-      2088
+      1998
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--paddy-cross"
+  },
+  {
+    "id": "ricky_mentha",
+    "name": "Ricky Mentha",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--ricky-mentha"
+  },
+  {
+    "id": "riley_onley",
+    "name": "Riley Onley",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--riley-onley"
+  },
+  {
+    "id": "shane_mcadam",
+    "name": "Shane McAdam",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--shane-mcadam"
+  },
+  {
+    "id": "steven_may",
+    "name": "Steven May",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--steven-may"
+  },
+  {
+    "id": "thomas_matthews",
+    "name": "Thomas Matthews",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--thomas-matthews"
+  },
+  {
+    "id": "tom_campbell",
+    "name": "Tom Campbell",
+    "team": "Melbourne",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--tom-campbell"
   },
   {
     "id": "tom_mcdonald",
@@ -4069,7 +5691,8 @@
     "eventIds": [
       630
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--tom-mcdonald"
   },
   {
     "id": "tom_sparrow",
@@ -4080,7 +5703,8 @@
     "eventIds": [
       1086
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--tom-sparrow"
   },
   {
     "id": "trent_rivers",
@@ -4091,7 +5715,8 @@
     "eventIds": [
       1088
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--trent-rivers"
   },
   {
     "id": "xavier_lindsay",
@@ -4102,7 +5727,8 @@
     "eventIds": [
       1943
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--xavier-lindsay"
   },
   {
     "id": "xavier_taylor",
@@ -4113,7 +5739,8 @@
     "eventIds": [
       2087
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-melbourne-demons--xavier-taylor"
   },
   {
     "id": "aidan_corr",
@@ -4124,7 +5751,8 @@
     "eventIds": [
       770
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--aidan-corr"
   },
   {
     "id": "bailey_scott",
@@ -4135,7 +5763,28 @@
     "eventIds": [
       780
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--bailey-scott"
+  },
+  {
+    "id": "blake_thredgold",
+    "name": "Blake Thredgold",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--blake-thredgold"
+  },
+  {
+    "id": "brayden_george",
+    "name": "Brayden George",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--brayden-george"
   },
   {
     "id": "caleb_daniel",
@@ -4146,7 +5795,8 @@
     "eventIds": [
       939
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--caleb-daniel"
   },
   {
     "id": "callum_coleman_jones",
@@ -4157,7 +5807,8 @@
     "eventIds": [
       1552
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--callum-coleman-jones"
   },
   {
     "id": "cameron_zurhaar",
@@ -4168,7 +5819,8 @@
     "eventIds": [
       1462
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--cameron-zurhaar"
   },
   {
     "id": "charlie_comben",
@@ -4179,7 +5831,8 @@
     "eventIds": [
       1662
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--charlie-comben"
   },
   {
     "id": "charlie_spargo",
@@ -4190,7 +5843,8 @@
     "eventIds": [
       1493
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--charlie-spargo"
   },
   {
     "id": "colby_mckercher",
@@ -4201,7 +5855,18 @@
     "eventIds": [
       1748
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--colby-mckercher"
+  },
+  {
+    "id": "cooper_harvey",
+    "name": "Cooper Harvey",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--cooper-harvey"
   },
   {
     "id": "cooper_trembath",
@@ -4212,7 +5877,8 @@
     "eventIds": [
       1803
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--cooper-trembath"
   },
   {
     "id": "dylan_stephens",
@@ -4223,7 +5889,8 @@
     "eventIds": [
       1068
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--dylan-stephens"
   },
   {
     "id": "finn_osullivan",
@@ -4234,7 +5901,8 @@
     "eventIds": [
       1806
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--finn-o-sullivan"
   },
   {
     "id": "george_wardlaw",
@@ -4245,7 +5913,8 @@
     "eventIds": [
       1724
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--george-wardlaw"
   },
   {
     "id": "griffin_logue",
@@ -4256,7 +5925,8 @@
     "eventIds": [
       1855
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--griffin-logue"
   },
   {
     "id": "harry_sheezel",
@@ -4267,7 +5937,18 @@
     "eventIds": [
       793
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--harry-sheezel"
+  },
+  {
+    "id": "hugo_mikunda",
+    "name": "Hugo Mikunda",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--hugo-mikunda"
   },
   {
     "id": "jack_darling",
@@ -4278,7 +5959,18 @@
     "eventIds": [
       286
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--jack-darling"
+  },
+  {
+    "id": "jackson_archer",
+    "name": "Jackson Archer",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--jackson-archer"
   },
   {
     "id": "jacob_konstanty",
@@ -4289,7 +5981,18 @@
     "eventIds": [
       1768
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--jacob-konstanty"
+  },
+  {
+    "id": "josh_goater",
+    "name": "Josh Goater",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--josh-goater"
   },
   {
     "id": "jy_simpkin",
@@ -4300,7 +6003,8 @@
     "eventIds": [
       776
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--jy-simpkin"
   },
   {
     "id": "lachy_dovaston",
@@ -4311,7 +6015,8 @@
     "eventIds": [
       1988
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--lachy-dovaston"
   },
   {
     "id": "luke_davies_uniacke",
@@ -4322,7 +6027,8 @@
     "eventIds": [
       1475
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--luke-davies-uniacke"
   },
   {
     "id": "luke_mcdonald",
@@ -4333,7 +6039,8 @@
     "eventIds": [
       1270
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--luke-mcdonald"
   },
   {
     "id": "luke_parker",
@@ -4344,7 +6051,8 @@
     "eventIds": [
       505
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--luke-parker"
   },
   {
     "id": "luke_trainor",
@@ -4358,6 +6066,26 @@
     "statsIds": []
   },
   {
+    "id": "luke_urquhart",
+    "name": "Luke Urquhart",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--luke-urquhart"
+  },
+  {
+    "id": "matt_whitlock",
+    "name": "Matt Whitlock",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--matt-whitlock"
+  },
+  {
     "id": "nick_larkey",
     "name": "Nick Larkey",
     "team": "North Melbourne",
@@ -4366,7 +6094,8 @@
     "eventIds": [
       775
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--nick-larkey"
   },
   {
     "id": "paul_curtis",
@@ -4377,7 +6106,38 @@
     "eventIds": [
       790
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--paul-curtis"
+  },
+  {
+    "id": "riley_hardeman",
+    "name": "Riley Hardeman",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--riley-hardeman"
+  },
+  {
+    "id": "river_stevens",
+    "name": "River Stevens",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--river-stevens"
+  },
+  {
+    "id": "robert_hansen",
+    "name": "Robert Hansen",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--robert-hansen"
   },
   {
     "id": "robert_hansen_jr",
@@ -4391,6 +6151,16 @@
     "statsIds": []
   },
   {
+    "id": "taylor_goad",
+    "name": "Taylor Goad",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--taylor-goad"
+  },
+  {
     "id": "toby_pink",
     "name": "Toby Pink",
     "team": "North Melbourne",
@@ -4399,7 +6169,8 @@
     "eventIds": [
       1747
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--toby-pink"
   },
   {
     "id": "tom_blamires",
@@ -4410,7 +6181,8 @@
     "eventIds": [
       2071
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--tom-blamires"
   },
   {
     "id": "tom_powell",
@@ -4421,7 +6193,8 @@
     "eventIds": [
       788
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--tom-powell"
   },
   {
     "id": "tristan_xerri",
@@ -4432,7 +6205,8 @@
     "eventIds": [
       779
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--tristan-xerri"
   },
   {
     "id": "wil_dawson",
@@ -4443,7 +6217,8 @@
     "eventIds": [
       9993
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--will-dawson"
   },
   {
     "id": "zac_banch",
@@ -4454,7 +6229,18 @@
     "eventIds": [
       2016
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--zac-banch"
+  },
+  {
+    "id": "zac_fisher",
+    "name": "Zac Fisher",
+    "team": "North Melbourne",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--zac-fisher"
   },
   {
     "id": "zane_duursma",
@@ -4465,7 +6251,8 @@
     "eventIds": [
       1749
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-kangaroos--zane-duursma"
   },
   {
     "id": "aliir_aliir",
@@ -4476,7 +6263,28 @@
     "eventIds": [
       1005
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--aliir-aliir"
+  },
+  {
+    "id": "balyn_obrien",
+    "name": "Balyn O'Brien",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--balyn-o-brien"
+  },
+  {
+    "id": "benny_barrett",
+    "name": "Benny Barrett",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--benny-barrett"
   },
   {
     "id": "brandon_zerk_thatcher",
@@ -4487,7 +6295,8 @@
     "eventIds": [
       736
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--brandon-zerk-thatcher"
   },
   {
     "id": "christian_moraes",
@@ -4498,7 +6307,8 @@
     "eventIds": [
       1917
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--christian-moraes"
   },
   {
     "id": "connor_rozee",
@@ -4509,7 +6319,8 @@
     "eventIds": [
       1017
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--connor-rozee"
   },
   {
     "id": "corey_durdin",
@@ -4520,7 +6331,8 @@
     "eventIds": [
       1117
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--corey-durdin"
   },
   {
     "id": "dante_visentini",
@@ -4531,7 +6343,8 @@
     "eventIds": [
       1024
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--dante-visentini"
   },
   {
     "id": "darcy_byrne_jones",
@@ -4542,7 +6355,8 @@
     "eventIds": [
       1004
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--darcy-byrne-jones"
   },
   {
     "id": "esava_ratugolea",
@@ -4553,7 +6367,8 @@
     "eventIds": [
       1480
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--esava-ratugolea"
   },
   {
     "id": "ewan_mackinlay",
@@ -4564,7 +6379,28 @@
     "eventIds": [
       1954
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--ewan-mackinlay"
+  },
+  {
+    "id": "harrison_ramm",
+    "name": "Harrison Ramm",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--harrison-ramm"
+  },
+  {
+    "id": "ivan_soldo",
+    "name": "Ivan Soldo",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--ivan-soldo"
   },
   {
     "id": "jack_lukosius",
@@ -4575,7 +6411,8 @@
     "eventIds": [
       1538
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--jack-lukosius"
   },
   {
     "id": "jack_watkins",
@@ -4586,7 +6423,8 @@
     "eventIds": [
       1996
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--jack-watkins"
   },
   {
     "id": "jack_whitlock",
@@ -4597,7 +6435,8 @@
     "eventIds": [
       1975
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--jack-whitlock"
   },
   {
     "id": "jackson_mead",
@@ -4608,7 +6447,18 @@
     "eventIds": [
       1667
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--jackson-mead"
+  },
+  {
+    "id": "jacob_moss",
+    "name": "Jacob Moss",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--jacob-moss"
   },
   {
     "id": "jacob_wehr",
@@ -4619,7 +6469,8 @@
     "eventIds": [
       1686
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--jacob-wehr"
   },
   {
     "id": "jase_burgoyne",
@@ -4630,7 +6481,8 @@
     "eventIds": [
       1691
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--jase-burgoyne"
   },
   {
     "id": "jason_horne_francis",
@@ -4641,7 +6493,8 @@
     "eventIds": [
       1025
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--jason-horne-francis"
   },
   {
     "id": "joe_berry",
@@ -4652,7 +6505,8 @@
     "eventIds": [
       1910
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--joe-berry"
   },
   {
     "id": "joe_richards",
@@ -4663,7 +6517,8 @@
     "eventIds": [
       1774
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--joe-richards"
   },
   {
     "id": "jordon_sweet",
@@ -4674,7 +6529,8 @@
     "eventIds": [
       947
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--jordon-sweet"
   },
   {
     "id": "josh_lai",
@@ -4685,7 +6541,18 @@
     "eventIds": [
       9999
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--josh-lai"
+  },
+  {
+    "id": "josh_sinn",
+    "name": "Josh Sinn",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--josh-sinn"
   },
   {
     "id": "kane_farrell",
@@ -4696,18 +6563,22 @@
     "eventIds": [
       1013
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--kane-farrell"
   },
   {
     "id": "lachlan_jones",
     "name": "Lachie Jones",
     "team": "Port Adelaide",
-    "aliases": [],
+    "aliases": [
+      "Lachlan Jones"
+    ],
     "apiSportsId": 1022,
     "eventIds": [
       1022
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--lachlan-jones"
   },
   {
     "id": "logan_evans",
@@ -4718,7 +6589,18 @@
     "eventIds": [
       1829
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--logan-evans"
+  },
+  {
+    "id": "mani_liddy",
+    "name": "Mani Liddy",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--mani-liddy"
   },
   {
     "id": "miles_bergman",
@@ -4729,18 +6611,8 @@
     "eventIds": [
       1020
     ],
-    "statsIds": []
-  },
-  {
-    "id": "mitch_zadow",
-    "name": "Mitch Zadow",
-    "team": "Port Adelaide",
-    "aliases": [],
-    "apiSportsId": 2069,
-    "eventIds": [
-      2069
-    ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--miles-bergman"
   },
   {
     "id": "mitchell_georgiades",
@@ -4751,7 +6623,42 @@
     "eventIds": [
       1576
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--mitch-georgiades"
+  },
+  {
+    "id": "mitch_zadow",
+    "name": "Mitch Zadow",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 2069,
+    "eventIds": [
+      2069
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--mitch-zadow"
+  },
+  {
+    "id": "oliver_wines",
+    "name": "Oliver Wines",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--oliver-wines"
+  },
+  {
+    "id": "ollie_lord",
+    "name": "Ollie Lord",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": 1825,
+    "eventIds": [
+      1026
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--ollie-lord"
   },
   {
     "id": "oliver_wines",
@@ -4765,15 +6672,14 @@
     "statsIds": []
   },
   {
-    "id": "ollie_lord",
-    "name": "Ollie Lord",
+    "id": "sam_powell_pepper",
+    "name": "Sam Powell-Pepper",
     "team": "Port Adelaide",
     "aliases": [],
-    "apiSportsId": 1825,
-    "eventIds": [
-      1026
-    ],
-    "statsIds": []
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--sam-powell-pepper"
   },
   {
     "id": "todd_marshall",
@@ -4784,7 +6690,28 @@
     "eventIds": [
       1011
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--todd-marshall"
+  },
+  {
+    "id": "tom_anastasopoulos",
+    "name": "Tom Anastasopoulos",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--thomas-anastasopoulos"
+  },
+  {
+    "id": "tom_cochrane",
+    "name": "Tom Cochrane",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--tom-cochrane"
   },
   {
     "id": "will_brodie",
@@ -4795,7 +6722,8 @@
     "eventIds": [
       1452
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--will-brodie"
   },
   {
     "id": "will_lorenz",
@@ -4806,7 +6734,8 @@
     "eventIds": [
       1835
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--will-lorenz"
   },
   {
     "id": "willem_drew",
@@ -4817,7 +6746,18 @@
     "eventIds": [
       1008
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--willem-drew"
+  },
+  {
+    "id": "xavier_walsh",
+    "name": "Xavier Walsh",
+    "team": "Port Adelaide",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--xavier-walsh"
   },
   {
     "id": "zak_butters",
@@ -4828,7 +6768,8 @@
     "eventIds": [
       1015
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--zak-butters"
   },
   {
     "id": "ben_miller",
@@ -4839,7 +6780,8 @@
     "eventIds": [
       1040
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--ben-miller"
   },
   {
     "id": "campbell_gray",
@@ -4850,7 +6792,8 @@
     "eventIds": [
       1933
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--campbell-gray"
   },
   {
     "id": "dion_prestia",
@@ -4861,7 +6804,8 @@
     "eventIds": [
       385
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--dion-prestia"
   },
   {
     "id": "harry_armstrong",
@@ -4872,7 +6816,8 @@
     "eventIds": [
       1920
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--harry-armstrong"
   },
   {
     "id": "hugo_ralphsmith",
@@ -4883,7 +6828,8 @@
     "eventIds": [
       1645
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--hugo-ralphsmith"
   },
   {
     "id": "jack_ross",
@@ -4894,7 +6840,8 @@
     "eventIds": [
       1041
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--jack-ross"
   },
   {
     "id": "jacob_hopper",
@@ -4905,7 +6852,8 @@
     "eventIds": [
       1034
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--jacob-hopper"
   },
   {
     "id": "james_trezise",
@@ -4916,7 +6864,8 @@
     "eventIds": [
       1050
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--james-trezise"
   },
   {
     "id": "jasper_alger",
@@ -4927,7 +6876,8 @@
     "eventIds": [
       1960
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--jasper-alger"
   },
   {
     "id": "jayden_short",
@@ -4938,7 +6888,8 @@
     "eventIds": [
       1030
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--jayden-short"
   },
   {
     "id": "jonty_faull",
@@ -4949,7 +6900,8 @@
     "eventIds": [
       1942
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--jonty-faull"
   },
   {
     "id": "jonty_faull",
@@ -4963,15 +6915,48 @@
     "statsIds": []
   },
   {
+    "id": "josh_smillie",
+    "name": "Josh Smillie",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--josh-smillie"
+  },
+  {
     "id": "joshua_gibcus",
     "name": "Joshua Gibcus",
     "team": "Richmond",
-    "aliases": [],
+    "aliases": [
+      "Josh Gibcus"
+    ],
     "apiSportsId": 1664,
     "eventIds": [
       1664
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--josh-gibcus"
+  },
+  {
+    "id": "judson_clarke",
+    "name": "Judson Clarke",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--judson-clarke"
+  },
+  {
+    "id": "kaleb_smith",
+    "name": "Kaleb Smith",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--kaleb-smith"
   },
   {
     "id": "kane_mcauliffe",
@@ -4982,7 +6967,8 @@
     "eventIds": [
       1767
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--kane-mcauliffe"
   },
   {
     "id": "liam_fawcett",
@@ -4993,7 +6979,8 @@
     "eventIds": [
       1970
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--liam-fawcett"
   },
   {
     "id": "luke_trainor",
@@ -5004,7 +6991,8 @@
     "eventIds": [
       1878
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--luke-trainor"
   },
   {
     "id": "maurice_rioli",
@@ -5015,7 +7003,8 @@
     "eventIds": [
       1045
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--maurice-rioli-1"
   },
   {
     "id": "mykelti_lefau",
@@ -5026,7 +7015,8 @@
     "eventIds": [
       1764
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--mykelti-lefau"
   },
   {
     "id": "nathan_broad",
@@ -5037,7 +7027,8 @@
     "eventIds": [
       1031
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--nathan-broad"
   },
   {
     "id": "nick_vlastuin",
@@ -5048,7 +7039,8 @@
     "eventIds": [
       1028
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--nick-vlastuin"
   },
   {
     "id": "noah_balta",
@@ -5059,7 +7051,29 @@
     "eventIds": [
       1039
     ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--noah-balta"
+  },
+  {
+    "id": "noah_roberts-thompson",
+    "name": "Noah Roberts-Thompson",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": 2100,
+    "eventIds": [
+      2100
+    ],
     "statsIds": []
+  },
+  {
+    "id": "noah_roberts_thomson",
+    "name": "Noah Roberts-Thomson",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--noah-roberts-thomson"
   },
   {
     "id": "oliver_hayes_brown",
@@ -5070,7 +7084,18 @@
     "eventIds": [
       2081
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--oliver-hayes-brown"
+  },
+  {
+    "id": "patrick_retschko",
+    "name": "Patrick Retschko",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--patrick-retschko"
   },
   {
     "id": "rhyan_mansell",
@@ -5081,7 +7106,8 @@
     "eventIds": [
       1044
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--rhyan-mansell"
   },
   {
     "id": "sam_banks",
@@ -5092,7 +7118,8 @@
     "eventIds": [
       1047
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--sam-banks"
   },
   {
     "id": "sam_cumming",
@@ -5101,20 +7128,24 @@
     "aliases": [],
     "apiSportsId": 2091,
     "eventIds": [
-      2091
+      2094
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--sam-cumming"
   },
   {
     "id": "sam_grlj",
     "name": "Sam Grlj",
     "team": "Richmond",
-    "aliases": [],
+    "aliases": [
+      "Samuel Grlj"
+    ],
     "apiSportsId": 2047,
     "eventIds": [
       2047
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--samuel-grlj"
   },
   {
     "id": "sam_lalor",
@@ -5125,7 +7156,8 @@
     "eventIds": [
       1815
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--sam-lalor"
   },
   {
     "id": "samson_ryan",
@@ -5136,7 +7168,8 @@
     "eventIds": [
       1653
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--samson-ryan"
   },
   {
     "id": "seth_campbell",
@@ -5147,7 +7180,8 @@
     "eventIds": [
       1741
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--seth-campbell"
   },
   {
     "id": "steely_green",
@@ -5158,18 +7192,42 @@
     "eventIds": [
       1740
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--steely-green"
+  },
+  {
+    "id": "taj_hotton",
+    "name": "Taj Hotton",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--taj-hotton"
   },
   {
     "id": "thomas_lynch",
     "name": "Thomas Lynch",
     "team": "Richmond",
-    "aliases": [],
+    "aliases": [
+      "Tom Lynch"
+    ],
     "apiSportsId": 486,
     "eventIds": [
       486
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--thomas-lynch"
+  },
+  {
+    "id": "thomas_sims",
+    "name": "Thomas Sims",
+    "team": "Richmond",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--thomas-sims"
   },
   {
     "id": "tim_taranto",
@@ -5180,7 +7238,8 @@
     "eventIds": [
       1035
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--tim-taranto"
   },
   {
     "id": "toby_nankervis",
@@ -5191,7 +7250,8 @@
     "eventIds": [
       1029
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--toby-nankervis"
   },
   {
     "id": "tom_brown",
@@ -5202,18 +7262,22 @@
     "eventIds": [
       1046
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--tom-brown"
   },
   {
     "id": "tom_burton",
     "name": "Tom Burton",
     "team": "Richmond",
-    "aliases": [],
+    "aliases": [
+      "Thomas Burton"
+    ],
     "apiSportsId": 2093,
     "eventIds": [
-      2093
+      2056
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--thomas-burton"
   },
   {
     "id": "tyler_sonsie",
@@ -5224,7 +7288,8 @@
     "eventIds": [
       1698
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--tyler-sonsie"
   },
   {
     "id": "zane_peucker",
@@ -5235,7 +7300,8 @@
     "eventIds": [
       2066
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-richmond-tigers--zane-peucker"
   },
   {
     "id": "alex_dodson",
@@ -5246,7 +7312,18 @@
     "eventIds": [
       2057
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--alex-dodson"
+  },
+  {
+    "id": "alix_tauru",
+    "name": "Alix Tauru",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--alix-tauru"
   },
   {
     "id": "alixzander_tauru",
@@ -5268,7 +7345,8 @@
     "eventIds": [
       1765
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--angus-hastie"
   },
   {
     "id": "anthony_caminiti",
@@ -5279,7 +7357,8 @@
     "eventIds": [
       1711
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--anthony-caminiti"
   },
   {
     "id": "bradley_hill",
@@ -5290,7 +7369,8 @@
     "eventIds": [
       689
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--bradley-hill"
   },
   {
     "id": "callum_wilkie",
@@ -5301,7 +7381,8 @@
     "eventIds": [
       906
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--callum-wilkie"
   },
   {
     "id": "charlie_banfield",
@@ -5312,7 +7393,8 @@
     "eventIds": [
       2037
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--charlie-banfield"
   },
   {
     "id": "cooper_sharman",
@@ -5323,7 +7405,8 @@
     "eventIds": [
       908
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--cooper-sharman"
   },
   {
     "id": "dan_butler",
@@ -5337,6 +7420,16 @@
     "statsIds": []
   },
   {
+    "id": "daniel_butler",
+    "name": "Daniel Butler",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--daniel-butler"
+  },
+  {
     "id": "darcy_wilson",
     "name": "Darcy Wilson",
     "team": "St Kilda",
@@ -5345,7 +7438,8 @@
     "eventIds": [
       1751
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--darcy-wilson"
   },
   {
     "id": "dougal_howard",
@@ -5356,7 +7450,18 @@
     "eventIds": [
       1388
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--dougal-howard"
+  },
+  {
+    "id": "eamonn_armstrong",
+    "name": "Eamonn Armstrong",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--eamonn-armstrong"
   },
   {
     "id": "hugh_boxshall",
@@ -5367,7 +7472,8 @@
     "eventIds": [
       1999
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--hugh-boxshall"
   },
   {
     "id": "hugo_garcia",
@@ -5378,7 +7484,8 @@
     "eventIds": [
       1754
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--hugo-garcia"
   },
   {
     "id": "hunter_clark",
@@ -5389,7 +7496,8 @@
     "eventIds": [
       1820
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--hunter-clark"
   },
   {
     "id": "isaac_keeler",
@@ -5400,7 +7508,8 @@
     "eventIds": [
       1924
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--isaac-keeler"
   },
   {
     "id": "jack_carroll",
@@ -5411,7 +7520,8 @@
     "eventIds": [
       1677
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--jack-carroll"
   },
   {
     "id": "jack_higgins",
@@ -5422,7 +7532,8 @@
     "eventIds": [
       902
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--jack-higgins"
   },
   {
     "id": "jack_silvagni",
@@ -5433,7 +7544,8 @@
     "eventIds": [
       1880
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--jack-silvagni"
   },
   {
     "id": "jack_sinclair",
@@ -5444,7 +7556,8 @@
     "eventIds": [
       897
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--jack-sinclair"
   },
   {
     "id": "jackson_macrae",
@@ -5455,7 +7568,38 @@
     "eventIds": [
       1206
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--jackson-macrae"
+  },
+  {
+    "id": "james_barrat",
+    "name": "James Barrat",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--james-barrat"
+  },
+  {
+    "id": "kobe_mcdonald",
+    "name": "Kobe McDonald",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--kobe-mcdonald"
+  },
+  {
+    "id": "kye_fincher",
+    "name": "Kye Fincher",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--kye-fincher"
   },
   {
     "id": "lance_collard",
@@ -5466,7 +7610,8 @@
     "eventIds": [
       1753
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--lance-collard"
   },
   {
     "id": "liam_henry",
@@ -5477,7 +7622,8 @@
     "eventIds": [
       858
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--liam-henry"
   },
   {
     "id": "liam_oconnell",
@@ -5488,7 +7634,8 @@
     "eventIds": [
       1889
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--liam-o-connell"
   },
   {
     "id": "liam_ryan",
@@ -5499,7 +7646,8 @@
     "eventIds": [
       1481
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--liam-ryan"
   },
   {
     "id": "liam_stocker",
@@ -5510,7 +7658,8 @@
     "eventIds": [
       905
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--liam-stocker"
   },
   {
     "id": "marcus_windhager",
@@ -5521,7 +7670,8 @@
     "eventIds": [
       912
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--marcus-windhager"
   },
   {
     "id": "mason_wood",
@@ -5532,7 +7682,8 @@
     "eventIds": [
       892
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--mason-wood"
   },
   {
     "id": "mattaes_phillipou",
@@ -5543,7 +7694,8 @@
     "eventIds": [
       913
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--mattaes-phillipou"
   },
   {
     "id": "max_hall",
@@ -5554,7 +7706,18 @@
     "eventIds": [
       1853
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--max-hall"
+  },
+  {
+    "id": "max_king",
+    "name": "Max King",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--max-king-1"
   },
   {
     "id": "mitch_owens",
@@ -5568,6 +7731,16 @@
     "statsIds": []
   },
   {
+    "id": "mitchito_owens",
+    "name": "Mitchito Owens",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--mitchito-owens"
+  },
+  {
     "id": "nasiah_wanganeen_milera",
     "name": "Nasiah Wanganeen-Milera",
     "team": "St Kilda",
@@ -5576,7 +7749,28 @@
     "eventIds": [
       911
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--nasiah-wanganeen-milera"
+  },
+  {
+    "id": "paddy_dow",
+    "name": "Paddy Dow",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--paddy-dow"
+  },
+  {
+    "id": "patrick_said",
+    "name": "Patrick Said",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--patrick-said"
   },
   {
     "id": "rowan_marshall",
@@ -5587,7 +7781,18 @@
     "eventIds": [
       901
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--rowan-marshall"
+  },
+  {
+    "id": "ryan_byrnes",
+    "name": "Ryan Byrnes",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--ryan-byrnes"
   },
   {
     "id": "sam_flanders",
@@ -5598,7 +7803,18 @@
     "eventIds": [
       810
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--sam-flanders"
+  },
+  {
+    "id": "tobie_travaglia",
+    "name": "Tobie Travaglia",
+    "team": "St Kilda",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--tobie-travaglia"
   },
   {
     "id": "tom_de_koning",
@@ -5609,7 +7825,8 @@
     "eventIds": [
       1112
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--tom-de-koning"
   },
   {
     "id": "angus_sheldrick",
@@ -5620,18 +7837,8 @@
     "eventIds": [
       1666
     ],
-    "statsIds": []
-  },
-  {
-    "id": "william_edwards",
-    "name": "William Edwards",
-    "team": "Sydney",
-    "aliases": [],
-    "apiSportsId": 1925,
-    "eventIds": [
-      9999
-    ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--angus-sheldrick"
   },
   {
     "id": "billy_cootee",
@@ -5642,7 +7849,18 @@
     "eventIds": [
       2085
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--billy-cootee"
+  },
+  {
+    "id": "braeden_campbell",
+    "name": "Braeden Campbell",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--braeden-campbell"
   },
   {
     "id": "brodie_grundy",
@@ -5653,7 +7871,8 @@
     "eventIds": [
       1250
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--brodie-grundy"
   },
   {
     "id": "caiden_cleary",
@@ -5664,7 +7883,8 @@
     "eventIds": [
       1782
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--caiden-cleary"
   },
   {
     "id": "callum_mills",
@@ -5675,7 +7895,8 @@
     "eventIds": [
       1848
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--callum-mills"
   },
   {
     "id": "chad_warner",
@@ -5686,7 +7907,8 @@
     "eventIds": [
       1069
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--chad-warner"
   },
   {
     "id": "charlie_curnow",
@@ -5697,7 +7919,8 @@
     "eventIds": [
       1102
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--charlie-curnow"
   },
   {
     "id": "corey_warner",
@@ -5708,7 +7931,8 @@
     "eventIds": [
       1716
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--corey-warner"
   },
   {
     "id": "dane_rampe",
@@ -5719,7 +7943,8 @@
     "eventIds": [
       1052
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--dane-rampe"
   },
   {
     "id": "errol_gulden",
@@ -5730,7 +7955,8 @@
     "eventIds": [
       1071
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--errol-gulden"
   },
   {
     "id": "harry_cunningham",
@@ -5741,7 +7967,18 @@
     "eventIds": [
       658
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--harry-cunningham"
+  },
+  {
+    "id": "harry_kyle",
+    "name": "Harry Kyle",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--harry-kyle"
   },
   {
     "id": "hayden_mclean",
@@ -5752,7 +7989,8 @@
     "eventIds": [
       1067
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--hayden-mclean"
   },
   {
     "id": "isaac_heeney",
@@ -5763,7 +8001,8 @@
     "eventIds": [
       1053
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--isaac-heeney"
   },
   {
     "id": "jai_serong",
@@ -5774,7 +8013,8 @@
     "eventIds": [
       838
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--jai-serong"
   },
   {
     "id": "jake_lloyd",
@@ -5785,7 +8025,8 @@
     "eventIds": [
       1051
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--jake-lloyd"
   },
   {
     "id": "james_jordon",
@@ -5796,7 +8037,8 @@
     "eventIds": [
       1622
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--james-jordon"
   },
   {
     "id": "james_rowbottom",
@@ -5807,7 +8049,28 @@
     "eventIds": [
       1065
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--james-rowbottom"
+  },
+  {
+    "id": "jesse_dattoli",
+    "name": "Jesse Dattoli",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--jesse-dattoli"
+  },
+  {
+    "id": "jevan_phillipou",
+    "name": "Jevan Phillipou",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--jevan-phillipou"
   },
   {
     "id": "joel_amartey",
@@ -5818,7 +8081,8 @@
     "eventIds": [
       1063
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--joel-amartey"
   },
   {
     "id": "joel_hamling",
@@ -5829,7 +8093,8 @@
     "eventIds": [
       843
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--joel-hamling"
   },
   {
     "id": "justin_mcinerney",
@@ -5840,7 +8105,8 @@
     "eventIds": [
       1541
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--justin-mcinerney"
   },
   {
     "id": "lewis_melican",
@@ -5851,7 +8117,18 @@
     "eventIds": [
       1054
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--lewis-melican"
+  },
+  {
+    "id": "liam_hetherton",
+    "name": "Liam Hetherton",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--liam-hetherton"
   },
   {
     "id": "logan_mcdonald",
@@ -5862,7 +8139,8 @@
     "eventIds": [
       1072
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--logan-mcdonald"
   },
   {
     "id": "malcolm_rosas",
@@ -5873,7 +8151,18 @@
     "eventIds": [
       811
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--malcolm-rosas"
+  },
+  {
+    "id": "matthew_roberts",
+    "name": "Matthew Roberts",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--matthew-roberts"
   },
   {
     "id": "matty_roberts",
@@ -5887,6 +8176,16 @@
     "statsIds": []
   },
   {
+    "id": "ned_bowman",
+    "name": "Ned Bowman",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--ned-bowman"
+  },
+  {
     "id": "nick_blakey",
     "name": "Nick Blakey",
     "team": "Sydney",
@@ -5895,7 +8194,28 @@
     "eventIds": [
       1064
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--nick-blakey"
+  },
+  {
+    "id": "noah_chamberlain",
+    "name": "Noah Chamberlain",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--noah-chamberlain"
+  },
+  {
+    "id": "patrick_snell",
+    "name": "Patrick Snell",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--patrick-snell"
   },
   {
     "id": "peter_ladhams",
@@ -5906,7 +8226,18 @@
     "eventIds": [
       1551
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--peter-ladhams"
+  },
+  {
+    "id": "riak_andrew",
+    "name": "Riak Andrew",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--riak-andrew"
   },
   {
     "id": "riley_bice",
@@ -5917,7 +8248,8 @@
     "eventIds": [
       1882
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--riley-bice"
   },
   {
     "id": "samuel_wicks",
@@ -5928,7 +8260,18 @@
     "eventIds": [
       1066
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--sam-wicks"
+  },
+  {
+    "id": "taylor_adams",
+    "name": "Taylor Adams",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--taylor-adams"
   },
   {
     "id": "tom_hanily",
@@ -5939,7 +8282,8 @@
     "eventIds": [
       1872
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--tom-hanily"
   },
   {
     "id": "tom_mccartin",
@@ -5950,7 +8294,8 @@
     "eventIds": [
       1062
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--tom-mccartin"
   },
   {
     "id": "tom_papley",
@@ -5961,7 +8306,32 @@
     "eventIds": [
       1056
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--tom-papley"
+  },
+  {
+    "id": "will_green",
+    "name": "Will Green",
+    "team": "Sydney",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--will-green"
+  },
+  {
+    "id": "william_edwards",
+    "name": "William Edwards",
+    "team": "Sydney",
+    "aliases": [
+      "Will Edwards"
+    ],
+    "apiSportsId": 1925,
+    "eventIds": [
+      9999
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-sydney-swans--will-edwards"
   },
   {
     "id": "archer_reid",
@@ -5972,7 +8342,8 @@
     "eventIds": [
       1925
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--archer-reid"
   },
   {
     "id": "bailey_j_williams",
@@ -5983,7 +8354,8 @@
     "eventIds": [
       969
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--bailey-williams-1"
   },
   {
     "id": "bo_allan",
@@ -5994,7 +8366,8 @@
     "eventIds": [
       2072
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--bo-allan"
   },
   {
     "id": "brady_hough",
@@ -6005,7 +8378,30 @@
     "eventIds": [
       972
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--brady-hough"
+  },
+  {
+    "id": "brandon_starcevich",
+    "name": "Brandon Starcevich",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--brandon-starcevich"
+  },
+  {
+    "id": "clay_hall",
+    "name": "Clay Hall",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 1859,
+    "eventIds": [
+      1859
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--clay-hall"
   },
   {
     "id": "cooper_duff_tytler",
@@ -6016,7 +8412,8 @@
     "eventIds": [
       2021
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--cooper-duff-tytler"
   },
   {
     "id": "deven_robertson",
@@ -6027,7 +8424,8 @@
     "eventIds": [
       883
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--deven-robertson"
   },
   {
     "id": "elijah_hewett",
@@ -6038,7 +8436,8 @@
     "eventIds": [
       1876
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--elijah-hewett"
   },
   {
     "id": "elliot_yeo",
@@ -6049,7 +8448,8 @@
     "eventIds": [
       717
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--elliot-yeo"
   },
   {
     "id": "finlay_macrae",
@@ -6060,7 +8460,18 @@
     "eventIds": [
       765
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--finlay-macrae"
+  },
+  {
+    "id": "fred_rodriguez",
+    "name": "Fred Rodriguez",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--fred-rodriguez"
   },
   {
     "id": "hamish_davis",
@@ -6071,7 +8482,8 @@
     "eventIds": [
       1949
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--hamish-davis"
   },
   {
     "id": "harley_reid",
@@ -6082,7 +8494,18 @@
     "eventIds": [
       1759
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--harley-reid"
+  },
+  {
+    "id": "harry_barnett",
+    "name": "Harry Barnett",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--harry-barnett"
   },
   {
     "id": "harry_edwards",
@@ -6093,7 +8516,8 @@
     "eventIds": [
       1600
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--harry-edwards"
   },
   {
     "id": "harry_schoenberg",
@@ -6104,7 +8528,20 @@
     "eventIds": [
       991
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--harry-schoenberg"
+  },
+  {
+    "id": "harvey_johnston",
+    "name": "Harvey Johnston",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 1766,
+    "eventIds": [
+      1766
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--harvey-johnston"
   },
   {
     "id": "jack_graham",
@@ -6115,7 +8552,20 @@
     "eventIds": [
       1037
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--jack-graham"
+  },
+  {
+    "id": "jack_hutchinson",
+    "name": "Jack Hutchinson",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": 1837,
+    "eventIds": [
+      1822
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--jack-hutchinson"
   },
   {
     "id": "jack_williams",
@@ -6126,7 +8576,8 @@
     "eventIds": [
       973
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--jack-williams"
   },
   {
     "id": "jacob_newton",
@@ -6137,7 +8588,8 @@
     "eventIds": [
       1844
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--jacob-newton"
   },
   {
     "id": "jake_waterman",
@@ -6148,7 +8600,8 @@
     "eventIds": [
       1482
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--jake-waterman"
   },
   {
     "id": "jamie_cripps",
@@ -6159,7 +8612,8 @@
     "eventIds": [
       468
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--jamie-cripps"
   },
   {
     "id": "jobe_shanahan",
@@ -6170,7 +8624,8 @@
     "eventIds": [
       1807
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--jobe-shanahan"
   },
   {
     "id": "josh_lindsay",
@@ -6181,7 +8636,8 @@
     "eventIds": [
       2060
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--josh-lindsay"
   },
   {
     "id": "liam_baker",
@@ -6192,7 +8648,8 @@
     "eventIds": [
       1038
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--liam-baker"
   },
   {
     "id": "liam_duggan",
@@ -6203,7 +8660,18 @@
     "eventIds": [
       960
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--liam-duggan"
+  },
+  {
+    "id": "lucca_grego",
+    "name": "Lucca Grego",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--lucca-grego"
   },
   {
     "id": "malakai_champion",
@@ -6214,29 +8682,36 @@
     "eventIds": [
       2096
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--malakai-champion"
   },
   {
     "id": "matt_flynn",
     "name": "Matt Flynn",
     "team": "West Coast",
-    "aliases": [],
+    "aliases": [
+      "Matthew Flynn"
+    ],
     "apiSportsId": 1127,
     "eventIds": [
       1127
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--matthew-flynn"
   },
   {
     "id": "matthew_owies",
     "name": "Matthew Owies",
     "team": "West Coast",
-    "aliases": [],
+    "aliases": [
+      "Matt Owies"
+    ],
     "apiSportsId": 1113,
     "eventIds": [
       1113
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--matt-owies"
   },
   {
     "id": "milan_murdock",
@@ -6247,18 +8722,18 @@
     "eventIds": [
       2027
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--milan-murdock"
   },
   {
-    "id": "oscar_allen",
-    "name": "Oscar Allen",
-    "team": "Brisbane",
+    "id": "noah_long",
+    "name": "Noah Long",
+    "team": "West Coast",
     "aliases": [],
-    "apiSportsId": 967,
-    "eventIds": [
-      967
-    ],
-    "statsIds": []
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--noah-long"
   },
   {
     "id": "reuben_ginbey",
@@ -6269,7 +8744,8 @@
     "eventIds": [
       1708
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--reuben-ginbey"
   },
   {
     "id": "rhett_bazzo",
@@ -6280,7 +8756,8 @@
     "eventIds": [
       1989
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--rhett-bazzo"
   },
   {
     "id": "ryan_maric",
@@ -6291,7 +8768,28 @@
     "eventIds": [
       978
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--ryan-maric"
+  },
+  {
+    "id": "sam_allen",
+    "name": "Sam Allen",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--sam-allen"
+  },
+  {
+    "id": "sandy_brock",
+    "name": "Sandy Brock",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--sandy-brock"
   },
   {
     "id": "tim_kelly",
@@ -6302,7 +8800,8 @@
     "eventIds": [
       966
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--tim-kelly"
   },
   {
     "id": "tom_cole",
@@ -6313,7 +8812,8 @@
     "eventIds": [
       961
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--tom-cole"
   },
   {
     "id": "tom_gross",
@@ -6324,7 +8824,8 @@
     "eventIds": [
       1946
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--tom-gross"
   },
   {
     "id": "tom_hanily",
@@ -6346,7 +8847,18 @@
     "eventIds": [
       1793
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--tom-mccarthy"
+  },
+  {
+    "id": "tylah_williams",
+    "name": "Tylah Williams",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--tylah-williams"
   },
   {
     "id": "tylar_young",
@@ -6357,7 +8869,28 @@
     "eventIds": [
       1048
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--tylar-young"
+  },
+  {
+    "id": "tyler_brockman",
+    "name": "Tyler Brockman",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--tyler-brockman"
+  },
+  {
+    "id": "tyrell_dewar",
+    "name": "Tyrell Dewar",
+    "team": "West Coast",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--tyrell-dewar"
   },
   {
     "id": "willem_duursma",
@@ -6368,7 +8901,8 @@
     "eventIds": [
       2012
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--willem-duursma"
   },
   {
     "id": "aaron_naughton",
@@ -6379,7 +8913,8 @@
     "eventIds": [
       944
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--aaron-naughton"
   },
   {
     "id": "adam_treloar",
@@ -6390,7 +8925,8 @@
     "eventIds": [
       679
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--adam-treloar"
   },
   {
     "id": "arthur_jones",
@@ -6401,7 +8937,8 @@
     "eventIds": [
       1714
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--arthur-jones"
   },
   {
     "id": "bailey_dale",
@@ -6412,7 +8949,8 @@
     "eventIds": [
       938
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--bailey-dale"
   },
   {
     "id": "bailey_williams",
@@ -6423,7 +8961,8 @@
     "eventIds": [
       941
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--bailey-williams"
   },
   {
     "id": "buku_khamis",
@@ -6434,7 +8973,18 @@
     "eventIds": [
       1644
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--buku-khamis"
+  },
+  {
+    "id": "cody_weightman",
+    "name": "Cody Weightman",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--cody-weightman"
   },
   {
     "id": "connor_budarick",
@@ -6445,7 +8995,8 @@
     "eventIds": [
       808
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--connor-budarick"
   },
   {
     "id": "cooper_hynes",
@@ -6456,7 +9007,8 @@
     "eventIds": [
       1886
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--cooper-hynes"
   },
   {
     "id": "ed_richards",
@@ -6467,7 +9019,8 @@
     "eventIds": [
       946
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--ed-richards"
   },
   {
     "id": "harvey_gallagher",
@@ -6478,9 +9031,19 @@
     "eventIds": [
       1757
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--harvey-gallagher"
   },
-  
+  {
+    "id": "james_harmes",
+    "name": "James Harmes",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--james-harmes"
+  },
   {
     "id": "james_odonnell",
     "name": "James O'Donnell",
@@ -6490,7 +9053,8 @@
     "eventIds": [
       957
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--james-o-donnell"
   },
   {
     "id": "jedd_busslinger",
@@ -6501,7 +9065,20 @@
     "eventIds": [
       1823
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--jedd-busslinger"
+  },
+  {
+    "id": "joel_freijah",
+    "name": "Joel Freijah",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": 1807,
+    "eventIds": [
+      1846
+    ],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--joel-freijah"
   },
   {
     "id": "jordan_croft",
@@ -6512,7 +9089,8 @@
     "eventIds": [
       1834
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--jordan-croft"
   },
   {
     "id": "josh_dolan",
@@ -6523,7 +9101,8 @@
     "eventIds": [
       1884
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--josh-dolan"
   },
   {
     "id": "lachie_jaques",
@@ -6534,7 +9113,8 @@
     "eventIds": [
       1980
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--lachie-jaques"
   },
   {
     "id": "lachlan_bramble",
@@ -6545,7 +9125,18 @@
     "eventIds": [
       1652
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--lachlan-bramble"
+  },
+  {
+    "id": "lachlan_carmichael",
+    "name": "Lachlan Carmichael",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--lachlan-carmichael"
   },
   {
     "id": "lachlan_mcneil",
@@ -6556,7 +9147,8 @@
     "eventIds": [
       953
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--lachlan-mcneil"
   },
   {
     "id": "lachlan_smith",
@@ -6567,7 +9159,8 @@
     "eventIds": [
       1931
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--lachlan-smith-1"
   },
   {
     "id": "laitham_vandermeer",
@@ -6578,7 +9171,8 @@
     "eventIds": [
       948
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--laitham-vandermeer"
   },
   {
     "id": "louis_emmett",
@@ -6589,7 +9183,8 @@
     "eventIds": [
       2052
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--louis-emmett"
   },
   {
     "id": "luke_cleary",
@@ -6600,7 +9195,8 @@
     "eventIds": [
       9999
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--luke-cleary"
   },
   {
     "id": "luke_kennedy",
@@ -6611,7 +9207,8 @@
     "eventIds": [
       9999
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--luke-kennedy"
   },
   {
     "id": "marcus_bontempelli",
@@ -6622,7 +9219,8 @@
     "eventIds": [
       937
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--marcus-bontempelli"
   },
   {
     "id": "matthew_kennedy",
@@ -6633,7 +9231,8 @@
     "eventIds": [
       1408
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--matthew-kennedy-1"
   },
   {
     "id": "michael_sellwood",
@@ -6644,19 +9243,22 @@
     "eventIds": [
       2012
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--michael-sellwood"
   },
-  
   {
     "id": "nick_coffield",
     "name": "Nick Coffield",
     "team": "Western Bulldogs",
-    "aliases": [],
+    "aliases": [
+      "Nicholas Coffield"
+    ],
     "apiSportsId": 904,
     "eventIds": [
       904
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--nicholas-coffield"
   },
   {
     "id": "oskar_baker",
@@ -6667,7 +9269,8 @@
     "eventIds": [
       945
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--oskar-baker"
   },
   {
     "id": "rhylee_west",
@@ -6678,7 +9281,18 @@
     "eventIds": [
       949
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--rhylee-west"
+  },
+  {
+    "id": "riley_garcia",
+    "name": "Riley Garcia",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--riley-garcia"
   },
   {
     "id": "rory_lobb",
@@ -6689,7 +9303,18 @@
     "eventIds": [
       936
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--rory-lobb"
+  },
+  {
+    "id": "ryan_gardner",
+    "name": "Ryan Gardner",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--ryan-gardner"
   },
   {
     "id": "ryley_sanders",
@@ -6700,7 +9325,8 @@
     "eventIds": [
       1756
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--ryley-sanders"
   },
   {
     "id": "sam_darcy",
@@ -6711,7 +9337,8 @@
     "eventIds": [
       1702
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--sam-darcy"
   },
   {
     "id": "sam_davidson",
@@ -6722,7 +9349,8 @@
     "eventIds": [
       1912
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--sam-davidson"
   },
   {
     "id": "thomas_liberatore",
@@ -6733,7 +9361,8 @@
     "eventIds": [
       309
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--thomas-liberatore"
   },
   {
     "id": "timothy_english",
@@ -6744,7 +9373,18 @@
     "eventIds": [
       942
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--timothy-english"
+  },
+  {
+    "id": "will_darcy",
+    "name": "Will Darcy",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--will-darcy"
   },
   {
     "id": "will_lewis",
@@ -6755,6 +9395,17 @@
     "eventIds": [
       2089
     ],
-    "statsIds": []
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--will-lewis"
+  },
+  {
+    "id": "zac_walker",
+    "name": "Zac Walker",
+    "team": "Western Bulldogs",
+    "aliases": [],
+    "apiSportsId": null,
+    "eventIds": [],
+    "statsIds": [],
+    "footyWireUrl": "https://www.footywire.compp-western-bulldogs--zac-walker"
   }
 ]

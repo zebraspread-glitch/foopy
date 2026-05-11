@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getAbbr, getLogo, teamColor } from "../utils";
+import { getLogo, teamColor } from "../utils";
 import { supabase } from "@/app/lib/supabase";
 
 type Props = {
@@ -158,6 +158,7 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus }: 
           selected={homeSelected}
           hasVoted={hasVoted}
           color={homeColor}
+          percent={homePercent}
           submitting={submitting}
           onPick={() => pick("home")}
         />
@@ -167,19 +168,10 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus }: 
           selected={awaySelected}
           hasVoted={hasVoted}
           color={awayColor}
+          percent={awayPercent}
           submitting={submitting}
           onPick={() => pick("away")}
         />
-      </div>
-
-      {/* Percentages */}
-      <div style={percentRowStyle}>
-        <span style={{ color: homeSelected ? homeColor : "#94a3b8", fontWeight: 900 }}>
-          {homePercent}%
-        </span>
-        <span style={{ color: awaySelected ? awayColor : "#94a3b8", fontWeight: 900 }}>
-          {awayPercent}%
-        </span>
       </div>
 
       {/* Bar */}
@@ -226,6 +218,7 @@ function PickBtn({
   selected,
   hasVoted,
   color,
+  percent,
   submitting,
   onPick,
 }: {
@@ -234,6 +227,7 @@ function PickBtn({
   selected: boolean;
   hasVoted: boolean;
   color: string;
+  percent: number;
   submitting: boolean;
   onPick: () => void;
 }) {
@@ -245,12 +239,13 @@ function PickBtn({
       style={{
         ...btnBase,
         borderColor: selected ? color : "rgba(255,255,255,.14)",
-        background: selected ? `${color}22` : "#020202",
-        boxShadow: selected ? `0 0 0 1px ${color}55, 0 4px 20px ${color}22` : "none",
+        background: selected ? color : "#0b0b0b",
+        boxShadow: "none",
       }}
     >
       <img src={getLogo(team)} alt={team} style={logoStyle} />
-      <span style={abbrStyle}>{getAbbr(team)}</span>
+      <span style={{ ...teamNameStyle, color: selected ? "#ffffff" : "#94a3b8" }}>{team}</span>
+      <span style={{ ...pickPercentStyle, color: selected ? "#ffffff" : "#f8fafc" }}>{percent}%</span>
     </button>
   );
 }
@@ -261,9 +256,10 @@ function PickBtn({
 
 const boxStyle: React.CSSProperties = {
   background: "#070707",
-  border: "1px solid rgba(255,255,255,.12)",
+  border: "1px solid rgba(255,255,255,.14)",
   borderRadius: 18,
-  padding: 16,
+  padding: 18,
+  boxShadow: "none",
 };
 
 const titleStyle: React.CSSProperties = {
@@ -272,78 +268,78 @@ const titleStyle: React.CSSProperties = {
   fontSize: 11,
   fontWeight: 1000,
   letterSpacing: ".16em",
-  marginBottom: 14,
+  marginBottom: 16,
 };
 
 const buttonsStyle: React.CSSProperties = {
   display: "grid",
   gridTemplateColumns: "1fr 1fr",
-  gap: 10,
+  gap: 12,
 };
 
 const btnBase: React.CSSProperties = {
   position: "relative",
   border: "2px solid rgba(255,255,255,.14)",
-  borderRadius: 14,
-  padding: "16px 10px 12px",
+  borderRadius: 16,
+  padding: "16px 12px 14px",
   color: "#fff",
   fontWeight: 1000,
   cursor: "pointer",
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
-  gap: 8,
+  gap: 7,
+  minHeight: 154,
+  overflow: "hidden",
   transition:
     "border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, transform 0.12s cubic-bezier(0.34,1.56,0.64,1)",
 };
 
 const logoStyle: React.CSSProperties = {
-  width: 52,
-  height: 52,
+  width: 58,
+  height: 58,
   objectFit: "contain",
   borderRadius: "50%",
   padding: "4px",
+  position: "relative",
+  zIndex: 1,
 };
 
-const abbrStyle: React.CSSProperties = {
-  fontSize: 15,
+const teamNameStyle: React.CSSProperties = {
+  maxWidth: "100%",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+  color: "#94a3b8",
+  fontSize: 12,
+  fontWeight: 800,
+  position: "relative",
+  zIndex: 1,
+};
+
+const pickPercentStyle: React.CSSProperties = {
+  marginTop: 2,
+  fontSize: 22,
   fontWeight: 1000,
-};
-
-const yourPickBadgeStyle: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 4,
-  fontSize: 9,
-  fontWeight: 900,
-  color: "#22c55e",
-  background: "rgba(34,197,94,.14)",
-  border: "1px solid rgba(34,197,94,.3)",
-  borderRadius: 999,
-  padding: "3px 7px",
-  letterSpacing: "0.05em",
-};
-
-const percentRowStyle: React.CSSProperties = {
-  marginTop: 14,
-  display: "flex",
-  justifyContent: "space-between",
-  fontSize: 15,
+  lineHeight: 1,
+  position: "relative",
+  zIndex: 1,
 };
 
 const barShellStyle: React.CSSProperties = {
-  marginTop: 8,
-  height: 10,
+  marginTop: 16,
+  height: 12,
   borderRadius: 999,
   overflow: "hidden",
   background: "#111827",
   display: "flex",
+  border: "1px solid rgba(255,255,255,.08)",
 };
 
 const voteCountStyle: React.CSSProperties = {
-  marginTop: 10,
+  marginTop: 12,
   textAlign: "center",
-  color: "#475569",
+  color: "#64748b",
   fontSize: 12,
-  fontWeight: 800,
+  fontWeight: 900,
 };

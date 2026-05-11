@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { ChevronLeft } from "lucide-react";
 import matchStatsJson from "@/app/data/game-stats.json";
 import teamStatsJson from "@/app/data/team-stats.json";
 import playerStatsJson from "@/app/data/players.json";
@@ -406,7 +407,7 @@ function foopyColor(value: number) {
 
 function TeamScore({ team, score, align = "left" }: { team: any; score: any; align?: "left" | "right" }) {
   const safeTeam = safeText(team, "");
-  const isRight = align === "right";
+  const displayScore = typeof score === "string" ? score : scoreText(score);
   const accent = teamColor(safeTeam);
   const prevScore = useRef<any>(score);
   const [animKey, setAnimKey] = useState(0);
@@ -424,44 +425,49 @@ function TeamScore({ team, score, align = "left" }: { team: any; score: any; ali
     <div style={{
       display: "flex", flexDirection: "column",
       alignItems: "center",
-      gap: 9,
-      minWidth: 92,
+      gap: 12,
+      minWidth: 0,
+      width: "100%",
     }}>
       {/* Logo */}
       <div style={{
-        width: 78, height: 78, borderRadius: "50%", flexShrink: 0,
-        background: `linear-gradient(145deg, ${accent}40, rgba(255,255,255,0.05))`,
-        border: "1.5px solid rgba(255,255,255,0.16)",
-        boxShadow: `0 16px 34px ${accent}24, inset 0 1px 0 rgba(255,255,255,0.18)`,
+        width: "clamp(82px, 17vw, 116px)", height: "clamp(82px, 17vw, 116px)", borderRadius: "50%", flexShrink: 0,
+        background: `radial-gradient(circle at 45% 35%, rgba(255,255,255,.18), ${accent}24 48%, rgba(255,255,255,.035) 100%)`,
+        border: "1px solid rgba(255,255,255,0.14)",
+        boxShadow: `0 22px 48px ${accent}30, 0 4px 22px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,0.16)`,
         overflow: "hidden",
         display: "flex", alignItems: "center", justifyContent: "center",
       }}>
         <img
           src={getLogo(safeTeam)}
           alt={safeTeam}
-          style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%", display: "block" }}
+          style={{ width: "92%", height: "92%", objectFit: "contain", borderRadius: "50%", display: "block" }}
         />
       </div>
       {/* Score */}
       <div
         key={animKey}
         style={{
-          fontSize: 58, fontWeight: 950, color: "#fff",
-          letterSpacing: "-0.03em", lineHeight: 0.95,
-          textShadow: `0 10px 28px ${accent}36`,
+          fontSize: "clamp(48px, 11vw, 78px)", fontWeight: 1000, color: "#fff",
+          letterSpacing: 0, lineHeight: 0.88,
+          textShadow: `0 16px 36px ${accent}40, 0 2px 12px rgba(0,0,0,.55)`,
           animation: animKey > 0 ? "score-pop 0.55s cubic-bezier(0.22,1,0.36,1) forwards" : undefined,
           display: "inline-block",
           fontVariantNumeric: "tabular-nums",
           transformOrigin: "center",
         }}
       >
-        {scoreText(score)}
+        {displayScore}
       </div>
       {/* Name */}
       <div style={{
-        fontSize: 12, fontWeight: 800, color: "#71717a",
-        letterSpacing: "0.01em",
+        fontSize: "clamp(13px, 3vw, 18px)", fontWeight: 900, color: "#f4f4f5",
+        letterSpacing: 0,
         textAlign: "center",
+        lineHeight: 1.1,
+        maxWidth: "100%",
+        overflowWrap: "anywhere",
+        textShadow: "0 2px 14px rgba(0,0,0,.65)",
       }}>
         {safeTeam}
       </div>
@@ -921,6 +927,38 @@ function getApiTeamId(teamName: any) {
   return API_TEAM_ID_BY_NAME[teamName] ?? API_TEAM_ID_BY_NAME[normalizeTeamName(teamName)] ?? 0;
 }
 
+function teamPlayedGame(game: MatchGame, team: any) {
+  const target = normalizeTeamName(team);
+  return normalizeTeamName(game.hteam) === target || normalizeTeamName(game.ateam) === target;
+}
+
+function getTeamRecordBeforeGame(team: any, games: MatchGame[], beforeGame: MatchGame) {
+  const target = normalizeTeamName(team);
+  const beforeTime = beforeGame.date ? new Date(beforeGame.date).getTime() : Infinity;
+  let wins = 0;
+  let losses = 0;
+  let draws = 0;
+
+  games.forEach((game) => {
+    if (String(game.id) === String(beforeGame.id)) return;
+    if (getStatus(game) !== "FINAL") return;
+    if (!teamPlayedGame(game, target)) return;
+
+    const gameTime = game.date ? new Date(game.date).getTime() : 0;
+    if (gameTime >= beforeTime) return;
+
+    const homeScore = num(game.hscore);
+    const awayScore = num(game.ascore);
+    const isHome = normalizeTeamName(game.hteam) === target;
+
+    if (homeScore === awayScore) draws += 1;
+    else if ((isHome && homeScore > awayScore) || (!isHome && awayScore > homeScore)) wins += 1;
+    else losses += 1;
+  });
+
+  return draws > 0 ? `${wins}-${losses}-${draws}` : `${wins}-${losses}`;
+}
+
 function playerTeamFromStatRow(player: any) {
   const mapped = findPlayerByApiSportsId(getApiPlayerId(player));
   return normalizeTeamName(mapped?.club ?? mapped?.team ?? player?.club ?? player?.team ?? "");
@@ -1040,6 +1078,7 @@ export default function MatchPage() {
   const [error, setError] = useState("");
   const [now, setNow] = useState(Date.now());
   const [teamStats, setTeamStats] = useState<any[]>([]);
+  const [allGames, setAllGames] = useState<MatchGame[]>([]);
   const [roundGames, setRoundGames] = useState<MatchGame[]>([]);
 
   const apiSportsGameId = useMemo(() => {
@@ -1094,6 +1133,7 @@ export default function MatchPage() {
           null;
 
         if (!cancelled) {
+          setAllGames(gameList);
           setGame(found);
           setRoundGames(
             found
@@ -1526,26 +1566,34 @@ export default function MatchPage() {
     return Math.max(max, Number(event.period ?? 0));
   }, 0);
   const liveFeedIsStale = status === "LIVE" && currentPeriod > 0 && liveEvents.length > 0 && latestFeedPeriod < currentPeriod;
+  const statusBadgeTone =
+    status === "FINAL"
+      ? { bg: "#7f1d1d", border: "#ef4444", color: "#fecaca", label: "Full time" }
+      : { bg: "#1d4ed8", border: "#60a5fa", color: "#eff6ff", label: status };
+  const homeScoreDisplay =
+    status === "UPCOMING" ? getTeamRecordBeforeGame(game.hteam, allGames, game) : game.hscore;
+  const awayScoreDisplay =
+    status === "UPCOMING" ? getTeamRecordBeforeGame(game.ateam, allGames, game) : game.ascore;
 
   return (
     <main style={pageStyle} className="page-enter">
-      {backButton}
-
       <section style={matchCentreStyle}>
         <RoundGameStrip games={roundGames} activeId={id} now={now} />
 
         {/* ── Scoreboard ── */}
         <div style={{
           position: "relative", overflow: "hidden",
-          padding: "30px 24px 24px",
+          padding: "calc(env(safe-area-inset-top) + 24px) 24px 26px",
+          minHeight: 292,
           borderBottom: "1px solid rgba(255,255,255,0.07)",
-          background: "linear-gradient(180deg, #0b0b0d 0%, #050506 100%)",
+          background: "linear-gradient(180deg, #151515 0%, #090909 58%, #040404 100%)",
         }}>
           {/* Team colour glow blobs */}
           <div style={{
             position: "absolute", inset: 0, pointerEvents: "none",
-            background: `radial-gradient(ellipse 48% 80% at 34% 42%, ${teamColor(game.hteam ?? "")}2f 0%, transparent 68%),
-                         radial-gradient(ellipse 48% 80% at 66% 42%, ${teamColor(game.ateam ?? "")}2f 0%, transparent 68%)`,
+            background: `radial-gradient(ellipse 48% 72% at 18% 56%, ${teamColor(game.hteam ?? "")}42 0%, transparent 68%),
+                         radial-gradient(ellipse 48% 72% at 82% 56%, ${teamColor(game.ateam ?? "")}42 0%, transparent 68%),
+                         radial-gradient(ellipse 70% 36% at 50% -4%, rgba(255,255,255,.09), transparent 70%)`,
           }} />
           <div style={{
             position: "absolute",
@@ -1555,25 +1603,86 @@ export default function MatchPage() {
             pointerEvents: "none",
           }} />
 
+          <div style={{
+            position: "relative",
+            display: "grid",
+            gridTemplateColumns: "44px 1fr 44px",
+            alignItems: "center",
+            gap: 10,
+            minHeight: 44,
+            marginBottom: 52,
+          }}>
+            <Link
+              href="/"
+              aria-label="Back to scores"
+              style={{
+                width: 44,
+                height: 44,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#fff",
+              }}
+            >
+              <ChevronLeft size={38} strokeWidth={2.4} />
+            </Link>
+
+            <Link
+              href="/"
+              aria-label="Foopy home"
+              style={{
+                justifySelf: "center",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 11,
+                color: "#fff",
+                fontSize: "clamp(28px, 6vw, 40px)",
+                fontFamily: "\"Borsok\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+                fontWeight: 400,
+                letterSpacing: 0,
+                lineHeight: 1,
+              }}
+            >
+              <span style={{
+                width: "clamp(30px, 6vw, 42px)",
+                height: "clamp(30px, 6vw, 42px)",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}>
+                <img
+                  src="/footy-icon.png"
+                  alt=""
+                  aria-hidden="true"
+                  style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                />
+              </span>
+              <span>foopy</span>
+            </Link>
+
+            <div aria-hidden="true" />
+          </div>
+
           {/* Scores row */}
           <div style={{
             position: "relative",
             display: "grid",
-            gridTemplateColumns: "minmax(0, 1fr) minmax(126px, 162px) minmax(0, 1fr)",
+            gridTemplateColumns: "minmax(0, 1fr) minmax(82px, 180px) minmax(0, 1fr)",
             alignItems: "center",
-            gap: 20,
+            gap: 16,
           }}>
-            <TeamScore team={game.hteam} score={game.hscore} align="left" />
+            <TeamScore team={game.hteam} score={homeScoreDisplay} align="left" />
 
             {/* Centre */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 7, minWidth: 0 }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, minWidth: 0, alignSelf: "end", paddingBottom: 19 }}>
               {/* Status badge */}
               {status === "LIVE" ? (
                 <div style={{
                   display: "flex", alignItems: "center", gap: 6,
-                  padding: "5px 11px", borderRadius: 6,
-                  background: "#0a1f12",
-                  border: "1px solid rgba(34,197,94,0.3)",
+                  padding: "8px 18px", borderRadius: 999,
+                  background: "#166534",
+                  border: "1px solid #4ade80",
+                  boxShadow: "0 14px 36px rgba(0,0,0,.24)",
                 }}>
                   <span style={{
                     width: 7, height: 7, borderRadius: "50%", flexShrink: 0,
@@ -1581,62 +1690,55 @@ export default function MatchPage() {
                     boxShadow: "0 0 0 2px rgba(34,197,94,0.25)",
                     animation: "livePulse 1.8s ease-in-out infinite",
                   }} />
-                  <span style={{ fontSize: 11, fontWeight: 800, color: "#22c55e", letterSpacing: "0.06em" }}>LIVE</span>
+                  <span style={{ fontSize: 14, fontWeight: 900, color: "#4ade80", letterSpacing: 0 }}>Live</span>
                 </div>
               ) : (
                 <div style={{
-                  fontSize: 10, fontWeight: 800, letterSpacing: "0.1em",
-                  padding: "4px 10px", borderRadius: 6,
-                  background: status === "FINAL" ? "rgba(167,139,250,0.15)" : "rgba(255,255,255,0.07)",
-                  border: status === "FINAL" ? "1px solid rgba(167,139,250,0.35)" : "1px solid rgba(255,255,255,0.1)",
-                  color: status === "FINAL" ? "#c4b5fd" : "#fff",
+                  fontSize: 17, fontWeight: 800, letterSpacing: 0,
+                  padding: "8px 28px", borderRadius: 999,
+                  background: statusBadgeTone.bg,
+                  border: `1px solid ${statusBadgeTone.border}`,
+                  color: statusBadgeTone.color,
+                  boxShadow: "0 14px 36px rgba(0,0,0,.24)",
                 }}>
-                  {status}
+                  {statusBadgeTone.label}
                 </div>
               )}
 
-              {/* VS divider */}
-              <div style={{ fontSize: 11, fontWeight: 800, color: "#3f3f46", letterSpacing: "0.05em" }}>
-                VS
-              </div>
-
-              {/* Time / date */}
-              {status === "LIVE" ? (
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#4ade80" }}>
-                  {game.timestr || getLiveGameClock(liveEvents)}
-                </div>
-              ) : (
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: "#444" }}>
-                    {formatDate(game.date)}
-                  </div>
-                </div>
-              )}
             </div>
 
-            <TeamScore team={game.ateam} score={game.ascore} align="right" />
+            <TeamScore team={game.ateam} score={awayScoreDisplay} align="right" />
           </div>
 
-          {/* Venue + round row — only for upcoming games */}
-          {status !== "LIVE" && (
+          {/* Venue + round row */}
+          <div style={{
+            position: "relative",
+            marginTop: 26,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+          }}>
             <div style={{
-              position: "relative",
-              marginTop: 18,
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              display: "flex", alignItems: "center", gap: 6,
+              background: "#18181b",
+              border: "1px solid #3f3f46",
+              borderRadius: 9, padding: "7px 13px",
+              maxWidth: "100%",
             }}>
-              <div style={{
-                display: "flex", alignItems: "center", gap: 6,
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.07)",
-                borderRadius: 8, padding: "5px 12px",
-              }}>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 13 8 13s8-7.75 8-13a8 8 0 0 0-8-8z"/></svg>
-                <span style={{ fontSize: 11, fontWeight: 600, color: "#444" }}>
-                  Round {game.round ?? "-"} · {game.venue || "Venue TBA"}
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#71717a" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 13 8 13s8-7.75 8-13a8 8 0 0 0-8-8z"/></svg>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "#71717a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                Round {game.round ?? "-"} · {game.venue || "Venue TBA"}
+              </span>
+              {status !== "LIVE" && (
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#52525b", whiteSpace: "nowrap" }}>
+                  · {formatDate(game.date)}
                 </span>
-              </div>
+              )}
+              {status === "LIVE" && (
+                <span style={{ fontSize: 12, fontWeight: 800, color: "#4ade80", whiteSpace: "nowrap" }}>
+                  · {game.timestr || getLiveGameClock(liveEvents)}
+                </span>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
         {/* ── Tabs ── */}
@@ -2649,21 +2751,23 @@ function PollCard({
           const optColors = pollOptionColors(opt.label, poll.poll_type);
 
           if (showResults || hasVoted || votingLocked) {
-            const barColor = isWinner ? "#22c55e" : isMyVote ? "#3b82f6" : (optColors as any).borderColor?.replace("55", "99") ?? "#334155";
+            const activeOption = isWinner || isMyVote;
+            const optionColor = String((optColors as any).background ?? "#334155");
+            const barColor = activeOption ? optionColor : "#3f3f46";
             return (
               <div key={opt.id} style={{
                 ...pollResultRowStyle,
                 borderRadius: 13,
                 padding: "11px 13px",
-                background: isWinner ? "rgba(34,197,94,.08)" : isMyVote ? "rgba(59,130,246,.08)" : "rgba(255,255,255,.04)",
-                border: isWinner ? "1px solid rgba(34,197,94,.35)" : isMyVote ? "1px solid rgba(59,130,246,.3)" : "1px solid rgba(255,255,255,.08)",
+                background: activeOption ? optionColor : "#18181b",
+                border: activeOption ? `1px solid ${optionColor}` : "1px solid #2f2f33",
               }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                   <PollOptionInner label={opt.label} pollType={poll.poll_type} winner={isWinner} myVote={isMyVote && !isWinner} />
-                  <span style={{ fontSize: 13, fontWeight: 800, color: isWinner ? "#22c55e" : isMyVote ? "#60a5fa" : "#94a3b8", marginLeft: 10, flexShrink: 0 }}>{pct}%</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: activeOption ? "#ffffff" : "#94a3b8", marginLeft: 10, flexShrink: 0 }}>{pct}%</span>
                 </div>
-                <div style={{ height: 6, borderRadius: 999, background: "rgba(255,255,255,.08)", overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${pct}%`, borderRadius: 999, background: barColor, transition: "width 0.5s cubic-bezier(.4,0,.2,1)", boxShadow: isWinner ? "0 0 8px rgba(34,197,94,.5)" : isMyVote ? "0 0 8px rgba(59,130,246,.4)" : "none" }} />
+                <div style={{ height: 6, borderRadius: 999, background: activeOption ? "rgba(255,255,255,.24)" : "#2a2a2d", overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${pct}%`, borderRadius: 999, background: barColor, transition: "width 0.5s cubic-bezier(.4,0,.2,1)", boxShadow: "none" }} />
                 </div>
               </div>
             );
@@ -2872,30 +2976,24 @@ function CreatePollForm({
 function pollOptionColors(label: string, pollType: string): React.CSSProperties {
   if (pollType === "team") {
     const c = liveFeedTeamColors(label);
-    return { background: `${c.primary}22`, borderColor: `${c.primary}55` };
+    return { background: c.primary, borderColor: c.primary };
   }
   const info = findPlayerInfo(label);
   const team = info?.club ?? info?.team ?? "";
   if (!team) return {};
   const c = liveFeedTeamColors(team);
-  return { background: `${c.primary}22`, borderColor: `${c.primary}55` };
+  return { background: c.primary, borderColor: c.primary };
 }
 
 function PollOptionInner({ label, pollType, winner, myVote }: { label: string; pollType: string; winner?: boolean; myVote?: boolean }) {
-  const textColor = winner ? "#22c55e" : myVote ? "#60a5fa" : "#e2e8f0";
-
   if (pollType === "team") {
     const logo = getLogo(label);
     return (
       <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
-        <div style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
-          <img src={logo} alt={label} style={{ width: 34, height: 34, objectFit: "contain" }} />
+        <div style={{ width: 40, height: 40, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+          <img src={logo} alt={label} style={{ width: 40, height: 40, objectFit: "contain", borderRadius: "50%" }} />
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-          <span style={{ fontSize: 14, fontWeight: 800, color: textColor, lineHeight: 1.2 }}>{label}</span>
-          {winner && <span style={{ fontSize: 10, fontWeight: 700, color: "#22c55e", letterSpacing: "0.04em" }}>WINNER</span>}
-          {myVote && !winner && <span style={{ fontSize: 10, fontWeight: 700, color: "#60a5fa", letterSpacing: "0.04em" }}>YOUR VOTE</span>}
-        </div>
+        <span style={{ fontSize: 14, fontWeight: 800, color: "#ffffff", lineHeight: 1.2 }}>{label}</span>
       </div>
     );
   }
@@ -2907,22 +3005,15 @@ function PollOptionInner({ label, pollType, winner, myVote }: { label: string; p
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
-      <div style={{ width: 38, height: 38, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${colors.primary}44`, display: "flex", alignItems: "center", justifyContent: "center", border: `2px solid ${colors.primary}55` }}>
+      <div style={{ width: 38, height: 38, borderRadius: "50%", overflow: "hidden", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", border: `2px solid ${colors.primary}` }}>
         <img
           src={img}
           alt={label}
-          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
           onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
         />
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-        <span style={{ fontSize: 14, fontWeight: 800, color: textColor, lineHeight: 1.2 }}>{label}</span>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          {team && <span style={{ fontSize: 10, fontWeight: 700, color: "#64748b" }}>{getAbbr(team)}</span>}
-          {winner && <span style={{ fontSize: 10, fontWeight: 700, color: "#22c55e", letterSpacing: "0.04em" }}>WINNER</span>}
-          {myVote && !winner && <span style={{ fontSize: 10, fontWeight: 700, color: "#60a5fa", letterSpacing: "0.04em" }}>YOUR VOTE</span>}
-        </div>
-      </div>
+      <span style={{ fontSize: 14, fontWeight: 800, color: "#ffffff", lineHeight: 1.2 }}>{label}</span>
     </div>
   );
 }
