@@ -699,7 +699,7 @@ free_kicks?: {
           <span style={roundBadgeStyle}>Rd {selectedRound}</span>
         </div>
 
-        <div ref={roundRef} style={headerRoundsScroll}>
+        <div ref={roundRef} style={isMobile ? headerRoundsScroll : headerRoundsDesktop}>
           {availableRounds.map((round) => {
             const isSelected = selectedRound === round;
             const isCurrent = currentRound === round;
@@ -709,7 +709,7 @@ free_kicks?: {
                 key={round}
                 data-selected={isSelected ? "true" : "false"}
                 onClick={() => chooseRound(round)}
-                style={headerRoundItem}
+                style={isMobile ? headerRoundItem : headerRoundItemDesktop}
               >
                 <span
                   style={{
@@ -1291,6 +1291,15 @@ const headerRoundsScroll: React.CSSProperties = {
   scrollbarWidth: "none",
 };
 
+const headerRoundsDesktop: React.CSSProperties = {
+  ...headerRoundsScroll,
+  width: "100%",
+  gap: 0,
+  overflowX: "visible",
+  justifyContent: "space-between",
+  padding: "7px 18px 8px",
+};
+
 const headerRoundItem: React.CSSProperties = {
   position: "relative",
   flex: "0 0 auto",
@@ -1298,6 +1307,14 @@ const headerRoundItem: React.CSSProperties = {
   border: "none",
   cursor: "pointer",
   padding: "5px 0 8px",
+};
+
+const headerRoundItemDesktop: React.CSSProperties = {
+  ...headerRoundItem,
+  flex: "1 1 0",
+  minWidth: 0,
+  display: "flex",
+  justifyContent: "center",
 };
 
 const headerRoundText: React.CSSProperties = {
