@@ -103,6 +103,16 @@ const RARITY_ODDS: Record<PackType, { rarity: Rarity; pct: string }[]> = {
   ],
 };
 
+const TEAM_COLORS: Record<string, string> = {
+  Adelaide: "#002b5c", "Brisbane Lions": "#a50034", Carlton: "#031a35",
+  Collingwood: "#111111", Essendon: "#cc0000", Fremantle: "#4b1979",
+  "Geelong Cats": "#003b73", Geelong: "#003b73", "Gold Coast": "#c0392b",
+  GWS: "#e05a1a", "GWS Giants": "#e05a1a", "Greater Western Sydney": "#e05a1a",
+  Hawthorn: "#6b3a1f", Melbourne: "#c8102e", "North Melbourne": "#0055a4",
+  "Port Adelaide": "#008999", Richmond: "#1a1a1a", "St Kilda": "#c8102e",
+  Sydney: "#c0392b", "West Coast": "#003087", "Western Bulldogs": "#1a4abf",
+};
+
 const ALL_TEAMS = [
   "Carlton",
   "Western Bulldogs",
@@ -672,7 +682,7 @@ function PlayerCard({ card, onSell }: { card: UserCard; onSell?: () => void }) {
         overflow: "hidden",
         border: `2.5px solid ${meta.color}`,
         boxShadow: `0 0 14px ${meta.glow}`,
-        background: "#111",
+        background: TEAM_COLORS[card.team] ?? "#111",
       }}>
         <img
           src={`/players/${folder}/${card.player_id}.png`}
@@ -860,7 +870,7 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
                         ✦ NEW
                       </div>
                     )}
-                    <div style={{ position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)", width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", border: `2.5px solid ${meta.color}`, boxShadow: `0 0 20px ${meta.glow}`, background: "#111" }}>
+                    <div style={{ position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)", width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", border: `2.5px solid ${meta.color}`, boxShadow: `0 0 20px ${meta.glow}`, background: TEAM_COLORS[current.team] ?? "#111" }}>
                       <img src={current.player_image} alt={current.player_name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
                     </div>
                     <div style={{ position: "absolute", top: "71%", left: 0, right: 0, textAlign: "center", padding: "0 10px" }}>

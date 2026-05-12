@@ -68,7 +68,6 @@ type PickerTab = "teams" | "players";
 const TEAMS = [
   { name: "Adelaide", logo: "/team-logos/crows.png", color: "#002b5c" },
   { name: "Brisbane Lions", logo: "/team-logos/lions.png", color: "#7a003c" },
-  { name: "Brisbane", logo: "/team-logos/lions.png", color: "#7a003c" },
   { name: "Carlton", logo: "/team-logos/blues.png", color: "#031a35" },
   { name: "Collingwood", logo: "/team-logos/magpies.png", color: "#111111" },
   { name: "Essendon", logo: "/team-logos/bombers.png", color: "#cc0000" },
@@ -76,6 +75,7 @@ const TEAMS = [
   { name: "Geelong Cats", logo: "/team-logos/cats.png", color: "#003b73" },
   { name: "Gold Coast", logo: "/team-logos/suns.png", color: "#c0392b" },
   { name: "GWS Giants", logo: "/team-logos/giants.png", color: "#e05a1a" },
+  { name: "GWS",        logo: "/team-logos/giants.png", color: "#e05a1a" },
   { name: "Hawthorn", logo: "/team-logos/hawks.png", color: "#6b3a1f" },
   { name: "Melbourne", logo: "/team-logos/demons.png", color: "#c8102e" },
   { name: "North Melbourne", logo: "/team-logos/kangaroos.png", color: "#0055a4" },

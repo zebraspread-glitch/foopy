@@ -43,6 +43,7 @@ type Comment = {
 type PlayerRecord = { name?: string; player?: string; club?: string; team?: string; image?: string; imagePath?: string; playerImage?: string };
 
 function slugify(s: string) { return s.toLowerCase().replace(/[^a-z0-9]/g, ""); }
+function playerSlug(s: string) { return s.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""); }
 
 function mixColor(a: string, b: string, t: number) {
   const ah = a.replace("#", ""), bh = b.replace("#", "");
@@ -465,7 +466,7 @@ export default function EventCommentsPage() {
 
       {playerCard && (
         <section style={playerCardStyle}>
-          <PlayerCardHeader name={label} img={playerCard.img} team={playerCard.team} rating={playerCard.rating} />
+          <PlayerCardHeader name={label} img={playerCard.img} team={playerCard.team} rating={playerCard.rating} slug={playerSlug(label)} />
           <div style={statChipsStyle}>
             {[
               { label: "G.B", value: playerCard.gb },
@@ -697,14 +698,18 @@ function EventCard({ playerName, team, img, type, quarter, minute }: {
   );
 }
 
-function PlayerCardHeader({ name, img, team, rating }: { name: string; img: string; team: string; rating: string }) {
+function PlayerCardHeader({ name, img, team, rating, slug }: { name: string; img: string; team: string; rating: string; slug?: string }) {
+  const router = useRouter();
   const [imgFailed, setImgFailed] = useState(false);
   const initials = name.trim().split(/\s+/).filter(Boolean).map(p => p[0]).join("").toUpperCase().slice(0, 2) || "?";
   const ratingNum = parseFloat(rating) || 0;
   const ratingColor = foopyColor(ratingNum);
 
   return (
-    <div style={playerCardHeaderStyle}>
+    <div
+      style={{ ...playerCardHeaderStyle, cursor: slug ? "pointer" : undefined }}
+      onClick={slug ? () => router.push(`/player/${slug}`) : undefined}
+    >
       <div style={playerAvatarLargeStyle}>
         {img && !imgFailed
           ? <img src={img} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} onError={() => setImgFailed(true)} />

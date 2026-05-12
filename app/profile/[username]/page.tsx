@@ -48,6 +48,7 @@ const TEAMS = [
   { name: "Geelong Cats",      logo: "/team-logos/cats.png",      color: "#003b73" },
   { name: "Gold Coast",        logo: "/team-logos/suns.png",      color: "#c0392b" },
   { name: "GWS Giants",        logo: "/team-logos/giants.png",    color: "#e05a1a" },
+  { name: "GWS",               logo: "/team-logos/giants.png",    color: "#e05a1a" },
   { name: "Hawthorn",          logo: "/team-logos/hawks.png",     color: "#6b3a1f" },
   { name: "Melbourne",         logo: "/team-logos/demons.png",    color: "#c8102e" },
   { name: "North Melbourne",   logo: "/team-logos/kangaroos.png", color: "#0055a4" },

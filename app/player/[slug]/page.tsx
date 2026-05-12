@@ -1,5 +1,6 @@
 import path from "path";
 import fs from "fs";
+import Link from "next/link";
 import { BackButton, PlayerHeroImage } from "./PlayerClient";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -316,7 +317,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
             <div style={sectionLabel}>Season performances</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {recentGames.map((g, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 14, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.07)" }}>
+                <Link key={i} href={`/match/${g.gameId}`} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 14, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.07)", textDecoration: "none", color: "inherit" }}>
                   <div style={{ minWidth: 52, display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, gap: 4 }}>
                     {g.round !== null
                       ? <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", whiteSpace: "nowrap" }}>Rd {g.round}</div>
@@ -341,7 +342,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                     <div style={{ fontSize: 18, fontWeight: 950, letterSpacing: "-0.04em", color: foopyColor(g.foopy) }}>{g.foopy.toFixed(1)}</div>
                     <div style={{ fontSize: 9, fontWeight: 800, color: "#334155", letterSpacing: "0.06em" }}>FOOPY</div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </section>
@@ -363,8 +364,8 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
 function StatChip({ label, value }: { label: string; value: number }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 24 }}>
-      <span style={{ fontSize: 13, fontWeight: 900, color: "#e2e8f0" }}>{value}</span>
-      <span style={{ fontSize: 9, fontWeight: 800, color: "#475569", letterSpacing: "0.04em" }}>{label}</span>
+      <span style={{ fontSize: 17, fontWeight: 900, color: "#e2e8f0" }}>{value}</span>
+      <span style={{ fontSize: 11, fontWeight: 800, color: "#475569", letterSpacing: "0.04em" }}>{label}</span>
     </div>
   );
 }
