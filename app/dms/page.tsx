@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/app/lib/supabase";
@@ -92,6 +92,28 @@ function SignInGate() {
 
 /* ════════════════════════════════════════════════════════ */
 export default function DMsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div
+          style={{
+            minHeight: "100dvh",
+            background: "#000",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div className="spinner" />
+        </div>
+      }
+    >
+      <DMsPageInner />
+    </Suspense>
+  );
+}
+
+function DMsPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { awardXP } = useXP();
@@ -237,7 +259,14 @@ export default function DMsPage() {
       .then(({ data }) => {
         if (!data) return;
         setAutoOpened(true);
-        openEntry({ id: data.id, other: data as Profile, convId: null, preview: "", unread: 0 });
+        openEntry({
+  id: data.id,
+  other: data as Profile,
+  convId: null,
+  preview: "",
+  last_at: null,
+  unread: 0,
+});
       });
   }, [searchParams, inbox, myProfile, autoOpened]);
 

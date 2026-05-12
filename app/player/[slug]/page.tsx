@@ -141,10 +141,22 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
   const seasonData: SeasonStats[]   = JSON.parse(fs.readFileSync(path.join(dataDir, "player-season-stats.json"), "utf8"));
   const gameStats:  Record<string, {
     gameId: number; date: string;
-    teams: { players: { player: { id: number }; goals: { total: number; assists: number };
-      behinds: number; disposals: number; kicks: number; handballs: number;
-      marks: number; tackles: number; hitouts: number; clearances: number;
-      free_kicks: { for: number; against: number } }[] }[];
+    teams: {
+  team?: { id: number; name?: string };
+  players: {
+    player: { id: number };
+    goals: { total: number; assists: number };
+    behinds: number;
+    disposals: number;
+    kicks: number;
+    handballs: number;
+    marks: number;
+    tackles: number;
+    hitouts: number;
+    clearances: number;
+    free_kicks: { for: number; against: number };
+  }[];
+}[];
   }> = JSON.parse(fs.readFileSync(path.join(dataDir, "game-stats.json"), "utf8"));
 
   const player = players.find(p => p.id === slug) ?? null;
