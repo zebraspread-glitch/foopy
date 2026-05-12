@@ -687,12 +687,6 @@ free_kicks?: {
       <header style={headerStyle}>
         <div style={headerTopStyle}>
           <div style={logoWrapStyle}>
-            <div style={logoIconStyle}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <ellipse cx="12" cy="12" rx="10" ry="7" stroke="white" strokeWidth="2.2" />
-                <path d="M5 12 Q12 5 19 12 Q12 19 5 12Z" fill="white" opacity="0.35" />
-              </svg>
-            </div>
             <span style={logoTextStyle}>foopy</span>
           </div>
 
