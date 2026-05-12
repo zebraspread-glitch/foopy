@@ -3,17 +3,52 @@
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { supabase } from "@/app/lib/supabase";
+import playersData from "@/app/data/players.json";
 
-type Profile = {
-  id: string;
-  username: string | null;
-  avatar_url: string | null;
-  bio: string | null;
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+type Profile = { id: string; username: string | null; avatar_url: string | null };
+
+type Player = { id: string; name: string; team: string };
+
+// ── Team helpers ──────────────────────────────────────────────────────────────
+
+const CLUB_FOLDER: Record<string, string> = {
+  adelaide: "crows", brisbanelions: "lions", brisbane: "lions", carlton: "blues",
+  collingwood: "magpies", essendon: "bombers", fremantle: "dockers",
+  geelongcats: "cats", geelong: "cats", goldcoast: "suns", gwsgiants: "giants",
+  gws: "giants", hawthorn: "hawks", melbourne: "demons",
+  northmelbourne: "kangaroos", portadelaide: "power", richmond: "tigers",
+  stkilda: "saints", sydney: "swans", westcoast: "eagles",
+  westernbulldogs: "bulldogs",
 };
 
-/* ── Avatar palette (matches profile page) ── */
+const TEAM_COLORS: Record<string, string> = {
+  Adelaide: "#002b5c", "Brisbane Lions": "#a50034", Brisbane: "#a50034",
+  Carlton: "#031a35", Collingwood: "#111111", Essendon: "#cc0000",
+  Fremantle: "#4b1979", "Geelong Cats": "#003b73", Geelong: "#003b73",
+  "Gold Coast": "#c0392b", "GWS Giants": "#e05a1a", GWS: "#e05a1a",
+  Hawthorn: "#6b3a1f", Melbourne: "#c8102e", "North Melbourne": "#0055a4",
+  "Port Adelaide": "#008999", Richmond: "#1a1a1a", "St Kilda": "#c8102e",
+  Sydney: "#c0392b", "West Coast": "#003087", "Western Bulldogs": "#1a4abf",
+};
+
+function slugTeam(t: string) { return t.toLowerCase().replace(/[^a-z0-9]/g, ""); }
+function teamColor(t: string) { return TEAM_COLORS[t] ?? "#1e293b"; }
+function playerImgSrc(name: string, team: string) {
+  const slug   = name.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const folder = CLUB_FOLDER[slugTeam(team)] ?? slugTeam(team);
+  return `/players/${folder}/${slug}.png`;
+}
+
+// All players indexed once
+const ALL_PLAYERS: Player[] = (playersData as Player[]).filter(p => p.name && p.team);
+
+// ── Avatar helpers ────────────────────────────────────────────────────────────
+
 const AVATAR_PALETTE: [string, string][] = [
   ["#1a3a5c","#60a5fa"],["#2d1b4e","#c084fc"],["#1a3d2e","#4ade80"],
   ["#3d2a10","#fb923c"],["#3d1a1a","#f87171"],["#1a3d3a","#2dd4bf"],
@@ -31,42 +66,75 @@ function getInitials(name: string) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
+// ── Sub-components ────────────────────────────────────────────────────────────
+
 function UserAvatar({ username, url }: { username: string; url?: string | null }) {
   const [bg, fg] = avatarColors(username || "?");
-  if (url) return (
-    <img src={url} alt={username} style={{ width: 52, height: 52, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
-  );
+  if (url) return <img src={url} alt={username} style={{ width: 46, height: 46, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />;
   return (
-    <div style={{ width: 52, height: 52, borderRadius: "50%", background: bg, color: fg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 950, flexShrink: 0 }}>
+    <div style={{ width: 46, height: 46, borderRadius: "50%", background: bg, color: fg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 950, flexShrink: 0 }}>
       {getInitials(username || "?")}
     </div>
   );
 }
 
+function PlayerAvatar({ player }: { player: Player }) {
+  const [err, setErr] = useState(false);
+  const color  = teamColor(player.team);
+  const imgSrc = playerImgSrc(player.name, player.team);
+  return (
+    <div style={{ width: 46, height: 46, borderRadius: "50%", background: color, flexShrink: 0, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      {!err
+        ? <img src={imgSrc} alt={player.name} onError={() => setErr(true)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        : <span style={{ fontSize: 16, fontWeight: 950, color: "#fff" }}>{getInitials(player.name)}</span>
+      }
+    </div>
+  );
+}
+
+function SectionLabel({ label, count }: { label: string; count: number }) {
+  return (
+    <div style={{ fontSize: 11, fontWeight: 900, color: "#475569", textTransform: "uppercase" as const, letterSpacing: "0.07em", paddingLeft: 4, marginBottom: 8 }}>
+      {label} · {count}
+    </div>
+  );
+}
+
+// ── Page ─────────────────────────────────────────────────────────────────────
+
 export default function SearchPage() {
-  const [query, setQuery]         = useState("");
-  const [results, setResults]     = useState<Profile[]>([]);
-  const [loading, setLoading]     = useState(false);
-  const [searched, setSearched]   = useState(false);
+  const router = useRouter();
+  const [query,        setQuery]        = useState("");
+  const [users,        setUsers]        = useState<Profile[]>([]);
+  const [players,      setPlayers]      = useState<Player[]>([]);
+  const [loading,      setLoading]      = useState(false);
+  const [searched,     setSearched]     = useState(false);
+  const [visibleUsers, setVisibleUsers] = useState(5);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  /* Debounced search */
   useEffect(() => {
-    const q = query.trim();
-    if (!q) { setResults([]); setSearched(false); setLoading(false); return; }
+    const q = query.trim().toLowerCase();
+    if (!q) { setUsers([]); setPlayers([]); setSearched(false); setLoading(false); setVisibleUsers(5); return; }
 
     setLoading(true);
     if (timerRef.current) clearTimeout(timerRef.current);
 
     timerRef.current = setTimeout(async () => {
+      // Player search — client-side, instant
+      const matchedPlayers = ALL_PLAYERS
+        .filter(p => p.name.toLowerCase().includes(q))
+        .slice(0, 20);
+      setPlayers(matchedPlayers);
+
+      // User search — Supabase
       const { data } = await supabase
         .from("profiles")
-        .select("id, username, avatar_url, bio")
+        .select("id, username, avatar_url")
         .ilike("username", `%${q}%`)
-        .limit(30);
-
-      setResults((data ?? []) as Profile[]);
+        .limit(20);
+      setUsers((data ?? []) as Profile[]);
+      setVisibleUsers(5);
       setSearched(true);
       setLoading(false);
     }, 280);
@@ -74,9 +142,10 @@ export default function SearchPage() {
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [query]);
 
+  const hasResults = users.length > 0 || players.length > 0;
+
   return (
     <main style={pageStyle} className="page-enter">
-      {/* Header */}
       <header style={headerStyle}>
         <span style={titleStyle}>Search</span>
       </header>
@@ -89,71 +158,102 @@ export default function SearchPage() {
             ref={inputRef}
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Search by username…"
+            placeholder="Search players or users…"
             autoComplete="off"
             spellCheck={false}
             style={searchInputStyle}
           />
           {query.length > 0 && (
-            <button
-              onClick={() => { setQuery(""); inputRef.current?.focus(); }}
-              style={clearBtnStyle}
-            >
-              ×
-            </button>
+            <button onClick={() => { setQuery(""); inputRef.current?.focus(); }} style={clearBtnStyle}>×</button>
           )}
         </div>
 
-        {/* States */}
+        {/* Empty state */}
         {!query.trim() && (
           <div style={emptyStateStyle}>
-            <div style={emptyIconStyle}>🔍</div>
-            <div style={emptyTitleStyle}>Find people</div>
-            <div style={emptySubStyle}>Search for a username to view their profile</div>
+            <div style={{ fontSize: 48, marginBottom: 4 }}>🔍</div>
+            <div style={{ fontSize: 18, fontWeight: 950, color: "#f1f5f9" }}>Search</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#475569" }}>Find players and users</div>
           </div>
         )}
 
+        {/* Loading */}
         {loading && (
           <div style={{ display: "flex", justifyContent: "center", padding: "40px 0" }}>
             <div className="spinner" />
           </div>
         )}
 
-        {!loading && searched && results.length === 0 && (
+        {/* No results */}
+        {!loading && searched && !hasResults && (
           <div style={emptyStateStyle}>
-            <div style={emptyIconStyle}>😶</div>
-            <div style={emptyTitleStyle}>No users found</div>
-            <div style={emptySubStyle}>Try a different username</div>
+            <div style={{ fontSize: 48, marginBottom: 4 }}>😶</div>
+            <div style={{ fontSize: 18, fontWeight: 950, color: "#f1f5f9" }}>No results</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#475569" }}>Try a different name</div>
           </div>
         )}
 
-        {!loading && results.length > 0 && (
-          <div style={resultsStyle}>
-            <div style={resultCountStyle}>
-              {results.length} {results.length === 1 ? "result" : "results"}
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {results.map(profile => {
-                const uname = profile.username || "unknown";
-                const [bg] = avatarColors(uname);
-                return (
-                  <Link
-                    key={profile.id}
-                    href={`/profile/${profile.username}`}
-                    style={resultRowStyle}
-                    className="pressable"
-                  >
-                    <UserAvatar username={uname} url={profile.avatar_url} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={resultNameStyle}>@{uname}</div>
-                    </div>
-                    <svg width="7" height="13" viewBox="0 0 7 13" fill="none" style={{ opacity: 0.25, flexShrink: 0 }}>
-                      <path d="M1 1.5l5 5-5 5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </Link>
-                );
-              })}
-            </div>
+        {/* Results */}
+        {!loading && hasResults && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+
+            {/* Users section */}
+            {users.length > 0 && (
+              <div>
+                <SectionLabel label="Users" count={users.length} />
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {users.slice(0, visibleUsers).map(u => {
+                    const uname = u.username || "unknown";
+                    return (
+                      <Link key={u.id} href={`/profile/${u.username}`} style={rowStyle} className="pressable">
+                        <UserAvatar username={uname} url={u.avatar_url} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 900, fontSize: 15, color: "#fff", letterSpacing: "-0.01em" }}>@{uname}</div>
+                        </div>
+                        <svg width="7" height="13" viewBox="0 0 7 13" fill="none" style={{ opacity: 0.25, flexShrink: 0 }}>
+                          <path d="M1 1.5l5 5-5 5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </Link>
+                    );
+                  })}
+                  {users.length > visibleUsers && (
+                    <button
+                      onClick={() => setVisibleUsers(v => v + 5)}
+                      style={{ padding: "12px", borderRadius: 14, border: "1px solid rgba(255,255,255,.1)", background: "transparent", color: "#60a5fa", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}
+                    >
+                      Load more ({users.length - visibleUsers} remaining)
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Players section */}
+            {players.length > 0 && (
+              <div>
+                <SectionLabel label="Players" count={players.length} />
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {players.map(p => (
+                    <Link
+                      key={p.id}
+                      href={`/player/${p.id}`}
+                      style={{ ...rowStyle, textDecoration: "none" }}
+                      className="pressable"
+                    >
+                      <PlayerAvatar player={p} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 900, fontSize: 15, color: "#fff", letterSpacing: "-0.01em" }}>{p.name}</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: "#64748b", marginTop: 2 }}>{p.team}</div>
+                      </div>
+                      <svg width="7" height="13" viewBox="0 0 7 13" fill="none" style={{ opacity: 0.25, flexShrink: 0 }}>
+                        <path d="M1 1.5l5 5-5 5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
           </div>
         )}
       </div>
@@ -161,7 +261,8 @@ export default function SearchPage() {
   );
 }
 
-/* ── Styles ── */
+// ── Styles ────────────────────────────────────────────────────────────────────
+
 const pageStyle: CSSProperties = {
   minHeight: "100dvh",
   background: "#000",
@@ -184,11 +285,7 @@ const headerStyle: CSSProperties = {
   borderBottom: "0.5px solid rgba(255,255,255,0.08)",
 };
 
-const titleStyle: CSSProperties = {
-  fontSize: 18,
-  fontWeight: 950,
-  letterSpacing: "-0.02em",
-};
+const titleStyle: CSSProperties = { fontSize: 18, fontWeight: 950, letterSpacing: "-0.02em" };
 
 const contentStyle: CSSProperties = {
   maxWidth: 640,
@@ -250,63 +347,17 @@ const emptyStateStyle: CSSProperties = {
   textAlign: "center",
 };
 
-const emptyIconStyle: CSSProperties = {
-  fontSize: 48,
-  marginBottom: 4,
-};
-
-const emptyTitleStyle: CSSProperties = {
-  fontSize: 18,
-  fontWeight: 950,
-  color: "#f1f5f9",
-};
-
-const emptySubStyle: CSSProperties = {
-  fontSize: 14,
-  fontWeight: 600,
-  color: "#475569",
-};
-
-const resultsStyle: CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  gap: 12,
-};
-
-const resultCountStyle: CSSProperties = {
-  fontSize: 11,
-  fontWeight: 900,
-  color: "#475569",
-  textTransform: "uppercase",
-  letterSpacing: "0.07em",
-  paddingLeft: 4,
-};
-
-const resultRowStyle: CSSProperties = {
+const rowStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   gap: 14,
-  padding: "14px 16px",
-  borderRadius: 18,
+  padding: "12px 14px",
+  borderRadius: 16,
   background: "#0d0d0d",
   border: "1px solid rgba(255,255,255,0.08)",
   color: "#fff",
   textDecoration: "none",
-};
-
-const resultNameStyle: CSSProperties = {
-  fontSize: 16,
-  fontWeight: 900,
-  letterSpacing: "-0.01em",
-};
-
-const resultBioStyle: CSSProperties = {
-  fontSize: 13,
-  fontWeight: 600,
-  color: "#64748b",
-  marginTop: 3,
-  overflow: "hidden",
-  display: "-webkit-box",
-  WebkitLineClamp: 1,
-  WebkitBoxOrient: "vertical",
+  width: "100%",
+  fontFamily: "inherit",
+  cursor: "pointer",
 };

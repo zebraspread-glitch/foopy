@@ -9,12 +9,19 @@ export type XPAction =
   | "add_favourite"
   | "set_username"
   | "set_avatar"
+  | "set_banner"
   | "set_bio"
-  | "view_match";
+  | "view_match"
+  | "react_play"
+  | "like_comment"
+  | "add_friend";
 
 export type XPLog = {
   daily?:   string;                   // ISO date string of last daily XP
   msg?:     string;                   // ISO timestamp of last message XP
+  react?:   string;                   // ISO timestamp of last react_play XP
+  like?:    string;                   // ISO timestamp of last like_comment XP
+  friend?:  string;                   // ISO timestamp of last add_friend XP
   locked?:  number[];                 // round numbers where lock_picks was awarded
   picks?:   number[];                 // game IDs where make_pick XP was awarded
   correct?: number[];                 // game IDs where correct_pick XP was awarded
@@ -34,16 +41,20 @@ export type XPResult = {
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 export const XP_VALUES: Record<XPAction, number> = {
-  daily_login:   20,
+  daily_login:   10,
   make_pick:      5,
   lock_picks:    15,
-  correct_pick:  25,
-  send_message:   3,
+  correct_pick:  10,
+  send_message:  10,
   add_favourite: 10,
   set_username:  50,
-  set_avatar:    30,
+  set_avatar:    20,
+  set_banner:    20,
   set_bio:       20,
-  view_match:    10,
+  view_match:     5,
+  react_play:     5,
+  like_comment:   2,
+  add_friend:     5,
 };
 
 export const LEVEL_TITLES = [
@@ -67,8 +78,8 @@ export const LEVEL_MILESTONES: Record<number, { emoji: string; label: string }> 
   10: { emoji: "🐐", label: "GOAT" },
 };
 
-// Cooldown for message XP: 5 minutes in ms
-const MSG_COOLDOWN_MS = 5 * 60 * 1000;
+// Cooldown for message XP: once per day
+const MSG_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 
 // ─── Level math ──────────────────────────────────────────────────────────────
 //
@@ -173,6 +184,18 @@ export function canAwardXP(
       if (!log.msg) return true;
       return now - new Date(log.msg).getTime() > MSG_COOLDOWN_MS;
     }
+    case "react_play": {
+      if (!log.react) return true;
+      return now - new Date(log.react).getTime() > MSG_COOLDOWN_MS;
+    }
+    case "like_comment": {
+      if (!log.like) return true;
+      return now - new Date(log.like).getTime() > MSG_COOLDOWN_MS;
+    }
+    case "add_friend": {
+      if (!log.friend) return true;
+      return now - new Date(log.friend).getTime() > MSG_COOLDOWN_MS;
+    }
     case "add_favourite": {
       if (meta?.slot === undefined) return false;
       return !(log.once ?? []).includes(`fav_${meta.slot}`);
@@ -181,6 +204,8 @@ export function canAwardXP(
       return !(log.once ?? []).includes("set_username");
     case "set_avatar":
       return !(log.once ?? []).includes("set_avatar");
+    case "set_banner":
+      return !(log.once ?? []).includes("set_banner");
     case "set_bio":
       return !(log.once ?? []).includes("set_bio");
     case "view_match": {
@@ -217,11 +242,21 @@ export function recordAction(
     case "send_message":
       updated.msg = now;
       break;
+    case "react_play":
+      updated.react = now;
+      break;
+    case "like_comment":
+      updated.like = now;
+      break;
+    case "add_friend":
+      updated.friend = now;
+      break;
     case "add_favourite":
       updated.once = [...(log.once ?? []), `fav_${meta!.slot!}`];
       break;
     case "set_username":
     case "set_avatar":
+    case "set_banner":
     case "set_bio":
       updated.once = [...(log.once ?? []), action];
       break;

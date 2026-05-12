@@ -65,9 +65,13 @@ const XP_LABELS: Record<XPAction, string> = {
   send_message:  "Message sent",
   add_favourite: "Favourite added",
   set_username:  "Username set",
-  set_avatar:    "Avatar uploaded",
+  set_avatar:    "Profile picture added",
+  set_banner:    "Banner picture added",
   set_bio:       "Bio written",
   view_match:    "Match viewed",
+  react_play:    "Reacted to a play",
+  like_comment:  "Liked a comment",
+  add_friend:    "Friend added",
 };
 
 export function XPProvider({ children }: { children: React.ReactNode }) {

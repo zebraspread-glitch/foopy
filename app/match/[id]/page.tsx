@@ -1101,9 +1101,24 @@ export default function MatchPage() {
 
   useEffect(() => setMounted(true), []);
 
-  // Award XP only for viewing a live match
+  // Award XP for viewing a live match
   useEffect(() => {
     if (id && game && getStatus(game) === "LIVE") awardXP("view_match", { matchId: id });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, game]);
+
+  // Award XP for a correct winner pick when match is FINAL
+  useEffect(() => {
+    if (!id || !game || getStatus(game) !== "FINAL") return;
+    const gameId = Number(id);
+    if (!gameId) return;
+    const pick = localStorage.getItem(`winner-pick-${id}`) as "home" | "away" | null;
+    if (!pick) return;
+    const hs = game.hscore ?? 0;
+    const as = game.ascore ?? 0;
+    if (hs === as) return; // draw — no XP
+    const winner = hs > as ? "home" : "away";
+    if (pick === winner) awardXP("correct_pick", { gameId });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, game]);
 
@@ -1712,35 +1727,37 @@ export default function MatchPage() {
             <TeamScore team={game.ateam} score={awayScoreDisplay} align="right" />
           </div>
 
-          {/* Venue + round row */}
-          <div style={{
-            position: "relative",
-            marginTop: 26,
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-          }}>
+          {/* Venue + round row — only for upcoming/live games */}
+          {status !== "FINAL" && (
             <div style={{
-              display: "flex", alignItems: "center", gap: 6,
-              background: "#18181b",
-              border: "1px solid #3f3f46",
-              borderRadius: 9, padding: "7px 13px",
-              maxWidth: "100%",
+              position: "relative",
+              marginTop: 26,
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
             }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#71717a" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 13 8 13s8-7.75 8-13a8 8 0 0 0-8-8z"/></svg>
-              <span style={{ fontSize: 12, fontWeight: 700, color: "#71717a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                Round {game.round ?? "-"} · {game.venue || "Venue TBA"}
-              </span>
-              {status !== "LIVE" && (
-                <span style={{ fontSize: 12, fontWeight: 700, color: "#52525b", whiteSpace: "nowrap" }}>
-                  · {formatDate(game.date)}
+              <div style={{
+                display: "flex", alignItems: "center", gap: 6,
+                background: "#18181b",
+                border: "1px solid #3f3f46",
+                borderRadius: 9, padding: "7px 13px",
+                maxWidth: "100%",
+              }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#71717a" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 13 8 13s8-7.75 8-13a8 8 0 0 0-8-8z"/></svg>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#71717a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  Round {game.round ?? "-"} · {game.venue || "Venue TBA"}
                 </span>
-              )}
-              {status === "LIVE" && (
-                <span style={{ fontSize: 12, fontWeight: 800, color: "#4ade80", whiteSpace: "nowrap" }}>
-                  · {game.timestr || getLiveGameClock(liveEvents)}
-                </span>
-              )}
+                {status === "LIVE" && (
+                  <span style={{ fontSize: 12, fontWeight: 800, color: "#4ade80", whiteSpace: "nowrap" }}>
+                    · {game.timestr || getLiveGameClock(liveEvents)}
+                  </span>
+                )}
+                {status !== "LIVE" && (
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "#52525b", whiteSpace: "nowrap" }}>
+                    · {formatDate(game.date)}
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* ── Tabs ── */}
@@ -2000,7 +2017,7 @@ export default function MatchPage() {
 
         {activeTab === "chat" && (
           <section style={{ ...sectionStyle, padding: 0 }}>
-            <MatchComments gameId={Number(id)} />
+            <MatchComments gameId={Number(id)} highlight={searchParams?.get("highlight") ?? null} />
           </section>
         )}
 
@@ -2042,7 +2059,7 @@ function mcRelTime(dateString: string) {
   return new Date(dateString).toLocaleDateString("en-AU", { day: "numeric", month: "short" });
 }
 
-function MatchComments({ gameId }: { gameId: number }) {
+function MatchComments({ gameId, highlight }: { gameId: number; highlight: string | null }) {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
   const [comments, setComments] = useState<MatchComment[]>([]);
@@ -2053,7 +2070,15 @@ function MatchComments({ gameId }: { gameId: number }) {
   const [liking, setLiking] = useState<Set<string>>(new Set());
   const [dupToast, setDupToast] = useState(false);
   const [sort, setSort] = useState<"live" | "top">("live");
+  const [cooldown, setCooldown] = useState(0);
+  const [commentsSent, setCommentsSent] = useState(0);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setTimeout(() => setCooldown(c => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
 
   function showDupToast() {
     setDupToast(true);
@@ -2110,6 +2135,12 @@ function MatchComments({ gameId }: { gameId: number }) {
     setLoading(false);
   }, [gameId]);
 
+  useEffect(() => {
+    if (!highlight || loading) return;
+    const el = document.getElementById(`c-${highlight}`);
+    if (el) el.scrollIntoView({ block: "start", behavior: "smooth" });
+  }, [highlight, loading]);
+
   useEffect(() => { load(sort); }, [load, sort]);
 
   async function submit() {
@@ -2149,7 +2180,11 @@ function MatchComments({ gameId }: { gameId: number }) {
         game_id: gameId,
         event_key: null,
       });
-      setBody(""); setReplyTo(null); await load(sort);
+      setBody(""); setReplyTo(null);
+      const newCount = commentsSent + 1;
+      setCommentsSent(newCount);
+      if (newCount > 3) setCooldown(30);
+      await load(sort);
     }
     setSubmitting(false);
   }
@@ -2274,24 +2309,31 @@ function MatchComments({ gameId }: { gameId: number }) {
                 <button onClick={() => setReplyTo(null)} style={{ width: 22, height: 22, borderRadius: "50%", background: "rgba(255,255,255,0.08)", border: "none", color: "#94a3b8", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
               </div>
             )}
+            {cooldown > 0 && (
+              <div style={{ marginBottom: 8, padding: "7px 12px", borderRadius: 12, background: "rgba(251,146,60,.1)", border: "1px solid rgba(251,146,60,.25)", fontSize: 12, fontWeight: 700, color: "#fb923c", textAlign: "center" as const }}>
+                Wait {cooldown}s before commenting again
+              </div>
+            )}
             <div style={{ display: "flex", alignItems: "flex-end", gap: 10 }}>
               <MentionTextarea
                 textareaRef={inputRef}
                 value={body}
                 onChange={setBody}
-                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); } }}
-                placeholder={replyTo ? "Write a reply…" : "Write a comment…"}
+                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && !cooldown) { e.preventDefault(); submit(); } }}
+                placeholder={cooldown > 0 ? `Wait ${cooldown}s…` : replyTo ? "Write a reply…" : "Write a comment…"}
                 rows={1}
                 maxLength={500}
                 style={{ width: "100%", minHeight: 44, maxHeight: 110, background: "rgba(255,255,255,.07)", border: "1.5px solid rgba(255,255,255,.12)", borderRadius: 22, color: "#f8fafc", fontSize: 14, padding: "11px 16px", resize: "none", outline: "none", fontFamily: "inherit", lineHeight: 1.45 }}
               />
               <button
                 onClick={submit}
-                disabled={!body.trim() || submitting}
-                style={{ width: 44, height: 44, borderRadius: "50%", background: "linear-gradient(135deg,#3b82f6,#2563eb)", boxShadow: "0 2px 12px rgba(59,130,246,0.35)", border: "none", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, opacity: !body.trim() || submitting ? 0.38 : 1, transition: "opacity 0.15s" }}
+                disabled={!body.trim() || submitting || cooldown > 0}
+                style={{ width: 44, height: 44, borderRadius: "50%", background: "linear-gradient(135deg,#3b82f6,#2563eb)", boxShadow: "0 2px 12px rgba(59,130,246,0.35)", border: "none", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, opacity: !body.trim() || submitting || cooldown > 0 ? 0.38 : 1, transition: "opacity 0.15s" }}
               >
                 {submitting
                   ? <div style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+                  : cooldown > 0
+                  ? <span style={{ fontSize: 11, fontWeight: 900 }}>{cooldown}s</span>
                   : <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" fill="currentColor" stroke="none" /></svg>
                 }
               </button>

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 export type PlayerRank = {
+  id: string;
   name: string;
   team: string;
   totalFoopy: number;
@@ -46,7 +47,7 @@ function foopyRating(p: {
 
 /* ── Season rankings: from player-season-stats.json ── */
 function buildSeasonRankings(seasonStats: {
-  name: string; team: string; games?: number; goals?: number; goalAssists?: number;
+  id: string; name: string; team: string; games?: number; goals?: number; goalAssists?: number;
   behinds?: number; totalKicks?: number; totalHandballs?: number; totalMarks?: number;
   totalTackles?: number; totalHitouts?: number; totalClearances?: number;
   freesFor?: number; freesAgainst?: number; disposals?: number; kicks?: number;
@@ -79,6 +80,7 @@ function buildSeasonRankings(seasonStats: {
     if (avgFoopy === 0) continue;
 
     result.push({
+      id:         p.id,
       name:       p.name,
       team:       p.team ?? "",
       avgFoopy:   Number(avgFoopy.toFixed(1)),
@@ -101,11 +103,11 @@ function buildPeriodRankings(
       free_kicks: { for: number; against: number };
     }[] }[];
   }>,
-  playerLookup: Map<number, { name: string; team: string }>,
+  playerLookup: Map<number, { id: string; name: string; team: string }>,
   cutoffDays: number
 ): PlayerRank[] {
   const cutoff = new Date(Date.now() - cutoffDays * 86_400_000);
-  const totals = new Map<string, { name: string; team: string; totalFoopy: number; games: number }>();
+  const totals = new Map<string, { id: string; name: string; team: string; totalFoopy: number; games: number }>();
 
   for (const game of Object.values(gameStats)) {
     const gameDate = new Date(game.date);
@@ -133,7 +135,7 @@ function buildPeriodRankings(
         if (gf === 0) continue;
 
         const key = `${info.name}||${info.team}`;
-        const cur = totals.get(key) ?? { name: info.name, team: info.team, totalFoopy: 0, games: 0 };
+        const cur = totals.get(key) ?? { id: info.id, name: info.name, team: info.team, totalFoopy: 0, games: 0 };
         cur.totalFoopy += gf;
         cur.games      += 1;
         totals.set(key, cur);
@@ -144,6 +146,7 @@ function buildPeriodRankings(
   return [...totals.values()]
     .filter(p => p.totalFoopy > 0)
     .map(p => ({
+      id:         p.id,
       name:       p.name,
       team:       p.team,
       totalFoopy: Number(p.totalFoopy.toFixed(1)),
@@ -160,10 +163,10 @@ export async function GET() {
     import("@/app/data/players.json"),
   ]);
 
-  // Build player ID → {name, team} lookup from players.json
-  const playerLookup = new Map<number, { name: string; team: string }>();
-  for (const p of playersMod.default as { name: string; team: string; apiSportsId?: number | null }[]) {
-    if (p.apiSportsId) playerLookup.set(Number(p.apiSportsId), { name: p.name, team: p.team ?? "" });
+  // Build player ID → {id, name, team} lookup from players.json
+  const playerLookup = new Map<number, { id: string; name: string; team: string }>();
+  for (const p of playersMod.default as { id: string; name: string; team: string; apiSportsId?: number | null }[]) {
+    if (p.apiSportsId) playerLookup.set(Number(p.apiSportsId), { id: p.id, name: p.name, team: p.team ?? "" });
   }
 
   const season = buildSeasonRankings(seasonMod.default as Parameters<typeof buildSeasonRankings>[0]);

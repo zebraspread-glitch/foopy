@@ -842,6 +842,7 @@ export default function ProfilePage() {
 
     // Notify the addressee
     createNotification(id, "friend_request", user.id);
+    awardXP("add_friend");
 
     setSearchRes((prev) => prev.filter((p) => p.id !== id));
   }
@@ -1067,6 +1068,7 @@ export default function ProfilePage() {
     setProfile(data as Profile);
     setBannerUploading(false);
     setEditSection(null);
+    awardXP("set_banner");
   }
 
   async function signOut() {

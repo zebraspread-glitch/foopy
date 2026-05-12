@@ -103,6 +103,7 @@ export default function EventCommentsPage() {
   const gameId = Number(params?.id ?? 0);
   const eventKey = String(params?.event ?? "");
   const label = searchParams.get("label") || "Event";
+  const highlight = searchParams.get("highlight");
 
   const [userId, setUserId] = useState<string | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -114,8 +115,16 @@ export default function EventCommentsPage() {
   const [likingIds, setLikingIds] = useState<Set<string>>(new Set());
   const [errorText, setErrorText] = useState<string | null>(null);
   const [sort, setSort] = useState<"live" | "top">("live");
+  const [cooldown, setCooldown] = useState(0);
+  const [commentsSent, setCommentsSent] = useState(0);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setTimeout(() => setCooldown(c => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
 
   const eventParts = useMemo(() => {
     // Try URL params first (richer data), fall back to parsing the event key
@@ -287,6 +296,13 @@ export default function EventCommentsPage() {
     loadComments(sort);
   }, [loadComments, sort]);
 
+  // Scroll highlighted comment to top after load
+  useEffect(() => {
+    if (!highlight || loading) return;
+    const el = document.getElementById(`c-${highlight}`);
+    if (el) el.scrollIntoView({ block: "start", behavior: "smooth" });
+  }, [highlight, loading]);
+
   async function handleSubmit() {
     const cleanBody = body.trim();
     if (!cleanBody || !userId || submitting) return;
@@ -338,6 +354,9 @@ export default function EventCommentsPage() {
 
     setBody("");
     setReplyTo(null);
+    const newCount = commentsSent + 1;
+    setCommentsSent(newCount);
+    if (newCount > 3) setCooldown(30);
     await loadComments(sort);
     setSubmitting(false);
   }
@@ -536,13 +555,18 @@ export default function EventCommentsPage() {
               </div>
             )}
 
+            {cooldown > 0 && (
+              <div style={{ marginBottom: 8, padding: "7px 12px", borderRadius: 12, background: "rgba(251,146,60,.1)", border: "1px solid rgba(251,146,60,.25)", fontSize: 12, fontWeight: 700, color: "#fb923c", textAlign: "center" as const }}>
+                Wait {cooldown}s before commenting again
+              </div>
+            )}
             <div style={inputRowStyle}>
               <MentionTextarea
                 textareaRef={inputRef}
                 value={body}
                 onChange={setBody}
-                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
-                placeholder={replyTo ? "Write a reply…" : "Write a comment…"}
+                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && !cooldown) { e.preventDefault(); handleSubmit(); } }}
+                placeholder={cooldown > 0 ? `Wait ${cooldown}s…` : replyTo ? "Write a reply…" : "Write a comment…"}
                 rows={1}
                 maxLength={500}
                 style={textareaStyle}
@@ -550,14 +574,16 @@ export default function EventCommentsPage() {
 
               <button
                 onClick={handleSubmit}
-                disabled={!body.trim() || submitting}
+                disabled={!body.trim() || submitting || cooldown > 0}
                 style={{
                   ...sendBtnStyle,
-                  opacity: !body.trim() || submitting ? 0.38 : 1,
+                  opacity: !body.trim() || submitting || cooldown > 0 ? 0.38 : 1,
                 }}
               >
                 {submitting ? (
                   <div style={{ width: 18, height: 18, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "commentSpin 0.7s linear infinite" }} />
+                ) : cooldown > 0 ? (
+                  <span style={{ fontSize: 11, fontWeight: 900 }}>{cooldown}s</span>
                 ) : (
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="22" y1="2" x2="11" y2="13" />

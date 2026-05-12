@@ -8,6 +8,7 @@ import { supabase } from "@/app/lib/supabase";
 import XPBar from "@/app/components/XPBar";
 import LevelBadge from "@/app/components/LevelBadge";
 import { CARD_PLAYERS } from "@/app/data/cardPlayers";
+import playersData from "@/app/data/players.json";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -101,6 +102,21 @@ function normaliseFavSlots(slots: FavSlot[]): FavSlot[] {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+function timeAgo(dateStr: string): string {
+  const secs = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+  if (secs < 60) return `${secs}s`;
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins}m`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d`;
+  const weeks = Math.floor(days / 7);
+  if (weeks < 5) return `${weeks}w`;
+  const months = Math.floor(days / 30);
+  return `${months}mo`;
+}
+
 function initials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (!parts.length) return "?";
@@ -118,6 +134,20 @@ function avatarColors(name: string): [string, string] {
   let h = 0;
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffffffff;
   return AVATAR_PALETTE[Math.abs(h) % AVATAR_PALETTE.length];
+}
+
+// ── Comment type ─────────────────────────────────────────────────────────────
+
+type Comment = { id: string; body: string; created_at: string; game_id: number | null; event_key: string | null };
+
+// Maps built once from players.json import
+// apiSportsId → { name, team }  (for play event keys like q1_m5_tgoal_p804)
+// slugName(name) → team          (for player_ event keys)
+const playerById  = new Map<string, { name: string; team: string }>();
+const playerBySlug = new Map<string, { name: string; team: string }>();
+for (const p of playersData as Array<{ name: string; team: string; apiSportsId?: number }>) {
+  if (p.apiSportsId) playerById.set(String(p.apiSportsId), p);
+  playerBySlug.set(slugName(p.name), p);
 }
 
 // ── Fav slot component (needs its own hook) ───────────────────────────────────
@@ -149,6 +179,53 @@ function FavSlotView({ slot }: { slot: NonNullable<FavSlot> }) {
   );
 }
 
+function TeamLogoImg({ name }: { name: string }) {
+  const team = TEAMS.find(t => t.name === name || t.name.startsWith(name));
+  const [err, setErr] = useState(false);
+  if (!team || err) return (
+    <div style={{ width: 28, height: 28, borderRadius: "50%", background: team?.color ?? "#1e293b", border: "1.5px solid rgba(255,255,255,.12)" }} />
+  );
+  return (
+    <img src={team.logo} alt={name} onError={() => setErr(true)}
+      style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", border: "1.5px solid rgba(255,255,255,.12)", background: team.color }} />
+  );
+}
+
+function CommentRow({ comment, imgSrc, teams, href }: {
+  comment: Comment;
+  imgSrc: string | null;
+  teams: { hteam: string; ateam: string } | null;
+  href: string | null;
+}) {
+  const [imgErr, setImgErr] = useState(false);
+  const router = useRouter();
+  return (
+    <div
+      onClick={() => href && router.push(href)}
+      style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 14px", borderRadius: 14, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.07)", cursor: href ? "pointer" : "default" }}
+    >
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "#e2e8f0", lineHeight: 1.5, wordBreak: "break-word" as const }}>
+          {comment.body}
+        </p>
+        <div style={{ marginTop: 6, fontSize: 11, fontWeight: 700, color: "#475569" }}>
+          {timeAgo(comment.created_at)}
+        </div>
+      </div>
+      {imgSrc && !imgErr ? (
+        <img src={imgSrc} alt="" onError={() => setImgErr(true)}
+          style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: "2px solid rgba(255,255,255,.1)", background: "#111" }} />
+      ) : teams ? (
+        <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+          <TeamLogoImg name={teams.hteam} />
+          <span style={{ fontSize: 10, fontWeight: 800, color: "#334155" }}>vs</span>
+          <TeamLogoImg name={teams.ateam} />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function PublicProfilePage() {
@@ -156,11 +233,24 @@ export default function PublicProfilePage() {
   const router  = useRouter();
   const username = String(params.username || "").replace("@", "").toLowerCase();
 
-  const [profile,     setProfile]     = useState<Profile | null>(null);
-  const [friends,     setFriends]     = useState<FriendEntry[]>([]);
-  const [showFriends, setShowFriends] = useState(false);
-  const [loading,     setLoading]     = useState(true);
-  const [cardCount,   setCardCount]   = useState(0);
+  const [profile,       setProfile]       = useState<Profile | null>(null);
+  const [friends,       setFriends]       = useState<FriendEntry[]>([]);
+  const [showFriends,   setShowFriends]   = useState(false);
+  const [loading,       setLoading]       = useState(true);
+  const [cardCount,     setCardCount]     = useState(0);
+  const [comments,  setComments]  = useState<Comment[]>([]);
+  const [gamesMap,  setGamesMap]  = useState<Map<number, { hteam: string; ateam: string }>>(new Map());
+
+  useEffect(() => {
+    fetch("/api/squiggle/games")
+      .then(r => r.json())
+      .then((games: Array<{ id: number; hteam: string; ateam: string }>) => {
+        const map = new Map<number, { hteam: string; ateam: string }>();
+        for (const g of games) map.set(g.id, { hteam: g.hteam, ateam: g.ateam });
+        setGamesMap(map);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -175,6 +265,14 @@ export default function PublicProfilePage() {
       if (!p) { setProfile(null); setLoading(false); return; }
 
       setProfile(p as Profile);
+
+      const { data: userComments } = await supabase
+        .from("feed_comments")
+        .select("id, body, created_at, game_id, event_key")
+        .eq("user_id", p.id)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      setComments((userComments ?? []) as Comment[]);
 
       const { count } = await supabase
         .from("user_cards")
@@ -420,6 +518,36 @@ export default function PublicProfilePage() {
             </div>
           </div>
         </div>
+
+        {/* ── Comment history ── */}
+        {comments.length > 0 && (
+          <section style={{ background: "#080808", border: "1px solid rgba(255,255,255,.1)", borderRadius: 18, padding: "18px 16px 20px" }}>
+            <div style={{ marginBottom: 14, fontSize: 12, fontWeight: 800, color: "#64748b", textTransform: "uppercase" as const, letterSpacing: "0.08em" }}>
+              comments
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {comments.map(c => {
+                const ek = c.event_key;
+                let player: { name: string; team: string } | undefined;
+                if (ek?.startsWith("player_")) {
+                  player = playerBySlug.get(ek.slice(7));
+                } else if (ek) {
+                  // e.g. q1_m5_tgoal_p804 — the _p suffix is the numeric apiSportsId
+                  const m = ek.match(/_p([^_]+)$/);
+                  if (m) player = playerById.get(m[1]);
+                }
+                const imgSrc = player ? playerImagePath(player.name, player.team) : null;
+                const teams = c.game_id ? (gamesMap.get(c.game_id) ?? null) : null;
+                const href = c.game_id && ek
+                  ? `/match/${c.game_id}/${ek}?highlight=${c.id}`
+                  : c.game_id
+                  ? `/match/${c.game_id}?tab=chat&highlight=${c.id}`
+                  : null;
+                return <CommentRow key={c.id} comment={c} imgSrc={imgSrc} teams={teams} href={href} />;
+              })}
+            </div>
+          </section>
+        )}
 
       </div>
 

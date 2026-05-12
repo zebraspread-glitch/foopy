@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
+import { useRouter } from "next/navigation";
 import { getGames, getGamesCached } from "@/app/lib/gameCache";
 import type { PlayerRank } from "@/app/api/power-rankings/route";
 
@@ -357,10 +358,12 @@ export default function PowerRankingsPage() {
 /* ─── Player list item ────────────────────────────────────── */
 
 function PlayerItem({ player, rank, period }: { player: PlayerRank; rank: number; period: Period }) {
+  const router = useRouter();
   const scoreLabel = player.totalFoopy.toFixed(1);
 
   return (
-    <div className="pr-item" style={itemStyle}>
+    <div className="pr-item" style={{ ...itemStyle, cursor: player.id ? "pointer" : "default" }}
+      onClick={() => player.id && router.push(`/player/${player.id}`)}>
       <div style={{ width: 38, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
         <RankBadge rank={rank} />
       </div>
