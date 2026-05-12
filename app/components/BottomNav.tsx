@@ -32,10 +32,13 @@ function LadderIcon({ active }: { active: boolean }) {
 }
 
 function CardsIcon({ active }: { active: boolean }) {
+  const sw = active ? 2.2 : 1.8;
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="5" width="20" height="14" rx="2" />
-      <line x1="2" y1="10" x2="22" y2="10" />
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
+      {/* back card rotated clockwise */}
+      <rect x="9" y="2" width="13" height="17" rx="2.5" transform="rotate(15 15.5 10.5)" strokeOpacity="0.55" />
+      {/* front card upright */}
+      <rect x="2" y="5" width="13" height="17" rx="2.5" />
     </svg>
   );
 }

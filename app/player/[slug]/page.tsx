@@ -2,6 +2,12 @@ import path from "path";
 import fs from "fs";
 import Link from "next/link";
 import { BackButton, PlayerHeroImage } from "./PlayerClient";
+import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
+
+// Reverse map: API Sports game ID → Squiggle game ID
+const API_SPORTS_TO_SQUIGGLE: Record<number, string> = Object.fromEntries(
+  Object.entries(API_SPORTS_MATCH_IDS).map(([squiggleId, apiSportsId]) => [Number(apiSportsId), squiggleId])
+);
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -16,7 +22,7 @@ type SeasonStats = {
   totalTackles?: number; totalHitouts?: number; totalClearances?: number;
 };
 type GamePerf = {
-  gameId: number; date: string; foopy: number; goals: number;
+  gameId: number; squiggleId: string | null; date: string; foopy: number; goals: number;
   disposals: number; kicks: number; marks: number; tackles: number; hitouts: number;
   opponentTeam: string; round: number | string | null;
 };
@@ -211,6 +217,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
 
         recentGames.push({
           gameId:       g.gameId,
+          squiggleId:   API_SPORTS_TO_SQUIGGLE[g.gameId] ?? null,
           date:         g.date,
           goals:        num(ps.goals?.total),
           disposals:    num(ps.disposals),
@@ -236,9 +243,51 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
   const color    = teamColor(player.team);
   const imgSrc   = playerImgSrc(player.name, player.team);
   const games    = season?.games ?? 0;
-  const avgFoopy = recentGames.length
-    ? (recentGames.reduce((s, g) => s + g.foopy, 0) / recentGames.length)
+  const playedGames = recentGames.filter(g => g.foopy > 0);
+  const avgFoopy = playedGames.length
+    ? (playedGames.reduce((s, g) => s + g.foopy, 0) / playedGames.length)
     : null;
+
+  // Compute global rank across all players who have game data
+  const allAvgs: number[] = [];
+  let playerAvg: number | null = null;
+  for (const p of players) {
+    if (!p.apiSportsId) continue;
+    const pid = p.apiSportsId;
+    const gsAll = Object.values(gameStats).filter(g => g.teams?.some(t => t.players?.some(pp => pp.player?.id === pid)));
+    const gsRated = gsAll.filter(g => {
+      for (const t of g.teams ?? []) {
+        const ps = t.players?.find(pp => pp.player?.id === pid);
+        if (ps) return foopyRating({
+          goals: num(ps.goals?.total), goalAssists: num(ps.goals?.assists),
+          behinds: num(ps.behinds), kicks: num(ps.kicks), handballs: num(ps.handballs),
+          marks: num(ps.marks), tackles: num(ps.tackles), hitouts: num(ps.hitouts),
+          disposals: num(ps.disposals), clearances: num(ps.clearances),
+          freesFor: num(ps.free_kicks?.for), freesAgainst: num(ps.free_kicks?.against),
+        }) > 0;
+      }
+      return false;
+    });
+    if (gsRated.length === 0) continue;
+    const avg = gsRated.reduce((s, g) => {
+      for (const t of g.teams ?? []) {
+        const ps = t.players?.find(pp => pp.player?.id === pid);
+        if (ps) return s + foopyRating({
+          goals: num(ps.goals?.total), goalAssists: num(ps.goals?.assists),
+          behinds: num(ps.behinds), kicks: num(ps.kicks), handballs: num(ps.handballs),
+          marks: num(ps.marks), tackles: num(ps.tackles), hitouts: num(ps.hitouts),
+          disposals: num(ps.disposals), clearances: num(ps.clearances),
+          freesFor: num(ps.free_kicks?.for), freesAgainst: num(ps.free_kicks?.against),
+        });
+      }
+      return s;
+    }, 0) / gsRated.length;
+    allAvgs.push(avg);
+    if (p.id === slug) playerAvg = avg;
+  }
+  allAvgs.sort((a, b) => b - a);
+  const foopyRank = playerAvg !== null ? allAvgs.indexOf(playerAvg) + 1 : null;
+  const foopyTotal = allAvgs.length;
 
   const statGrid = [
     { label: "Goals",      value: season?.goalAvg?.toFixed(1)    ?? (games ? ((season?.goals  ?? 0) / games).toFixed(1) : "—") },
@@ -289,12 +338,17 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
             <div style={{ flexShrink: 0, width: 90, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: "20px 0", borderRight: "1px solid rgba(255,255,255,.08)" }}>
               <div style={{ fontSize: 10, fontWeight: 800, color: "#64748b", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>Avg Foopy</div>
               <div style={{ fontSize: 40, fontWeight: 950, letterSpacing: "-0.05em", lineHeight: 1, color: foopyColor(avgFoopy) }}>{avgFoopy.toFixed(1)}</div>
+              {foopyRank !== null && (
+                <div style={{ fontSize: 10, fontWeight: 800, color: "#475569", marginTop: 6, letterSpacing: "0.02em" }}>
+                  #{foopyRank} of {foopyTotal}
+                </div>
+              )}
             </div>
             {/* Right — bar chart */}
             <div style={{ flex: 1, padding: "16px 14px 12px", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
               <div style={{ fontSize: 10, fontWeight: 800, color: "#64748b", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Last 10 games</div>
               <div style={{ display: "flex", gap: 5, alignItems: "flex-end" }}>
-                {[...recentGames].slice(0, 10).reverse().map((g, i) => (
+                {[...playedGames].slice(0, 10).reverse().map((g, i) => (
                   <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
                     <span style={{ fontSize: 9, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{g.foopy.toFixed(1)}</span>
                     <div style={{ width: "70%", borderRadius: 4, background: foopyColor(g.foopy), height: Math.max(14, (g.foopy / 10) * 52) }} />
@@ -324,12 +378,12 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
         )}
 
         {/* ── Recent performances ── */}
-        {recentGames.length > 0 && (
+        {playedGames.length > 0 && (
           <section style={cardStyle}>
             <div style={sectionLabel}>Season performances</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {recentGames.map((g, i) => (
-                <Link key={i} href={`/match/${g.gameId}`} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 14, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.07)", textDecoration: "none", color: "inherit" }}>
+              {playedGames.map((g, i) => (
+                <Link key={i} href={g.squiggleId ? `/match/${g.squiggleId}` : "#"} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 14, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.07)", textDecoration: "none", color: "inherit" }}>
                   <div style={{ minWidth: 52, display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, gap: 4 }}>
                     {g.round !== null
                       ? <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", whiteSpace: "nowrap" }}>Rd {g.round}</div>
@@ -360,7 +414,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
           </section>
         )}
 
-        {!season && recentGames.length === 0 && (
+        {!season && playedGames.length === 0 && (
           <section style={cardStyle}>
             <p style={{ textAlign: "center", color: "#334155", fontWeight: 700, fontSize: 14, padding: "24px 0", margin: 0 }}>
               No stats available for this player yet.

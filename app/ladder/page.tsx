@@ -276,7 +276,8 @@ export default function LadderPage() {
 
           .ladder-team-cell {
             padding: 0 4px !important;
-            width: auto !important;
+            width: 90px !important;
+            min-width: 90px !important;
           }
 
           .ladder-team-inner {
@@ -315,6 +316,7 @@ export default function LadderPage() {
             font-size: 13px !important;
             font-weight: 950 !important;
             letter-spacing: 0.02em !important;
+            white-space: nowrap !important;
           }
 
           .ladder-row {
