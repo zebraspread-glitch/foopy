@@ -71,32 +71,66 @@ export const LEVEL_MILESTONES: Record<number, { emoji: string; label: string }> 
 const MSG_COOLDOWN_MS = 5 * 60 * 1000;
 
 // ─── Level math ──────────────────────────────────────────────────────────────
+//
+// XP to level up per bracket of 100 levels:
+//   Levels   1–100  → 100 XP each
+//   Levels 101–200  → 120 XP each
+//   Levels 201–300  → 140 XP each
+//   …and so on (+20 XP per bracket)
 
-/** Total XP required to reach `level` (from 0). */
+function xpPerLevelInBracket(bracket: number): number {
+  return 100 + 20 * bracket;
+}
+
+/** Total XP required to reach `level` (accumulated from level 1). */
 export function totalXPToReach(level: number): number {
   if (level <= 1) return 0;
-  const n = level - 1;
-  return ((n * (n + 1)) / 2) * 100;
+  const n = level - 1;                       // number of levels to climb
+  const bracket    = Math.floor(n / 100);    // complete brackets before current
+  const remainder  = n % 100;                // levels into the current bracket
+
+  // Sum XP for all complete brackets (each bracket k = 100 levels at 100+20k XP)
+  // = sum_{k=0}^{bracket-1} 100*(100+20k) = 100*bracket*(100 + 10*(bracket-1))
+  const completedXP = bracket * 100 * (100 + 10 * (bracket - 1));
+  const remainderXP = remainder * xpPerLevelInBracket(bracket);
+
+  return completedXP + remainderXP;
 }
 
 /** Current level from total accumulated XP. */
 export function levelFromXP(xp: number): number {
   if (xp <= 0) return 1;
-  // Inverse of totalXPToReach: solve n*(n+1)/2*100 = xp → n = (-1+sqrt(1+4xp/50))/2
-  const n = (-1 + Math.sqrt(1 + (4 * xp) / 50)) / 2;
-  return Math.max(1, Math.floor(n) + 1);
+  let remaining = xp;
+  let level     = 1;
+  let bracket   = 0;
+
+  while (true) {
+    const xpPerLevel    = xpPerLevelInBracket(bracket);
+    const xpForBracket  = 100 * xpPerLevel;
+
+    if (remaining < xpForBracket) {
+      level += Math.floor(remaining / xpPerLevel);
+      break;
+    }
+    remaining -= xpForBracket;
+    level     += 100;
+    bracket++;
+  }
+
+  return Math.max(1, level);
 }
 
-/** XP needed to complete current level (progress toward next). */
+/** XP accumulated within the current level (progress toward next). */
 export function xpInCurrentLevel(xp: number): number {
   const level = levelFromXP(xp);
   return xp - totalXPToReach(level);
 }
 
-/** Total XP required to advance one level from current level. */
+/** XP required to complete the current level (advance one level). */
 export function xpForCurrentLevel(xp: number): number {
-  const level = levelFromXP(xp);
-  return level * 100;
+  const level   = levelFromXP(xp);
+  const bracket = Math.floor((level - 1) / 100);
+  return xpPerLevelInBracket(bracket);
 }
 
 /** 0–1 progress fraction within the current level. */

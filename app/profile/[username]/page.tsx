@@ -39,6 +39,7 @@ type FriendEntry = { id: string; username: string | null; avatar_url: string | n
 const TEAMS = [
   { name: "Adelaide",          logo: "/team-logos/crows.png",     color: "#002b5c" },
   { name: "Brisbane Lions",    logo: "/team-logos/lions.png",     color: "#7a003c" },
+  { name: "Brisbane",          logo: "/team-logos/lions.png",     color: "#7a003c" },
   { name: "Carlton",           logo: "/team-logos/blues.png",     color: "#031a35" },
   { name: "Collingwood",       logo: "/team-logos/magpies.png",   color: "#111111" },
   { name: "Essendon",          logo: "/team-logos/bombers.png",   color: "#cc0000" },

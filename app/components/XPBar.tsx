@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { levelFromXP, levelProgress, xpForCurrentLevel, xpInCurrentLevel, levelTitle } from "@/app/lib/xp";
+import { levelFromXP, levelProgress, xpForCurrentLevel, xpInCurrentLevel } from "@/app/lib/xp";
 
 type Props = {
   xp: number;
@@ -13,7 +13,6 @@ export default function XPBar({ xp, compact = false }: Props) {
   const progress = levelProgress(xp);
   const current  = xpInCurrentLevel(xp);
   const needed   = xpForCurrentLevel(xp);
-  const title    = levelTitle(level);
 
   const containerStyle: CSSProperties = {
     display: "flex",
@@ -59,7 +58,7 @@ export default function XPBar({ xp, compact = false }: Props) {
     <div style={containerStyle}>
       <div style={labelRowStyle}>
         <span style={{ fontSize: "13px", fontWeight: 700, color: "rgba(255,255,255,0.9)" }}>
-          {title}
+          Level {level}
         </span>
         <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.45)", fontVariantNumeric: "tabular-nums" }}>
           {current} / {needed} XP

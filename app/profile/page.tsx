@@ -68,6 +68,7 @@ type PickerTab = "teams" | "players";
 const TEAMS = [
   { name: "Adelaide", logo: "/team-logos/crows.png", color: "#002b5c" },
   { name: "Brisbane Lions", logo: "/team-logos/lions.png", color: "#7a003c" },
+  { name: "Brisbane", logo: "/team-logos/lions.png", color: "#7a003c" },
   { name: "Carlton", logo: "/team-logos/blues.png", color: "#031a35" },
   { name: "Collingwood", logo: "/team-logos/magpies.png", color: "#111111" },
   { name: "Essendon", logo: "/team-logos/bombers.png", color: "#cc0000" },
@@ -1208,14 +1209,16 @@ export default function ProfilePage() {
         </div>
 
         {/* ── XP Progress ── */}
-        <div style={{ background: "#080808", border: "1px solid rgba(255,255,255,.1)", borderRadius: 18, padding: "16px 20px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-            <LevelBadge level={level} size="md" showTitle />
-            <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontVariantNumeric: "tabular-nums" }}>
-              {xp} XP total
-            </span>
+        <div style={{ background: "#080808", border: "1px solid rgba(255,255,255,.1)", borderRadius: 18, padding: "16px 20px", display: "flex", alignItems: "center", gap: 16 }}>
+          <LevelBadge level={level} size="xl" />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontVariantNumeric: "tabular-nums" }}>
+                {xp} XP total
+              </span>
+            </div>
+            <XPBar xp={xp} />
           </div>
-          <XPBar xp={xp} />
         </div>
 
         {/* ── Favourites ── */}
