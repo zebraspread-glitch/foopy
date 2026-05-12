@@ -42,7 +42,7 @@ function foopyRating(p: {
   if (p.freesAgainst >= 4) score -= 1;
 
   if (score <= 0) return 0;
-  return Number(Math.max(1, Math.min(10, 10 * (1 - Math.exp(-score / 65)))).toFixed(2));
+  return Number(Math.max(1, Math.min(10, 10 * (1 - Math.exp(-score / 36)))).toFixed(2));
 }
 
 /* ── Season rankings: from player-season-stats.json ── */

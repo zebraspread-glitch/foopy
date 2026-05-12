@@ -244,7 +244,7 @@ export function foopyRating(p: PlayerStat) {
   if (freesAgainst >= 4) score -= 1;
 
   if (score <= 0) return 0;
-  const rawRating = 10 * (1 - Math.exp(-score / 65));
+  const rawRating = 10 * (1 - Math.exp(-score / 36));
   return Number(Math.max(1, Math.min(10, rawRating)).toFixed(1));
 }
 

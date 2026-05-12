@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/app/lib/supabase";
 import { useXP } from "@/app/context/XPContext";
@@ -93,6 +93,7 @@ function SignInGate() {
 /* ════════════════════════════════════════════════════════ */
 export default function DMsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { awardXP } = useXP();
   const [user,      setUser]      = useState<User | null>(null);
   const [myProfile, setMyProfile] = useState<Profile | null>(null);
@@ -219,6 +220,26 @@ export default function DMsPage() {
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [myProfile, loadInbox]);
+
+  /* ── Auto-open from ?open= URL param ── */
+  const [autoOpened, setAutoOpened] = useState(false);
+  useEffect(() => {
+    const openId = searchParams.get("open");
+    if (!openId || autoOpened || !myProfile || inbox.length === 0) return;
+    const existing = inbox.find(e => e.other.id === openId);
+    if (existing) {
+      setAutoOpened(true);
+      openEntry(existing);
+      return;
+    }
+    // Not in inbox yet — fetch their profile and open a new blank thread
+    supabase.from("profiles").select("id,username,display_name,avatar_url").eq("id", openId).maybeSingle()
+      .then(({ data }) => {
+        if (!data) return;
+        setAutoOpened(true);
+        openEntry({ id: data.id, other: data as Profile, convId: null, preview: "", unread: 0 });
+      });
+  }, [searchParams, inbox, myProfile, autoOpened]);
 
   /* ── Open conversation ── */
   async function openEntry(entry: InboxEntry) {

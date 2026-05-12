@@ -240,6 +240,29 @@ export default function PublicProfilePage() {
   const [cardCount,     setCardCount]     = useState(0);
   const [comments,  setComments]  = useState<Comment[]>([]);
   const [gamesMap,  setGamesMap]  = useState<Map<number, { hteam: string; ateam: string }>>(new Map());
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [friendStatus,  setFriendStatus]  = useState<"none" | "pending_sent" | "pending_received" | "accepted">("none");
+  const [friendLoading, setFriendLoading] = useState(false);
+
+  // Get current session user
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null));
+  }, []);
+
+  // Load friendship status whenever currentUserId or profile changes
+  useEffect(() => {
+    if (!currentUserId || !profile || currentUserId === profile.id) return;
+    supabase
+      .from("friendships")
+      .select("requester_id, status")
+      .or(`and(requester_id.eq.${currentUserId},addressee_id.eq.${profile.id}),and(requester_id.eq.${profile.id},addressee_id.eq.${currentUserId})`)
+      .maybeSingle()
+      .then(({ data: row }) => {
+        if (!row) { setFriendStatus("none"); return; }
+        if (row.status === "accepted") { setFriendStatus("accepted"); return; }
+        setFriendStatus(row.requester_id === currentUserId ? "pending_sent" : "pending_received");
+      });
+  }, [currentUserId, profile]);
 
   useEffect(() => {
     fetch("/api/squiggle/games")
@@ -349,6 +372,29 @@ export default function PublicProfilePage() {
     Array.isArray(profile.favourites) ? profile.favourites : []
   );
   const filledFavs = favourites.filter(Boolean).length;
+  const isOwnProfile = currentUserId === profile.id;
+
+  async function handleFriendAction() {
+    if (!currentUserId || !profile) return;
+    setFriendLoading(true);
+    if (friendStatus === "none") {
+      await supabase.from("friendships").insert({ requester_id: currentUserId, addressee_id: profile.id, status: "pending" });
+      setFriendStatus("pending_sent");
+    } else if (friendStatus === "pending_sent") {
+      await supabase.from("friendships").delete()
+        .eq("requester_id", currentUserId).eq("addressee_id", profile.id);
+      setFriendStatus("none");
+    } else if (friendStatus === "pending_received") {
+      await supabase.from("friendships").update({ status: "accepted" })
+        .eq("requester_id", profile.id).eq("addressee_id", currentUserId);
+      setFriendStatus("accepted");
+    } else if (friendStatus === "accepted") {
+      await supabase.from("friendships").delete()
+        .or(`and(requester_id.eq.${currentUserId},addressee_id.eq.${profile.id}),and(requester_id.eq.${profile.id},addressee_id.eq.${currentUserId})`);
+      setFriendStatus("none");
+    }
+    setFriendLoading(false);
+  }
 
   return (
     <main style={pageStyle} className="page-enter">
@@ -408,11 +454,49 @@ export default function PublicProfilePage() {
           </div>
 
           {/* Bio */}
-          <div style={{ margin: "0 14px 14px", padding: "14px 16px", borderRadius: 16, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)" }}>
+          <div style={{ margin: "0 14px", padding: "14px 16px", borderRadius: 16, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)" }}>
             <p style={{ margin: 0, color: profile.bio ? "#cbd5e1" : "#475569", fontSize: 14, fontWeight: 600, lineHeight: 1.6, fontStyle: profile.bio ? "normal" : "italic" }}>
               {profile.bio || "No bio yet."}
             </p>
           </div>
+
+          {/* Add Friend + Message buttons (only when viewing another user's profile) */}
+          {!isOwnProfile && currentUserId && (
+            <div style={{ display: "flex", gap: 10, padding: "12px 14px 14px" }}>
+              <button
+                onClick={handleFriendAction}
+                disabled={friendLoading}
+                style={{
+                  flex: 1, padding: "11px 14px", borderRadius: 14, border: "none", cursor: "pointer",
+                  fontFamily: "inherit", fontWeight: 900, fontSize: 14,
+                  background: friendStatus === "accepted" ? "rgba(239,68,68,.15)"
+                    : friendStatus === "pending_sent" ? "rgba(255,255,255,.08)"
+                    : friendStatus === "pending_received" ? "rgba(59,130,246,.2)"
+                    : "rgba(59,130,246,.2)",
+                  color: friendStatus === "accepted" ? "#f87171"
+                    : friendStatus === "pending_sent" ? "#94a3b8"
+                    : "#60a5fa",
+                  opacity: friendLoading ? 0.6 : 1,
+                }}
+              >
+                {friendStatus === "accepted" ? "Remove Friend"
+                  : friendStatus === "pending_sent" ? "Request Sent"
+                  : friendStatus === "pending_received" ? "Accept Request"
+                  : "Add Friend"}
+              </button>
+              <button
+                onClick={() => router.push(`/dms?open=${profile.id}`)}
+                style={{
+                  flex: 1, padding: "11px 14px", borderRadius: 14,
+                  border: "1px solid rgba(255,255,255,.12)", cursor: "pointer",
+                  fontFamily: "inherit", fontWeight: 900, fontSize: 14,
+                  background: "rgba(255,255,255,.06)", color: "#e2e8f0",
+                }}
+              >
+                Message
+              </button>
+            </div>
+          )}
         </section>
 
         {/* ── Favourites ── */}

@@ -33,7 +33,7 @@ function foopyRating(p: {
   if (p.hitouts >= 25)     score += 3;
   if (p.freesAgainst >= 4) score -= 1;
   if (score <= 0) return 0;
-  return Number(Math.max(1, Math.min(10, 10 * (1 - Math.exp(-score / 65)))).toFixed(2));
+  return Number(Math.max(1, Math.min(10, 10 * (1 - Math.exp(-score / 36)))).toFixed(2));
 }
 
 export async function GET(_req: Request, { params }: { params: { slug: string } }) {
