@@ -905,6 +905,277 @@ function getCountdownText(date?: string, now = Date.now()) {
   return `${minutes}m ${seconds}s`;
 }
 
+// ─── Insights ────────────────────────────────────────────────────────────────
+
+type Insight = { team: string | null; text: string };
+
+function flexMatchTeam(a: string, b: string) {
+  const n = (s: string) => s.toLowerCase().replace(/[^a-z]/g, "");
+  const na = n(a); const nb = n(b);
+  return na === nb || na.includes(nb) || nb.includes(na);
+}
+
+function generateInsights(
+  homeTeam: string,
+  awayTeam: string,
+  allGames: MatchGame[],
+  teamStats: Record<string, any>,
+  apiTeamIdByName: Record<string, number>,
+): Insight[] {
+  const completed = allGames.filter(g => Number(g.complete) === 100);
+
+  const tScore   = (g: MatchGame, n: string) => flexMatchTeam(g.hteam, n) ? Number(g.hscore ?? 0) : Number(g.ascore ?? 0);
+  const oppScore = (g: MatchGame, n: string) => flexMatchTeam(g.hteam, n) ? Number(g.ascore ?? 0) : Number(g.hscore ?? 0);
+  const isWin    = (g: MatchGame, n: string) => tScore(g, n) > oppScore(g, n);
+  const isLoss   = (g: MatchGame, n: string) => tScore(g, n) < oppScore(g, n);
+
+  function sortedGames(name: string) {
+    return completed
+      .filter(g => flexMatchTeam(g.hteam, name) || flexMatchTeam(g.ateam, name))
+      .sort((a, b) => new Date(a.date ?? "").getTime() - new Date(b.date ?? "").getTime());
+  }
+
+  function statBlock(name: string) {
+    const tid = apiTeamIdByName[name];
+    if (!tid) return null;
+    const entries = (Object.values(teamStats) as any[]).filter(e =>
+      Array.isArray(e.teams) && e.teams.some((t: any) => t.team?.id === tid)
+    );
+    if (!entries.length) return null;
+    let goals = 0, behinds = 0, tackles = 0, clearances = 0, disposals = 0;
+    for (const e of entries) {
+      const b = e.teams.find((t: any) => t.team?.id === tid);
+      if (!b) continue;
+      goals      += Number(b.statistics?.scoring?.goals        ?? 0);
+      behinds    += Number(b.statistics?.scoring?.behinds      ?? 0);
+      tackles    += Number(b.statistics?.defence?.tackles      ?? 0);
+      clearances += Number(b.statistics?.stoppages?.clearances ?? 0);
+      disposals  += Number(b.statistics?.disposals?.disposals  ?? 0);
+    }
+    const n = entries.length;
+    return {
+      acc:           goals + behinds > 0 ? Math.round((goals / (goals + behinds)) * 100) : null,
+      avgGoals:      Math.round((goals / n) * 10) / 10,
+      avgTackles:    Math.round((tackles / n) * 10) / 10,
+      avgClearances: Math.round((clearances / n) * 10) / 10,
+      avgDisposals:  Math.round(disposals / n),
+    };
+  }
+
+  // Deterministic shuffle using team name as seed
+  function seededShuffle<T>(arr: T[], seed: number): T[] {
+    const a = [...arr];
+    let s = seed;
+    for (let i = a.length - 1; i > 0; i--) {
+      s = (Math.imul(s, 1664525) + 1013904223) | 0;
+      const j = Math.abs(s) % (i + 1);
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function teamSeed(name: string) {
+    return name.split("").reduce((s, c) => (Math.imul(s, 31) + c.charCodeAt(0)) | 0, 0);
+  }
+
+  function candidatesForTeam(name: string): Insight[] {
+    const games  = sortedGames(name);
+    if (!games.length) return [];
+    const wins   = games.filter(g => isWin(g, name));
+    const losses = games.filter(g => isLoss(g, name));
+    const st     = statBlock(name);
+    const pool: Insight[] = [];
+
+    // Season record
+    pool.push({ team: name, text: `${name} are ${wins.length}-${losses.length} this season` });
+
+    // Win/loss streak
+    const lastType = isWin(games[games.length - 1], name) ? "win" : "loss";
+    let streak = 0;
+    for (let i = games.length - 1; i >= 0; i--) {
+      const w = isWin(games[i], name);
+      if ((lastType === "win" && w) || (lastType === "loss" && !w)) streak++;
+      else break;
+    }
+    if (streak >= 2) {
+      pool.push(lastType === "win"
+        ? { team: name, text: `${name} are on a ${streak}-game winning streak heading into this clash` }
+        : { team: name, text: `${name} have lost ${streak} consecutive games and need a response` }
+      );
+    }
+
+    // Last 5 form string
+    const last5 = games.slice(-5);
+    const formStr = last5.map(g => isWin(g, name) ? "W" : isLoss(g, name) ? "L" : "D").join("·");
+    pool.push({ team: name, text: `${name}'s last ${last5.length} results: ${formStr}` });
+
+    // Biggest win
+    if (wins.length > 0) {
+      const bigWin = wins.reduce((b, g) =>
+        tScore(g, name) - oppScore(g, name) > tScore(b, name) - oppScore(b, name) ? g : b
+      );
+      const margin = tScore(bigWin, name) - oppScore(bigWin, name);
+      const opp = flexMatchTeam(bigWin.hteam, name) ? bigWin.ateam : bigWin.hteam;
+      pool.push({ team: name, text: `${name}'s biggest win this season was a ${margin}-point victory over ${opp}` });
+    }
+
+    // Biggest loss
+    if (losses.length > 0) {
+      const bigLoss = losses.reduce((b, g) =>
+        oppScore(g, name) - tScore(g, name) > oppScore(b, name) - tScore(b, name) ? g : b
+      );
+      const margin = oppScore(bigLoss, name) - tScore(bigLoss, name);
+      const opp = flexMatchTeam(bigLoss.hteam, name) ? bigLoss.ateam : bigLoss.hteam;
+      pool.push({ team: name, text: `${name}'s heaviest defeat this season was a ${margin}-point loss to ${opp}` });
+    }
+
+    // Avg score for & against
+    const avgFor = Math.round(games.reduce((s, g) => s + tScore(g, name), 0) / games.length);
+    const avgAga = Math.round(games.reduce((s, g) => s + oppScore(g, name), 0) / games.length);
+    pool.push({ team: name, text: `${name} average ${avgFor} points scored and ${avgAga} conceded per game` });
+
+    // 100+ scoring frequency
+    const century = games.filter(g => tScore(g, name) >= 100).length;
+    if (century >= 1) {
+      pool.push({ team: name, text: `${name} have hit 100+ points in ${century} of their ${games.length} games this season` });
+    }
+
+    // Sub-70 conceded frequency
+    const shutdowns = games.filter(g => oppScore(g, name) < 70).length;
+    if (shutdowns >= 2) {
+      pool.push({ team: name, text: `${name} have held opponents to under 70 points ${shutdowns} times this season` });
+    }
+
+    // Avg win/loss margins
+    if (wins.length > 0 && losses.length > 0) {
+      const avgWin  = Math.round(wins.reduce((s, g)   => s + tScore(g, name) - oppScore(g, name), 0) / wins.length);
+      const avgLoss = Math.round(losses.reduce((s, g) => s + oppScore(g, name) - tScore(g, name), 0) / losses.length);
+      pool.push({ team: name, text: `${name} win by an average of ${avgWin} points but lose by ${avgLoss} when beaten` });
+    }
+
+    // Home record
+    const homeGames = games.filter(g => flexMatchTeam(g.hteam, name));
+    if (homeGames.length >= 2) {
+      const hw = homeGames.filter(g => isWin(g, name)).length;
+      pool.push({ team: name, text: `${name} are ${hw}-${homeGames.length - hw} at home this season` });
+    }
+
+    // Away record
+    const awayGames = games.filter(g => flexMatchTeam(g.ateam, name));
+    if (awayGames.length >= 2) {
+      const aw = awayGames.filter(g => isWin(g, name)).length;
+      pool.push({ team: name, text: `${name} are ${aw}-${awayGames.length - aw} away from home this season` });
+    }
+
+    // Shooting accuracy
+    if (st?.acc !== null && st) {
+      pool.push({ team: name, text: `${name} convert ${st.acc}% of their scoring shots to goals this season` });
+    }
+
+    // Average tackles
+    if (st) {
+      pool.push({ team: name, text: `${name} lay an average of ${st.avgTackles} tackles per game this season` });
+    }
+
+    // Average clearances
+    if (st) {
+      pool.push({ team: name, text: `${name} win an average of ${st.avgClearances} clearances per game` });
+    }
+
+    // Average disposals
+    if (st) {
+      pool.push({ team: name, text: `${name} rack up an average of ${st.avgDisposals} disposals per game` });
+    }
+
+    // Close games (decided by ≤ 15 pts)
+    const closeGames = games.filter(g => Math.abs(tScore(g, name) - oppScore(g, name)) <= 15);
+    if (closeGames.length >= 2) {
+      const closeWins = closeGames.filter(g => isWin(g, name)).length;
+      pool.push({ team: name, text: `${name} have played ${closeGames.length} games decided by 15 points or less, winning ${closeWins}` });
+    }
+
+    return pool;
+  }
+
+  function pick5(name: string): Insight[] {
+    const pool = candidatesForTeam(name);
+    const shuffled = seededShuffle(pool, teamSeed(name));
+    return shuffled.slice(0, 5);
+  }
+
+  const insights: Insight[] = [
+    ...pick5(homeTeam),
+    ...pick5(awayTeam),
+  ];
+
+  // H2H — last meeting
+  const h2h = completed
+    .filter(g =>
+      (flexMatchTeam(g.hteam, homeTeam) && flexMatchTeam(g.ateam, awayTeam)) ||
+      (flexMatchTeam(g.hteam, awayTeam) && flexMatchTeam(g.ateam, homeTeam))
+    )
+    .sort((a, b) => new Date(a.date ?? "").getTime() - new Date(b.date ?? "").getTime());
+
+  if (h2h.length > 0) {
+    const last = h2h[h2h.length - 1];
+    const hScore = tScore(last, homeTeam);
+    const aScore = tScore(last, awayTeam);
+    const lastWinner = hScore > aScore ? homeTeam : awayTeam;
+    const margin = Math.abs(hScore - aScore);
+    insights.push({ team: lastWinner, text: `Last time these sides met, ${lastWinner} won by ${margin} points (${Math.max(hScore, aScore)}–${Math.min(hScore, aScore)})` });
+  }
+
+  return insights;
+}
+
+function InsightsBox({ homeTeam, awayTeam, allGames }: { homeTeam: string; awayTeam: string; allGames: MatchGame[] }) {
+  const insights = generateInsights(homeTeam, awayTeam, allGames, teamStatsJson as Record<string, any>, API_TEAM_ID_BY_NAME);
+  if (!insights.length) return null;
+
+  let lastTeam: string | null | undefined = undefined;
+
+  return (
+    <div style={{
+      margin: "20px 0 8px",
+      background: "#0d0d0d",
+      border: "1px solid rgba(255,255,255,0.08)",
+      borderRadius: 16,
+      overflow: "hidden",
+    }}>
+      <div style={{ padding: "14px 16px 10px", fontWeight: 900, fontSize: 15, color: "#fff", letterSpacing: "-0.01em" }}>
+        Insights
+      </div>
+      <div style={{ display: "flex", flexDirection: "column" }}>
+        {insights.map((ins, i) => {
+          const barColor = ins.team ? teamColor(ins.team, "primary") : "#3b82f6";
+          return (
+            <div key={i} style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "11px 14px",
+              background: "#111111",
+              borderRadius: 10,
+              margin: `0 8px ${i === insights.length - 1 ? 8 : 3}px`,
+            }}>
+              {/* Circular logo on every row */}
+              {ins.team
+                ? <img src={getLogo(ins.team)} alt={ins.team} style={{ width: 30, height: 30, flexShrink: 0, borderRadius: "50%", objectFit: "cover" }} />
+                : <div style={{ width: 30, height: 30, flexShrink: 0 }} />
+              }
+              {/* Team-coloured accent bar */}
+              <div style={{ width: 3, alignSelf: "stretch", minHeight: 32, background: barColor, borderRadius: 4, flexShrink: 0, opacity: 0.85 }} />
+              <span style={{ fontSize: 14, fontWeight: 700, color: "#e5e7eb", lineHeight: 1.45 }}>
+                {ins.text}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function getLiveGameClock(events: LiveEvent[]) {
   const latest = [...events].reverse().find((e) => e.period || e.quarter || e.minute);
   if (!latest) return "Q- · --'";
@@ -1836,10 +2107,15 @@ export default function MatchPage() {
             {!feedLoading && feedError && <p style={statsLoadingStyle}>{feedError}</p>}
 
             {!feedLoading && !feedError && liveEvents.length === 0 && status === "UPCOMING" && (
-              <div style={countdownBoxStyle}>
-                <div style={countdownLabelStyle}>GAME STARTS IN</div>
-                <div style={countdownTimeStyle}>{getCountdownText(game.date, now)}</div>
-              </div>
+              <>
+                <div style={countdownBoxStyle}>
+                  <div style={countdownLabelStyle}>GAME STARTS IN</div>
+                  <div style={countdownTimeStyle}>{getCountdownText(game.date, now)}</div>
+                </div>
+                {new Date(game.date ?? "").getTime() - now < 5 * 24 * 60 * 60 * 1000 && (
+                  <InsightsBox homeTeam={game.hteam} awayTeam={game.ateam} allGames={allGames} />
+                )}
+              </>
             )}
 
             {!feedLoading && !feedError && liveEvents.length === 0 && status !== "UPCOMING" && (
