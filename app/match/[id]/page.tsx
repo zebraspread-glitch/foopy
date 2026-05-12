@@ -463,12 +463,13 @@ function TeamScore({ team, score, align = "left" }: { team: any; score: any; ali
       </div>
       {/* Name */}
       <div style={{
-        fontSize: "clamp(13px, 3vw, 18px)", fontWeight: 900, color: "#f4f4f5",
-        letterSpacing: 0,
+        fontSize: "clamp(13px, 3.2vw, 18px)", fontWeight: 900, color: "#f4f4f5",
         textAlign: "center",
-        lineHeight: 1.1,
+        lineHeight: 1.2,
         maxWidth: "100%",
-        overflowWrap: "anywhere",
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
         textShadow: "0 2px 14px rgba(0,0,0,.65)",
       }}>
         {safeTeam}
@@ -485,11 +486,14 @@ function timeUntilStart(date?: string, now = Date.now()) {
   if (diff <= 0) return "Starting soon";
 
   const totalMinutes = Math.ceil(diff / 60_000);
-  const hours = Math.floor(totalMinutes / 60);
+  const totalHours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
+  const days = Math.floor(totalHours / 24);
+  const hours = totalHours % 24;
 
-  if (hours <= 0) return `${minutes}m`;
-  return `${hours}h ${minutes}m`;
+  if (days > 0) return `${days}d ${hours}h`;
+  if (totalHours <= 0) return `${minutes}m`;
+  return `${totalHours}h ${minutes}m`;
 }
 
 function roundStripStatus(game: MatchGame, now = Date.now()) {
@@ -2610,6 +2614,7 @@ function MatchPolls({
   const [voteCounts, setVoteCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const { awardXP } = useXP();
 
   const isAdmin = !!ADMIN_USER_ID && userId === ADMIN_USER_ID;
   const showResults = status === "FINAL";
@@ -2658,6 +2663,23 @@ function MatchPolls({
   }, [gameId]);
 
   useEffect(() => { loadPolls(); }, [loadPolls]);
+
+  // Award XP for correct poll votes when game is FINAL
+  useEffect(() => {
+    if (status !== "FINAL" || polls.length === 0 || Object.keys(userVotes).length === 0) return;
+    for (const poll of polls) {
+      const myVoteOptionId = userVotes[poll.id];
+      if (!myVoteOptionId) continue;
+      const winner = resolveWinner(poll, homeStats, awayStats, homeTeam, awayTeam);
+      if (!winner) continue;
+      const myOption = poll.options.find(o => o.id === myVoteOptionId);
+      if (!myOption) continue;
+      if (myOption.label.toLowerCase() !== winner.toLowerCase()) continue;
+      const optionCount = poll.options.length;
+      const xpOverride = optionCount >= 4 ? 20 : optionCount === 3 ? 15 : 10;
+      awardXP("poll_correct", { pollId: poll.id, xpOverride });
+    }
+  }, [status, polls, userVotes, homeStats, awayStats, homeTeam, awayTeam, awardXP]);
 
   async function vote(pollId: string, optionId: string) {
     if (!userId || userVotes[pollId]) return;
@@ -2761,91 +2783,106 @@ function PollCard({
   const totalVotes = poll.options.reduce((sum, o) => sum + (voteCounts[o.id] ?? 0), 0);
   const sorted = [...poll.options].sort((a, b) => a.position - b.position);
 
+  const optionColor = (label: string) => {
+    const c = pollOptionColors(label, poll.poll_type);
+    return String((c as any).background ?? "#6d28d9");
+  };
+
   return (
     <div style={pollCardStyle}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 16 }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          {isLivePoll && (
-            canVote ? (
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 5, marginBottom: 8, background: "rgba(34,197,94,0.13)", border: "1px solid rgba(34,197,94,0.32)", borderRadius: 999, padding: "3px 9px" }}>
-                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", animation: "livePulse 1.6s ease-in-out infinite" }} />
+      {/* ── Poll header ── */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#6d28d9", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
+              <rect x="18" y="4" width="4" height="16" rx="1" />
+              <rect x="10" y="9" width="4" height="11" rx="1" />
+              <rect x="2" y="13" width="4" height="7" rx="1" />
+            </svg>
+          </div>
+          {isLivePoll && canVote
+            ? <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(34,197,94,0.13)", border: "1px solid rgba(34,197,94,0.32)", borderRadius: 999, padding: "3px 9px" }}>
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e" }} />
                 <span style={{ fontSize: 10, fontWeight: 900, color: "#22c55e", letterSpacing: "0.08em" }}>LIVE · Q{poll.quarter}</span>
               </div>
-            ) : (
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 5, marginBottom: 8, background: "rgba(100,116,139,0.12)", border: "1px solid rgba(100,116,139,0.25)", borderRadius: 999, padding: "3px 9px" }}>
-                <span style={{ fontSize: 10, fontWeight: 900, color: "#64748b", letterSpacing: "0.08em" }}>Q{poll.quarter} POLL · CLOSED</span>
-              </div>
-            )
-          )}
-          <span style={pollQuestionStyle}>{poll.question}</span>
+            : isLivePoll
+            ? <span style={{ fontSize: 10, fontWeight: 900, color: "#64748b", letterSpacing: "0.06em" }}>Q{poll.quarter} · CLOSED</span>
+            : <span style={{ fontSize: 13, fontWeight: 900, color: "#a78bfa", letterSpacing: "0.08em" }}>POLL</span>
+          }
         </div>
-        {onDelete && (
-          <button onClick={onDelete} style={{ background: "rgba(255,255,255,.07)", border: "none", color: "#64748b", fontSize: 12, cursor: "pointer", flexShrink: 0, padding: "4px 7px", borderRadius: 6, lineHeight: 1 }}>✕</button>
-        )}
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+          <span style={{ fontSize: 12, fontWeight: 700, color: "#64748b" }}>{totalVotes} votes</span>
+          {onDelete && (
+            <button onClick={onDelete} style={{ background: "rgba(255,255,255,.07)", border: "none", color: "#64748b", fontSize: 12, cursor: "pointer", padding: "4px 7px", borderRadius: 6, lineHeight: 1, marginLeft: 4 }}>✕</button>
+          )}
+        </div>
       </div>
 
-      {/* Options / Results */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+      {/* ── Question ── */}
+      <div style={{ marginBottom: 16 }}>
+        <span style={pollQuestionStyle}>{poll.question}</span>
+        <div style={{ fontSize: 12, color: "#475569", fontWeight: 600, marginTop: 4 }}>
+          {votingLocked
+            ? isLivePoll ? "Voting closed — quarter ended" : "Voting closed — game has started"
+            : hasVoted ? "Results revealed after the game" : "Tap to vote"}
+        </div>
+      </div>
+
+      {/* ── Options ── */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {sorted.map(opt => {
           const count = voteCounts[opt.id] ?? 0;
           const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
           const isMyVote = userVote === opt.id;
           const isWinner = showResults && winner !== null && opt.label.toLowerCase() === winner.toLowerCase();
-          const optColors = pollOptionColors(opt.label, poll.poll_type);
+          const color = optionColor(opt.label);
+          const selected = isMyVote || isWinner;
+          const showBar = showResults || hasVoted || votingLocked;
 
-          if (showResults || hasVoted || votingLocked) {
-            const activeOption = isWinner || isMyVote;
-            const optionColor = String((optColors as any).background ?? "#334155");
-            const barColor = activeOption ? optionColor : "#3f3f46";
+          const inner = (
+            <>
+              {/* Radio */}
+              <div style={{ width: 20, height: 20, borderRadius: "50%", flexShrink: 0, border: `2px solid ${selected ? color : "rgba(255,255,255,0.25)"}`, display: "flex", alignItems: "center", justifyContent: "center", transition: "border-color 0.2s" }}>
+                {selected && <div style={{ width: 10, height: 10, borderRadius: "50%", background: color }} />}
+              </div>
+              {/* Logo / avatar */}
+              <PollOptionInner label={opt.label} pollType={poll.poll_type} winner={isWinner} myVote={isMyVote && !isWinner} />
+              {/* Bar + % */}
+              {showBar && (
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ height: 6, borderRadius: 999, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${pct}%`, borderRadius: 999, background: color, transition: "width 0.5s cubic-bezier(.4,0,.2,1)" }} />
+                  </div>
+                </div>
+              )}
+              {showBar && (
+                <div style={{ flexShrink: 0, textAlign: "right" }}>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: selected ? color : "#64748b", lineHeight: 1 }}>{pct}%</div>
+                  <div style={{ fontSize: 10, color: "#475569", fontWeight: 700, marginTop: 2 }}>{count} votes</div>
+                </div>
+              )}
+            </>
+          );
+
+          if (showBar) {
             return (
-              <div key={opt.id} style={{
-                ...pollResultRowStyle,
-                borderRadius: 13,
-                padding: "11px 13px",
-                background: activeOption ? optionColor : "#18181b",
-                border: activeOption ? `1px solid ${optionColor}` : "1px solid #2f2f33",
-              }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                  <PollOptionInner label={opt.label} pollType={poll.poll_type} winner={isWinner} myVote={isMyVote && !isWinner} />
-                  <span style={{ fontSize: 13, fontWeight: 800, color: activeOption ? "#ffffff" : "#94a3b8", marginLeft: 10, flexShrink: 0 }}>{pct}%</span>
-                </div>
-                <div style={{ height: 6, borderRadius: 999, background: activeOption ? "rgba(255,255,255,.24)" : "#2a2a2d", overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${pct}%`, borderRadius: 999, background: barColor, transition: "width 0.5s cubic-bezier(.4,0,.2,1)", boxShadow: "none" }} />
-                </div>
+              <div key={opt.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 14, border: `1.5px solid ${selected ? color : "rgba(255,255,255,0.1)"}`, background: selected ? `${color}18` : "rgba(255,255,255,0.03)" }}>
+                {inner}
               </div>
             );
           }
 
           return (
-            <button
-              key={opt.id}
-              onClick={() => onVote(opt.id)}
-              disabled={!canVote}
-              style={{ ...pollOptionBtnStyle, opacity: canVote ? 1 : 0.5, ...optColors }}
-            >
-              <PollOptionInner label={opt.label} pollType={poll.poll_type} />
+            <button key={opt.id} type="button" onClick={() => onVote(opt.id)} disabled={!canVote}
+              style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 14, border: "1.5px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)", cursor: canVote ? "pointer" : "default", opacity: canVote ? 1 : 0.5, width: "100%", textAlign: "left", transition: "border-color 0.2s, background 0.2s" }}>
+              {inner}
             </button>
           );
         })}
-      </div>
-
-      {/* Footer */}
-      <div style={{ marginTop: 13, display: "flex", alignItems: "center", gap: 6 }}>
-        {votingLocked && !showResults && (
-          <span style={{ fontSize: 10, color: "#64748b" }}>🔒</span>
-        )}
-        <span style={{ fontSize: 11, color: "#475569", fontWeight: 600 }}>
-          {showResults
-            ? `${totalVotes} vote${totalVotes !== 1 ? "s" : ""}`
-            : hasVoted
-            ? `${totalVotes} vote${totalVotes !== 1 ? "s" : ""} · Results revealed after the game`
-            : votingLocked
-            ? isLivePoll
-              ? `Voting closed — quarter ended · ${totalVotes} vote${totalVotes !== 1 ? "s" : ""}`
-              : "Voting closed — game has started"
-            : `Tap to vote · ${totalVotes > 0 ? `${totalVotes} vote${totalVotes !== 1 ? "s" : ""}` : "Be the first"}`}
-        </span>
       </div>
     </div>
   );
@@ -2877,9 +2914,13 @@ function CreatePollForm({
 
   const allPlayers = useMemo(() => {
     const norm = (s: string) => s.toLowerCase().replace(/[^a-z]/g, "");
+    const matches = (playerClub: string, teamName: string) => {
+      const a = norm(playerClub), b = norm(teamName);
+      return a === b || a.includes(b) || b.includes(a);
+    };
     const match = (team: string) => (p: any) => {
-      const club = norm(String(p.club || p.team || ""));
-      return club === norm(team);
+      const club = String(p.club || p.team || "");
+      return matches(club, team);
     };
     const home = (playerStatsJson as any[]).filter(match(homeTeam)).map(p => ({ name: String(p.name), team: homeTeam }));
     const away = (playerStatsJson as any[]).filter(match(awayTeam)).map(p => ({ name: String(p.name), team: awayTeam }));
@@ -3029,15 +3070,13 @@ function pollOptionColors(label: string, pollType: string): React.CSSProperties 
   return { background: c.primary, borderColor: c.primary };
 }
 
-function PollOptionInner({ label, pollType, winner, myVote }: { label: string; pollType: string; winner?: boolean; myVote?: boolean }) {
+function PollOptionInner({ label, pollType }: { label: string; pollType: string; winner?: boolean; myVote?: boolean }) {
   if (pollType === "team") {
     const logo = getLogo(label);
     return (
-      <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
-        <div style={{ width: 40, height: 40, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
-          <img src={logo} alt={label} style={{ width: 40, height: 40, objectFit: "contain", borderRadius: "50%" }} />
-        </div>
-        <span style={{ fontSize: 14, fontWeight: 800, color: "#ffffff", lineHeight: 1.2 }}>{label}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
+        <img src={logo} alt={label} style={{ width: 36, height: 36, objectFit: "contain", borderRadius: 8, flexShrink: 0 }} />
+        <span style={{ fontSize: 14, fontWeight: 800, color: "#f1f5f9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</span>
       </div>
     );
   }
@@ -3048,16 +3087,11 @@ function PollOptionInner({ label, pollType, winner, myVote }: { label: string; p
   const colors = liveFeedTeamColors(team);
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
-      <div style={{ width: 38, height: 38, borderRadius: "50%", overflow: "hidden", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", border: `2px solid ${colors.primary}` }}>
-        <img
-          src={img}
-          alt={label}
-          style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
-          onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-        />
+    <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
+      <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flexShrink: 0, border: `2px solid ${colors.primary}` }}>
+        <img src={img} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
       </div>
-      <span style={{ fontSize: 14, fontWeight: 800, color: "#ffffff", lineHeight: 1.2 }}>{label}</span>
+      <span style={{ fontSize: 14, fontWeight: 800, color: "#f1f5f9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</span>
     </div>
   );
 }
@@ -3065,10 +3099,10 @@ function PollOptionInner({ label, pollType, winner, myVote }: { label: string; p
 /* ================= STYLES ================= */
 
 const createPollBtnStyle: CSSProperties = { display: "block", margin: "0 16px 16px", padding: "10px 16px", borderRadius: 12, background: "rgba(59,130,246,.15)", border: "1px solid rgba(59,130,246,.3)", color: "#60a5fa", fontWeight: 800, fontSize: 14, cursor: "pointer" };
-const pollCardStyle: CSSProperties = { background: "linear-gradient(160deg,#13161d 0%,#0e1014 100%)", border: "1px solid rgba(255,255,255,.11)", borderRadius: 20, padding: "18px 16px", boxShadow: "0 6px 28px rgba(0,0,0,.45)" };
-const pollQuestionStyle: CSSProperties = { fontSize: 15, fontWeight: 800, color: "#f8fafc", lineHeight: 1.45, display: "block" };
+const pollCardStyle: CSSProperties = { background: "#070707", border: "1px solid rgba(255,255,255,.12)", borderRadius: 20, padding: "18px 16px", boxShadow: "0 6px 28px rgba(0,0,0,.45)" };
+const pollQuestionStyle: CSSProperties = { fontSize: 18, fontWeight: 900, color: "#f8fafc", lineHeight: 1.3, display: "block", letterSpacing: "-0.02em" };
 const pollResultRowStyle: CSSProperties = { padding: "0" };
-const pollOptionBtnStyle: CSSProperties = { width: "100%", padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,.055)", border: "1px solid rgba(255,255,255,.1)", color: "#e2e8f0", fontSize: 14, fontWeight: 700, cursor: "pointer", textAlign: "left", transition: "background 0.15s, border-color 0.15s" };
+const pollOptionBtnStyle: CSSProperties = { width: "100%", padding: "12px 14px", borderRadius: 14, background: "rgba(255,255,255,.03)", border: "1.5px solid rgba(255,255,255,.1)", color: "#e2e8f0", fontSize: 14, fontWeight: 700, cursor: "pointer", textAlign: "left", transition: "background 0.15s, border-color 0.15s" };
 const createFormStyle: CSSProperties = { margin: "0 16px 16px", padding: "16px", borderRadius: 16, background: "#0c0c0f", border: "1px solid rgba(255,255,255,.1)" };
 const pollTypeToggleStyle: CSSProperties = { flex: 1, padding: "8px 0", borderRadius: 8, border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer" };
 

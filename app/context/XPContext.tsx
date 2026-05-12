@@ -35,7 +35,7 @@ type XPContextValue = {
   dismissLevelUp: () => void;
   awardXP: (
     action: XPAction,
-    meta?: { roundId?: number; gameId?: number; matchId?: string; slot?: number }
+    meta?: { roundId?: number; gameId?: number; matchId?: string; slot?: number; pollId?: string; xpOverride?: number }
   ) => void;
 };
 
@@ -62,6 +62,7 @@ const XP_LABELS: Record<XPAction, string> = {
   make_pick:     "Pick made",
   lock_picks:    "Picks locked in",
   correct_pick:  "Correct pick!",
+  poll_correct:  "Poll correct!",
   send_message:  "Message sent",
   add_favourite: "Favourite added",
   set_username:  "Username set",
@@ -181,7 +182,7 @@ export function XPProvider({ children }: { children: React.ReactNode }) {
   const awardXP = useCallback(
     (
       action: XPAction,
-      meta?: { roundId?: number; gameId?: number; matchId?: string; slot?: number }
+      meta?: { roundId?: number; gameId?: number; matchId?: string; slot?: number; pollId?: string; xpOverride?: number }
     ): void => {
       if (!userIdRef.current) return;
 
@@ -191,7 +192,7 @@ export function XPProvider({ children }: { children: React.ReactNode }) {
 
       if (!canAwardXP(action, currentLog, meta)) return;
 
-      const awarded    = XP_VALUES[action];
+      const awarded    = meta?.xpOverride ?? XP_VALUES[action];
       const newXP      = currentXP + awarded;
       const prevLevel  = levelFromXP(currentXP);
       const newLevel   = levelFromXP(newXP);

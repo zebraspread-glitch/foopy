@@ -5,6 +5,7 @@ export type XPAction =
   | "make_pick"
   | "lock_picks"
   | "correct_pick"
+  | "poll_correct"
   | "send_message"
   | "add_favourite"
   | "set_username"
@@ -17,16 +18,17 @@ export type XPAction =
   | "add_friend";
 
 export type XPLog = {
-  daily?:   string;                   // ISO date string of last daily XP
-  msg?:     string;                   // ISO timestamp of last message XP
-  react?:   string;                   // ISO timestamp of last react_play XP
-  like?:    string;                   // ISO timestamp of last like_comment XP
-  friend?:  string;                   // ISO timestamp of last add_friend XP
-  locked?:  number[];                 // round numbers where lock_picks was awarded
-  picks?:   number[];                 // game IDs where make_pick XP was awarded
-  correct?: number[];                 // game IDs where correct_pick XP was awarded
-  once?:    string[];                 // one-time action keys
-  matches?: Record<string, string>;   // matchId → ISO timestamp of last view XP
+  daily?:        string;                   // ISO date string of last daily XP
+  msg?:          string;                   // ISO timestamp of last message XP
+  react?:        string;                   // ISO timestamp of last react_play XP
+  like?:         string;                   // ISO timestamp of last like_comment XP
+  friend?:       string;                   // ISO timestamp of last add_friend XP
+  locked?:       number[];                 // round numbers where lock_picks was awarded
+  picks?:        number[];                 // game IDs where make_pick XP was awarded
+  correct?:      number[];                 // game IDs where correct_pick XP was awarded
+  pollsCorrect?: string[];                 // poll IDs where poll_correct XP was awarded
+  once?:         string[];                 // one-time action keys
+  matches?:      Record<string, string>;   // matchId → ISO timestamp of last view XP
 };
 
 export type XPResult = {
@@ -45,6 +47,7 @@ export const XP_VALUES: Record<XPAction, number> = {
   make_pick:      5,
   lock_picks:    15,
   correct_pick:  10,
+  poll_correct:  10, // base; actual amount passed via meta.xpOverride
   send_message:  10,
   add_favourite: 10,
   set_username:  50,
@@ -158,7 +161,7 @@ export function levelTitle(level: number): string {
 export function canAwardXP(
   action: XPAction,
   log: XPLog,
-  meta?: { roundId?: number; gameId?: number; matchId?: string; slot?: number }
+  meta?: { roundId?: number; gameId?: number; matchId?: string; slot?: number; pollId?: string; xpOverride?: number }
 ): boolean {
   const now = Date.now();
 
@@ -179,6 +182,10 @@ export function canAwardXP(
     case "correct_pick": {
       if (!meta?.gameId) return false;
       return !(log.correct ?? []).includes(meta.gameId);
+    }
+    case "poll_correct": {
+      if (!meta?.pollId) return false;
+      return !(log.pollsCorrect ?? []).includes(meta.pollId);
     }
     case "send_message": {
       if (!log.msg) return true;
@@ -221,7 +228,7 @@ export function canAwardXP(
 export function recordAction(
   action: XPAction,
   log: XPLog,
-  meta?: { roundId?: number; gameId?: number; matchId?: string; slot?: number }
+  meta?: { roundId?: number; gameId?: number; matchId?: string; slot?: number; pollId?: string; xpOverride?: number }
 ): XPLog {
   const now = new Date().toISOString();
   const updated = { ...log };
@@ -238,6 +245,9 @@ export function recordAction(
       break;
     case "correct_pick":
       updated.correct = [...(log.correct ?? []), meta!.gameId!];
+      break;
+    case "poll_correct":
+      updated.pollsCorrect = [...(log.pollsCorrect ?? []), meta!.pollId!];
       break;
     case "send_message":
       updated.msg = now;
@@ -273,11 +283,11 @@ export function computeXPAward(
   action: XPAction,
   currentXP: number,
   log: XPLog,
-  meta?: { roundId?: number; gameId?: number; matchId?: string; slot?: number }
+  meta?: { roundId?: number; gameId?: number; matchId?: string; slot?: number; pollId?: string; xpOverride?: number }
 ): XPResult | null {
   if (!canAwardXP(action, log, meta)) return null;
 
-  const awarded = XP_VALUES[action];
+  const awarded = meta?.xpOverride ?? XP_VALUES[action];
   const newXP = currentXP + awarded;
   const prevLevel = levelFromXP(currentXP);
   const newLevel = levelFromXP(newXP);
