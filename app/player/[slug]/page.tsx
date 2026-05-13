@@ -365,12 +365,48 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
         {/* ── Season averages ── */}
         {season && games > 0 && (
           <section style={cardStyle}>
-            <div style={sectionLabel}>Season averages</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 1, background: "rgba(255,255,255,.06)", borderRadius: 12, overflow: "hidden" }}>
-              {statGrid.map(({ label, value }) => (
-                <div key={label} style={{ background: "#080808", padding: "12px 8px", textAlign: "center" }}>
-                  <div style={{ fontSize: 17, fontWeight: 950, letterSpacing: "-0.03em", color: "#f8fafc" }}>{value}</div>
-                  <div style={{ fontSize: 10, fontWeight: 800, color: "#475569", marginTop: 2, letterSpacing: "0.04em" }}>{label.toUpperCase()}</div>
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+              <div style={sectionLabel}>Season averages</div>
+              <span style={{ fontSize: 11, fontWeight: 800, color: "#475569", background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 999, padding: "3px 10px", letterSpacing: "0.04em" }}>
+                {games} games
+              </span>
+            </div>
+
+            {/* Hero stats — Goals & Disposals */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+              {[
+                { label: "Goals", value: statGrid[0].value, accent: true },
+                { label: "Disposals", value: statGrid[1].value, accent: false },
+              ].map(({ label, value, accent }) => (
+                <div key={label} style={{
+                  background: accent ? `${color}18` : "rgba(255,255,255,.04)",
+                  border: `1px solid ${accent ? `${color}35` : "rgba(255,255,255,.07)"}`,
+                  borderRadius: 16,
+                  padding: "16px 14px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 4,
+                }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: accent ? `${color}cc` : "#475569", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>{label}</div>
+                  <div style={{ fontSize: 32, fontWeight: 950, letterSpacing: "-0.04em", lineHeight: 1, color: accent ? color : "#f8fafc" }}>{value}</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#334155" }}>per game</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Secondary stats — 3-col grid */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+              {statGrid.slice(2).map(({ label, value }) => (
+                <div key={label} style={{
+                  background: "rgba(255,255,255,.03)",
+                  border: "1px solid rgba(255,255,255,.06)",
+                  borderRadius: 12,
+                  padding: "11px 10px",
+                  textAlign: "center" as const,
+                }}>
+                  <div style={{ fontSize: 19, fontWeight: 950, letterSpacing: "-0.03em", color: "#e2e8f0", lineHeight: 1 }}>{value}</div>
+                  <div style={{ fontSize: 9, fontWeight: 800, color: "#475569", marginTop: 4, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>{label}</div>
                 </div>
               ))}
             </div>
