@@ -562,7 +562,7 @@ function PackShop({
                   boxShadow: canAfford ? `0 4px 18px ${pack.accent}44` : "none",
                 }}
               >
-                {isOpening ? <Spinner size={14} /> : "Open"}
+                {isOpening ? <Spinner /> : "Open"}
               </button>
 
               {/* Odds toggle */}
