@@ -533,7 +533,7 @@ export default function EventCommentsPage() {
 
   return (
     <main style={pageStyle}>
-      <style jsx global>{`
+      <style>{`
         @keyframes commentSpin {
           to {
             transform: rotate(360deg);
