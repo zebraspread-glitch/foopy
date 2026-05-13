@@ -109,6 +109,7 @@ export default function EventCommentsPage() {
 
   const [resolvedPlayerName, setResolvedPlayerName] = useState<string | null>(null);
   const [fetchedStats, setFetchedStats] = useState<{ rating: string; gb: string; d: string; k: string; h: string; m: string; t: string; ho: string } | null>(null);
+  const [matchGame, setMatchGame] = useState<{ hteam: string; ateam: string; hscore: number | null; ascore: number | null; complete: number; round: number | string } | null>(null);
 
   // Resolve label: use URL param if provided, otherwise derive from event key (local lookup),
   // or fall back to resolvedPlayerName fetched async from the play-by-play API.
@@ -156,6 +157,24 @@ export default function EventCommentsPage() {
   }, [gameId, eventKey, labelFromParams]);
 
   const label = labelFromParams ?? resolvedPlayerName ?? "Event";
+
+  useEffect(() => {
+    if (!gameId) return;
+    fetch("/api/squiggle/games")
+      .then(r => r.json())
+      .then((games: any[]) => {
+        const g = games.find((x: any) => Number(x.id) === gameId);
+        if (g) setMatchGame({
+          hteam: g.hteam ?? "",
+          ateam: g.ateam ?? "",
+          hscore: g.hscore ?? null,
+          ascore: g.ascore ?? null,
+          complete: Number(g.complete ?? 0),
+          round: g.round ?? "",
+        });
+      })
+      .catch(() => {});
+  }, [gameId]);
 
   const [userId, setUserId] = useState<string | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -559,6 +578,10 @@ export default function EventCommentsPage() {
         </div>
       </header>
 
+      {matchGame && (
+        <MatchScoreBar game={matchGame} gameId={gameId} />
+      )}
+
       {eventParts && eventCard && (
         <EventCard
           playerName={eventCard.playerName}
@@ -703,6 +726,62 @@ export default function EventCommentsPage() {
         )}
       </section>
     </main>
+  );
+}
+
+function MatchScoreBar({ game, gameId }: { game: { hteam: string; ateam: string; hscore: number | null; ascore: number | null; complete: number; round: number | string }; gameId: number }) {
+  const router = useRouter();
+  const [hErr, setHErr] = useState(false);
+  const [aErr, setAErr] = useState(false);
+
+  const hFolder = CLUB_FOLDER[game.hteam] ?? slugify(game.hteam);
+  const aFolder = CLUB_FOLDER[game.ateam] ?? slugify(game.ateam);
+  const hLogo = `/team-logos/${hFolder}.png`;
+  const aLogo = `/team-logos/${aFolder}.png`;
+
+  const status = game.complete >= 100 ? "FINAL" : game.complete > 0 ? "LIVE" : "UPCOMING";
+  const hScore = game.hscore ?? "-";
+  const aScore = game.ascore ?? "-";
+
+  return (
+    <button
+      onClick={() => router.push(`/match/${gameId}`)}
+      style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        width: "100%", margin: "10px 0 0", padding: "10px 16px",
+        background: "rgba(255,255,255,0.04)", borderTop: "1px solid rgba(255,255,255,0.07)",
+        borderBottom: "1px solid rgba(255,255,255,0.07)", border: "none",
+        cursor: "pointer", color: "#fff", fontFamily: "inherit",
+      }}
+    >
+      {/* Home team */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
+        {!hErr
+          ? <img src={hLogo} alt={game.hteam} onError={() => setHErr(true)} style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover" }} />
+          : <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#1e293b" }} />}
+        <div style={{ textAlign: "left" as const }}>
+          <div style={{ fontSize: 13, fontWeight: 900, color: "#f8fafc" }}>{game.hteam.split(" ").pop()}</div>
+          <div style={{ fontSize: 22, fontWeight: 1000, color: "#f8fafc", lineHeight: 1 }}>{hScore}</div>
+        </div>
+      </div>
+
+      {/* Centre */}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "0 10px" }}>
+        <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.1em", color: status === "LIVE" ? "#22c55e" : "#64748b" }}>{status}</span>
+        <span style={{ fontSize: 10, fontWeight: 700, color: "#334155" }}>Rd {game.round}</span>
+      </div>
+
+      {/* Away team */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, justifyContent: "flex-end" }}>
+        <div style={{ textAlign: "right" as const }}>
+          <div style={{ fontSize: 13, fontWeight: 900, color: "#f8fafc" }}>{game.ateam.split(" ").pop()}</div>
+          <div style={{ fontSize: 22, fontWeight: 1000, color: "#f8fafc", lineHeight: 1 }}>{aScore}</div>
+        </div>
+        {!aErr
+          ? <img src={aLogo} alt={game.ateam} onError={() => setAErr(true)} style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover" }} />
+          : <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#1e293b" }} />}
+      </div>
+    </button>
   );
 }
 
