@@ -9,6 +9,8 @@ import XPBar from "@/app/components/XPBar";
 import LevelBadge from "@/app/components/LevelBadge";
 import { CARD_PLAYERS } from "@/app/data/cardPlayers";
 import playersData from "@/app/data/players.json";
+import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
+import { foopyRating } from "@/app/match/[id]/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -244,6 +246,63 @@ export default function PublicProfilePage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [friendStatus,  setFriendStatus]  = useState<"none" | "pending_sent" | "pending_received" | "accepted">("none");
   const [friendLoading, setFriendLoading] = useState(false);
+  const [playerStatsMap, setPlayerStatsMap] = useState<Map<string, { rating: string; gb: string; d: string; k: string; h: string; m: string; t: string; ho: string }>>(new Map());
+
+  // Fetch player stats for all player_ event key comments so we can embed them in the URL
+  useEffect(() => {
+    const playerComments = comments.filter(c => c.event_key?.startsWith("player_") && c.game_id);
+    if (!playerComments.length) return;
+
+    const uniqueGameIds = Array.from(new Set(playerComments.map(c => c.game_id!)));
+
+    Promise.all(
+      uniqueGameIds.map(async (gameId) => {
+        const apiId = (API_SPORTS_MATCH_IDS as Record<string, string>)[String(gameId)] ?? String(gameId);
+        try {
+          const res = await fetch(`/api/afl/player-stats?id=${apiId}`);
+          if (!res.ok) return { gameId, players: [] };
+          const data = await res.json();
+          return { gameId, players: (data?.response ?? []) as any[] };
+        } catch {
+          return { gameId, players: [] };
+        }
+      })
+    ).then(results => {
+      const next = new Map<string, { rating: string; gb: string; d: string; k: string; h: string; m: string; t: string; ho: string }>();
+      for (const { gameId, players } of results) {
+        for (const c of playerComments.filter(c => c.game_id === gameId)) {
+          const slug = c.event_key!.slice(7); // after "player_"
+          const found = players.find((p: any) => slugName(p.player?.name ?? p.name ?? "") === slug);
+          if (!found) continue;
+          const raw = found.statistics ?? found;
+          const goals = raw.goals?.total ?? raw.goals ?? 0;
+          const goalAssists = raw.goals?.assists ?? raw.goalAssists ?? 0;
+          const behinds = raw.behinds ?? 0;
+          const kicks = raw.kicks ?? 0;
+          const handballs = raw.handballs ?? 0;
+          const marks = raw.marks ?? 0;
+          const tackles = raw.tackles ?? 0;
+          const hitouts = raw.hitouts ?? 0;
+          const disposals = raw.disposals ?? 0;
+          const clearances = raw.clearances ?? 0;
+          const freesFor = raw.free_kicks?.for ?? raw.freesFor ?? 0;
+          const freesAgainst = raw.free_kicks?.against ?? raw.freesAgainst ?? 0;
+          const rating = foopyRating({ goals, goalAssists, behinds, kicks, handballs, marks, tackles, hitouts, disposals, clearances, freesFor, freesAgainst } as any);
+          next.set(`${gameId}_${slug}`, {
+            rating: rating > 0 ? String(rating) : "",
+            gb: `${goals}.${behinds}`,
+            d: String(disposals),
+            k: String(kicks),
+            h: String(handballs),
+            m: String(marks),
+            t: String(tackles),
+            ho: String(hitouts),
+          });
+        }
+      }
+      setPlayerStatsMap(next);
+    });
+  }, [comments]);
 
   // Get current session user
   useEffect(() => {
@@ -625,18 +684,29 @@ export default function PublicProfilePage() {
                 const teams = c.game_id ? (gamesMap.get(c.game_id) ?? null) : null;
                 let href: string | null = null;
                 if (c.game_id && ek) {
-                  const p = new URLSearchParams({ highlight: c.id });
-                  if (player) {
-                    if (ek.startsWith("player_")) {
-                      p.set("label", player.name);
-                    } else {
+                  if (ek.startsWith("player_") && player) {
+                    const slug = ek.slice(7);
+                    const stats = playerStatsMap.get(`${c.game_id}_${slug}`);
+                    const p = new URLSearchParams({ label: player.name, team: player.team });
+                    if (stats?.rating) p.set("rating", stats.rating);
+                    if (stats?.gb)     p.set("gb", stats.gb);
+                    if (stats?.d)      p.set("d", stats.d);
+                    if (stats?.k)      p.set("k", stats.k);
+                    if (stats?.h)      p.set("h", stats.h);
+                    if (stats?.m)      p.set("m", stats.m);
+                    if (stats?.t)      p.set("t", stats.t);
+                    if (stats?.ho)     p.set("ho", stats.ho);
+                    href = `/match/${c.game_id}/${ek}?${p.toString()}`;
+                  } else {
+                    const p = new URLSearchParams({ highlight: c.id });
+                    if (player) {
                       const typeMatch = ek.match(/_t([^_]+)_p/);
                       const eventType = typeMatch ? typeMatch[1].toUpperCase() : "";
                       p.set("label", eventType ? `${player.name} · ${eventType}` : player.name);
+                      p.set("team", player.team);
                     }
-                    p.set("team", player.team);
+                    href = `/match/${c.game_id}/${ek}?${p.toString()}`;
                   }
-                  href = `/match/${c.game_id}/${ek}?${p.toString()}`;
                 } else if (c.game_id) {
                   href = `/match/${c.game_id}?tab=chat&highlight=${c.id}`;
                 }
