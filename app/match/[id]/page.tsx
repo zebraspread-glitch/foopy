@@ -1877,7 +1877,7 @@ export default function MatchPage() {
         {/* ── Scoreboard ── */}
         <div style={{
           position: "relative", overflow: "hidden",
-          padding: "calc(env(safe-area-inset-top) + 24px) 24px 26px",
+          padding: roundGames.length > 1 ? "24px 24px 26px" : "calc(env(safe-area-inset-top) + 24px) 24px 26px",
           minHeight: 292,
           borderBottom: "1px solid rgba(255,255,255,0.07)",
           background: "linear-gradient(180deg, #151515 0%, #090909 58%, #040404 100%)",
@@ -3393,6 +3393,7 @@ const roundStripShellStyle: CSSProperties = {
   gap: 8,
   overflowX: "auto",
   padding: "10px 12px",
+  paddingTop: "calc(env(safe-area-inset-top) + 10px)",
   background: "#050505",
   borderBottom: "1px solid rgba(255,255,255,.08)",
   scrollSnapType: "x mandatory",
