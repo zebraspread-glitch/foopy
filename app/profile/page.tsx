@@ -573,7 +573,7 @@ function FavSlotButton({
 /* ═══════════════════ Main Page ═══════════════════ */
 export default function ProfilePage() {
   const router = useRouter();
-  const { xp, level, awardXP } = useXP();
+  const { xp, level, log, awardXP } = useXP();
 
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -617,6 +617,27 @@ export default function ProfilePage() {
   const [friendsLoading, setFriendsLoading] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [signOutBusy, setSignOutBusy] = useState(false);
+
+  // ── Stats section ──
+  type StatsPopup = null | "games" | "likes" | "polls";
+  const [statsPopup, setStatsPopup] = useState<StatsPopup>(null);
+  const [cardCount, setCardCount] = useState<number | null>(null);
+  const [totalLikes, setTotalLikes] = useState<number | null>(null);
+
+  type TeamStat = { name: string; logo: string; count: number };
+  type LikeEntry = { id: string; username: string | null; avatar_url: string | null; total: number };
+  type PollTeamStat = { name: string; logo: string; wins: number; losses: number };
+
+  const [gamesData, setGamesData] = useState<TeamStat[]>([]);
+  const [gamesDataLoading, setGamesDataLoading] = useState(false);
+  const [likesData, setLikesData] = useState<LikeEntry[]>([]);
+  const [likesDataLoading, setLikesDataLoading] = useState(false);
+  const [likesOffset, setLikesOffset] = useState(0);
+  const [likesHasMore, setLikesHasMore] = useState(true);
+  const likesSentinelRef = useRef<HTMLDivElement>(null);
+  const likesLoadingRef = useRef(false);
+  const [pollsData, setPollsData] = useState<PollTeamStat[]>([]);
+  const [pollsDataLoading, setPollsDataLoading] = useState(false);
 
   useEffect(() => {
     const {
@@ -662,6 +683,23 @@ export default function ProfilePage() {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
     };
   }, [previewUrl]);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("user_cards")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .then(({ count }) => setCardCount(count ?? 0));
+    supabase
+      .from("feed_comments")
+      .select("likes")
+      .eq("user_id", user.id)
+      .then(({ data }) => {
+        const total = (data ?? []).reduce((acc, r) => acc + (r.likes ?? 0), 0);
+        setTotalLikes(total);
+      });
+  }, [user]);
 
   async function applyPending(userId: string, p: Profile | null) {
     const pending = localStorage.getItem("foopy_pending_username");
@@ -1071,6 +1109,107 @@ export default function ProfilePage() {
     awardXP("set_banner");
   }
 
+  function getTeamLogo(name: string) {
+    const t = TEAMS.find((t) => t.name === name || t.name.includes(name) || name.includes(t.name.split(" ")[0]));
+    return t?.logo ?? "/team-logos/crows.png";
+  }
+
+  async function openGamesPopup() {
+    setStatsPopup("games");
+    if (gamesData.length > 0) return;
+    setGamesDataLoading(true);
+    try {
+      const res = await fetch("/api/squiggle/games", { cache: "no-store" });
+      const raw = await res.json();
+      const all: { id: number; hteam?: string; ateam?: string }[] = Array.isArray(raw) ? raw : (raw.games ?? []);
+      const matchIds = Object.keys(log.matches ?? {});
+      const counts: Record<string, TeamStat> = {};
+      for (const mid of matchIds) {
+        const game = all.find((g) => String(g.id) === String(mid));
+        if (!game) continue;
+        for (const teamName of [game.hteam, game.ateam].filter(Boolean) as string[]) {
+          if (!counts[teamName]) counts[teamName] = { name: teamName, logo: getTeamLogo(teamName), count: 0 };
+          counts[teamName].count++;
+        }
+      }
+      setGamesData(Object.values(counts).sort((a, b) => b.count - a.count));
+    } catch {}
+    setGamesDataLoading(false);
+  }
+
+  const PAGE_SIZE = 40;
+
+  async function fetchLikesPage(offset: number, append: boolean) {
+    if (likesLoadingRef.current) return;
+    likesLoadingRef.current = true;
+    setLikesDataLoading(true);
+    try {
+      const { data: rows, error } = await supabase.rpc("get_likes_leaderboard", { p_limit: PAGE_SIZE, p_offset: offset });
+      if (error) throw error;
+      const entries: LikeEntry[] = (rows ?? []).map((r: any) => ({
+        id: String(r.user_id),
+        username: r.username ?? null,
+        avatar_url: r.avatar_url ?? null,
+        total: Number(r.total_likes),
+      }));
+      setLikesData((prev) => append ? [...prev, ...entries] : entries);
+      setLikesOffset(offset + entries.length);
+      setLikesHasMore(entries.length === PAGE_SIZE);
+    } catch (e) { console.error("likes leaderboard:", e); }
+    likesLoadingRef.current = false;
+    setLikesDataLoading(false);
+  }
+
+  useEffect(() => {
+    if (statsPopup !== "likes" || !likesSentinelRef.current) return;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && likesHasMore && !likesLoadingRef.current) {
+        fetchLikesPage(likesOffset, true);
+      }
+    }, { threshold: 0.1 });
+    observer.observe(likesSentinelRef.current);
+    return () => observer.disconnect();
+  }, [statsPopup, likesOffset, likesHasMore]);
+
+  async function openLikesPopup() {
+    setStatsPopup("likes");
+    if (likesData.length > 0) return;
+    setLikesOffset(0);
+    setLikesHasMore(true);
+    fetchLikesPage(0, false);
+  }
+
+  async function openPollsPopup() {
+    setStatsPopup("polls");
+    if (pollsData.length > 0) return;
+    setPollsDataLoading(true);
+    try {
+      const res = await fetch("/api/squiggle/games", { cache: "no-store" });
+      const raw = await res.json();
+      const all: { id: number; hteam?: string; ateam?: string; hscore?: number; ascore?: number; complete?: number; is_final?: number }[] = Array.isArray(raw) ? raw : (raw.games ?? []);
+      const picks: Record<string, "home" | "away"> = {};
+      try { Object.assign(picks, JSON.parse(localStorage.getItem("foopy_picks") ?? "{}")); } catch {}
+      const correctIds = new Set((log.correct ?? []).map(String));
+      const teamStats: Record<string, PollTeamStat> = {};
+      for (const [gidStr, side] of Object.entries(picks)) {
+        const game = all.find((g) => String(g.id) === String(gidStr));
+        if (!game) continue;
+        const isDone = (game.complete ?? 0) >= 100 || game.is_final === 1;
+        if (!isDone) continue;
+        const hs = game.hscore ?? 0, as = game.ascore ?? 0;
+        const winner: "home" | "away" | "draw" = hs > as ? "home" : as > hs ? "away" : "draw";
+        if (winner === "draw") continue;
+        const pickedTeam = side === "home" ? (game.hteam ?? "") : (game.ateam ?? "");
+        if (!pickedTeam) continue;
+        if (!teamStats[pickedTeam]) teamStats[pickedTeam] = { name: pickedTeam, logo: getTeamLogo(pickedTeam), wins: 0, losses: 0 };
+        if (correctIds.has(String(gidStr))) teamStats[pickedTeam].wins++;
+        else teamStats[pickedTeam].losses++;
+      }
+      setPollsData(Object.values(teamStats).sort((a, b) => b.wins - a.wins || a.losses - b.losses));
+    } catch {}
+    setPollsDataLoading(false);
+  }
+
   async function signOut() {
     setSignOutBusy(true);
     await supabase.auth.signOut();
@@ -1289,40 +1428,38 @@ export default function ProfilePage() {
           );
         })()}
 
-        {/* ── Album ── */}
-        <Link
-          href="/album"
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center",
-            background: "#080808", border: "1px solid rgba(255,255,255,.1)",
-            borderRadius: 18, padding: "22px 20px", textDecoration: "none", color: "#fff",
-          }}
-        >
-          <span style={{ fontSize: 26, fontWeight: 950, letterSpacing: "-0.04em" }}>Album</span>
-        </Link>
-
         {/* ── Stats row ── */}
-        <div style={statsRowStyle}>
-          <div style={statCardStyle}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.35)", letterSpacing: "0.08em", textTransform: "uppercase" as const, marginBottom: 6 }}>
-              Member since
-            </div>
-            <div style={{ fontSize: 15, fontWeight: 950, letterSpacing: "-0.03em", color: "#f8fafc" }}>
-              {new Date(user.created_at).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}
-            </div>
-            <div style={{ marginTop: 4, fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)" }}>
-              {Math.floor((Date.now() - new Date(user.created_at).getTime()) / 86400000)} days ago
-            </div>
-          </div>
-
-          <div style={statCardStyle}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.35)", letterSpacing: "0.08em", textTransform: "uppercase" as const, marginBottom: 6 }}>
-              Polls win rate
-            </div>
-            <div style={{ fontSize: 15, fontWeight: 950, letterSpacing: "-0.03em", color: "#f8fafc" }}>
-              —
-            </div>
-          </div>
+        <div style={{ background: "#080808", border: "1px solid rgba(255,255,255,.1)", borderRadius: 18, display: "flex" }}>
+          {(
+            [
+              { label: "Games",     value: Object.keys(log.matches ?? {}).length, color: "#f8fafc",  onClick: openGamesPopup },
+              { label: "Likes",     value: totalLikes ?? "—",                      color: "#f8fafc",  onClick: openLikesPopup },
+              { label: "Polls Won", value: (log.correct ?? []).length,             color: "#22c55e",  onClick: openPollsPopup },
+              { label: "Cards",     value: cardCount ?? "—",                        color: "#c084fc",  onClick: () => router.push("/album") },
+            ] as const
+          ).map((s, i, arr) => (
+            <button
+              key={s.label}
+              onClick={s.onClick}
+              style={{
+                flex: 1,
+                padding: "16px 8px",
+                background: "none",
+                border: "none",
+                borderRight: i < arr.length - 1 ? "1px solid rgba(255,255,255,.08)" : "none",
+                cursor: "pointer",
+                color: "#fff",
+                fontFamily: "inherit",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 4,
+              }}
+            >
+              <span style={{ fontSize: 20, fontWeight: 950, letterSpacing: "-0.03em", color: s.color }}>{s.value}</span>
+              <span style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{s.label}</span>
+            </button>
+          ))}
         </div>
 
         <button onClick={signOut} disabled={signOutBusy} style={{ ...signOutBtnStyle, opacity: signOutBusy ? 0.6 : 1 }}>
@@ -1684,6 +1821,114 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+
+      {/* ── Stats popups ── */}
+      {statsPopup !== null && createPortal(
+        <>
+          <div
+            style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,.75)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
+            onClick={() => setStatsPopup(null)}
+          />
+          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 301, background: "#0a0a0a", borderRadius: 24, border: "1px solid rgba(255,255,255,.1)", width: "calc(100% - 32px)", maxWidth: 480, maxHeight: "80dvh", display: "flex", flexDirection: "column" }} onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 20px 16px", borderBottom: "1px solid rgba(255,255,255,.07)", flexShrink: 0 }}>
+              <div style={{ fontSize: 18, fontWeight: 950, letterSpacing: "-0.02em" }}>
+                {statsPopup === "games" && "Live Games Viewed"}
+                {statsPopup === "likes" && "Comment Likes Leaderboard"}
+                {statsPopup === "polls" && "Polls Won by Team"}
+              </div>
+              <button onClick={() => setStatsPopup(null)} style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: 4 }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", paddingBottom: "calc(16px + env(safe-area-inset-bottom))" }}>
+
+              {/* Games popup */}
+              {statsPopup === "games" && (
+                gamesDataLoading ? (
+                  <div style={{ textAlign: "center", padding: 40, color: "#475569" }}>Loading…</div>
+                ) : gamesData.length === 0 ? (
+                  <EmptyState icon="📺" text="No live games viewed yet. Tune in to a live match!" />
+                ) : (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+                    {gamesData.map((t) => (
+                      <div key={t.name} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "14px 8px", borderRadius: 16, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.07)" }}>
+                        <img src={t.logo} alt={t.name} style={{ width: 44, height: 44, objectFit: "contain" }} />
+                        <div style={{ fontSize: 22, fontWeight: 950, color: "#f8fafc", letterSpacing: "-0.04em" }}>{t.count}</div>
+                        <div style={{ fontSize: 10, fontWeight: 800, color: "#475569", textAlign: "center", lineHeight: 1.3 }}>{t.name}</div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              )}
+
+              {/* Likes popup */}
+              {statsPopup === "likes" && (
+                likesDataLoading ? (
+                  <div style={{ textAlign: "center", padding: 40, color: "#475569" }}>Loading…</div>
+                ) : likesData.length === 0 ? (
+                  <EmptyState icon="❤️" text="No comment likes yet." />
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {likesData.map((entry, i) => {
+                      const isMe = entry.id === user?.id;
+                      return (
+                        <div key={entry.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 14, background: isMe ? "rgba(59,130,246,.08)" : "rgba(255,255,255,.03)", border: `1px solid ${isMe ? "rgba(59,130,246,.2)" : "rgba(255,255,255,.06)"}` }}>
+                          <div style={{ fontSize: 13, fontWeight: 900, color: i < 3 ? ["#ffd700","#c0c0c0","#cd7f32"][i] : "#334155", width: 22, textAlign: "center" }}>
+                            {i + 1}
+                          </div>
+                          <Avatar name={entry.username || "?"} url={entry.avatar_url} size={36} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: 800, fontSize: 14, color: isMe ? "#60a5fa" : "#f8fafc" }}>
+                              @{entry.username ?? "unknown"}{isMe ? " (you)" : ""}
+                            </div>
+                          </div>
+                          <div style={{ fontSize: 18, fontWeight: 950, color: "#f8fafc", letterSpacing: "-0.03em" }}>
+                            {entry.total.toLocaleString()}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div ref={likesSentinelRef} style={{ height: 1 }} />
+                    {likesDataLoading && (
+                      <div style={{ display: "flex", justifyContent: "center", padding: "16px 0" }}>
+                        <div style={{ width: 22, height: 22, borderRadius: "50%", border: "2.5px solid rgba(255,255,255,.12)", borderTopColor: "#60a5fa", animation: "spin 0.7s linear infinite" }} />
+                      </div>
+                    )}
+                  </div>
+                )
+              )}
+
+              {/* Polls popup */}
+              {statsPopup === "polls" && (
+                pollsDataLoading ? (
+                  <div style={{ textAlign: "center", padding: 40, color: "#475569" }}>Loading…</div>
+                ) : pollsData.length === 0 ? (
+                  <EmptyState icon="📊" text="No completed picks yet. Head to a match and pick a winner!" />
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {pollsData.map((t) => (
+                      <div key={t.name} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 14px", borderRadius: 14, background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.07)" }}>
+                        <img src={t.logo} alt={t.name} style={{ width: 40, height: 40, objectFit: "contain" }} />
+                        <div style={{ flex: 1, fontWeight: 800, fontSize: 14, color: "#f8fafc" }}>{t.name}</div>
+                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                          <span style={{ fontSize: 14, fontWeight: 900, color: "#22c55e" }}>{t.wins}W</span>
+                          <span style={{ fontSize: 12, color: "#334155" }}>–</span>
+                          <span style={{ fontSize: 14, fontWeight: 900, color: "#ef4444" }}>{t.losses}L</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              )}
+
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
     </main>
   );
 }
@@ -1965,7 +2210,6 @@ const statsRowStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "1fr 1fr",
   gap: 10,
-  padding: "0 0",
 };
 
 const statCardStyle: CSSProperties = {
@@ -1973,6 +2217,18 @@ const statCardStyle: CSSProperties = {
   borderRadius: 18,
   background: "#080808",
   border: "1px solid rgba(255,255,255,.1)",
+};
+
+const statCardClickStyle: CSSProperties = {
+  padding: "18px 16px",
+  borderRadius: 18,
+  background: "#080808",
+  border: "1px solid rgba(255,255,255,.1)",
+  cursor: "pointer",
+  textAlign: "left",
+  color: "#fff",
+  fontFamily: "inherit",
+  transition: "border-color 0.15s, background 0.15s",
 };
 
 const statValueStyle: CSSProperties = {

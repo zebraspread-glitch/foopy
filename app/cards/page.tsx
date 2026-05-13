@@ -1053,17 +1053,8 @@ function FilterPill({ active, color, onClick, children }: {
   );
 }
 
-function Spinner({ size = 20 }: { size?: number }) {
-  return (
-    <div style={{
-      width: size, height: size,
-      border: `2px solid rgba(255,255,255,.1)`,
-      borderTop: `2px solid #60a5fa`,
-      borderRadius: "50%",
-      animation: "spin 0.7s linear infinite",
-      flexShrink: 0,
-    }} />
-  );
+function Spinner() {
+  return <div className="spinner" />;
 }
 
 function CoinIcon({ size = 16 }: { size?: number }) {

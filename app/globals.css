@@ -786,6 +786,11 @@ textarea::placeholder { color: var(--text-3); }
   border-width: 2px;
 }
 
+.spinner-white {
+  border-color: rgba(255,255,255,0.3);
+  border-top-color: #fff;
+}
+
 /* ============================================================
    BOTTOM SHEET
    ============================================================ */

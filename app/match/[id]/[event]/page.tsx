@@ -639,7 +639,7 @@ export default function EventCommentsPage() {
       <section style={listStyle}>
         {loading ? (
           <div style={centreStyle}>
-            <div style={spinnerStyle} />
+            <div className="spinner" />
           </div>
         ) : comments.length === 0 ? (
           <div style={emptyStyle}>
@@ -714,7 +714,7 @@ export default function EventCommentsPage() {
                 }}
               >
                 {submitting ? (
-                  <div style={{ width: 18, height: 18, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+                  <div className="spinner spinner-sm spinner-white" />
                 ) : cooldown > 0 ? (
                   <span style={{ fontSize: 11, fontWeight: 900 }}>{cooldown}s</span>
                 ) : (
@@ -1292,14 +1292,6 @@ const centreStyle: CSSProperties = {
   padding: "70px 0",
 };
 
-const spinnerStyle: CSSProperties = {
-  width: 26,
-  height: 26,
-  borderRadius: "50%",
-  border: "2px solid rgba(255,255,255,0.12)",
-  borderTopColor: "#3b82f6",
-  animation: "spin 0.75s linear infinite",
-};
 
 const emptyStyle: CSSProperties = {
   minHeight: 300,

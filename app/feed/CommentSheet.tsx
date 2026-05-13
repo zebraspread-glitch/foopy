@@ -189,7 +189,7 @@ export default function CommentSheet({ gameId, gameLabel, eventKey, onClose }: P
         <div style={listStyle}>
           {loading ? (
             <div style={centreStyle}>
-              <div style={spinnerStyle} />
+              <div className="spinner" />
             </div>
           ) : comments.length === 0 ? (
             <div style={emptyStyle}>
@@ -464,14 +464,6 @@ const centreStyle: CSSProperties = {
   padding: "40px 0",
 };
 
-const spinnerStyle: CSSProperties = {
-  width: 24,
-  height: 24,
-  border: "2px solid rgba(255,255,255,0.1)",
-  borderTop: "2px solid #60a5fa",
-  borderRadius: "50%",
-  animation: "spin 0.7s linear infinite",
-};
 
 const emptyStyle: CSSProperties = {
   display: "flex",

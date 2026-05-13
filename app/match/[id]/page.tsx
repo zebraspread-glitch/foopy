@@ -2154,12 +2154,7 @@ export default function MatchPage() {
 
             {feedLoading && (
               <div style={{ display: "flex", justifyContent: "center", padding: "40px 0" }}>
-                <div style={{
-                  width: 32, height: 32, borderRadius: "50%",
-                  border: "3px solid rgba(255,255,255,0.15)",
-                  borderTopColor: "#fff",
-                  animation: "spin 0.75s linear infinite",
-                }} />
+                <div className="spinner" />
               </div>
             )}
 
@@ -2401,7 +2396,8 @@ function mcRelTime(dateString: string) {
 
 function MatchComments({ gameId, highlight }: { gameId: number; highlight: string | null }) {
   const router = useRouter();
-  const [userId, setUserId] = useState<string | null>(null);
+  // null = auth loading, string = signed in, false = confirmed signed out
+  const [userId, setUserId] = useState<string | null | false>(null);
   const [comments, setComments] = useState<MatchComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [body, setBody] = useState("");
@@ -2426,7 +2422,7 @@ function MatchComments({ gameId, highlight }: { gameId: number; highlight: strin
   }
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setUserId(data.session?.user.id ?? null));
+    supabase.auth.getSession().then(({ data }) => setUserId(data.session?.user.id ?? false));
   }, []);
 
   const load = useCallback(async (currentSort: "live" | "top" = "live") => {
@@ -2614,7 +2610,7 @@ function MatchComments({ gameId, highlight }: { gameId: number; highlight: strin
       <div style={{ flex: 1, padding: "10px 0 4px" }}>
         {loading ? (
           <div style={{ display: "flex", justifyContent: "center", padding: "48px 0" }}>
-            <div style={{ width: 24, height: 24, border: "2px solid rgba(255,255,255,.08)", borderTop: "2px solid #3b82f6", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+            <div className="spinner" />
           </div>
         ) : comments.length === 0 ? (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "52px 20px", color: "#94a3b8", textAlign: "center" }}>
@@ -2627,7 +2623,7 @@ function MatchComments({ gameId, highlight }: { gameId: number; highlight: strin
           </div>
         ) : (
           comments.map(c => (
-            <MCRow key={c.id} comment={c} userId={userId} onLike={handleLike} onDelete={handleDelete}
+            <MCRow key={c.id} comment={c} userId={userId as string} onLike={handleLike} onDelete={handleDelete}
               onReply={r => { setReplyTo(r); setTimeout(() => inputRef.current?.focus(), 50); }} liking={liking} />
           ))
         )}
@@ -2635,7 +2631,9 @@ function MatchComments({ gameId, highlight }: { gameId: number; highlight: strin
 
       {/* Input — sticky within the match container */}
       <div style={{ position: "sticky", bottom: 0, zIndex: 50, borderTop: "1px solid rgba(255,255,255,.08)", padding: "10px 14px calc(14px + env(safe-area-inset-bottom))", background: "rgba(5,5,5,0.92)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
-        {!userId ? (
+        {userId === null ? (
+          <div style={{ height: 48 }} />
+        ) : userId === false ? (
           <button onClick={() => router.push("/login")} style={{ width: "100%", height: 48, borderRadius: 16, background: "linear-gradient(135deg,#3b82f6,#2563eb)", color: "#fff", fontWeight: 900, fontSize: 15, border: "none", cursor: "pointer", boxShadow: "0 4px 16px rgba(59,130,246,0.3)" }}>
             Sign in to chat
           </button>
@@ -2671,7 +2669,7 @@ function MatchComments({ gameId, highlight }: { gameId: number; highlight: strin
                 style={{ width: 44, height: 44, borderRadius: "50%", background: "linear-gradient(135deg,#3b82f6,#2563eb)", boxShadow: "0 2px 12px rgba(59,130,246,0.35)", border: "none", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, opacity: !body.trim() || submitting || cooldown > 0 ? 0.38 : 1, transition: "opacity 0.15s" }}
               >
                 {submitting
-                  ? <div style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+                  ? <div className="spinner spinner-sm spinner-white" />
                   : cooldown > 0
                   ? <span style={{ fontSize: 11, fontWeight: 900 }}>{cooldown}s</span>
                   : <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" fill="currentColor" stroke="none" /></svg>
@@ -3067,7 +3065,7 @@ function MatchPolls({
 
       {loading ? (
         <div style={{ display: "flex", justifyContent: "center", padding: "40px 0" }}>
-          <div style={{ width: 24, height: 24, border: "2px solid rgba(255,255,255,.1)", borderTop: "2px solid #60a5fa", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+          <div className="spinner" />
         </div>
       ) : polls.length === 0 ? (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "40px 20px", color: "#94a3b8", textAlign: "center" }}>

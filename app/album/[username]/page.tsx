@@ -233,7 +233,7 @@ export default function UserAlbumPage() {
       <div style={{ padding: "10px 10px 0" }}>
         {loading ? (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 0", gap: 14 }}>
-            <div style={{ width: 28, height: 28, border: "2.5px solid rgba(255,255,255,.08)", borderTop: "2.5px solid #60a5fa", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+            <div className="spinner" />
             <div style={{ fontSize: 13, color: "rgba(255,255,255,.3)", fontWeight: 600 }}>Loading album…</div>
           </div>
         ) : (

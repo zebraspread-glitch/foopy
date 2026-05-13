@@ -313,7 +313,7 @@ export default function NotificationsPage() {
         {/* Content */}
         {loading ? (
           <div style={{ display: "flex", justifyContent: "center", padding: "64px 0" }}>
-            <div style={{ width: 26, height: 26, border: "2.5px solid rgba(255,255,255,.07)", borderTop: "2.5px solid #3b82f6", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+            <div className="spinner" />
           </div>
         ) : displayed.length === 0 ? (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "72px 24px", color: "#475569", textAlign: "center" }}>
