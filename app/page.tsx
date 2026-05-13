@@ -5,8 +5,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import matchStatsRaw from "./data/game-stats.json";
 import playerStatsRaw from "./data/players.json";
 import { API_SPORTS_MATCH_IDS } from "./data/apiSportsMatchIds";
-import { getGames, getGamesCached } from "./lib/gameCache";
+import { getGames, getGamesCached, invalidateGames } from "./lib/gameCache";
 import { foopyRating } from "./match/[id]/utils";
+import { haptic } from "./lib/haptic";
 
 type Game = {
   id: number;
@@ -448,7 +449,10 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [columns, setColumns] = useState<"1" | "3">("3");
   const [hasLoadedSavedRound, setHasLoadedSavedRound] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [pullVisible, setPullVisible] = useState(false);
   const roundRef = useRef<HTMLDivElement | null>(null);
+  const touchStartY = useRef(0);
   const isMobile = useIsMobile();
 
   const listStyle: React.CSSProperties = {
@@ -516,6 +520,43 @@ export default function HomePage() {
       window.removeEventListener("foopy-settings-changed", handler);
     };
   }, []);
+
+  // Pull-to-refresh touch handlers
+  useEffect(() => {
+    const THRESHOLD = 72;
+
+    function onTouchStart(e: TouchEvent) {
+      touchStartY.current = e.touches[0].clientY;
+    }
+
+    function onTouchMove(e: TouchEvent) {
+      if (window.scrollY > 0) return;
+      const delta = e.touches[0].clientY - touchStartY.current;
+      if (delta > 20) setPullVisible(true);
+    }
+
+    function onTouchEnd(e: TouchEvent) {
+      const delta = e.changedTouches[0].clientY - touchStartY.current;
+      setPullVisible(false);
+      if (delta >= THRESHOLD && window.scrollY === 0 && !refreshing) {
+        haptic("medium");
+        setRefreshing(true);
+        invalidateGames();
+        getGames()
+          .then((data) => setGames(data as Game[]))
+          .finally(() => setRefreshing(false));
+      }
+    }
+
+    document.addEventListener("touchstart", onTouchStart, { passive: true });
+    document.addEventListener("touchmove", onTouchMove, { passive: true });
+    document.addEventListener("touchend", onTouchEnd, { passive: true });
+    return () => {
+      document.removeEventListener("touchstart", onTouchStart);
+      document.removeEventListener("touchmove", onTouchMove);
+      document.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [refreshing]);
 
   useEffect(() => {
     if (!hasLoadedSavedRound) return;
@@ -684,6 +725,18 @@ free_kicks?: {
 
   return (
     <main style={pageStyle} className="page-enter">
+      {/* Pull-to-refresh indicator */}
+      <div className={`pull-indicator${pullVisible || refreshing ? " visible" : ""}`}>
+        <svg
+          width="18" height="18" viewBox="0 0 24 24" fill="none"
+          stroke="rgba(255,255,255,0.7)" strokeWidth="2.5" strokeLinecap="round"
+          style={{ animation: refreshing ? "spin 0.7s linear infinite" : undefined }}
+        >
+          <polyline points="23 4 23 10 17 10" />
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+        </svg>
+      </div>
+
       <header style={headerStyle}>
         <div style={headerTopStyle}>
           <div style={logoWrapStyle}>
