@@ -1787,8 +1787,8 @@ export default function MatchPage() {
 
   const backButton = (
     <div style={{ padding: "calc(env(safe-area-inset-top) + 10px) 16px 0", display: "flex", alignItems: "center" }}>
-      <Link
-        href="/"
+      <button
+        onClick={() => router.back()}
         style={{
           display: "inline-flex",
           alignItems: "center",
@@ -1796,18 +1796,19 @@ export default function MatchPage() {
           color: "#60a5fa",
           fontSize: 14,
           fontWeight: 700,
-          textDecoration: "none",
-          padding: "8px 12px",
-          borderRadius: 10,
           background: "rgba(255,255,255,0.06)",
           border: "1px solid rgba(255,255,255,0.08)",
+          padding: "8px 12px",
+          borderRadius: 10,
+          cursor: "pointer",
+          fontFamily: "inherit",
         }}
       >
         <svg width="7" height="13" viewBox="0 0 7 13" fill="none" style={{ transform: "rotate(180deg)" }}>
           <path d="M1 1.5l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
         Scores
-      </Link>
+      </button>
     </div>
   );
 
@@ -1905,9 +1906,9 @@ export default function MatchPage() {
             minHeight: 44,
             marginBottom: 52,
           }}>
-            <Link
-              href="/"
-              aria-label="Back to scores"
+            <button
+              onClick={() => router.back()}
+              aria-label="Back"
               style={{
                 width: 44,
                 height: 44,
@@ -1915,10 +1916,14 @@ export default function MatchPage() {
                 alignItems: "center",
                 justifyContent: "center",
                 color: "#fff",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: 0,
               }}
             >
               <ChevronLeft size={38} strokeWidth={2.4} />
-            </Link>
+            </button>
 
             <Link
               href="/"
