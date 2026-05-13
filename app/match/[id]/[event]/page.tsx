@@ -221,10 +221,8 @@ export default function EventCommentsPage() {
       .then(data => {
         const playerName = label !== "Event" ? label : null;
         if (!playerName) return;
-        const allPlayers: any[] = [];
-        for (const team of data?.response ?? []) {
-          for (const p of team?.players ?? []) allPlayers.push(p);
-        }
+        // api-sports response is a flat array of { player: { name }, statistics: { ... } }
+        const allPlayers: any[] = data?.response ?? [];
         const slug = slugify(playerName);
         const found = allPlayers.find((p: any) => slugify(p.player?.name ?? p.name ?? "") === slug);
         if (!found) return;
