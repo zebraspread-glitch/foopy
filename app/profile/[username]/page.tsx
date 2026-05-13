@@ -578,13 +578,20 @@ export default function PublicProfilePage() {
             favorites
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12 }}>
-            {favourites.map((slot, i) =>
-              slot ? (
-                <FavSlotView key={i} slot={slot} />
-              ) : (
+            {favourites.map((slot, i) => {
+              if (!slot) return (
                 <div key={i} style={{ width: "100%", aspectRatio: "1", borderRadius: "50%", border: "2px dashed rgba(255,255,255,.1)", background: "rgba(255,255,255,.025)" }} />
-              )
-            )}
+              );
+              if (slot.type === "player") {
+                const playerSlug = slot.label.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+                return (
+                  <Link key={i} href={`/player/${playerSlug}`} style={{ textDecoration: "none", color: "inherit" }}>
+                    <FavSlotView slot={slot} />
+                  </Link>
+                );
+              }
+              return <FavSlotView key={i} slot={slot} />;
+            })}
           </div>
         </section>
 
