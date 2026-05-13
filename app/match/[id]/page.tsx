@@ -1337,6 +1337,7 @@ export default function MatchPage() {
   const [activeTab, setActiveTab] = useState<TabKey>(() =>
     (searchParams?.get("tab") as TabKey) ?? "feed"
   );
+  const [unansweredPollCount, setUnansweredPollCount] = useState(0);
   const [game, setGame] = useState<MatchGame | null>(null);
   const [savedMatch, setSavedMatch] = useState<SavedMatchStats | null>(null);
   const [homeStats, setHomeStats] = useState<PlayerStat[]>([]);
@@ -1401,6 +1402,7 @@ export default function MatchPage() {
     const interval = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(interval);
   }, []);
+
 
   useEffect(() => {
     if (!mounted || !id) return;
@@ -1520,6 +1522,46 @@ export default function MatchPage() {
     return 0;
   })();
   const currentPeriod = Math.max(periodFromEvents, periodFromTimestr);
+
+  // Count unanswered open polls — always runs so tab badge is visible before entering the tab
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    async function fetchCount() {
+      const currentStatus = game ? getStatus(game) : "UPCOMING";
+
+      // Winner pick poll (stored in localStorage)
+      const winnerPickVoted = !!localStorage.getItem(`winner-pick-${id}`);
+      const winnerPickUnanswered = currentStatus === "UPCOMING" && !winnerPickVoted ? 1 : 0;
+
+      const { data: pollRows } = await supabase
+        .from("match_polls")
+        .select("id, quarter")
+        .eq("game_id", Number(id));
+      if (cancelled) return;
+      if (!pollRows?.length) { setUnansweredPollCount(winnerPickUnanswered); return; }
+
+      const uid = (await supabase.auth.getSession()).data.session?.user?.id;
+      let votedPollIds = new Set<string>();
+      if (uid) {
+        const { data: voteRows } = await supabase
+          .from("match_poll_votes")
+          .select("poll_id")
+          .in("poll_id", pollRows.map((p: any) => p.id))
+          .eq("user_id", uid);
+        votedPollIds = new Set((voteRows ?? []).map((v: any) => v.poll_id));
+      }
+
+      const open = pollRows.filter((p: any) => {
+        if (currentStatus === "FINAL") return false;
+        if (p.quarter === null) return currentStatus === "UPCOMING";
+        return currentPeriod <= p.quarter;
+      });
+      if (!cancelled) setUnansweredPollCount(winnerPickUnanswered + open.filter((p: any) => !votedPollIds.has(p.id)).length);
+    }
+    fetchCount();
+    return () => { cancelled = true; };
+  }, [id, game, currentPeriod]);
 
   // Detect newly-added feed events and animate them — skip the first batch on page load
   useEffect(() => {
@@ -2059,8 +2101,19 @@ export default function MatchPage() {
                 cursor: "pointer", whiteSpace: "nowrap",
                 textTransform: "capitalize",
                 transition: "color 0.12s",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
               }}>
                 {t.charAt(0).toUpperCase() + t.slice(1)}
+                {t === "polls" && unansweredPollCount > 0 && activeTab !== "polls" && (
+                  <span style={{
+                    fontSize: 10, fontWeight: 900, lineHeight: 1,
+                    background: "#ef4444", color: "#fff",
+                    borderRadius: 999, padding: "2px 5px",
+                    minWidth: 16, textAlign: "center",
+                  }}>
+                    {unansweredPollCount}
+                  </span>
+                )}
               </button>
             ))}
             {showStatsTabs && (
@@ -2320,6 +2373,7 @@ export default function MatchPage() {
               awayTeam={game.ateam}
               homeStats={displayHomeStats}
               awayStats={displayAwayStats}
+              onUnansweredCount={setUnansweredPollCount}
             />
           </section>
         )}
@@ -2881,6 +2935,7 @@ function MatchPolls({
   awayTeam,
   homeStats,
   awayStats,
+  onUnansweredCount,
 }: {
   gameId: number;
   status: string;
@@ -2889,6 +2944,7 @@ function MatchPolls({
   awayTeam: string;
   homeStats: PlayerStat[];
   awayStats: PlayerStat[];
+  onUnansweredCount?: (n: number) => void;
 }) {
   const [userId, setUserId] = useState<string | null>(null);
   const [polls, setPolls] = useState<Poll[]>([]);
@@ -2946,6 +3002,13 @@ function MatchPolls({
 
   useEffect(() => { loadPolls(); }, [loadPolls]);
 
+  // Keep parent badge count up to date
+  useEffect(() => {
+    if (!onUnansweredCount || loading) return;
+    const count = polls.filter(p => isPollOpen(p, status, currentPeriod) && !userVotes[p.id]).length;
+    onUnansweredCount(count);
+  }, [polls, userVotes, status, currentPeriod, loading, onUnansweredCount]);
+
   // Award XP for correct poll votes when game is FINAL
   useEffect(() => {
     if (status !== "FINAL" || polls.length === 0 || Object.keys(userVotes).length === 0) return;
@@ -2964,7 +3027,15 @@ function MatchPolls({
   }, [status, polls, userVotes, homeStats, awayStats, homeTeam, awayTeam, awardXP]);
 
   async function vote(pollId: string, optionId: string) {
-    if (!userId || userVotes[pollId]) return;
+    if (!userId) return;
+    const existingVote = userVotes[pollId];
+    // Allow changing vote before the game starts; block re-votes once live/final
+    if (existingVote && status !== "UPCOMING") return;
+    if (existingVote === optionId) return; // tapping the same option — no-op
+    if (existingVote) {
+      // Delete old vote then insert new one
+      await supabase.from("match_poll_votes").delete().eq("poll_id", pollId).eq("user_id", userId);
+    }
     await supabase.from("match_poll_votes").insert({ poll_id: pollId, option_id: optionId, user_id: userId });
     await loadPolls();
   }
@@ -3024,7 +3095,8 @@ function MatchPolls({
                   voteCounts={voteCounts}
                   showResults={showResults}
                   winner={showResults ? resolveWinner(poll, homeStats, awayStats, homeTeam, awayTeam) : null}
-                  canVote={!!userId && !userVotes[poll.id] && open}
+                  canVote={!!userId && open}
+                  canChangeVote={!!userId && !!userVotes[poll.id] && status === "UPCOMING"}
                   votingLocked={!open}
                   isLivePoll={poll.quarter !== null}
                   onVote={optionId => vote(poll.id, optionId)}
@@ -3045,6 +3117,7 @@ function PollCard({
   showResults,
   winner,
   canVote,
+  canChangeVote,
   votingLocked,
   isLivePoll,
   onVote,
@@ -3056,6 +3129,7 @@ function PollCard({
   showResults: boolean;
   winner: string | null;
   canVote: boolean;
+  canChangeVote?: boolean;
   votingLocked?: boolean;
   isLivePoll?: boolean;
   onVote: (optionId: string) => void;
@@ -3110,7 +3184,8 @@ function PollCard({
         <div style={{ fontSize: 12, color: "#475569", fontWeight: 600, marginTop: 4 }}>
           {votingLocked
             ? isLivePoll ? "Voting closed — quarter ended" : "Voting closed — game has started"
-            : hasVoted ? "Results revealed after the game" : "Tap to vote"}
+            : canChangeVote ? "Tap to change your vote"
+            : hasVoted ? "" : "Tap to vote"}
         </div>
       </div>
 
@@ -3151,6 +3226,14 @@ function PollCard({
           );
 
           if (showBar) {
+            if (canChangeVote) {
+              return (
+                <button key={opt.id} type="button" onClick={() => onVote(opt.id)}
+                  style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 14, border: `1.5px solid ${selected ? color : "rgba(255,255,255,0.1)"}`, background: selected ? `${color}18` : "rgba(255,255,255,0.03)", cursor: "pointer", width: "100%", textAlign: "left", transition: "border-color 0.2s, background 0.2s" }}>
+                  {inner}
+                </button>
+              );
+            }
             return (
               <div key={opt.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 14, border: `1.5px solid ${selected ? color : "rgba(255,255,255,0.1)"}`, background: selected ? `${color}18` : "rgba(255,255,255,0.03)" }}>
                 {inner}
@@ -3159,8 +3242,8 @@ function PollCard({
           }
 
           return (
-            <button key={opt.id} type="button" onClick={() => onVote(opt.id)} disabled={!canVote}
-              style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 14, border: "1.5px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)", cursor: canVote ? "pointer" : "default", opacity: canVote ? 1 : 0.5, width: "100%", textAlign: "left", transition: "border-color 0.2s, background 0.2s" }}>
+            <button key={opt.id} type="button" onClick={() => onVote(opt.id)} disabled={!canVote && !canChangeVote}
+              style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 14, border: `1.5px solid ${selected ? color : "rgba(255,255,255,0.1)"}`, background: selected ? `${color}18` : "rgba(255,255,255,0.03)", cursor: (canVote || canChangeVote) ? "pointer" : "default", opacity: (canVote || canChangeVote) ? 1 : 0.5, width: "100%", textAlign: "left", transition: "border-color 0.2s, background 0.2s" }}>
               {inner}
             </button>
           );

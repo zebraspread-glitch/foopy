@@ -11,7 +11,7 @@ const API_SPORTS_TO_SQUIGGLE: Record<number, string> = Object.fromEntries(
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type PlayerInfo  = { id: string; name: string; team: string; apiSportsId?: number | null };
+type PlayerInfo  = { id: string; name: string; team: string; apiSportsId?: number | null; statsIds?: number[] };
 type SeasonStats = {
   id: string; position?: string; jerseyNumber?: number; games?: number;
   goals?: number; goalAssists?: number; behinds?: number;
@@ -197,15 +197,20 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
   } catch {}
 
   const recentGames: GamePerf[] = [];
-  if (player.apiSportsId) {
-    const id = player.apiSportsId;
+  // Collect all possible player IDs: apiSportsId + statsIds (API Sports uses different IDs inconsistently)
+  const allPlayerIds = new Set<number>();
+  if (player.apiSportsId) allPlayerIds.add(player.apiSportsId);
+  for (const sid of player.statsIds ?? []) allPlayerIds.add(sid);
+
+  if (allPlayerIds.size > 0) {
+    const matchesPlayer = (pid: number) => allPlayerIds.has(pid);
     const sorted = Object.values(gameStats)
-      .filter(g => g.teams?.some(t => t.players?.some(p => p.player?.id === id)))
+      .filter(g => g.teams?.some(t => t.players?.some(p => matchesPlayer(p.player?.id))))
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     for (const g of sorted) {
       for (const t of g.teams ?? []) {
-        const ps = t.players?.find(p => p.player?.id === id);
+        const ps = t.players?.find(p => matchesPlayer(p.player?.id));
         if (!ps) continue;
 
         // Opponent = the other team in this game
@@ -213,11 +218,13 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
         const opponentTeamId = opponentTeamEntry?.team?.id as number | undefined;
         const opponentTeam = opponentTeamId ? (TEAM_ID_MAP[opponentTeamId] ?? "") : "";
 
-        const sq = squiggleMap.get(g.gameId);
+        // game-stats uses API Sports IDs; squiggleMap uses Squiggle IDs — convert first
+        const squiggleGameId = API_SPORTS_TO_SQUIGGLE[g.gameId];
+        const sq = squiggleGameId ? squiggleMap.get(Number(squiggleGameId)) : undefined;
 
         recentGames.push({
           gameId:       g.gameId,
-          squiggleId:   API_SPORTS_TO_SQUIGGLE[g.gameId] ?? null,
+          squiggleId:   squiggleGameId ?? null,
           date:         g.date,
           goals:        num(ps.goals?.total),
           disposals:    num(ps.disposals),
@@ -252,12 +259,15 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
   const allAvgs: number[] = [];
   let playerAvg: number | null = null;
   for (const p of players) {
-    if (!p.apiSportsId) continue;
-    const pid = p.apiSportsId;
-    const gsAll = Object.values(gameStats).filter(g => g.teams?.some(t => t.players?.some(pp => pp.player?.id === pid)));
+    const pids = new Set<number>();
+    if (p.apiSportsId) pids.add(p.apiSportsId);
+    for (const sid of (p as PlayerInfo).statsIds ?? []) pids.add(sid);
+    if (pids.size === 0) continue;
+    const matchP = (pid: number) => pids.has(pid);
+    const gsAll = Object.values(gameStats).filter(g => g.teams?.some(t => t.players?.some(pp => matchP(pp.player?.id))));
     const gsRated = gsAll.filter(g => {
       for (const t of g.teams ?? []) {
-        const ps = t.players?.find(pp => pp.player?.id === pid);
+        const ps = t.players?.find(pp => matchP(pp.player?.id));
         if (ps) return foopyRating({
           goals: num(ps.goals?.total), goalAssists: num(ps.goals?.assists),
           behinds: num(ps.behinds), kicks: num(ps.kicks), handballs: num(ps.handballs),
@@ -271,7 +281,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
     if (gsRated.length === 0) continue;
     const avg = gsRated.reduce((s, g) => {
       for (const t of g.teams ?? []) {
-        const ps = t.players?.find(pp => pp.player?.id === pid);
+        const ps = t.players?.find(pp => matchP(pp.player?.id));
         if (ps) return s + foopyRating({
           goals: num(ps.goals?.total), goalAssists: num(ps.goals?.assists),
           behinds: num(ps.behinds), kicks: num(ps.kicks), handballs: num(ps.handballs),
