@@ -9,6 +9,7 @@ import MentionTextarea from "@/app/components/MentionTextarea";
 import playerStatsJson from "@/app/data/players.json";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import { foopyRating } from "@/app/match/[id]/utils";
+import { haptic } from "@/app/lib/haptic";
 
 type Profile = {
   id: string;
@@ -441,6 +442,7 @@ export default function EventCommentsPage() {
     const cleanBody = body.trim();
     if (!cleanBody || !userId || submitting) return;
 
+    haptic("medium");
     setSubmitting(true);
     setErrorText(null);
 
@@ -503,6 +505,7 @@ export default function EventCommentsPage() {
 
   if (likingIds.has(comment.id)) return;
 
+  haptic("selection");
   setLikingIds((prev) => new Set(prev).add(comment.id));
   setErrorText(null);
 
