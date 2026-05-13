@@ -8,6 +8,7 @@ import { createNotification, notifyMentions } from "@/app/lib/notifications";
 import MentionTextarea from "@/app/components/MentionTextarea";
 import playerStatsJson from "@/app/data/players.json";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
+import { foopyRating } from "@/app/match/[id]/utils";
 
 type Profile = {
   id: string;
@@ -107,6 +108,7 @@ export default function EventCommentsPage() {
   const highlight = searchParams.get("highlight");
 
   const [resolvedPlayerName, setResolvedPlayerName] = useState<string | null>(null);
+  const [fetchedStats, setFetchedStats] = useState<{ rating: string; gb: string; d: string; k: string; h: string; m: string; t: string; ho: string } | null>(null);
 
   // Resolve label: use URL param if provided, otherwise derive from event key (local lookup),
   // or fall back to resolvedPlayerName fetched async from the play-by-play API.
@@ -197,17 +199,62 @@ export default function EventCommentsPage() {
     const slug = eventKey.slice(7);
     const found = players.find(p => slugify(p.name ?? p.player ?? "") === slugify(slug));
     const team = searchParams.get("team") || found?.club || found?.team || "";
-    const rating = searchParams.get("rating") ?? "";
-    const gb = searchParams.get("gb") ?? "";
-    const d = searchParams.get("d") ?? "";
-    const k = searchParams.get("k") ?? "";
-    const h = searchParams.get("h") ?? "";
-    const m = searchParams.get("m") ?? "";
-    const t = searchParams.get("t") ?? "";
-    const ho = searchParams.get("ho") ?? "";
+    const rating = searchParams.get("rating") || fetchedStats?.rating || "";
+    const gb = searchParams.get("gb") || fetchedStats?.gb || "";
+    const d = searchParams.get("d") || fetchedStats?.d || "";
+    const k = searchParams.get("k") || fetchedStats?.k || "";
+    const h = searchParams.get("h") || fetchedStats?.h || "";
+    const m = searchParams.get("m") || fetchedStats?.m || "";
+    const t = searchParams.get("t") || fetchedStats?.t || "";
+    const ho = searchParams.get("ho") || fetchedStats?.ho || "";
     const img = resolvePlayerImage(label, team);
     return { team, rating, gb, d, k, h, m, t, ho, img };
-  }, [isPlayerComment, eventKey, label, searchParams]);
+  }, [isPlayerComment, eventKey, label, searchParams, fetchedStats]);
+
+  // Fetch player stats when navigating to a player_ event without rating in URL params
+  useEffect(() => {
+    if (!isPlayerComment || !gameId) return;
+    if (searchParams.get("rating")) return;
+    const apiId = (API_SPORTS_MATCH_IDS as Record<string, string>)[String(gameId)] ?? String(gameId);
+    fetch(`/api/afl/player-stats?id=${apiId}`)
+      .then(r => r.json())
+      .then(data => {
+        const playerName = label !== "Event" ? label : null;
+        if (!playerName) return;
+        const allPlayers: any[] = [];
+        for (const team of data?.response ?? []) {
+          for (const p of team?.players ?? []) allPlayers.push(p);
+        }
+        const slug = slugify(playerName);
+        const found = allPlayers.find((p: any) => slugify(p.player?.name ?? p.name ?? "") === slug);
+        if (!found) return;
+        const raw = found.statistics ?? found;
+        const goals = raw.goals?.total ?? raw.goals ?? 0;
+        const goalAssists = raw.goals?.assists ?? raw.goalAssists ?? 0;
+        const behinds = raw.behinds ?? 0;
+        const disposals = raw.disposals ?? 0;
+        const kicks = raw.kicks ?? 0;
+        const handballs = raw.handballs ?? 0;
+        const marks = raw.marks ?? 0;
+        const tackles = raw.tackles ?? 0;
+        const hitouts = raw.hitouts ?? 0;
+        const clearances = raw.clearances ?? 0;
+        const freesFor = raw.free_kicks?.for ?? raw.freesFor ?? 0;
+        const freesAgainst = raw.free_kicks?.against ?? raw.freesAgainst ?? 0;
+        const rating = foopyRating({ goals, goalAssists, behinds, kicks, handballs, marks, tackles, hitouts, disposals, clearances, freesFor, freesAgainst } as any);
+        setFetchedStats({
+          rating: rating > 0 ? String(rating) : "",
+          gb: `${goals}.${behinds}`,
+          d: String(disposals),
+          k: String(kicks),
+          h: String(handballs),
+          m: String(marks),
+          t: String(tackles),
+          ho: String(hitouts),
+        });
+      })
+      .catch(() => {});
+  }, [isPlayerComment, gameId, label, searchParams]);
 
   // For regular event comments — parse player name from label ("Jack Gunston · BEHIND")
   const eventCard = useMemo(() => {
