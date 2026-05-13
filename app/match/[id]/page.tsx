@@ -1631,6 +1631,7 @@ export default function MatchPage() {
         type: e.type,
         teamId: e.team_id,
         playerId: e.player_id,
+        playerName: e.player_name ?? null,
         homeScore: e.home_score,
         awayScore: e.away_score,
       }));
@@ -2164,7 +2165,7 @@ export default function MatchPage() {
                           commentCount={eventCommentCounts[ek] ?? 0}
                           onCommentClick={() => {
                             const player = findPlayerByEventId(event.playerId);
-                            const name = safePlayerName(player?.name, index + 1);
+                            const name = event.playerName || safePlayerName(player?.name, event.playerId ?? index + 1);
                             const label = `${name} · ${safeText(event.type, "").toUpperCase()}`;
                             const inferredTeam = safeText((event as any).teamName, "");
                             const apiTeam = teamNameFromEvent(event);

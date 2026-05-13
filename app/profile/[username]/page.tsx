@@ -142,12 +142,12 @@ function avatarColors(name: string): [string, string] {
 type Comment = { id: string; body: string; created_at: string; game_id: number | null; event_key: string | null };
 
 // Maps built once from players.json import
-// apiSportsId → { name, team }  (for play event keys like q1_m5_tgoal_p804)
-// slugName(name) → team          (for player_ event keys)
-const playerById  = new Map<string, { name: string; team: string }>();
-const playerBySlug = new Map<string, { name: string; team: string }>();
-for (const p of playersData as Array<{ name: string; team: string; apiSportsId?: number }>) {
-  if (p.apiSportsId) playerById.set(String(p.apiSportsId), p);
+// eventId → { name, team }  (for play event keys like q1_m5_tgoal_p804 — _p uses Squiggle eventIds)
+// slugName(name) → { name, team }  (for player_ event keys)
+const playerByEventId = new Map<number, { name: string; team: string }>();
+const playerBySlug    = new Map<string, { name: string; team: string }>();
+for (const p of playersData as Array<{ name: string; team: string; eventIds?: number[] }>) {
+  for (const eid of p.eventIds ?? []) playerByEventId.set(eid, p);
   playerBySlug.set(slugName(p.name), p);
 }
 
@@ -617,17 +617,29 @@ export default function PublicProfilePage() {
                 if (ek?.startsWith("player_")) {
                   player = playerBySlug.get(ek.slice(7));
                 } else if (ek) {
-                  // e.g. q1_m5_tgoal_p804 — the _p suffix is the numeric apiSportsId
+                  // e.g. q1_m5_tgoal_p804 — the _p suffix is the Squiggle eventId
                   const m = ek.match(/_p([^_]+)$/);
-                  if (m) player = playerById.get(m[1]);
+                  if (m) player = playerByEventId.get(Number(m[1]));
                 }
                 const imgSrc = player ? playerImagePath(player.name, player.team) : null;
                 const teams = c.game_id ? (gamesMap.get(c.game_id) ?? null) : null;
-                const href = c.game_id && ek
-                  ? `/match/${c.game_id}/${ek}?highlight=${c.id}`
-                  : c.game_id
-                  ? `/match/${c.game_id}?tab=chat&highlight=${c.id}`
-                  : null;
+                let href: string | null = null;
+                if (c.game_id && ek) {
+                  const p = new URLSearchParams({ highlight: c.id });
+                  if (player) {
+                    if (ek.startsWith("player_")) {
+                      p.set("label", player.name);
+                    } else {
+                      const typeMatch = ek.match(/_t([^_]+)_p/);
+                      const eventType = typeMatch ? typeMatch[1].toUpperCase() : "";
+                      p.set("label", eventType ? `${player.name} · ${eventType}` : player.name);
+                    }
+                    p.set("team", player.team);
+                  }
+                  href = `/match/${c.game_id}/${ek}?${p.toString()}`;
+                } else if (c.game_id) {
+                  href = `/match/${c.game_id}?tab=chat&highlight=${c.id}`;
+                }
                 return <CommentRow key={c.id} comment={c} imgSrc={imgSrc} teams={teams} href={href} />;
               })}
             </div>

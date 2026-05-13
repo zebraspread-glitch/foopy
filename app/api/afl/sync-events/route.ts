@@ -54,6 +54,7 @@ export async function GET(req: Request) {
     type: e.type ?? null,
     team_id: e.team?.id ?? null,
     player_id: e.player?.id ?? null,
+    player_name: e.player?.name ?? null,
     home_score: e.homeScore ?? e.home_score ?? e.score?.home ?? e.scores?.home ?? null,
     away_score: e.awayScore ?? e.away_score ?? e.score?.away ?? e.scores?.away ?? null,
   }));

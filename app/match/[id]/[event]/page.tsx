@@ -7,6 +7,7 @@ import { supabase } from "@/app/lib/supabase";
 import { createNotification, notifyMentions } from "@/app/lib/notifications";
 import MentionTextarea from "@/app/components/MentionTextarea";
 import playerStatsJson from "@/app/data/players.json";
+import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 
 type Profile = {
   id: string;
@@ -40,7 +41,7 @@ type Comment = {
   replies: Comment[];
 };
 
-type PlayerRecord = { name?: string; player?: string; club?: string; team?: string; image?: string; imagePath?: string; playerImage?: string };
+type PlayerRecord = { name?: string; player?: string; club?: string; team?: string; image?: string; imagePath?: string; playerImage?: string; apiSportsId?: number; eventIds?: number[] };
 
 function slugify(s: string) { return s.toLowerCase().replace(/[^a-z0-9]/g, ""); }
 function playerSlug(s: string) { return s.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""); }
@@ -103,8 +104,56 @@ export default function EventCommentsPage() {
 
   const gameId = Number(params?.id ?? 0);
   const eventKey = String(params?.event ?? "");
-  const label = searchParams.get("label") || "Event";
   const highlight = searchParams.get("highlight");
+
+  const [resolvedPlayerName, setResolvedPlayerName] = useState<string | null>(null);
+
+  // Resolve label: use URL param if provided, otherwise derive from event key (local lookup),
+  // or fall back to resolvedPlayerName fetched async from the play-by-play API.
+  const labelFromParams = useMemo(() => {
+    const param = searchParams.get("label");
+    if (param) return param;
+    const players = playerStatsJson as PlayerRecord[];
+    if (eventKey.startsWith("player_")) {
+      const slug = eventKey.slice(7);
+      const found = players.find(p => slugify(p.name ?? p.player ?? "") === slugify(slug));
+      return found ? (found.name ?? found.player ?? null) : null;
+    }
+    const idMatch = eventKey.match(/_p([^_]+)$/);
+    if (idMatch) {
+      const target = Number(idMatch[1]);
+      const found = players.find(p => Array.isArray(p.eventIds) && p.eventIds.map(Number).includes(target));
+      if (found) {
+        const name = found.name ?? found.player ?? "";
+        const typeMatch = eventKey.match(/_t([^_]+)_p/);
+        const eventType = typeMatch ? typeMatch[1].toUpperCase() : "";
+        return eventType ? `${name} · ${eventType}` : name;
+      }
+    }
+    return null;
+  }, [eventKey, searchParams]);
+
+  // If label not in URL params and not in players.json, fetch from play-by-play API
+  useEffect(() => {
+    if (labelFromParams || eventKey.startsWith("player_") || !gameId) return;
+    const idMatch = eventKey.match(/_p([^_]+)$/);
+    if (!idMatch) return;
+    const playerId = Number(idMatch[1]);
+    const typeMatch = eventKey.match(/_t([^_]+)_p/);
+    const eventType = typeMatch ? typeMatch[1].toUpperCase() : "";
+    const apiId = (API_SPORTS_MATCH_IDS as Record<string, string>)[String(gameId)] ?? String(gameId);
+    fetch(`/api/afl/play-by-play?id=${apiId}`)
+      .then(r => r.json())
+      .then(data => {
+        const match = (data.events ?? []).find((e: any) => Number(e.playerId) === playerId);
+        if (match?.playerName) {
+          setResolvedPlayerName(eventType ? `${match.playerName} · ${eventType}` : match.playerName);
+        }
+      })
+      .catch(() => {});
+  }, [gameId, eventKey, labelFromParams]);
+
+  const label = labelFromParams ?? resolvedPlayerName ?? "Event";
 
   const [userId, setUserId] = useState<string | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -144,7 +193,10 @@ export default function EventCommentsPage() {
 
   const playerCard = useMemo(() => {
     if (!isPlayerComment) return null;
-    const team = searchParams.get("team") ?? "";
+    const players = playerStatsJson as PlayerRecord[];
+    const slug = eventKey.slice(7);
+    const found = players.find(p => slugify(p.name ?? p.player ?? "") === slugify(slug));
+    const team = searchParams.get("team") || found?.club || found?.team || "";
     const rating = searchParams.get("rating") ?? "";
     const gb = searchParams.get("gb") ?? "";
     const d = searchParams.get("d") ?? "";
@@ -155,12 +207,16 @@ export default function EventCommentsPage() {
     const ho = searchParams.get("ho") ?? "";
     const img = resolvePlayerImage(label, team);
     return { team, rating, gb, d, k, h, m, t, ho, img };
-  }, [isPlayerComment, label, searchParams]);
+  }, [isPlayerComment, eventKey, label, searchParams]);
 
   // For regular event comments — parse player name from label ("Jack Gunston · BEHIND")
   const eventCard = useMemo(() => {
     if (isPlayerComment || !eventParts) return null;
-    const team = searchParams.get("team") ?? "";
+    const players = playerStatsJson as PlayerRecord[];
+    const idMatch = eventKey.match(/_p([^_]+)$/);
+    const target = idMatch ? Number(idMatch[1]) : null;
+    const found = target != null ? players.find(p => Array.isArray(p.eventIds) && p.eventIds.map(Number).includes(target)) : null;
+    const team = searchParams.get("team") || found?.club || found?.team || "";
     // Player name is everything before the " · " separator
     const playerName = label.includes(" · ") ? label.split(" · ")[0].trim() : label;
     const img = playerName ? resolvePlayerImage(playerName, team) : "";

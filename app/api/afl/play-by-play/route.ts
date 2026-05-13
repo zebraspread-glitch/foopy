@@ -50,6 +50,7 @@ async function fetchAndCache(gameId: string, now: number) {
     type: event.type,
     teamId: event.team?.id,
     playerId: event.player?.id,
+    playerName: event.player?.name ?? null,
     text: `${String(event.type || "event").toUpperCase()} · Team ID ${
       event.team?.id ?? "-"
     } · Player ID ${event.player?.id ?? "-"}`,

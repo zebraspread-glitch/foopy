@@ -90,6 +90,7 @@ export type LiveEvent = {
   type?: string;
   teamId?: number | string;
   playerId?: number | string;
+  playerName?: string | null;
   label?: string;
   homeScore?: number | string;
   awayScore?: number | string;
