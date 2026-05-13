@@ -227,7 +227,11 @@ export default function EventCommentsPage() {
     fetch(`/api/afl/player-stats?id=${apiId}`)
       .then(r => r.json())
       .then(data => {
-        const allPlayers: any[] = data?.response ?? [];
+        // Structure: response[0].teams[].players[]
+        const allPlayers: any[] = [];
+        for (const team of data?.response?.[0]?.teams ?? []) {
+          for (const p of team?.players ?? []) allPlayers.push(p);
+        }
         // Prefer matching by apiSportsId; fall back to name slug
         const found = allPlayers.find((p: any) =>
           apiSportsPlayerId
@@ -540,14 +544,6 @@ export default function EventCommentsPage() {
 
   return (
     <main style={pageStyle}>
-      <style>{`
-        @keyframes commentSpin {
-          to {
-            transform: rotate(360deg);
-          }
-        }
-      `}</style>
-
       <header style={headerStyle}>
         <button onClick={() => router.back()} style={backBtnStyle} aria-label="Back">
           <svg width="10" height="17" viewBox="0 0 10 18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -692,7 +688,7 @@ export default function EventCommentsPage() {
                 }}
               >
                 {submitting ? (
-                  <div style={{ width: 18, height: 18, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "commentSpin 0.7s linear infinite" }} />
+                  <div style={{ width: 18, height: 18, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
                 ) : cooldown > 0 ? (
                   <span style={{ fontSize: 11, fontWeight: 900 }}>{cooldown}s</span>
                 ) : (
@@ -1220,7 +1216,7 @@ const spinnerStyle: CSSProperties = {
   borderRadius: "50%",
   border: "2px solid rgba(255,255,255,0.12)",
   borderTopColor: "#3b82f6",
-  animation: "commentSpin 0.75s linear infinite",
+  animation: "spin 0.75s linear infinite",
 };
 
 const emptyStyle: CSSProperties = {

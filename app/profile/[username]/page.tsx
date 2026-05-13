@@ -262,7 +262,12 @@ export default function PublicProfilePage() {
           const res = await fetch(`/api/afl/player-stats?id=${apiId}`);
           if (!res.ok) return { gameId, players: [] };
           const data = await res.json();
-          return { gameId, players: (data?.response ?? []) as any[] };
+          // Structure: response[0].teams[].players[]
+          const players: any[] = [];
+          for (const team of data?.response?.[0]?.teams ?? []) {
+            for (const p of team?.players ?? []) players.push(p);
+          }
+          return { gameId, players };
         } catch {
           return { gameId, players: [] };
         }
