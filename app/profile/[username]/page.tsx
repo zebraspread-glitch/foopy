@@ -149,7 +149,7 @@ type Comment = { id: string; body: string; created_at: string; game_id: number |
 const playerByEventId = new Map<number, { name: string; team: string }>();
 const playerBySlug    = new Map<string, { name: string; team: string }>();
 for (const p of playersData as Array<{ name: string; team: string; eventIds?: number[] }>) {
-  for (const eid of p.eventIds ?? []) playerByEventId.set(eid, p);
+  for (const eid of (Array.isArray(p.eventIds) ? p.eventIds : [])) playerByEventId.set(eid, p);
   playerBySlug.set(slugName(p.name), p);
 }
 

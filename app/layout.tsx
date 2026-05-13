@@ -42,7 +42,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <XPProvider>
           <NavigationEvents />
           <GlobalSideDrawer />
-          {children}
+          <div className="page-shell">
+            {children}
+          </div>
           <BottomNav />
           <XPLevelUpGate />
         </XPProvider>

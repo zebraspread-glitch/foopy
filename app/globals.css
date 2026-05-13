@@ -289,6 +289,25 @@ a.pressable:active {
 }
 
 /* ============================================================
+   PAGE SHELL — centres all content on desktop
+   ============================================================ */
+
+.page-shell {
+  max-width: 760px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  position: relative;
+  border-left: 1px solid rgba(255,255,255,.07);
+  border-right: 1px solid rgba(255,255,255,.07);
+}
+
+body.full-width-page .page-shell {
+  max-width: none;
+  border-left: none;
+  border-right: none;
+}
+
+/* ============================================================
    BOTTOM NAV — iOS-native style
    ============================================================ */
 
@@ -306,12 +325,11 @@ a.pressable:active {
   border-top: 0.5px solid rgba(255,255,255,0.10);
   padding-bottom: env(safe-area-inset-bottom);
   height: var(--nav-h);
-  /* Hardware accelerate the nav */
   will-change: transform;
   transform: translateZ(0);
-  /* Contain layout/paint — nav doesn't affect content above it */
   contain: strict;
 }
+
 
 .tab-item {
   flex: 1;
@@ -784,11 +802,6 @@ textarea::placeholder { color: var(--text-3); }
   width: 18px;
   height: 18px;
   border-width: 2px;
-}
-
-.spinner-white {
-  border-color: rgba(255,255,255,0.3);
-  border-top-color: #fff;
 }
 
 /* ============================================================

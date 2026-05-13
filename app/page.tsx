@@ -670,8 +670,8 @@ free_kicks?: {
           const found = playerData.find(
             (p) =>
               p.apiSportsId === apiPlayerId ||
-              (Array.isArray(p.eventIds) ? p.eventIds : []).includes(apiPlayerId) ||
-              (Array.isArray(p.statsIds) ? p.statsIds : []).includes(apiPlayerId)
+              (p.eventIds ?? []).includes(apiPlayerId) ||
+              (p.statsIds ?? []).includes(apiPlayerId)
           );
 
           if (!found) continue;
@@ -782,6 +782,7 @@ free_kicks?: {
         </div>
       </header>
 
+      <div style={{ height: "calc(92px + env(safe-area-inset-top))" }} />
       <section style={wrapStyle}>
         <div style={listStyle} className={loading ? undefined : "stagger"}>
           {loading &&
@@ -1306,8 +1307,10 @@ const pageStyle: React.CSSProperties = {
 };
 
 const headerStyle: React.CSSProperties = {
-  position: "sticky",
+  position: "fixed",
   top: 0,
+  left: 0,
+  right: 0,
   zIndex: 50,
   display: "flex",
   flexDirection: "column",

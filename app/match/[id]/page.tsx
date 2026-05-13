@@ -1358,6 +1358,8 @@ export default function MatchPage() {
   const [teamStats, setTeamStats] = useState<any[]>([]);
   const [allGames, setAllGames] = useState<MatchGame[]>([]);
   const [roundGames, setRoundGames] = useState<MatchGame[]>([]);
+  const [scoreboardPassed, setScoreboardPassed] = useState(false);
+  const scoreboardRef = useRef<HTMLDivElement>(null);
 
   const apiSportsGameId = useMemo(() => {
     const mapped = (API_SPORTS_MATCH_IDS as Record<string, any>)[id];
@@ -1376,6 +1378,17 @@ export default function MatchPage() {
   }, [apiSportsGameId, id]);
 
   useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    const el = scoreboardRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setScoreboardPassed(!entry.isIntersecting),
+      { threshold: 0 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   // Award XP for viewing a live match
   useEffect(() => {
@@ -1917,7 +1930,7 @@ export default function MatchPage() {
         <RoundGameStrip games={roundGames} activeId={id} now={now} />
 
         {/* ── Scoreboard ── */}
-        <div style={{
+        <div ref={scoreboardRef} style={{
           position: "relative", overflow: "hidden",
           padding: roundGames.length > 1 ? "24px 24px 26px" : "calc(env(safe-area-inset-top) + 24px) 24px 26px",
           minHeight: 292,
@@ -2083,9 +2096,74 @@ export default function MatchPage() {
           )}
         </div>
 
+        {/* ── Compact sticky scoreboard (appears when main scoreboard scrolls off) ── */}
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: "50%",
+          transform: scoreboardPassed ? "translateX(-50%) translateY(0)" : "translateX(-50%) translateY(-110%)",
+          width: "min(760px, 100%)",
+          zIndex: 50,
+          background: "rgba(8,8,8,0.97)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          borderBottom: "1px solid rgba(255,255,255,.08)",
+          paddingTop: "env(safe-area-inset-top)",
+          transition: "transform 0.22s cubic-bezier(0.4,0,0.2,1)",
+          pointerEvents: scoreboardPassed ? "auto" : "none",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", padding: "8px 8px 8px 4px", gap: 8 }}>
+            {/* Back */}
+            <button
+              onClick={() => router.back()}
+              style={{ width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", cursor: "pointer", color: "#fff", flexShrink: 0, padding: 0 }}
+            >
+              <ChevronLeft size={28} strokeWidth={2.4} />
+            </button>
+
+            {/* Scores */}
+            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+              {/* Home */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, justifyContent: "flex-end" }}>
+                <span style={{ fontSize: 20, fontWeight: 1000, color: "#fff", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em" }}>
+                  {typeof homeScoreDisplay === "string" ? homeScoreDisplay : scoreText(homeScoreDisplay)}
+                </span>
+                <div style={{ width: 38, height: 38, borderRadius: "50%", overflow: "hidden", background: `${teamColor(game.hteam ?? "")}22`, border: "1px solid rgba(255,255,255,.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <img src={getLogo(game.hteam)} alt={game.hteam ?? ""} style={{ width: "88%", height: "88%", objectFit: "contain" }} />
+                </div>
+              </div>
+
+              {/* Status badge */}
+              {status === "LIVE" ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", borderRadius: 999, background: "#166534", border: "1px solid #4ade80", flexShrink: 0 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 0 2px rgba(34,197,94,.25)", animation: "livePulse 1.8s ease-in-out infinite", flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, fontWeight: 900, color: "#4ade80" }}>Live</span>
+                </div>
+              ) : (
+                <div style={{ padding: "5px 10px", borderRadius: 999, background: statusBadgeTone.bg, border: `1px solid ${statusBadgeTone.border}`, color: statusBadgeTone.color, fontSize: 12, fontWeight: 800, flexShrink: 0, whiteSpace: "nowrap" }}>
+                  {statusBadgeTone.label}
+                </div>
+              )}
+
+              {/* Away */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, justifyContent: "flex-start" }}>
+                <div style={{ width: 38, height: 38, borderRadius: "50%", overflow: "hidden", background: `${teamColor(game.ateam ?? "")}22`, border: "1px solid rgba(255,255,255,.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <img src={getLogo(game.ateam)} alt={game.ateam ?? ""} style={{ width: "88%", height: "88%", objectFit: "contain" }} />
+                </div>
+                <span style={{ fontSize: 20, fontWeight: 1000, color: "#fff", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em" }}>
+                  {typeof awayScoreDisplay === "string" ? awayScoreDisplay : scoreText(awayScoreDisplay)}
+                </span>
+              </div>
+            </div>
+
+            {/* Spacer to balance back button */}
+            <div style={{ width: 36, flexShrink: 0 }} />
+          </div>
+        </div>
+
         {/* ── Tabs ── */}
         <div style={{
-          position: "sticky", top: 0, zIndex: 10,
+          position: "sticky", top: scoreboardPassed ? 52 : 0, zIndex: 10,
           background: "rgba(10,10,10,0.97)",
           backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
           borderBottom: "1px solid rgba(255,255,255,0.06)",
@@ -2154,7 +2232,12 @@ export default function MatchPage() {
 
             {feedLoading && (
               <div style={{ display: "flex", justifyContent: "center", padding: "40px 0" }}>
-                <div className="spinner" />
+                <div style={{
+                  width: 32, height: 32, borderRadius: "50%",
+                  border: "3px solid rgba(255,255,255,0.15)",
+                  borderTopColor: "#fff",
+                  animation: "spin 0.75s linear infinite",
+                }} />
               </div>
             )}
 
@@ -2396,8 +2479,7 @@ function mcRelTime(dateString: string) {
 
 function MatchComments({ gameId, highlight }: { gameId: number; highlight: string | null }) {
   const router = useRouter();
-  // null = auth loading, string = signed in, false = confirmed signed out
-  const [userId, setUserId] = useState<string | null | false>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [comments, setComments] = useState<MatchComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [body, setBody] = useState("");
@@ -2422,7 +2504,7 @@ function MatchComments({ gameId, highlight }: { gameId: number; highlight: strin
   }
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setUserId(data.session?.user.id ?? false));
+    supabase.auth.getSession().then(({ data }) => setUserId(data.session?.user.id ?? null));
   }, []);
 
   const load = useCallback(async (currentSort: "live" | "top" = "live") => {
@@ -2610,7 +2692,7 @@ function MatchComments({ gameId, highlight }: { gameId: number; highlight: strin
       <div style={{ flex: 1, padding: "10px 0 4px" }}>
         {loading ? (
           <div style={{ display: "flex", justifyContent: "center", padding: "48px 0" }}>
-            <div className="spinner" />
+            <div style={{ width: 24, height: 24, border: "2px solid rgba(255,255,255,.08)", borderTop: "2px solid #3b82f6", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
           </div>
         ) : comments.length === 0 ? (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "52px 20px", color: "#94a3b8", textAlign: "center" }}>
@@ -2623,7 +2705,7 @@ function MatchComments({ gameId, highlight }: { gameId: number; highlight: strin
           </div>
         ) : (
           comments.map(c => (
-            <MCRow key={c.id} comment={c} userId={userId as string} onLike={handleLike} onDelete={handleDelete}
+            <MCRow key={c.id} comment={c} userId={userId} onLike={handleLike} onDelete={handleDelete}
               onReply={r => { setReplyTo(r); setTimeout(() => inputRef.current?.focus(), 50); }} liking={liking} />
           ))
         )}
@@ -2631,9 +2713,7 @@ function MatchComments({ gameId, highlight }: { gameId: number; highlight: strin
 
       {/* Input — sticky within the match container */}
       <div style={{ position: "sticky", bottom: 0, zIndex: 50, borderTop: "1px solid rgba(255,255,255,.08)", padding: "10px 14px calc(14px + env(safe-area-inset-bottom))", background: "rgba(5,5,5,0.92)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
-        {userId === null ? (
-          <div style={{ height: 48 }} />
-        ) : userId === false ? (
+        {!userId ? (
           <button onClick={() => router.push("/login")} style={{ width: "100%", height: 48, borderRadius: 16, background: "linear-gradient(135deg,#3b82f6,#2563eb)", color: "#fff", fontWeight: 900, fontSize: 15, border: "none", cursor: "pointer", boxShadow: "0 4px 16px rgba(59,130,246,0.3)" }}>
             Sign in to chat
           </button>
@@ -2669,7 +2749,7 @@ function MatchComments({ gameId, highlight }: { gameId: number; highlight: strin
                 style={{ width: 44, height: 44, borderRadius: "50%", background: "linear-gradient(135deg,#3b82f6,#2563eb)", boxShadow: "0 2px 12px rgba(59,130,246,0.35)", border: "none", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, opacity: !body.trim() || submitting || cooldown > 0 ? 0.38 : 1, transition: "opacity 0.15s" }}
               >
                 {submitting
-                  ? <div className="spinner spinner-sm spinner-white" />
+                  ? <div style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
                   : cooldown > 0
                   ? <span style={{ fontSize: 11, fontWeight: 900 }}>{cooldown}s</span>
                   : <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" fill="currentColor" stroke="none" /></svg>
@@ -3065,7 +3145,7 @@ function MatchPolls({
 
       {loading ? (
         <div style={{ display: "flex", justifyContent: "center", padding: "40px 0" }}>
-          <div className="spinner" />
+          <div style={{ width: 24, height: 24, border: "2px solid rgba(255,255,255,.1)", borderTop: "2px solid #60a5fa", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
         </div>
       ) : polls.length === 0 ? (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "40px 20px", color: "#94a3b8", textAlign: "center" }}>
@@ -3205,17 +3285,15 @@ function PollCard({
                 {selected && <div style={{ width: 10, height: 10, borderRadius: "50%", background: color }} />}
               </div>
               {/* Logo / avatar */}
-              <PollOptionIcon label={opt.label} pollType={poll.poll_type} />
-              {/* Name + bar stacked */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 15, fontWeight: 800, color: "#f1f5f9", marginBottom: showBar ? 6 : 0 }}>{opt.label}</div>
-                {showBar && (
+              <PollOptionInner label={opt.label} pollType={poll.poll_type} winner={isWinner} myVote={isMyVote && !isWinner} />
+              {/* Bar + % */}
+              {showBar && (
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ height: 6, borderRadius: 999, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
                     <div style={{ height: "100%", width: `${pct}%`, borderRadius: 999, background: color, transition: "width 0.5s cubic-bezier(.4,0,.2,1)" }} />
                   </div>
-                )}
-              </div>
-              {/* Percentage */}
+                </div>
+              )}
               {showBar && (
                 <div style={{ flexShrink: 0, textAlign: "right" }}>
                   <div style={{ fontSize: 16, fontWeight: 900, color: selected ? color : "#64748b", lineHeight: 1 }}>{pct}%</div>
@@ -3435,27 +3513,28 @@ function pollOptionColors(label: string, pollType: string): React.CSSProperties 
   return { background: c.primary, borderColor: c.primary };
 }
 
-function PollOptionIcon({ label, pollType }: { label: string; pollType: string }) {
+function PollOptionInner({ label, pollType }: { label: string; pollType: string; winner?: boolean; myVote?: boolean }) {
   if (pollType === "team") {
-    return <img src={getLogo(label)} alt={label} style={{ width: 40, height: 40, objectFit: "contain", borderRadius: 8, flexShrink: 0 }} />;
+    const logo = getLogo(label);
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
+        <img src={logo} alt={label} style={{ width: 36, height: 36, objectFit: "contain", borderRadius: 8, flexShrink: 0 }} />
+        <span style={{ fontSize: 14, fontWeight: 800, color: "#f1f5f9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</span>
+      </div>
+    );
   }
+
   const info = findPlayerInfo(label);
   const team = info?.club ?? info?.team ?? "";
   const img = playerImagePath(label, team);
   const colors = liveFeedTeamColors(team);
-  return (
-    <div style={{ width: 40, height: 40, borderRadius: "50%", overflow: "hidden", flexShrink: 0, border: `2px solid ${colors.primary}` }}>
-      <img src={img} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-    </div>
-  );
-}
 
-// kept for any remaining callers
-function PollOptionInner({ label, pollType }: { label: string; pollType: string; winner?: boolean; myVote?: boolean }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
-      <PollOptionIcon label={label} pollType={pollType} />
-      <span style={{ fontSize: 14, fontWeight: 800, color: "#f1f5f9" }}>{label}</span>
+      <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flexShrink: 0, border: `2px solid ${colors.primary}` }}>
+        <img src={img} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+      </div>
+      <span style={{ fontSize: 14, fontWeight: 800, color: "#f1f5f9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</span>
     </div>
   );
 }
