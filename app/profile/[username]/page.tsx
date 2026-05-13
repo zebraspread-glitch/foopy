@@ -272,10 +272,18 @@ export default function PublicProfilePage() {
       for (const { gameId, players } of results) {
         for (const c of playerComments.filter(c => c.game_id === gameId)) {
           const slug = c.event_key!.slice(7); // after "player_"
-          const found = players.find((p: any) => slugName(p.player?.name ?? p.name ?? "") === slug);
+          // Look up apiSportsId from players.json for reliable ID-based matching
+          const playerRecord = (playersData as Array<{ name?: string; team?: string; apiSportsId?: number }>)
+            .find(p => slugName(p.name ?? "") === slug);
+          const apiSportsPlayerId = playerRecord?.apiSportsId ?? null;
+          const found = players.find((p: any) =>
+            apiSportsPlayerId
+              ? Number(p.player?.id) === apiSportsPlayerId
+              : slugName(p.player?.name ?? p.name ?? "") === slug
+          );
           if (!found) continue;
           const raw = found.statistics ?? found;
-          const goals = raw.goals?.total ?? raw.goals ?? 0;
+          const goals = raw.goals?.total ?? (typeof raw.goals === "number" ? raw.goals : 0);
           const goalAssists = raw.goals?.assists ?? raw.goalAssists ?? 0;
           const behinds = raw.behinds ?? 0;
           const kicks = raw.kicks ?? 0;
@@ -284,7 +292,7 @@ export default function PublicProfilePage() {
           const tackles = raw.tackles ?? 0;
           const hitouts = raw.hitouts ?? 0;
           const disposals = raw.disposals ?? 0;
-          const clearances = raw.clearances ?? 0;
+          const clearances = typeof raw.clearances === "object" ? (raw.clearances?.total ?? 0) : (raw.clearances ?? 0);
           const freesFor = raw.free_kicks?.for ?? raw.freesFor ?? 0;
           const freesAgainst = raw.free_kicks?.against ?? raw.freesAgainst ?? 0;
           const rating = foopyRating({ goals, goalAssists, behinds, kicks, handballs, marks, tackles, hitouts, disposals, clearances, freesFor, freesAgainst } as any);

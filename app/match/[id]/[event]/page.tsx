@@ -216,18 +216,27 @@ export default function EventCommentsPage() {
     if (!isPlayerComment || !gameId) return;
     if (searchParams.get("rating")) return;
     const apiId = (API_SPORTS_MATCH_IDS as Record<string, string>)[String(gameId)] ?? String(gameId);
+
+    // Look up the player's apiSportsId from players.json for reliable ID-based matching
+    const slug = eventKey.slice(7);
+    const playerRecord = (playerStatsJson as PlayerRecord[]).find(
+      p => slugify(p.name ?? p.player ?? "") === slugify(slug)
+    );
+    const apiSportsPlayerId = playerRecord?.apiSportsId ?? null;
+
     fetch(`/api/afl/player-stats?id=${apiId}`)
       .then(r => r.json())
       .then(data => {
-        const playerName = label !== "Event" ? label : null;
-        if (!playerName) return;
-        // api-sports response is a flat array of { player: { name }, statistics: { ... } }
         const allPlayers: any[] = data?.response ?? [];
-        const slug = slugify(playerName);
-        const found = allPlayers.find((p: any) => slugify(p.player?.name ?? p.name ?? "") === slug);
+        // Prefer matching by apiSportsId; fall back to name slug
+        const found = allPlayers.find((p: any) =>
+          apiSportsPlayerId
+            ? Number(p.player?.id) === apiSportsPlayerId
+            : slugify(p.player?.name ?? p.name ?? "") === slugify(slug)
+        );
         if (!found) return;
         const raw = found.statistics ?? found;
-        const goals = raw.goals?.total ?? raw.goals ?? 0;
+        const goals = raw.goals?.total ?? (typeof raw.goals === "number" ? raw.goals : 0);
         const goalAssists = raw.goals?.assists ?? raw.goalAssists ?? 0;
         const behinds = raw.behinds ?? 0;
         const disposals = raw.disposals ?? 0;
@@ -236,7 +245,7 @@ export default function EventCommentsPage() {
         const marks = raw.marks ?? 0;
         const tackles = raw.tackles ?? 0;
         const hitouts = raw.hitouts ?? 0;
-        const clearances = raw.clearances ?? 0;
+        const clearances = typeof raw.clearances === "object" ? (raw.clearances?.total ?? 0) : (raw.clearances ?? 0);
         const freesFor = raw.free_kicks?.for ?? raw.freesFor ?? 0;
         const freesAgainst = raw.free_kicks?.against ?? raw.freesAgainst ?? 0;
         const rating = foopyRating({ goals, goalAssists, behinds, kicks, handballs, marks, tackles, hitouts, disposals, clearances, freesFor, freesAgainst } as any);
@@ -252,7 +261,7 @@ export default function EventCommentsPage() {
         });
       })
       .catch(() => {});
-  }, [isPlayerComment, gameId, label, searchParams]);
+  }, [isPlayerComment, gameId, eventKey, searchParams]);
 
   // For regular event comments — parse player name from label ("Jack Gunston · BEHIND")
   const eventCard = useMemo(() => {
