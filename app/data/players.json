@@ -5863,8 +5863,8 @@
     "name": "Cooper Harvey",
     "team": "North Melbourne",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1921,
+    "eventIds": 1921,
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.compp-kangaroos--cooper-harvey"
   },
@@ -6055,17 +6055,6 @@
     "footyWireUrl": "https://www.footywire.compp-kangaroos--luke-parker"
   },
   {
-    "id": "luke_trainor",
-    "name": "Luke Trainor",
-    "team": "North Melbourne",
-    "aliases": [],
-    "apiSportsId": 1921,
-    "eventIds": [
-      1921
-    ],
-    "statsIds": []
-  },
-  {
     "id": "luke_urquhart",
     "name": "Luke Urquhart",
     "team": "North Melbourne",
@@ -6080,8 +6069,8 @@
     "name": "Matt Whitlock",
     "team": "North Melbourne",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1934,
+    "eventIds": 1934,
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.compp-kangaroos--matt-whitlock"
   },

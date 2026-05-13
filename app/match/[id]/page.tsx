@@ -3205,15 +3205,17 @@ function PollCard({
                 {selected && <div style={{ width: 10, height: 10, borderRadius: "50%", background: color }} />}
               </div>
               {/* Logo / avatar */}
-              <PollOptionInner label={opt.label} pollType={poll.poll_type} winner={isWinner} myVote={isMyVote && !isWinner} />
-              {/* Bar + % */}
-              {showBar && (
-                <div style={{ flex: 1, minWidth: 0 }}>
+              <PollOptionIcon label={opt.label} pollType={poll.poll_type} />
+              {/* Name + bar stacked */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "#f1f5f9", marginBottom: showBar ? 6 : 0 }}>{opt.label}</div>
+                {showBar && (
                   <div style={{ height: 6, borderRadius: 999, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
                     <div style={{ height: "100%", width: `${pct}%`, borderRadius: 999, background: color, transition: "width 0.5s cubic-bezier(.4,0,.2,1)" }} />
                   </div>
-                </div>
-              )}
+                )}
+              </div>
+              {/* Percentage */}
               {showBar && (
                 <div style={{ flexShrink: 0, textAlign: "right" }}>
                   <div style={{ fontSize: 16, fontWeight: 900, color: selected ? color : "#64748b", lineHeight: 1 }}>{pct}%</div>
@@ -3433,28 +3435,27 @@ function pollOptionColors(label: string, pollType: string): React.CSSProperties 
   return { background: c.primary, borderColor: c.primary };
 }
 
-function PollOptionInner({ label, pollType }: { label: string; pollType: string; winner?: boolean; myVote?: boolean }) {
+function PollOptionIcon({ label, pollType }: { label: string; pollType: string }) {
   if (pollType === "team") {
-    const logo = getLogo(label);
-    return (
-      <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
-        <img src={logo} alt={label} style={{ width: 36, height: 36, objectFit: "contain", borderRadius: 8, flexShrink: 0 }} />
-        <span style={{ fontSize: 14, fontWeight: 800, color: "#f1f5f9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</span>
-      </div>
-    );
+    return <img src={getLogo(label)} alt={label} style={{ width: 40, height: 40, objectFit: "contain", borderRadius: 8, flexShrink: 0 }} />;
   }
-
   const info = findPlayerInfo(label);
   const team = info?.club ?? info?.team ?? "";
   const img = playerImagePath(label, team);
   const colors = liveFeedTeamColors(team);
+  return (
+    <div style={{ width: 40, height: 40, borderRadius: "50%", overflow: "hidden", flexShrink: 0, border: `2px solid ${colors.primary}` }}>
+      <img src={img} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+    </div>
+  );
+}
 
+// kept for any remaining callers
+function PollOptionInner({ label, pollType }: { label: string; pollType: string; winner?: boolean; myVote?: boolean }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
-      <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flexShrink: 0, border: `2px solid ${colors.primary}` }}>
-        <img src={img} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-      </div>
-      <span style={{ fontSize: 14, fontWeight: 800, color: "#f1f5f9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</span>
+      <PollOptionIcon label={label} pollType={pollType} />
+      <span style={{ fontSize: 14, fontWeight: 800, color: "#f1f5f9" }}>{label}</span>
     </div>
   );
 }

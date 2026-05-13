@@ -31,6 +31,8 @@ type Profile = {
   favourites: FavSlot[] | null;
   featured_cards: FeaturedCardSlot[] | null;
   coins: number | null;
+  matches_viewed: number | null;
+  total_likes: number | null;
 };
 
 type FriendEntry = {
@@ -634,6 +636,7 @@ export default function ProfilePage() {
   const [likesDataLoading, setLikesDataLoading] = useState(false);
   const [likesOffset, setLikesOffset] = useState(0);
   const [likesHasMore, setLikesHasMore] = useState(true);
+  const [myLikesRank, setMyLikesRank] = useState<{ rank: number; total: number } | null>(null);
   const likesSentinelRef = useRef<HTMLDivElement>(null);
   const likesLoadingRef = useRef(false);
   const [pollsData, setPollsData] = useState<PollTeamStat[]>([]);
@@ -691,14 +694,6 @@ export default function ProfilePage() {
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id)
       .then(({ count }) => setCardCount(count ?? 0));
-    supabase
-      .from("feed_comments")
-      .select("likes")
-      .eq("user_id", user.id)
-      .then(({ data }) => {
-        const total = (data ?? []).reduce((acc, r) => acc + (r.likes ?? 0), 0);
-        setTotalLikes(total);
-      });
   }, [user]);
 
   async function applyPending(userId: string, p: Profile | null) {
@@ -1155,7 +1150,7 @@ export default function ProfilePage() {
       setLikesData((prev) => append ? [...prev, ...entries] : entries);
       setLikesOffset(offset + entries.length);
       setLikesHasMore(entries.length === PAGE_SIZE);
-    } catch (e) { console.error("likes leaderboard:", e); }
+    } catch (e: any) { console.error("likes leaderboard error:", e?.message ?? e); }
     likesLoadingRef.current = false;
     setLikesDataLoading(false);
   }
@@ -1173,6 +1168,10 @@ export default function ProfilePage() {
 
   async function openLikesPopup() {
     setStatsPopup("likes");
+    supabase.rpc("get_my_likes_rank").then(({ data }) => {
+      const row = (data ?? [])[0];
+      if (row) setMyLikesRank({ rank: Number(row.rank), total: Number(row.total_likes) });
+    });
     if (likesData.length > 0) return;
     setLikesOffset(0);
     setLikesHasMore(true);
@@ -1432,8 +1431,8 @@ export default function ProfilePage() {
         <div style={{ background: "#080808", border: "1px solid rgba(255,255,255,.1)", borderRadius: 18, display: "flex" }}>
           {(
             [
-              { label: "Games",     value: Object.keys(log.matches ?? {}).length, color: "#f8fafc",  onClick: openGamesPopup },
-              { label: "Likes",     value: totalLikes ?? "—",                      color: "#f8fafc",  onClick: openLikesPopup },
+              { label: "Games",     value: profile?.matches_viewed ?? 0,           color: "#f8fafc",  onClick: openGamesPopup },
+              { label: "Likes",     value: profile?.total_likes ?? totalLikes ?? "—", color: "#f8fafc",  onClick: openLikesPopup },
               { label: "Polls Won", value: (log.correct ?? []).length,             color: "#22c55e",  onClick: openPollsPopup },
               { label: "Cards",     value: cardCount ?? "—",                        color: "#c084fc",  onClick: () => router.push("/album") },
             ] as const
@@ -1834,7 +1833,7 @@ export default function ProfilePage() {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 20px 16px", borderBottom: "1px solid rgba(255,255,255,.07)", flexShrink: 0 }}>
               <div style={{ fontSize: 18, fontWeight: 950, letterSpacing: "-0.02em" }}>
                 {statsPopup === "games" && "Live Games Viewed"}
-                {statsPopup === "likes" && "Comment Likes Leaderboard"}
+                {statsPopup === "likes" && "Likes Leaderboard"}
                 {statsPopup === "polls" && "Polls Won by Team"}
               </div>
               <button onClick={() => setStatsPopup(null)} style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: 4 }}>
@@ -1866,7 +1865,16 @@ export default function ProfilePage() {
 
               {/* Likes popup */}
               {statsPopup === "likes" && (
-                likesDataLoading ? (
+                <>
+                  {myLikesRank && (
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "10px 14px", marginBottom: 12, borderRadius: 12, background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.08)" }}>
+                      <Avatar name={profile?.username || "?"} url={profile?.avatar_url} size={28} />
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#94a3b8" }}>
+                        You are <strong style={{ color: "#f8fafc" }}>#{myLikesRank.rank.toLocaleString()}</strong> with <strong style={{ color: "#f8fafc" }}>{myLikesRank.total.toLocaleString()}</strong> likes
+                      </span>
+                    </div>
+                  )}
+                  {likesDataLoading && likesData.length === 0 ? (
                   <div style={{ textAlign: "center", padding: 40, color: "#475569" }}>Loading…</div>
                 ) : likesData.length === 0 ? (
                   <EmptyState icon="❤️" text="No comment likes yet." />
@@ -1898,7 +1906,8 @@ export default function ProfilePage() {
                       </div>
                     )}
                   </div>
-                )
+                )}
+                </>
               )}
 
               {/* Polls popup */}

@@ -670,8 +670,8 @@ free_kicks?: {
           const found = playerData.find(
             (p) =>
               p.apiSportsId === apiPlayerId ||
-              (p.eventIds ?? []).includes(apiPlayerId) ||
-              (p.statsIds ?? []).includes(apiPlayerId)
+              (Array.isArray(p.eventIds) ? p.eventIds : []).includes(apiPlayerId) ||
+              (Array.isArray(p.statsIds) ? p.statsIds : []).includes(apiPlayerId)
           );
 
           if (!found) continue;
