@@ -36,7 +36,7 @@ type LadderTeam = {
   percentage: number;
 };
 
-type Tab = "league" | "finals";
+type Tab = "league" | "finals" | "live";
 
 const TEAM_LOGOS: Record<string, string> = {
   Adelaide: "/team-logos/crows.png",
@@ -158,6 +158,55 @@ function makeLadder(games: Game[]): LadderTeam[] {
     .sort((a, b) => (b.points !== a.points ? b.points - a.points : b.percentage - a.percentage));
 }
 
+function isLiveGame(g: Game) {
+  return (g.complete ?? 0) > 0 && !isCompleted(g);
+}
+
+function makeLiveLadder(games: Game[]): LadderTeam[] {
+  const teams: Record<string, LadderTeam> = {};
+
+  function ensure(name: string) {
+    if (!teams[name]) {
+      teams[name] = { team: name, played: 0, wins: 0, losses: 0, draws: 0, points: 0, for: 0, against: 0, percentage: 0 };
+    }
+    return teams[name];
+  }
+
+  // Process all completed games first
+  games.filter(isCompleted).forEach((g) => {
+    if (!g.hteam || !g.ateam) return;
+    const hs = g.hscore ?? 0;
+    const as = g.ascore ?? 0;
+    const home = ensure(g.hteam);
+    const away = ensure(g.ateam);
+    home.played++; away.played++;
+    home.for += hs; home.against += as;
+    away.for += as; away.against += hs;
+    if (hs > as) { home.wins++; home.points += 4; away.losses++; }
+    else if (as > hs) { away.wins++; away.points += 4; home.losses++; }
+    else { home.draws++; away.draws++; home.points += 2; away.points += 2; }
+  });
+
+  // Provisionally apply current live game scores
+  games.filter(isLiveGame).forEach((g) => {
+    if (!g.hteam || !g.ateam) return;
+    const hs = g.hscore ?? 0;
+    const as = g.ascore ?? 0;
+    const home = ensure(g.hteam);
+    const away = ensure(g.ateam);
+    home.played++; away.played++;
+    home.for += hs; home.against += as;
+    away.for += as; away.against += hs;
+    if (hs > as) { home.wins++; home.points += 4; away.losses++; }
+    else if (as > hs) { away.wins++; away.points += 4; home.losses++; }
+    else { home.draws++; away.draws++; home.points += 2; away.points += 2; }
+  });
+
+  return Object.values(teams)
+    .map((t) => ({ ...t, percentage: t.against > 0 ? (t.for / t.against) * 100 : 0 }))
+    .sort((a, b) => b.points !== a.points ? b.points - a.points : b.percentage - a.percentage);
+}
+
 function sideColour(index: number) {
   if (index < 4) return "#fbbf24"; // Gold: Double Chance
   if (index < 6) return "#ffffff"; // White
@@ -212,7 +261,25 @@ export default function LadderPage() {
   }, []);
 
   const ladder = useMemo(() => makeLadder(games), [games]);
-  const shownLadder = activeTab === "finals" ? ladder.slice(0, 10) : ladder;
+  const liveLadder = useMemo(() => makeLiveLadder(games), [games]);
+  const liveTeams = useMemo(() => new Set(
+    games.filter(isLiveGame).flatMap(g => [g.hteam, g.ateam].filter(Boolean) as string[])
+  ), [games]);
+  const hasLiveGames = liveTeams.size > 0;
+
+  const shownLadder =
+    activeTab === "finals" ? ladder.slice(0, 10) :
+    activeTab === "live"   ? liveLadder :
+    ladder;
+
+  // Poll every 20s when on the live tab so standings stay current
+  useEffect(() => {
+    if (activeTab !== "live") return;
+    const timer = setInterval(() => {
+      getGames().then(data => setGames(data as Game[])).catch(() => {});
+    }, 20_000);
+    return () => clearInterval(timer);
+  }, [activeTab]);
 
   function retry() {
     setError(false);
@@ -362,13 +429,23 @@ export default function LadderPage() {
       <header style={headerStyle} className="ladder-header">
         <span style={titleStyle}>Ladder</span>
         <div style={tabsStyle}>
-          {(["league", "finals"] as Tab[]).map((t) => (
+          {(["league", "finals", "live"] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => setActiveTab(t)}
-              style={{ ...tabBtnStyle, ...(activeTab === t ? activeTabStyle : {}) }}
+              style={{ ...tabBtnStyle, ...(activeTab === t ? (t === "live" ? activeTabLiveStyle : activeTabStyle) : {}) }}
             >
-              {t === "league" ? "League" : "Finals"}
+              {t === "live" ? (
+                <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <span style={{
+                    width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
+                    background: hasLiveGames ? "#22c55e" : "#475569",
+                    boxShadow: hasLiveGames ? "0 0 0 2px rgba(34,197,94,0.3)" : "none",
+                    animation: hasLiveGames ? "livePulse 1.8s ease-in-out infinite" : "none",
+                  }} />
+                  Live
+                </span>
+              ) : t === "league" ? "League" : "Finals"}
             </button>
           ))}
         </div>
@@ -413,6 +490,7 @@ export default function LadderPage() {
                       const logo = TEAM_LOGOS[team.team];
                       const colour = sideColour(i);
                       const stripe = i % 2 === 1 ? "rgba(255,255,255,.018)" : "transparent";
+                      const teamIsLive = activeTab === "live" && liveTeams.has(team.team);
 
                       return (
                         <tr
@@ -452,12 +530,15 @@ export default function LadderPage() {
                                   <span style={logoFallbackStyle} />
                                 )}
                               </span>
-                              <span style={teamNameStyle} className="ladder-team-name ladder-team-name-full">
+                              <span style={{ ...teamNameStyle, color: teamIsLive ? "#4ade80" : undefined }} className="ladder-team-name ladder-team-name-full">
                                 {displayTeamName(team.team)}
                               </span>
-                              <span style={teamNameStyle} className="ladder-team-name ladder-team-name-mobile">
+                              <span style={{ ...teamNameStyle, color: teamIsLive ? "#4ade80" : undefined }} className="ladder-team-name ladder-team-name-mobile">
                                 {displayTeamAbbrev(team.team)}
                               </span>
+                              {teamIsLive && (
+                                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", flexShrink: 0, animation: "livePulse 1.8s ease-in-out infinite" }} />
+                              )}
                             </div>
                           </td>
 
@@ -481,12 +562,21 @@ export default function LadderPage() {
 
             {!loading && (
               <div style={legendStyle}>
-                <span style={legendItemStyle}>
-                  <span style={{ ...legendDotStyle, background: "#fbbf24" }} /> Gold = Double Chance
-                </span>
-                <span style={legendItemStyle}>
-                  <span style={{ ...legendDotStyle, background: "#3b82f6" }} /> Blue = Wildcard
-                </span>
+                {activeTab === "live" ? (
+                  <span style={{ ...legendItemStyle, color: "#4ade80" }}>
+                    <span style={{ ...legendDotStyle, background: "#22c55e", animation: "livePulse 1.8s ease-in-out infinite" }} />
+                    Provisional — includes live game scores
+                  </span>
+                ) : (
+                  <>
+                    <span style={legendItemStyle}>
+                      <span style={{ ...legendDotStyle, background: "#fbbf24" }} /> Gold = Double Chance
+                    </span>
+                    <span style={legendItemStyle}>
+                      <span style={{ ...legendDotStyle, background: "#3b82f6" }} /> Blue = Wildcard
+                    </span>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -549,6 +639,12 @@ const tabBtnStyle: CSSProperties = {
 const activeTabStyle: CSSProperties = {
   background: "white",
   color: "#000",
+};
+
+const activeTabLiveStyle: CSSProperties = {
+  background: "#166534",
+  color: "#4ade80",
+  border: "1px solid rgba(74,222,128,0.3)",
 };
 
 const wrapStyle: CSSProperties = {

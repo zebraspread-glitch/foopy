@@ -2276,16 +2276,7 @@ export default function MatchPage() {
               </div>
             )}
 
-            {!feedLoading && !feedError && liveFeedIsStale && (
-              <div style={emptyFeedStyle}>
-                <strong>Live feed is catching up.</strong>
-                <div style={{ marginTop: 6 }}>
-                  The score and clock are current, but the play-by-play provider is still behind this quarter.
-                </div>
-              </div>
-            )}
-
-            {!feedLoading && liveEvents.length > 0 && !liveFeedIsStale && (
+            {!feedLoading && liveEvents.length > 0 && (
               <div style={liveFeedListStyle}>
                 {liveEvents.map((event, index) => {
                   const ek = `q${eventQuarter(event)}_m${event.minute ?? 0}_t${event.type ?? ""}_p${event.playerId ?? index}`;
