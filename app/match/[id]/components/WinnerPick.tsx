@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { CheckCircle } from "lucide-react";
 import { getLogo, teamColor } from "../utils";
 import { supabase } from "@/app/lib/supabase";
 
@@ -10,6 +11,8 @@ type Props = {
   homeTeam: string;
   awayTeam: string;
   gameStatus?: string;
+  homeScore?: number | string | null;
+  awayScore?: number | string | null;
 };
 
 type Votes = { home: number; away: number; total: number };
@@ -27,7 +30,7 @@ function getOrCreateVoterId(): string {
   return id;
 }
 
-export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus }: Props) {
+export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, homeScore, awayScore }: Props) {
   const router = useRouter();
   const storageKey = `winner-pick-${matchId}`;
 
@@ -80,6 +83,13 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus }: 
   }, [loadVotes]);
 
   const votingLocked = !!gameStatus && gameStatus !== "UPCOMING";
+  const finalWinner = useMemo<"home" | "away" | null>(() => {
+    if (gameStatus !== "FINAL") return null;
+    const home = Number(homeScore ?? 0);
+    const away = Number(awayScore ?? 0);
+    if (!Number.isFinite(home) || !Number.isFinite(away) || home === away) return null;
+    return home > away ? "home" : "away";
+  }, [awayScore, gameStatus, homeScore]);
 
   async function pick(side: "home" | "away") {
     if (!authed) { router.push("/login"); return; }
@@ -115,7 +125,8 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus }: 
     setSubmitting(false);
   }
 
-  const locked = authed === false || (votingLocked && !hasVoted);
+  const interactionLocked = authed === false || votingLocked;
+  const dimUnavailable = authed === false && !hasVoted;
 
   const options: { side: "home" | "away"; team: string; color: string; percent: number; voteCount: number }[] = [
     { side: "home", team: homeTeam, color: homeColor, percent: homePercent, voteCount: votes.home },
@@ -175,9 +186,12 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus }: 
       </div>
 
       {/* ── Options ── */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16, opacity: locked ? 0.5 : 1, pointerEvents: locked ? "none" : "auto" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16, opacity: dimUnavailable ? 0.5 : 1, pointerEvents: interactionLocked ? "none" : "auto" }}>
         {options.map(({ side, team, color, percent, voteCount }) => {
           const selected = myPick === side;
+          const isWinner = finalWinner === side;
+          const wrong = !!finalWinner && selected && !isWinner;
+          const dimmed = !!finalWinner && !isWinner && !selected;
           return (
             <button
               key={side}
@@ -190,11 +204,12 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus }: 
                 gap: 12,
                 padding: "14px 16px",
                 borderRadius: 14,
-                border: `1.5px solid ${selected ? color : "rgba(255,255,255,0.1)"}`,
-                background: selected ? `${color}18` : "rgba(255,255,255,0.03)",
+                border: `1.5px solid ${wrong ? "#ef4444" : selected ? color : "rgba(255,255,255,0.1)"}`,
+                background: wrong ? "rgba(239,68,68,.12)" : selected ? `${color}18` : "rgba(255,255,255,0.03)",
                 cursor: "pointer",
                 textAlign: "left",
                 width: "100%",
+                opacity: dimmed ? 0.35 : 1,
                 transition: "border-color 0.2s, background 0.2s",
               }}
             >
@@ -215,6 +230,7 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus }: 
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 15, fontWeight: 800, color: "#f1f5f9", marginBottom: 6, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {team}
+                  {isWinner && <CheckCircle size={15} color="#22c55e" style={{ display: "inline-block", verticalAlign: "-2px", marginLeft: 7 }} />}
                 </div>
                 <div style={{ height: 6, borderRadius: 999, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
                   <div style={{

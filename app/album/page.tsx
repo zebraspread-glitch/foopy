@@ -227,6 +227,7 @@ export default function AlbumPage() {
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
         borderBottom: "1px solid rgba(255,255,255,.06)",
+        paddingTop: "env(safe-area-inset-top)",
       }}>
         {/* Top row */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px 10px 58px" }}>

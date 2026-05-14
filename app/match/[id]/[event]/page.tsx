@@ -48,6 +48,14 @@ type PlayerRecord = { name?: string; player?: string; club?: string; team?: stri
 function slugify(s: string) { return s.toLowerCase().replace(/[^a-z0-9]/g, ""); }
 function playerSlug(s: string) { return s.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""); }
 
+function eventKeyAliases(eventKey: string) {
+  const aliases = [eventKey];
+  const modern = eventKey.match(/^(q.+?_m.+?_t.+?)_team[^_]*_p([^_]*)_i\d+$/);
+  if (modern) aliases.push(`${modern[1]}_p${modern[2]}`);
+
+  return Array.from(new Set(aliases.filter(Boolean)));
+}
+
 function mixColor(a: string, b: string, t: number) {
   const ah = a.replace("#", ""), bh = b.replace("#", "");
   const r = Math.round(parseInt(ah.slice(0,2),16) + t*(parseInt(bh.slice(0,2),16)-parseInt(ah.slice(0,2),16)));
@@ -106,6 +114,7 @@ export default function EventCommentsPage() {
 
   const gameId = Number(params?.id ?? 0);
   const eventKey = String(params?.event ?? "");
+  const eventKeys = useMemo(() => eventKeyAliases(eventKey), [eventKey]);
   const highlight = searchParams.get("highlight");
 
   const [resolvedPlayerName, setResolvedPlayerName] = useState<string | null>(null);
@@ -336,7 +345,7 @@ export default function EventCommentsPage() {
       .from("feed_comments")
       .select("id, game_id, user_id, parent_id, body, likes, created_at, event_key")
       .eq("game_id", gameId)
-      .eq("event_key", eventKey);
+      .in("event_key", eventKeys);
 
     const { data: rows, error } = currentSort === "top"
       ? await query.order("likes", { ascending: false }).order("created_at", { ascending: false })
@@ -425,7 +434,7 @@ export default function EventCommentsPage() {
 
     setComments(topLevel);
     setLoading(false);
-  }, [gameId, eventKey]);
+  }, [gameId, eventKey, eventKeys]);
 
   useEffect(() => {
     loadComments(sort);
@@ -1121,9 +1130,11 @@ const headerStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   gap: 12,
-  height: 58,
+  height: "calc(58px + env(safe-area-inset-top))",
+  paddingTop: "env(safe-area-inset-top)",
   paddingLeft: 10,
   paddingRight: 16,
+  boxSizing: "border-box",
   background: "rgba(5,5,5,0.88)",
   backdropFilter: "blur(20px)",
   WebkitBackdropFilter: "blur(20px)",

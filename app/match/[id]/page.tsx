@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { Check, ChevronLeft } from "lucide-react";
 import matchStatsJson from "@/app/data/game-stats.json";
 import teamStatsJson from "@/app/data/team-stats.json";
 import playerStatsJson from "@/app/data/players.json";
@@ -194,8 +194,30 @@ function eventScoreBasedKey(event: LiveEvent) {
 }
 
 function scoreEventKey(event: LiveEvent, index = 0) {
-  const carriedKey = (event as any).displayEventKey ?? (event as any).optimisticKey;
-  return carriedKey || eventScoreBasedKey(event) || (event as any).rowKey || `q${eventQuarter(event)}_m${event.minute ?? 0}_t${event.type ?? ""}_team${event.teamId ?? ""}_p${(event as any).playerId ?? ""}_i${index}`;
+  return eventKeyAliases(event, index)[0];
+}
+
+function eventKeyAliases(event: LiveEvent, index = 0) {
+  const aliases = [
+    (event as any).displayEventKey,
+    (event as any).optimisticKey,
+    eventScoreBasedKey(event),
+    (event as any).rowKey,
+    `q${eventQuarter(event)}_m${event.minute ?? 0}_t${event.type ?? ""}_p${(event as any).playerId ?? index}`,
+    `q${eventQuarter(event)}_m${event.minute ?? 0}_t${event.type ?? ""}_team${event.teamId ?? ""}_p${(event as any).playerId ?? ""}_i${index}`,
+    event.playerId != null ? `q${eventQuarter(event)}_m${event.minute ?? 0}_t${event.type ?? ""}_p${event.playerId}` : "",
+  ];
+
+  return Array.from(new Set(aliases.map((key) => safeText(key, "")).filter(Boolean)));
+}
+
+function commentCountForEvent(counts: Record<string, number>, event: LiveEvent, index = 0) {
+  return eventKeyAliases(event, index).reduce((sum, key) => sum + (counts[key] ?? 0), 0);
+}
+
+function commentKeyForEvent(counts: Record<string, number>, event: LiveEvent, index = 0) {
+  const aliases = eventKeyAliases(event, index);
+  return aliases.find((key) => (counts[key] ?? 0) > 0) ?? aliases[0];
 }
 
 function eventIdentityKey(event: LiveEvent) {
@@ -1752,7 +1774,7 @@ export default function MatchPage() {
   useEffect(() => {
     if (!game || getStatus(game) !== "LIVE") {
       previousScoreRef.current = null;
-      setOptimisticScoreEvents([]);
+      if (getStatus(game) === "UPCOMING") setOptimisticScoreEvents([]);
       return;
     }
 
@@ -2547,6 +2569,7 @@ export default function MatchPage() {
               <div style={liveFeedListStyle}>
                 {displayLiveEvents.map((event, index) => {
                   const ek = scoreEventKey(event, index);
+                  const commentKey = commentKeyForEvent(eventCommentCounts, event, index);
                   const isFresh = freshEventKeys.has(ek);
 
                   return (
@@ -2570,8 +2593,8 @@ export default function MatchPage() {
                           event={event}
                           homeTeam={game.hteam}
                           awayTeam={game.ateam}
-                          eventKey={ek}
-                          commentCount={eventCommentCounts[ek] ?? 0}
+                          eventKey={commentKey}
+                          commentCount={commentCountForEvent(eventCommentCounts, event, index)}
                           onCommentClick={() => {
                             const player = findPlayerByEventId(event.playerId);
                             const inferredTeam = safeText((event as any).teamName, "");
@@ -2591,7 +2614,7 @@ export default function MatchPage() {
                               ...(quarter ? { quarter } : {}),
                               ...(minute ? { minute } : {}),
                             });
-                            router.push(`/match/${id}/${encodeURIComponent(ek)}?${params}`);
+                            router.push(`/match/${id}/${encodeURIComponent(commentKey)}?${params}`);
                           }}
                         />
                       )}
@@ -2716,7 +2739,14 @@ export default function MatchPage() {
         {activeTab === "polls" && (
           <section style={sectionStyle}>
             <div style={{ padding: "16px 16px 0" }}>
-              <WinnerPick matchId={id} homeTeam={game.hteam} awayTeam={game.ateam} gameStatus={status} />
+              <WinnerPick
+                matchId={id}
+                homeTeam={game.hteam}
+                awayTeam={game.ateam}
+                gameStatus={status}
+                homeScore={game.hscore}
+                awayScore={game.ascore}
+              />
             </div>
             <MatchPolls
               gameId={Number(id)}
@@ -3280,6 +3310,11 @@ function resolveWinner(poll: Poll, homeStats: PlayerStat[], awayStats: PlayerSta
   return best;
 }
 
+function pollOptionMatchesWinner(optionLabel: string, winner: string | null) {
+  if (!winner) return false;
+  return normaliseTeamKey(optionLabel) === normaliseTeamKey(winner);
+}
+
 type VoteRow = { poll_id: string; option_id: string; user_id: string };
 
 type LeaderEntry = {
@@ -3316,7 +3351,7 @@ function PollLeaderboard({
     for (const poll of polls) {
       const winner = resolveWinner(poll, homeStats, awayStats, homeTeam, awayTeam);
       if (!winner) continue;
-      const winOpt = poll.options.find(o => o.label.toLowerCase() === winner.toLowerCase());
+      const winOpt = poll.options.find(o => pollOptionMatchesWinner(o.label, winner));
       if (!winOpt) continue;
       const xp = poll.options.length >= 4 ? 20 : poll.options.length === 3 ? 15 : 10;
       for (const v of allVotes) {
@@ -3522,7 +3557,7 @@ function MatchPolls({
       if (!winner) continue;
       const myOption = poll.options.find(o => o.id === myVoteOptionId);
       if (!myOption) continue;
-      if (myOption.label.toLowerCase() !== winner.toLowerCase()) continue;
+      if (!pollOptionMatchesWinner(myOption.label, winner)) continue;
       const optionCount = poll.options.length;
       const xpOverride = optionCount >= 4 ? 20 : optionCount === 3 ? 15 : 10;
       awardXP("poll_correct", { pollId: poll.id, xpOverride });
@@ -3708,16 +3743,18 @@ function PollCard({
           const count = voteCounts[opt.id] ?? 0;
           const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
           const isMyVote = userVote === opt.id;
-          const isWinner = showResults && winner !== null && opt.label.toLowerCase() === winner.toLowerCase();
+          const isWinner = showResults && pollOptionMatchesWinner(opt.label, winner);
           const color = optionColor(opt.label);
-          const selected = isMyVote || isWinner;
+          const selected = isMyVote;
           const showBar = showResults || hasVoted || votingLocked;
+          const wrong = showResults && selected && winner !== null && !isWinner;
+          const dimmed = showResults && winner !== null && !isWinner && !selected;
 
           const inner = (
             <>
               {/* Radio */}
-              <div style={{ width: 20, height: 20, borderRadius: "50%", flexShrink: 0, border: `2px solid ${selected ? color : "rgba(255,255,255,0.25)"}`, display: "flex", alignItems: "center", justifyContent: "center", transition: "border-color 0.2s" }}>
-                {selected && <div style={{ width: 10, height: 10, borderRadius: "50%", background: color }} />}
+              <div style={{ width: 20, height: 20, borderRadius: "50%", flexShrink: 0, border: `2px solid ${wrong ? "#ef4444" : selected ? color : "rgba(255,255,255,0.25)"}`, display: "flex", alignItems: "center", justifyContent: "center", transition: "border-color 0.2s" }}>
+                {selected && <div style={{ width: 10, height: 10, borderRadius: "50%", background: wrong ? "#ef4444" : color }} />}
               </div>
               {/* Logo / avatar */}
               <PollOptionInner label={opt.label} pollType={poll.poll_type} winner={isWinner} myVote={isMyVote && !isWinner} />
@@ -3731,7 +3768,7 @@ function PollCard({
               )}
               {showBar && (
                 <div style={{ flexShrink: 0, textAlign: "right" }}>
-                  <div style={{ fontSize: 16, fontWeight: 900, color: selected ? color : "#64748b", lineHeight: 1 }}>{pct}%</div>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: isWinner ? "#22c55e" : wrong ? "#ef4444" : selected ? color : "#64748b", lineHeight: 1 }}>{pct}%</div>
                   <div style={{ fontSize: 10, color: "#475569", fontWeight: 700, marginTop: 2 }}>{count} votes</div>
                 </div>
               )}
@@ -3742,13 +3779,13 @@ function PollCard({
             if (canChangeVote) {
               return (
                 <button key={opt.id} type="button" onClick={() => onVote(opt.id)}
-                  style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 14, border: `1.5px solid ${selected ? color : "rgba(255,255,255,0.1)"}`, background: selected ? `${color}18` : "rgba(255,255,255,0.03)", cursor: "pointer", width: "100%", textAlign: "left", transition: "border-color 0.2s, background 0.2s" }}>
+                  style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 14, border: `1.5px solid ${wrong ? "#ef4444" : selected ? color : "rgba(255,255,255,0.1)"}`, background: wrong ? "rgba(239,68,68,.12)" : selected ? `${color}18` : "rgba(255,255,255,0.03)", cursor: "pointer", width: "100%", textAlign: "left", opacity: dimmed ? 0.35 : 1, transition: "border-color 0.2s, background 0.2s" }}>
                   {inner}
                 </button>
               );
             }
             return (
-              <div key={opt.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 14, border: `1.5px solid ${selected ? color : "rgba(255,255,255,0.1)"}`, background: selected ? `${color}18` : "rgba(255,255,255,0.03)" }}>
+              <div key={opt.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 14, border: `1.5px solid ${wrong ? "#ef4444" : selected ? color : "rgba(255,255,255,0.1)"}`, background: wrong ? "rgba(239,68,68,.12)" : selected ? `${color}18` : "rgba(255,255,255,0.03)", opacity: dimmed ? 0.35 : 1 }}>
                 {inner}
               </div>
             );
@@ -3756,7 +3793,7 @@ function PollCard({
 
           return (
             <button key={opt.id} type="button" onClick={() => onVote(opt.id)} disabled={!canVote && !canChangeVote}
-              style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 14, border: `1.5px solid ${selected ? color : "rgba(255,255,255,0.1)"}`, background: selected ? `${color}18` : "rgba(255,255,255,0.03)", cursor: (canVote || canChangeVote) ? "pointer" : "default", opacity: (canVote || canChangeVote) ? 1 : 0.5, width: "100%", textAlign: "left", transition: "border-color 0.2s, background 0.2s" }}>
+              style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 14, border: `1.5px solid ${wrong ? "#ef4444" : selected ? color : "rgba(255,255,255,0.1)"}`, background: wrong ? "rgba(239,68,68,.12)" : selected ? `${color}18` : "rgba(255,255,255,0.03)", cursor: (canVote || canChangeVote) ? "pointer" : "default", opacity: dimmed ? 0.35 : (canVote || canChangeVote) ? 1 : 0.5, width: "100%", textAlign: "left", transition: "border-color 0.2s, background 0.2s" }}>
               {inner}
             </button>
           );
@@ -3948,13 +3985,14 @@ function pollOptionColors(label: string, pollType: string): React.CSSProperties 
   return { background: c.primary, borderColor: c.primary };
 }
 
-function PollOptionInner({ label, pollType }: { label: string; pollType: string; winner?: boolean; myVote?: boolean }) {
+function PollOptionInner({ label, pollType, winner = false }: { label: string; pollType: string; winner?: boolean; myVote?: boolean }) {
   if (pollType === "team") {
     const logo = getLogo(label);
     return (
       <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
         <img src={logo} alt={label} style={{ width: 36, height: 36, objectFit: "contain", borderRadius: 8, flexShrink: 0 }} />
         <span style={{ fontSize: 14, fontWeight: 800, color: "#f1f5f9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</span>
+        {winner && <CorrectPollTick />}
       </div>
     );
   }
@@ -3970,7 +4008,30 @@ function PollOptionInner({ label, pollType }: { label: string; pollType: string;
         <img src={img} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
       </div>
       <span style={{ fontSize: 14, fontWeight: 800, color: "#f1f5f9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</span>
+      {winner && <CorrectPollTick />}
     </div>
+  );
+}
+
+function CorrectPollTick() {
+  return (
+    <span
+      aria-label="Correct answer"
+      title="Correct answer"
+      style={{
+        width: 18,
+        height: 18,
+        borderRadius: "50%",
+        background: "#22c55e",
+        color: "#fff",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+      }}
+    >
+      <Check size={13} strokeWidth={3} />
+    </span>
   );
 }
 

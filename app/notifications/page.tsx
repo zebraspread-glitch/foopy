@@ -269,7 +269,7 @@ export default function NotificationsPage() {
       <div style={{ maxWidth: 600, margin: "0 auto", background: "#020202", minHeight: "100dvh", borderLeft: "1px solid rgba(255,255,255,.07)", borderRight: "1px solid rgba(255,255,255,.07)" }}>
 
         {/* Header */}
-        <div style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(2,2,2,0.92)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: "1px solid rgba(255,255,255,0.06)", padding: "16px 18px 12px" }}>
+        <div style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(2,2,2,0.92)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: "1px solid rgba(255,255,255,0.06)", padding: "calc(16px + env(safe-area-inset-top)) 18px 12px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <button onClick={() => router.back()} style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer", padding: 0, display: "flex" }}>
