@@ -853,7 +853,7 @@ free_kicks?: {
                   }}
                 >
                   <aside style={infoStyle}>
-                    <div style={timeStyle}>{getTime(game, selectedRound !== currentRound)}</div>
+                    <div style={{ ...timeStyle, color: status === "LIVE" ? "#4ade80" : undefined }}>{getTime(game, selectedRound !== currentRound)}</div>
                     <div style={venueStyle}>{game.venue || "Venue TBA"}</div>
                   </aside>
 
@@ -931,6 +931,7 @@ free_kicks?: {
                         homeLost={status === "COMPLETED" && (game.hscore ?? 0) < (game.ascore ?? 0)}
                         awayLost={status === "COMPLETED" && (game.ascore ?? 0) < (game.hscore ?? 0)}
                         isUpcoming={isUpcoming}
+                        isLive={status === "LIVE"}
                       />
                     </Link>
                   );
@@ -1021,6 +1022,7 @@ function MobileMatchRow({
   homeLost,
   awayLost,
   isUpcoming,
+  isLive,
 }: {
   homeLogo: string;
   awayLogo: string;
@@ -1037,12 +1039,15 @@ function MobileMatchRow({
   homeLost: boolean;
   awayLost: boolean;
   isUpcoming: boolean;
+  isLive: boolean;
 }) {
   return (
     <div style={mobileMatchInnerStyle}>
       <div style={mobileMatchHeaderStyle}>
         <div style={mobileVenueStyle}>{venue}</div>
-        <strong style={mobileHeaderTimeStyle}>{isUpcoming ? timeText : "Full Time"}</strong>
+        <strong style={{ ...mobileHeaderTimeStyle, color: isLive ? "#4ade80" : "#ffffff" }}>
+          {isUpcoming ? timeText : isLive ? timeText : "Full Time"}
+        </strong>
       </div>
 
       <div style={mobileTeamsStackStyle}>
