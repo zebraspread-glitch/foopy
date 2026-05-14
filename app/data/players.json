@@ -7196,10 +7196,10 @@
   },
   {
     "id": "thomas_lynch",
-    "name": "Thomas Lynch",
+    "name": "Tom Lynch",
     "team": "Richmond",
     "aliases": [
-      "Tom Lynch"
+      "Thomas Lynch"
     ],
     "apiSportsId": 486,
     "eventIds": [
@@ -7307,16 +7307,6 @@
   {
     "id": "alix_tauru",
     "name": "Alix Tauru",
-    "team": "St Kilda",
-    "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
-    "statsIds": [],
-    "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--alix-tauru"
-  },
-  {
-    "id": "alixzander_tauru",
-    "name": "Alixzander Tauru",
     "team": "St Kilda",
     "aliases": [],
     "apiSportsId": 1994,

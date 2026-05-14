@@ -9,14 +9,11 @@ import {
   useState,
 } from "react";
 import { supabase } from "@/app/lib/supabase";
-import { createNotification } from "@/app/lib/notifications";
 import {
   canAwardXP,
-  levelFromXP,
   recordAction,
   type XPAction,
   type XPLog,
-  type XPResult,
   XP_VALUES,
 } from "@/app/lib/xp";
 
@@ -24,15 +21,10 @@ import {
 
 type Toast = { id: number; text: string; xp: number };
 
-type LevelUpInfo = { newLevel: number; prevLevel: number };
-
 type XPContextValue = {
   xp: number;
-  level: number;
   log: XPLog;
   toasts: Toast[];
-  levelUp: LevelUpInfo | null;
-  dismissLevelUp: () => void;
   awardXP: (
     action: XPAction,
     meta?: { roundId?: number; gameId?: number; matchId?: string; slot?: number; pollId?: string; xpOverride?: number }
@@ -41,11 +33,8 @@ type XPContextValue = {
 
 const XPContext = createContext<XPContextValue>({
   xp: 0,
-  level: 1,
   log: {},
   toasts: [],
-  levelUp: null,
-  dismissLevelUp: () => {},
   awardXP: () => {},
 });
 
@@ -76,12 +65,10 @@ const XP_LABELS: Record<XPAction, string> = {
 };
 
 export function XPProvider({ children }: { children: React.ReactNode }) {
-  const [userId, setUserId]   = useState<string | null>(null);
-  const [xp, setXP]           = useState(0);
-  const [level, setLevel]     = useState(1);
-  const [log, setLog]         = useState<XPLog>({});
-  const [toasts, setToasts]   = useState<Toast[]>([]);
-  const [levelUp, setLevelUp] = useState<LevelUpInfo | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [xp, setXP]         = useState(0);
+  const [log, setLog]       = useState<XPLog>({});
+  const [toasts, setToasts] = useState<Toast[]>([]);
 
   // Live refs to avoid stale closures in awardXP
   const xpRef     = useRef(0);
@@ -105,7 +92,7 @@ export function XPProvider({ children }: { children: React.ReactNode }) {
     async function loadProfile(uid: string) {
       const { data } = await supabase
         .from("profiles")
-        .select("xp, level, xp_log")
+        .select("xp, xp_log")
         .eq("id", uid)
         .single();
 
@@ -115,7 +102,6 @@ export function XPProvider({ children }: { children: React.ReactNode }) {
       xpRef.current  = savedXP;
       logRef.current = savedLog;
       setXP(savedXP);
-      setLevel(levelFromXP(savedXP));
       setLog(savedLog);
     }
 
@@ -140,7 +126,6 @@ export function XPProvider({ children }: { children: React.ReactNode }) {
         xpRef.current  = 0;
         logRef.current = {};
         setXP(0);
-        setLevel(1);
         setLog({});
       }
     });
@@ -162,11 +147,7 @@ export function XPProvider({ children }: { children: React.ReactNode }) {
       const logToWrite = pendingLog.current;
       await supabase
         .from("profiles")
-        .update({
-          xp:     xpToWrite,
-          level:  levelFromXP(xpToWrite),
-          xp_log: logToWrite,
-        })
+        .update({ xp: xpToWrite, xp_log: logToWrite })
         .eq("id", uid);
     }, 2000);
   }, []);
@@ -192,42 +173,27 @@ export function XPProvider({ children }: { children: React.ReactNode }) {
 
       if (!canAwardXP(action, currentLog, meta)) return;
 
-      const awarded    = meta?.xpOverride ?? XP_VALUES[action];
-      const newXP      = currentXP + awarded;
-      const prevLevel  = levelFromXP(currentXP);
-      const newLevel   = levelFromXP(newXP);
-      const newLog     = recordAction(action, currentLog, meta);
+      const awarded = meta?.xpOverride ?? XP_VALUES[action];
+      const newXP   = currentXP + awarded;
+      const newLog  = recordAction(action, currentLog, meta);
 
-      // Update refs immediately so rapid sequential calls are safe
       xpRef.current  = newXP;
       logRef.current = newLog;
 
-      // Schedule DB persist
       pendingXP.current  = newXP;
       pendingLog.current = newLog;
       scheduleWrite();
 
-      // Optimistic UI update
       setXP(newXP);
-      setLevel(newLevel);
       setLog(newLog);
 
-      // Toast
       addToast(XP_LABELS[action], awarded);
-
-      // Level-up modal + notification
-      if (newLevel > prevLevel) {
-        setLevelUp({ newLevel, prevLevel });
-        createNotification(userIdRef.current!, "level_up", null, { level: newLevel });
-      }
     },
     [scheduleWrite, addToast]
   );
 
-  const dismissLevelUp = useCallback(() => setLevelUp(null), []);
-
   return (
-    <XPContext.Provider value={{ xp, level, log, toasts, levelUp, dismissLevelUp, awardXP }}>
+    <XPContext.Provider value={{ xp, log, toasts, awardXP }}>
       {children}
       <XPToastStack toasts={toasts} />
     </XPContext.Provider>

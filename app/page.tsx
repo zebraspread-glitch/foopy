@@ -46,8 +46,8 @@ type PlayerStatsPlayer = {
   imagePath?: string;
   playerImage?: string;
   apiSportsId?: number;
-  eventIds?: number[];
-  statsIds?: number[];
+  eventIds?: unknown;
+  statsIds?: unknown;
 };
 
 const TEAM_NAMES: Record<number, string> = {
@@ -232,6 +232,10 @@ function getMobileScoreText(game: Game, isUpcoming: boolean) {
   return `${game.hscore ?? 0} - ${game.ascore ?? 0}`;
 }
 
+function idListIncludes(ids: unknown, target: number) {
+  if (!Array.isArray(ids)) return false;
+  return ids.map(Number).includes(target);
+}
 
 function makeTeamGradient(colors: string[]) {
   if (colors.length === 1) return colors[0];
@@ -670,8 +674,8 @@ free_kicks?: {
           const found = playerData.find(
             (p) =>
               p.apiSportsId === apiPlayerId ||
-              (p.eventIds ?? []).includes(apiPlayerId) ||
-              (p.statsIds ?? []).includes(apiPlayerId)
+              idListIncludes(p.eventIds, apiPlayerId) ||
+              idListIncludes(p.statsIds, apiPlayerId)
           );
 
           if (!found) continue;
@@ -746,7 +750,7 @@ free_kicks?: {
           <span style={roundBadgeStyle}>Rd {selectedRound}</span>
         </div>
 
-        <div ref={roundRef} style={isMobile ? headerRoundsScroll : headerRoundsDesktop}>
+        <div ref={roundRef} className="no-scrollbar" style={isMobile ? headerRoundsScroll : headerRoundsDesktop}>
           {availableRounds.map((round) => {
             const isSelected = selectedRound === round;
             const isCurrent = currentRound === round;
@@ -765,7 +769,7 @@ free_kicks?: {
                     fontWeight: isSelected ? 950 : isCurrent ? 850 : 750,
                   }}
                 >
-                  {round === 0 ? "OR" : `R${round}`}
+                  {round === 0 ? "Opening Round" : `Round ${round}`}
                 </span>
 
                 {(isSelected || isCurrent) && (
@@ -1309,8 +1313,9 @@ const pageStyle: React.CSSProperties = {
 const headerStyle: React.CSSProperties = {
   position: "fixed",
   top: 0,
-  left: 0,
-  right: 0,
+  left: "50%",
+  width: "100vw",
+  transform: "translateX(-50%)",
   zIndex: 50,
   display: "flex",
   flexDirection: "column",
@@ -1344,9 +1349,9 @@ const headerRoundsScroll: React.CSSProperties = {
 const headerRoundsDesktop: React.CSSProperties = {
   ...headerRoundsScroll,
   width: "100%",
-  gap: 0,
-  overflowX: "visible",
-  justifyContent: "space-between",
+  gap: "22px",
+  overflowX: "auto",
+  justifyContent: "flex-start",
   padding: "7px 18px 8px",
 };
 
@@ -1361,10 +1366,7 @@ const headerRoundItem: React.CSSProperties = {
 
 const headerRoundItemDesktop: React.CSSProperties = {
   ...headerRoundItem,
-  flex: "1 1 0",
-  minWidth: 0,
-  display: "flex",
-  justifyContent: "center",
+  padding: "5px 2px 8px",
 };
 
 const headerRoundText: React.CSSProperties = {

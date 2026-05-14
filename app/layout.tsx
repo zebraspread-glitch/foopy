@@ -4,7 +4,6 @@ import BottomNav from "./components/BottomNav";
 import GlobalSideDrawer from "./components/GlobalSideDrawer";
 import NavigationEvents from "./components/NavigationEvents";
 import { XPProvider } from "./context/XPContext";
-import XPLevelUpGate from "./components/XPLevelUpGate";
 
 export const metadata: Metadata = {
   title: "Foopy | AFL Live Scores & Picks",
@@ -46,7 +45,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </div>
           <BottomNav />
-          <XPLevelUpGate />
         </XPProvider>
       </body>
     </html>

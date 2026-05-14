@@ -2,7 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
+import { useRouter } from "next/navigation";
 import { getGames, getGamesCached } from "@/app/lib/gameCache";
+
+function toTeamSlug(name: string): string {
+  const overrides: Record<string, string> = {
+    "Greater Western Sydney": "gws", "GWS Giants": "gws",
+    "Brisbane": "brisbanelions", "Geelong Cats": "geelong",
+  };
+  return overrides[name] ?? name.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
 
 type Game = {
   id: number;
@@ -178,6 +187,7 @@ function SkeletonRow({ i }: { i: number }) {
 }
 
 export default function LadderPage() {
+  const router = useRouter();
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -408,10 +418,12 @@ export default function LadderPage() {
                         <tr
                           key={team.team}
                           className="ladder-row"
+                          onClick={() => router.push(`/team/${toTeamSlug(team.team)}`)}
                           style={{
                             background: stripe,
                             borderBottom: "1px solid rgba(255,255,255,.05)",
                             borderLeft: colour !== "transparent" ? `5px solid ${colour}` : "5px solid transparent",
+                            cursor: "pointer",
                           }}
                         >
                           <td style={tdCentreStyle} className="ladder-rank-cell">

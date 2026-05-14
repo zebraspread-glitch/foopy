@@ -13,7 +13,6 @@ import { supabase } from "@/app/lib/supabase";
 import { createNotification } from "@/app/lib/notifications";
 import { useXP } from "@/app/context/XPContext";
 import XPBar from "@/app/components/XPBar";
-import LevelBadge from "@/app/components/LevelBadge";
 import playersRaw from "@/app/data/players.json";
 import { CARD_PLAYERS } from "@/app/data/cardPlayers";
 
@@ -575,7 +574,7 @@ function FavSlotButton({
 /* ═══════════════════ Main Page ═══════════════════ */
 export default function ProfilePage() {
   const router = useRouter();
-  const { xp, level, log, awardXP } = useXP();
+  const { xp, log, awardXP } = useXP();
 
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -1313,11 +1312,10 @@ export default function ProfilePage() {
                 @{username || "—"}
               </h1>
 
-              {/* Pills: level · coins · friends */}
+              {/* Pills: xp · coins · friends */}
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as const, alignItems: "center" }}>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 10px 6px 6px", borderRadius: 999, background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.1)" }}>
-                  <LevelBadge level={level} size="sm" />
-                  <span style={{ fontSize: 13, fontWeight: 800, color: "#e2e8f0" }}>Level {level}</span>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 999, background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.1)" }}>
+                  <XPBar xp={xp} />
                 </div>
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 999, background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.1)" }}>
                   <img src="/coin/coin.png" alt="coins" style={{ width: 16, height: 16, objectFit: "contain" }} />
@@ -1348,17 +1346,10 @@ export default function ProfilePage() {
 
         </div>
 
-        {/* ── XP Progress ── */}
-        <div style={{ background: "#080808", border: "1px solid rgba(255,255,255,.1)", borderRadius: 18, padding: "16px 20px", display: "flex", alignItems: "center", gap: 16 }}>
-          <LevelBadge level={level} size="xl" />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontVariantNumeric: "tabular-nums" }}>
-                {xp} XP total
-              </span>
-            </div>
-            <XPBar xp={xp} />
-          </div>
+        {/* ── XP ── */}
+        <div style={{ background: "#080808", border: "1px solid rgba(255,255,255,.1)", borderRadius: 18, padding: "20px 24px", display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.45)" }}>Total XP</span>
+          <XPBar xp={xp} />
         </div>
 
         {/* ── Favourites ── */}

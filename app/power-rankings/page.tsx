@@ -50,6 +50,14 @@ function slugify(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
+function toTeamSlug(name: string): string {
+  const overrides: Record<string, string> = {
+    "Greater Western Sydney": "gws", "GWS Giants": "gws",
+    "Brisbane": "brisbanelions", "Geelong Cats": "geelong",
+  };
+  return overrides[name] ?? slugify(name);
+}
+
 function teamFolder(team: string): string {
   const map: Record<string, string> = {
     Adelaide: "crows", "Adelaide Crows": "crows",
@@ -388,11 +396,12 @@ function PlayerItem({ player, rank, period }: { player: PlayerRank; rank: number
 /* ─── Team list item ──────────────────────────────────────── */
 
 function TeamItem({ team, rank }: { team: TeamRank; rank: number }) {
+  const router = useRouter();
   const logo = TEAM_LOGOS[team.team];
   const scoreColor = "#fff";
 
   return (
-    <div className="pr-item" style={itemStyle}>
+    <div className="pr-item" style={{ ...itemStyle, cursor: "pointer" }} onClick={() => router.push(`/team/${toTeamSlug(team.team)}`)}>
       <div style={{ width: 38, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
         <RankBadge rank={rank} />
       </div>

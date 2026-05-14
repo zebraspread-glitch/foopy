@@ -35,9 +35,6 @@ export type XPResult = {
   awarded: number;
   reason: string;
   newXP: number;
-  newLevel: number;
-  leveledUp: boolean;
-  prevLevel: number;
 };
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -60,101 +57,8 @@ export const XP_VALUES: Record<XPAction, number> = {
   add_friend:     5,
 };
 
-export const LEVEL_TITLES = [
-  "",            // 0 — unused
-  "Rookie",      // 1
-  "Supporter",   // 2
-  "Fan",         // 3
-  "Fanatic",     // 4
-  "Die Hard",    // 5
-  "Expert",      // 6
-  "Legend",      // 7
-  "Icon",        // 8
-  "Elite",       // 9
-  "GOAT",        // 10+
-];
-
-export const LEVEL_MILESTONES: Record<number, { emoji: string; label: string }> = {
-  2:  { emoji: "🎟️", label: "Supporter" },
-  5:  { emoji: "🔥", label: "Die Hard" },
-  7:  { emoji: "👑", label: "Legend" },
-  10: { emoji: "🐐", label: "GOAT" },
-};
-
 // Cooldown for message XP: once per day
 const MSG_COOLDOWN_MS = 24 * 60 * 60 * 1000;
-
-// ─── Level math ──────────────────────────────────────────────────────────────
-//
-// XP to level up per bracket of 100 levels:
-//   Levels   1–100  → 100 XP each
-//   Levels 101–200  → 120 XP each
-//   Levels 201–300  → 140 XP each
-//   …and so on (+20 XP per bracket)
-
-function xpPerLevelInBracket(bracket: number): number {
-  return 100 + 20 * bracket;
-}
-
-/** Total XP required to reach `level` (accumulated from level 1). */
-export function totalXPToReach(level: number): number {
-  if (level <= 1) return 0;
-  const n = level - 1;                       // number of levels to climb
-  const bracket    = Math.floor(n / 100);    // complete brackets before current
-  const remainder  = n % 100;                // levels into the current bracket
-
-  // Sum XP for all complete brackets (each bracket k = 100 levels at 100+20k XP)
-  // = sum_{k=0}^{bracket-1} 100*(100+20k) = 100*bracket*(100 + 10*(bracket-1))
-  const completedXP = bracket * 100 * (100 + 10 * (bracket - 1));
-  const remainderXP = remainder * xpPerLevelInBracket(bracket);
-
-  return completedXP + remainderXP;
-}
-
-/** Current level from total accumulated XP. */
-export function levelFromXP(xp: number): number {
-  if (xp <= 0) return 1;
-  let remaining = xp;
-  let level     = 1;
-  let bracket   = 0;
-
-  while (true) {
-    const xpPerLevel    = xpPerLevelInBracket(bracket);
-    const xpForBracket  = 100 * xpPerLevel;
-
-    if (remaining < xpForBracket) {
-      level += Math.floor(remaining / xpPerLevel);
-      break;
-    }
-    remaining -= xpForBracket;
-    level     += 100;
-    bracket++;
-  }
-
-  return Math.max(1, level);
-}
-
-/** XP accumulated within the current level (progress toward next). */
-export function xpInCurrentLevel(xp: number): number {
-  const level = levelFromXP(xp);
-  return xp - totalXPToReach(level);
-}
-
-/** XP required to complete the current level (advance one level). */
-export function xpForCurrentLevel(xp: number): number {
-  const level   = levelFromXP(xp);
-  const bracket = Math.floor((level - 1) / 100);
-  return xpPerLevelInBracket(bracket);
-}
-
-/** 0–1 progress fraction within the current level. */
-export function levelProgress(xp: number): number {
-  return Math.min(1, xpInCurrentLevel(xp) / xpForCurrentLevel(xp));
-}
-
-export function levelTitle(level: number): string {
-  return LEVEL_TITLES[Math.min(level, LEVEL_TITLES.length - 1)] ?? "GOAT";
-}
 
 // ─── Cooldown / eligibility checks ───────────────────────────────────────────
 
@@ -288,16 +192,5 @@ export function computeXPAward(
   if (!canAwardXP(action, log, meta)) return null;
 
   const awarded = meta?.xpOverride ?? XP_VALUES[action];
-  const newXP = currentXP + awarded;
-  const prevLevel = levelFromXP(currentXP);
-  const newLevel = levelFromXP(newXP);
-
-  return {
-    awarded,
-    reason: action,
-    newXP,
-    newLevel,
-    leveledUp: newLevel > prevLevel,
-    prevLevel,
-  };
+  return { awarded, reason: action, newXP: currentXP + awarded };
 }

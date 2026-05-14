@@ -5,8 +5,6 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Users, Layers } from "lucide-react";
 import { supabase } from "@/app/lib/supabase";
-import XPBar from "@/app/components/XPBar";
-import LevelBadge from "@/app/components/LevelBadge";
 import { CARD_PLAYERS } from "@/app/data/cardPlayers";
 import playersData from "@/app/data/players.json";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
@@ -31,7 +29,6 @@ type Profile = {
   favourites: FavSlot[] | null;
   featured_cards: FeaturedCardSlot[] | null;
   xp: number | null;
-  level: number | null;
   coins: number | null;
 };
 
@@ -354,7 +351,7 @@ export default function PublicProfilePage() {
 
       const { data: p } = await supabase
         .from("profiles")
-        .select("id, username, display_name, avatar_url, banner_url, bio, created_at, favourites, featured_cards, xp, level, coins")
+        .select("id, username, display_name, avatar_url, banner_url, bio, created_at, favourites, featured_cards, xp, coins")
         .eq("username", username)
         .maybeSingle();
 
@@ -436,7 +433,6 @@ export default function PublicProfilePage() {
   const label    = profile.username || profile.display_name || "User";
   const [avBg, avFg] = avatarColors(label);
   const xp       = profile.xp    ?? 0;
-  const level    = profile.level  ?? 1;
   const daysAgo  = profile.created_at
     ? Math.floor((Date.now() - new Date(profile.created_at).getTime()) / 86400000)
     : null;
@@ -510,9 +506,8 @@ export default function PublicProfilePage() {
                 @{profile.username}
               </h1>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as const, alignItems: "center" }}>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 10px 6px 6px", borderRadius: 999, background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.1)" }}>
-                  <LevelBadge level={level} size="sm" />
-                  <span style={{ fontSize: 13, fontWeight: 800, color: "#e2e8f0" }}>Level {level}</span>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 999, background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.2)" }}>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: "#4ade80" }}>{xp.toLocaleString()} XP</span>
                 </div>
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 999, background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.1)" }}>
                   <Layers size={14} color="#94a3b8" strokeWidth={2} />

@@ -405,6 +405,14 @@ function foopyColor(value: number) {
   return mixColor("#3b82f6", "#1e3a8a", (v - 9) / 0.9);
 }
 
+function toTeamSlug(name: string): string {
+  const overrides: Record<string, string> = {
+    "Greater Western Sydney": "gws", "GWS Giants": "gws",
+    "Brisbane": "brisbanelions", "Geelong Cats": "geelong",
+  };
+  return overrides[name] ?? name.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
 function TeamScore({ team, score, align = "left" }: { team: any; score: any; align?: "left" | "right" }) {
   const safeTeam = safeText(team, "");
   const displayScore = typeof score === "string" ? score : scoreText(score);
@@ -431,20 +439,22 @@ function TeamScore({ team, score, align = "left" }: { team: any; score: any; ali
       width: "100%",
     }}>
       {/* Logo */}
-      <div style={{
-        width: "clamp(82px, 17vw, 116px)", height: "clamp(82px, 17vw, 116px)", borderRadius: "50%", flexShrink: 0,
-        background: `radial-gradient(circle at 45% 35%, rgba(255,255,255,.18), ${accent}24 48%, rgba(255,255,255,.035) 100%)`,
-        border: "1px solid rgba(255,255,255,0.14)",
-        boxShadow: `0 22px 48px ${accent}30, 0 4px 22px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,0.16)`,
-        overflow: "hidden",
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}>
-        <img
-          src={getLogo(safeTeam)}
-          alt={safeTeam}
-          style={{ width: "92%", height: "92%", objectFit: "contain", borderRadius: "50%", display: "block" }}
-        />
-      </div>
+      <Link href={`/team/${toTeamSlug(safeTeam)}`} style={{ textDecoration: "none", flexShrink: 0 }}>
+        <div style={{
+          width: "clamp(82px, 17vw, 116px)", height: "clamp(82px, 17vw, 116px)", borderRadius: "50%", flexShrink: 0,
+          background: `radial-gradient(circle at 45% 35%, rgba(255,255,255,.18), ${accent}24 48%, rgba(255,255,255,.035) 100%)`,
+          border: "1px solid rgba(255,255,255,0.14)",
+          boxShadow: `0 22px 48px ${accent}30, 0 4px 22px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,0.16)`,
+          overflow: "hidden",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <img
+            src={getLogo(safeTeam)}
+            alt={safeTeam}
+            style={{ width: "92%", height: "92%", objectFit: "contain", borderRadius: "50%", display: "block" }}
+          />
+        </div>
+      </Link>
       {/* Score */}
       <div
         key={animKey}
@@ -3005,6 +3015,154 @@ function resolveWinner(poll: Poll, homeStats: PlayerStat[], awayStats: PlayerSta
   return best;
 }
 
+type VoteRow = { poll_id: string; option_id: string; user_id: string };
+
+type LeaderEntry = {
+  userId: string;
+  xp: number;
+  username: string | null;
+  displayName: string | null;
+  avatarUrl: string | null;
+};
+
+function PollLeaderboard({
+  polls,
+  allVotes,
+  homeStats,
+  awayStats,
+  homeTeam,
+  awayTeam,
+}: {
+  polls: Poll[];
+  allVotes: VoteRow[];
+  homeStats: PlayerStat[];
+  awayStats: PlayerStat[];
+  homeTeam: string;
+  awayTeam: string;
+}) {
+  const [entries, setEntries] = useState<LeaderEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (polls.length === 0 || allVotes.length === 0) { setLoading(false); return; }
+
+    // Compute XP earned per user from correct votes
+    const xpMap: Record<string, number> = {};
+    for (const poll of polls) {
+      const winner = resolveWinner(poll, homeStats, awayStats, homeTeam, awayTeam);
+      if (!winner) continue;
+      const winOpt = poll.options.find(o => o.label.toLowerCase() === winner.toLowerCase());
+      if (!winOpt) continue;
+      const xp = poll.options.length >= 4 ? 20 : poll.options.length === 3 ? 15 : 10;
+      for (const v of allVotes) {
+        if (v.poll_id === poll.id && v.option_id === winOpt.id) {
+          xpMap[v.user_id] = (xpMap[v.user_id] ?? 0) + xp;
+        }
+      }
+    }
+
+    const top10 = Object.entries(xpMap)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 10);
+
+    if (top10.length === 0) { setLoading(false); return; }
+
+    // Fetch profiles for top users
+    const userIds = top10.map(([id]) => id);
+    supabase
+      .from("profiles")
+      .select("id, username, display_name, avatar_url")
+      .in("id", userIds)
+      .then(({ data }) => {
+        const profileMap: Record<string, { username: string | null; display_name: string | null; avatar_url: string | null }> = {};
+        for (const p of (data ?? []) as any[]) profileMap[p.id] = p;
+        setEntries(
+          top10.map(([userId, xp]) => ({
+            userId,
+            xp,
+            username: profileMap[userId]?.username ?? null,
+            displayName: profileMap[userId]?.display_name ?? null,
+            avatarUrl: profileMap[userId]?.avatar_url ?? null,
+          }))
+        );
+        setLoading(false);
+      });
+  }, [polls, allVotes, homeStats, awayStats, homeTeam, awayTeam]);
+
+  if (loading) return (
+    <div style={{ display: "flex", justifyContent: "center", padding: "20px 0" }}>
+      <div style={{ width: 20, height: 20, border: "2px solid rgba(255,255,255,.1)", borderTop: "2px solid #fbbf24", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+    </div>
+  );
+  if (entries.length === 0) return null;
+
+  return (
+    <div style={{ background: "rgba(251,191,36,0.06)", border: "1.5px solid rgba(251,191,36,0.2)", borderRadius: 18, overflow: "hidden", marginBottom: 4 }}>
+      {/* Header */}
+      <div style={{ padding: "14px 16px 10px", display: "flex", alignItems: "center", gap: 8, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+        </svg>
+        <span style={{ fontSize: 13, fontWeight: 900, color: "#fbbf24", letterSpacing: "0.04em" }}>POLL LEADERBOARD</span>
+        <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.35)", marginLeft: "auto" }}>XP from polls</span>
+      </div>
+
+      {/* Rows */}
+      {entries.map((e, i) => {
+        const label = e.username || e.displayName || "User";
+        const initials = label.trim().split(/\s+/).map((w: string) => w[0]).join("").toUpperCase().slice(0, 2);
+        const isTop3 = i < 3;
+        const medalColor = i === 0 ? "#fbbf24" : i === 1 ? "#94a3b8" : i === 2 ? "#cd7c32" : "rgba(255,255,255,0.2)";
+
+        return (
+          <div
+            key={e.userId}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: "10px 16px",
+              borderBottom: i < entries.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none",
+              background: i === 0 ? "rgba(251,191,36,0.05)" : "transparent",
+            }}
+          >
+            {/* Rank */}
+            <div style={{ width: 24, textAlign: "center", flexShrink: 0 }}>
+              {isTop3 ? (
+                <span style={{ fontSize: 16 }}>{i === 0 ? "🥇" : i === 1 ? "🥈" : "🥉"}</span>
+              ) : (
+                <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.3)" }}>{i + 1}</span>
+              )}
+            </div>
+
+            {/* Avatar */}
+            <div style={{ width: 34, height: 34, borderRadius: "50%", flexShrink: 0, overflow: "hidden", border: `2px solid ${isTop3 ? medalColor : "rgba(255,255,255,0.1)"}`, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.07)" }}>
+              {e.avatarUrl
+                ? <img src={e.avatarUrl} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : <span style={{ fontSize: 13, fontWeight: 900, color: isTop3 ? medalColor : "rgba(255,255,255,0.5)" }}>{initials}</span>
+              }
+            </div>
+
+            {/* Name */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: i === 0 ? "#fef3c7" : "#f1f5f9", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {e.username ? `@${e.username}` : e.displayName || "User"}
+              </div>
+            </div>
+
+            {/* XP badge */}
+            <div style={{ flexShrink: 0, background: isTop3 ? `rgba(${i === 0 ? "251,191,36" : i === 1 ? "148,163,184" : "205,124,50"},0.15)` : "rgba(255,255,255,0.07)", border: `1px solid ${isTop3 ? medalColor + "44" : "rgba(255,255,255,0.1)"}`, borderRadius: 999, padding: "4px 10px" }}>
+              <span style={{ fontSize: 13, fontWeight: 900, color: isTop3 ? (i === 0 ? "#fbbf24" : i === 1 ? "#94a3b8" : "#cd7c32") : "rgba(255,255,255,0.6)" }}>
+                +{e.xp} XP
+              </span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function MatchPolls({
   gameId,
   status,
@@ -3028,6 +3186,7 @@ function MatchPolls({
   const [polls, setPolls] = useState<Poll[]>([]);
   const [userVotes, setUserVotes] = useState<Record<string, string>>({});
   const [voteCounts, setVoteCounts] = useState<Record<string, number>>({});
+  const [allVotes, setAllVotes] = useState<{ poll_id: string; option_id: string; user_id: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const { awardXP } = useXP();
@@ -3058,6 +3217,7 @@ function MatchPolls({
         .in("poll_id", pollIds);
 
       if (voteRows) {
+        setAllVotes(voteRows as { poll_id: string; option_id: string; user_id: string }[]);
         const counts: Record<string, number> = {};
         for (const v of voteRows as any[]) {
           counts[v.option_id] = (counts[v.option_id] ?? 0) + 1;
@@ -3155,6 +3315,16 @@ function MatchPolls({
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "0 16px" }}>
+          {status === "FINAL" && polls.length > 0 && (
+            <PollLeaderboard
+              polls={polls}
+              allVotes={allVotes}
+              homeStats={homeStats}
+              awayStats={awayStats}
+              homeTeam={homeTeam}
+              awayTeam={awayTeam}
+            />
+          )}
           {[...polls]
             .sort((a, b) => {
               // Active polls (open for current quarter) float to top
