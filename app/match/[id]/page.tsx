@@ -163,6 +163,139 @@ function teamNameFromEvent(event: LiveEvent) {
   return Number.isFinite(apiTeamId) ? API_TEAM_NAME_BY_ID[apiTeamId] ?? "" : "";
 }
 
+function normaliseTeamKey(team: any) {
+  return safeText(team, "").toLowerCase().replace(/[^a-z]/g, "");
+}
+
+function teamsMatch(a: any, b: any) {
+  const ak = normaliseTeamKey(a);
+  const bk = normaliseTeamKey(b);
+  return !!ak && !!bk && (ak === bk || ak.includes(bk) || bk.includes(ak));
+}
+
+function scoreBasedEventKey(team: any, homeScore: any, awayScore: any, type: any) {
+  const safeTeam = normaliseTeamKey(team);
+  const home = Number(homeScore);
+  const away = Number(awayScore);
+  const safeType = safeText(type, "").toUpperCase();
+
+  if (!safeTeam || !Number.isFinite(home) || !Number.isFinite(away) || !safeType) return "";
+  if (home + away <= 0) return "";
+  return `score_${safeTeam}_${home}_${away}_${safeType}`;
+}
+
+function eventScoreBasedKey(event: LiveEvent) {
+  if (event.type === "QUARTER_BREAK") return "";
+  const type = safeText(event.type, "").toUpperCase();
+  if (type !== "GOAL" && type !== "BEHIND" && type !== "SCORE") return "";
+
+  const team = safeText((event as any).teamName || teamNameFromEvent(event), "");
+  return scoreBasedEventKey(team, event.homeScore, event.awayScore, type);
+}
+
+function scoreEventKey(event: LiveEvent, index = 0) {
+  const carriedKey = (event as any).displayEventKey ?? (event as any).optimisticKey;
+  return carriedKey || eventScoreBasedKey(event) || (event as any).rowKey || `q${eventQuarter(event)}_m${event.minute ?? 0}_t${event.type ?? ""}_team${event.teamId ?? ""}_p${(event as any).playerId ?? ""}_i${index}`;
+}
+
+function eventIdentityKey(event: LiveEvent) {
+  return [
+    event.period ?? "",
+    event.minute ?? "",
+    event.type ?? "",
+    event.teamId ?? "",
+    event.playerId ?? "",
+    event.homeScore ?? "",
+    event.awayScore ?? "",
+  ].join("|");
+}
+
+function clockFromTimestr(timestr?: string) {
+  const text = safeText(timestr, "");
+  const qMatch = text.match(/Q\s*(\d+)/i);
+  const minuteMatch = text.match(/(\d+):\d+/);
+
+  return {
+    period: qMatch ? Number(qMatch[1]) : undefined,
+    minute: minuteMatch ? Number(minuteMatch[1]) : undefined,
+  };
+}
+
+function scoreTypeFromDelta(delta: number) {
+  if (delta >= 6) return "GOAL";
+  if (delta >= 1) return "BEHIND";
+  return "SCORE";
+}
+
+function latestFeedScore(events: LiveEvent[], homeTeam?: string, awayTeam?: string) {
+  const event = events.find(
+    (e) =>
+      e.type !== "QUARTER_BREAK" &&
+      Number.isFinite(Number(e.homeScore)) &&
+      Number.isFinite(Number(e.awayScore))
+  );
+
+  if (event) {
+    return {
+      home: Number(event.homeScore),
+      away: Number(event.awayScore),
+    };
+  }
+
+  if (!homeTeam || !awayTeam) return null;
+
+  let home = 0;
+  let away = 0;
+
+  for (const e of events) {
+    const type = safeText(e.type, "").toUpperCase();
+    const points = type === "GOAL" ? 6 : type === "BEHIND" ? 1 : 0;
+    if (!points) continue;
+
+    const eventTeam = safeText((e as any).teamName || teamNameFromEvent(e), "");
+    if (teamsMatch(eventTeam, homeTeam)) home += points;
+    else if (teamsMatch(eventTeam, awayTeam)) away += points;
+  }
+
+  return { home, away };
+}
+
+function realEventMatchesOptimistic(realEvent: LiveEvent, optimisticEvent: LiveEvent) {
+  if (realEvent.type === "QUARTER_BREAK") return false;
+  const realScoreKey = eventScoreBasedKey(realEvent);
+  const optimisticKey = safeText((optimisticEvent as any).optimisticKey, "");
+  if (realScoreKey && optimisticKey && realScoreKey === optimisticKey) return true;
+
+  const alreadyExisted = ((optimisticEvent as any).existingRealEventKeys ?? []).includes(eventIdentityKey(realEvent));
+  if (alreadyExisted) return false;
+
+  const optimisticTeam = safeText((optimisticEvent as any).teamName, "");
+  const realTeam = safeText((realEvent as any).teamName || teamNameFromEvent(realEvent), "");
+  if (optimisticTeam && realTeam && !teamsMatch(optimisticTeam, realTeam)) return false;
+
+  const optimisticType = safeText(optimisticEvent.type, "").toUpperCase();
+  const realType = safeText(realEvent.type, "").toUpperCase();
+  if (optimisticType !== "SCORE" && optimisticType !== realType) return false;
+
+  const sameScore =
+    Number(realEvent.homeScore) === Number(optimisticEvent.homeScore) &&
+    Number(realEvent.awayScore) === Number(optimisticEvent.awayScore);
+
+  const realPeriod = Number(realEvent.period ?? 0);
+  const optimisticPeriod = Number(optimisticEvent.period ?? 0);
+  const realMinute = Number(realEvent.minute ?? -1);
+  const optimisticMinute = Number(optimisticEvent.minute ?? -1);
+  const sameClock =
+    realPeriod > 0 &&
+    optimisticPeriod > 0 &&
+    realPeriod === optimisticPeriod &&
+    realMinute >= 0 &&
+    optimisticMinute >= 0 &&
+    Math.abs(realMinute - optimisticMinute) <= 1;
+
+  return sameScore || sameClock;
+}
+
 function slugName(name: any) {
   return safeText(name, "").toLowerCase().replace(/[^a-z0-9]/g, "");
 }
@@ -580,6 +713,22 @@ function PlayerAvatar({ name, team }: { name: any; team?: any }) {
   );
 }
 
+function TeamEventAvatar({ team }: { team: any }) {
+  const safeTeam = safeText(team, "Team");
+  const colours = teamColors(safeTeam);
+  const logo = getLogo(safeTeam);
+
+  return (
+    <span style={{ ...playerAvatarWrapStyle, background: `${colours.primary}80` }}>
+      {logo ? (
+        <img src={logo} alt={safeTeam} style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} />
+      ) : (
+        <span style={playerInitialsStyle}>{getInitials(safeTeam)}</span>
+      )}
+    </span>
+  );
+}
+
 function LiveFeedPlayer({
   event,
   homeTeam,
@@ -594,10 +743,11 @@ function LiveFeedPlayer({
   commentCount?: number;
   onCommentClick?: () => void;
 }) {
+  const isOptimistic = Boolean((event as any).optimistic);
   const player = findPlayerByEventId(event.playerId);
-  const playerName = safePlayerName(player?.name, event.playerId);
-
   const inferredTeam = safeText((event as any).teamName, "");
+  const playerName = isOptimistic ? inferredTeam : safePlayerName(event.playerName || player?.name, event.playerId);
+
   const apiEventTeam = teamNameFromEvent(event);
   const team = safeText(player?.club || player?.team || inferredTeam || apiEventTeam, "");
   const colours = liveFeedTeamColors(team);
@@ -623,7 +773,7 @@ function LiveFeedPlayer({
         cursor: "pointer",
       }}
     >
-      <PlayerAvatar name={playerName} team={team} />
+      {isOptimistic ? <TeamEventAvatar team={team} /> : <PlayerAvatar name={playerName} team={team} />}
 
       <div style={liveFeedInfoStyle}>
         <div style={liveFeedNameStyle}>{playerName}</div>
@@ -633,17 +783,6 @@ function LiveFeedPlayer({
       </div>
 
       <div style={liveFeedRightStyle}>
-        {/* Score */}
-        {event.homeScore != null && event.awayScore != null && (
-          <div style={liveFeedScoreRowStyle}>
-            <img src={getLogo(homeTeam)} alt={homeTeam} style={miniLogoStyle} />
-            <span style={liveFeedScoreTextStyle}>
-              {scoreText(event.homeScore)}–{scoreText(event.awayScore)}
-            </span>
-            <img src={getLogo(awayTeam)} alt={awayTeam} style={miniLogoStyle} />
-          </div>
-        )}
-
         {/* Quarter + time badge */}
         <div style={liveFeedTimeBadgeStyle}>
           <span style={liveFeedQuarterStyle}>{eventQuarter(event)}</span>
@@ -651,7 +790,6 @@ function LiveFeedPlayer({
           <span style={liveFeedMinuteStyle}>{event.minute ?? "-"}'</span>
         </div>
 
-        {/* Comment bubble */}
         <button onClick={onCommentClick} style={commentBubbleBtnStyle}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -1341,7 +1479,6 @@ export default function MatchPage() {
   const searchParams = useSearchParams();
   const { awardXP } = useXP();
   const id = String(params?.id ?? "");
-  const enteredFromHome = searchParams?.get("from") === "home";
 
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>(() =>
@@ -1356,6 +1493,7 @@ export default function MatchPage() {
   const [liveAwayStats, setLiveAwayStats] = useState<PlayerStat[]>([]);
   const [liveStatsError, setLiveStatsError] = useState("");
   const [liveEvents, setLiveEvents] = useState<LiveEvent[]>([]);
+  const [optimisticScoreEvents, setOptimisticScoreEvents] = useState<LiveEvent[]>([]);
   const [feedError, setFeedError] = useState("");
   const [feedLoading, setFeedLoading] = useState(true);
   const [eventCommentCounts, setEventCommentCounts] = useState<Record<string, number>>({});
@@ -1370,6 +1508,8 @@ export default function MatchPage() {
   const [roundGames, setRoundGames] = useState<MatchGame[]>([]);
   const [scoreboardPassed, setScoreboardPassed] = useState(false);
   const scoreboardRef = useRef<HTMLDivElement>(null);
+  const previousScoreRef = useRef<{ home: number; away: number } | null>(null);
+  const liveEventsRef = useRef<LiveEvent[]>([]);
 
   const apiSportsGameId = useMemo(() => {
     const mapped = (API_SPORTS_MATCH_IDS as Record<string, any>)[id];
@@ -1439,7 +1579,7 @@ export default function MatchPage() {
           setError("");
         }
 
-        const gamesUrl = `/api/squiggle/games${enteredFromHome && isFirst ? "?fresh=1" : ""}`;
+        const gamesUrl = `/api/squiggle/games?fresh=1&t=${Date.now()}`;
         const res = await fetch(gamesUrl, { cache: "no-store" });
         if (!res.ok) throw new Error("Could not load Squiggle games.");
 
@@ -1472,13 +1612,13 @@ export default function MatchPage() {
     }
 
     loadMatch(true);
-    const interval = setInterval(() => loadMatch(false), 30_000);
+    const interval = setInterval(() => loadMatch(false), 10_000);
 
     return () => {
       cancelled = true;
       clearInterval(interval);
     };
-  }, [mounted, id, enteredFromHome]);
+  }, [mounted, id]);
 
   useEffect(() => {
     if (!mounted || !game || !id) return;
@@ -1546,6 +1686,132 @@ export default function MatchPage() {
   })();
   const currentPeriod = Math.max(periodFromEvents, periodFromTimestr);
 
+  const addOptimisticScoreEvent = useCallback((
+    scoringTeam: string,
+    home: number,
+    away: number,
+    delta: number,
+    existingEvents: LiveEvent[]
+  ) => {
+    const { period, minute } = clockFromTimestr(game?.timestr);
+    const type = scoreTypeFromDelta(delta);
+    const optimisticKey = scoreBasedEventKey(scoringTeam, home, away, type);
+    if (!optimisticKey) return;
+
+    const existingRealEventKeys = existingEvents.map(eventIdentityKey);
+    const optimisticEvent: LiveEvent = {
+      quarter: period ? `Q${period}` : undefined,
+      period: period ?? (currentPeriod || undefined),
+      minute,
+      type,
+      teamId: getApiTeamId(scoringTeam),
+      playerId: null as any,
+      playerName: null,
+      homeScore: home,
+      awayScore: away,
+      teamName: scoringTeam,
+      optimistic: true,
+      optimisticKey,
+      existingRealEventKeys,
+    } as any;
+
+    setOptimisticScoreEvents((events) => {
+      if (events.some((event) => (event as any).optimisticKey === optimisticKey)) return events;
+      if (existingEvents.some((event) => eventScoreBasedKey(event) === optimisticKey)) return events;
+      return [optimisticEvent, ...events].slice(0, 8);
+    });
+  }, [currentPeriod, game?.timestr]);
+
+  useEffect(() => {
+    liveEventsRef.current = liveEvents;
+
+    if (!game || getStatus(game) !== "LIVE") return;
+
+    const home = Number(game.hscore ?? 0);
+    const away = Number(game.ascore ?? 0);
+    if (!Number.isFinite(home) || !Number.isFinite(away)) return;
+
+    const feedScore = latestFeedScore(liveEvents, game.hteam, game.ateam);
+    if (!feedScore || (home <= feedScore.home && away <= feedScore.away)) return;
+
+    const homeDelta = home - feedScore.home;
+    const awayDelta = away - feedScore.away;
+    const homeScored = homeDelta > 0 && awayDelta <= 0;
+    const awayScored = awayDelta > 0 && homeDelta <= 0;
+    if (!homeScored && !awayScored) return;
+
+    addOptimisticScoreEvent(
+      homeScored ? game.hteam : game.ateam,
+      home,
+      away,
+      homeScored ? homeDelta : awayDelta,
+      liveEvents
+    );
+  }, [liveEvents, game, addOptimisticScoreEvent]);
+
+  useEffect(() => {
+    if (!game || getStatus(game) !== "LIVE") {
+      previousScoreRef.current = null;
+      setOptimisticScoreEvents([]);
+      return;
+    }
+
+    const home = Number(game.hscore ?? 0);
+    const away = Number(game.ascore ?? 0);
+    if (!Number.isFinite(home) || !Number.isFinite(away)) return;
+
+    const previous = previousScoreRef.current;
+    previousScoreRef.current = { home, away };
+    const feedScore = latestFeedScore(liveEventsRef.current, game.hteam, game.ateam);
+    const sawScoreboardChange = !!previous && (home !== previous.home || away !== previous.away);
+    const baseline =
+      sawScoreboardChange
+        ? previous
+        : feedScore && (home > feedScore.home || away > feedScore.away)
+        ? feedScore
+        : previous;
+
+    if (!baseline) return;
+
+    const homeDelta = home - baseline.home;
+    const awayDelta = away - baseline.away;
+    const homeScored = homeDelta > 0 && awayDelta <= 0;
+    const awayScored = awayDelta > 0 && homeDelta <= 0;
+    if (!homeScored && !awayScored) return;
+
+    addOptimisticScoreEvent(
+      homeScored ? game.hteam : game.ateam,
+      home,
+      away,
+      homeScored ? homeDelta : awayDelta,
+      liveEventsRef.current
+    );
+  }, [game, addOptimisticScoreEvent]);
+
+  const displayLiveEvents = useMemo(() => {
+    const pendingOptimistic = optimisticScoreEvents.filter(
+      (optimisticEvent) => !liveEvents.some((event) => realEventMatchesOptimistic(event, optimisticEvent))
+    );
+
+    const keyedLiveEvents = liveEvents.map((event) => {
+      const matchedOptimistic = optimisticScoreEvents.find((optimisticEvent) =>
+        realEventMatchesOptimistic(event, optimisticEvent)
+      );
+
+      return matchedOptimistic
+        ? ({
+            ...event,
+            displayEventKey: (matchedOptimistic as any).optimisticKey,
+          } as LiveEvent)
+        : event;
+    });
+
+    return [...pendingOptimistic, ...keyedLiveEvents].sort((a, b) => {
+      if (Number(a.period ?? 0) !== Number(b.period ?? 0)) return Number(b.period ?? 0) - Number(a.period ?? 0);
+      return Number(b.minute ?? 0) - Number(a.minute ?? 0);
+    });
+  }, [liveEvents, optimisticScoreEvents]);
+
   // Count unanswered open polls — always runs so tab badge is visible before entering the tab
   useEffect(() => {
     if (!id) return;
@@ -1588,12 +1854,12 @@ export default function MatchPage() {
 
   // Detect newly-added feed events and animate them — skip the first batch on page load
   useEffect(() => {
-    if (liveEvents.length === 0) return;
+    if (displayLiveEvents.length === 0) return;
 
     if (!initialFeedLoaded.current) {
       // First load: seed the seen set silently so nothing animates on reload
-      liveEvents.forEach((event, index) => {
-        const ek = `q${eventQuarter(event)}_m${event.minute ?? 0}_t${event.type ?? ""}_p${(event as any).playerId ?? index}`;
+      displayLiveEvents.forEach((event, index) => {
+        const ek = scoreEventKey(event, index);
         seenEventKeys.current.add(ek);
       });
       initialFeedLoaded.current = true;
@@ -1602,8 +1868,8 @@ export default function MatchPage() {
 
     // Subsequent polls: only animate genuinely new events
     const fresh = new Set<string>();
-    liveEvents.forEach((event, index) => {
-      const ek = `q${eventQuarter(event)}_m${event.minute ?? 0}_t${event.type ?? ""}_p${(event as any).playerId ?? index}`;
+    displayLiveEvents.forEach((event, index) => {
+      const ek = scoreEventKey(event, index);
       if (!seenEventKeys.current.has(ek)) {
         fresh.add(ek);
         seenEventKeys.current.add(ek);
@@ -1614,7 +1880,7 @@ export default function MatchPage() {
       const t = setTimeout(() => setFreshEventKeys(new Set()), 800);
       return () => clearTimeout(t);
     }
-  }, [liveEvents]);
+  }, [displayLiveEvents]);
 
 
   useEffect(() => {
@@ -1690,6 +1956,7 @@ export default function MatchPage() {
         return true;
       })
       .map((e: any) => ({
+        rowKey: e.id ? `feed_${e.id}` : undefined,
         quarter: `Q${e.period ?? "-"}`,
         period: e.period,
         minute: e.minute,
@@ -2043,21 +2310,21 @@ export default function MatchPage() {
                 <div style={{
                   display: "flex", alignItems: "center", gap: 6,
                   padding: "8px 18px", borderRadius: 999,
-                  background: "#166534",
-                  border: "1px solid #4ade80",
+                  background: "#16a34a",
+                  border: "1px solid #16a34a",
                   boxShadow: "0 14px 36px rgba(0,0,0,.24)",
                 }}>
                   <span style={{
                     width: 7, height: 7, borderRadius: "50%", flexShrink: 0,
-                    background: "#22c55e",
-                    boxShadow: "0 0 0 2px rgba(34,197,94,0.25)",
+                    background: "#ffffff",
+                    boxShadow: "0 0 0 2px rgba(255,255,255,0.22)",
                     animation: "livePulse 1.8s ease-in-out infinite",
                   }} />
-                  <span style={{ fontSize: 14, fontWeight: 900, color: "#4ade80", letterSpacing: 0 }}>Live</span>
+                  <span style={{ fontSize: 14, fontWeight: 900, color: "#ffffff", letterSpacing: 0 }}>Live</span>
                   {(game.timestr || getLiveGameClock(liveEvents)) && (
                     <>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(74,222,128,0.5)" }}>·</span>
-                      <span style={{ fontSize: 14, fontWeight: 800, color: "#4ade80" }}>{game.timestr || getLiveGameClock(liveEvents)}</span>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.72)" }}>·</span>
+                      <span style={{ fontSize: 14, fontWeight: 800, color: "#ffffff" }}>{game.timestr || getLiveGameClock(liveEvents)}</span>
                     </>
                   )}
                 </div>
@@ -2245,7 +2512,7 @@ export default function MatchPage() {
 
             {liveStatsError && status === "LIVE" && <p style={statsLoadingStyle}>{liveStatsError}</p>}
 
-            {feedLoading && (
+            {feedLoading && displayLiveEvents.length === 0 && (
               <div style={{ display: "flex", justifyContent: "center", padding: "40px 0" }}>
                 <div style={{
                   width: 32, height: 32, borderRadius: "50%",
@@ -2258,7 +2525,7 @@ export default function MatchPage() {
 
             {!feedLoading && feedError && <p style={statsLoadingStyle}>{feedError}</p>}
 
-            {!feedLoading && !feedError && liveEvents.length === 0 && status === "UPCOMING" && (
+            {!feedLoading && !feedError && displayLiveEvents.length === 0 && status === "UPCOMING" && (
               <>
                 <div style={countdownBoxStyle}>
                   <div style={countdownLabelStyle}>GAME STARTS IN</div>
@@ -2270,21 +2537,21 @@ export default function MatchPage() {
               </>
             )}
 
-            {!feedLoading && !feedError && liveEvents.length === 0 && status !== "UPCOMING" && (
+            {!feedLoading && !feedError && displayLiveEvents.length === 0 && status !== "UPCOMING" && (
               <div style={emptyFeedStyle}>
                 <strong>No live feed events available yet.</strong>
               </div>
             )}
 
-            {!feedLoading && liveEvents.length > 0 && (
+            {displayLiveEvents.length > 0 && (
               <div style={liveFeedListStyle}>
-                {liveEvents.map((event, index) => {
-                  const ek = `q${eventQuarter(event)}_m${event.minute ?? 0}_t${event.type ?? ""}_p${event.playerId ?? index}`;
+                {displayLiveEvents.map((event, index) => {
+                  const ek = scoreEventKey(event, index);
                   const isFresh = freshEventKeys.has(ek);
 
                   return (
                     <div
-                      key={`${eventQuarter(event)}-${event.minute}-${event.type}-${index}`}
+                      key={ek}
                       style={isFresh ? {
                         animation: "feed-event-in 0.5s cubic-bezier(0.22,1,0.36,1) forwards, feed-event-glow 0.8s ease-out forwards",
                         borderRadius: 18,
@@ -2307,9 +2574,11 @@ export default function MatchPage() {
                           commentCount={eventCommentCounts[ek] ?? 0}
                           onCommentClick={() => {
                             const player = findPlayerByEventId(event.playerId);
-                            const name = event.playerName || safePlayerName(player?.name, event.playerId ?? index + 1);
-                            const label = `${name} · ${safeText(event.type, "").toUpperCase()}`;
                             const inferredTeam = safeText((event as any).teamName, "");
+                            const name = (event as any).optimistic
+                              ? inferredTeam || teamNameFromEvent(event) || "Team"
+                              : event.playerName || safePlayerName(player?.name, event.playerId ?? index + 1);
+                            const label = `${name} · ${safeText(event.type, "").toUpperCase()}`;
                             const apiTeam = teamNameFromEvent(event);
                             const team = safeText(player?.club || player?.team || inferredTeam || apiTeam, "");
                             const type = safeText(event.type, "").toUpperCase();

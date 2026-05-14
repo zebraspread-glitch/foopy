@@ -4777,5 +4777,64 @@
       }
     ],
     "savedAt": "2026-05-10T10:10:01.255Z"
+  },
+  "3426": {
+    "gameId": 3426,
+    "date": "2026-05-14",
+    "teams": [
+      {
+        "team": {
+          "id": 2
+        },
+        "statistics": {
+          "disposals": {
+            "disposals": 381,
+            "kicks": 226,
+            "handballs": 155,
+            "free_kicks": 22
+          },
+          "stoppages": {
+            "hitouts": 44,
+            "clearances": 45
+          },
+          "marks": 69,
+          "scoring": {
+            "goals": 11,
+            "assists": 7,
+            "behinds": 9
+          },
+          "defence": {
+            "tackles": 44
+          }
+        }
+      },
+      {
+        "team": {
+          "id": 7
+        },
+        "statistics": {
+          "disposals": {
+            "disposals": 404,
+            "kicks": 223,
+            "handballs": 181,
+            "free_kicks": 19
+          },
+          "stoppages": {
+            "hitouts": 37,
+            "clearances": 35
+          },
+          "marks": 80,
+          "scoring": {
+            "goals": 17,
+            "assists": 12,
+            "behinds": 12
+          },
+          "defence": {
+            "tackles": 64
+          }
+        }
+      }
+    ],
+    "savedAt": "2026-05-14T12:15:02.080Z"
   }
 }
