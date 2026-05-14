@@ -1805,8 +1805,8 @@ export default function MatchPage() {
       if (!cancelled) loadFromSupabase();
     });
 
-    // Re-sync every 60s (server cooldown means only 1 external call per minute regardless of user count)
-    const syncInterval = setInterval(triggerSync, 60_000);
+    // Re-sync every 10s (server cooldown prevents more than 1 external API call per 10s regardless of user count)
+    const syncInterval = setInterval(triggerSync, 10_000);
 
     // ── 3. Subscribe to Realtime — new events pushed automatically ───────────
     const channel = supabase

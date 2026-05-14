@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 const API_BASE = "https://v1.afl.api-sports.io";
 
 const lastSync = new Map<string, number>();
-const COOLDOWN_MS = 60_000;
+const COOLDOWN_MS = 10_000;
 
 function adminSupabase() {
   return createClient(
