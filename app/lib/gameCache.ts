@@ -12,8 +12,8 @@
 
 const LS_KEY = "foopy_games_v2";
 const LS_TTL_MS = 5 * 60_000;    // 5 minutes — localStorage freshness window
-const MEM_TTL_MS = 60_000;       // 1 minute  — memory cache freshness
-const MEM_LIVE_TTL_MS = 20_000;  // 20 seconds when a game is live
+const MEM_TTL_MS = 30_000;       // 30 seconds — memory cache freshness
+const MEM_LIVE_TTL_MS = 15_000;  // 15 seconds when a game is live
 
 type CacheEntry = { data: unknown[]; fetchedAt: number };
 
@@ -78,7 +78,7 @@ export async function getGames(): Promise<unknown[]> {
 }
 
 async function fetchFresh(): Promise<unknown[]> {
-  const res = await fetch("/api/squiggle/games");
+  const res = await fetch("/api/squiggle/games?fresh=1");
   if (!res.ok) {
     // Serve stale data rather than crash
     if (mem) return mem.data;

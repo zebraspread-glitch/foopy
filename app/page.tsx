@@ -510,6 +510,16 @@ export default function HomePage() {
     }
   }, []);
 
+  // Auto-poll every 20s so live scores stay current
+  useEffect(() => {
+    const timer = setInterval(() => {
+      getGames()
+        .then(data => setGames(data as Game[]))
+        .catch(() => {});
+    }, 20_000);
+    return () => clearInterval(timer);
+  }, []);
+
   useEffect(() => {
     const handler = () => {
       const saved = localStorage.getItem("foopy_game_columns");

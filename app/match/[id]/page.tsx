@@ -2054,6 +2054,12 @@ export default function MatchPage() {
                     animation: "livePulse 1.8s ease-in-out infinite",
                   }} />
                   <span style={{ fontSize: 14, fontWeight: 900, color: "#4ade80", letterSpacing: 0 }}>Live</span>
+                  {(game.timestr || getLiveGameClock(liveEvents)) && (
+                    <>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(74,222,128,0.5)" }}>·</span>
+                      <span style={{ fontSize: 14, fontWeight: 800, color: "#4ade80" }}>{game.timestr || getLiveGameClock(liveEvents)}</span>
+                    </>
+                  )}
                 </div>
               ) : (
                 <div style={{
@@ -2073,8 +2079,8 @@ export default function MatchPage() {
             <TeamScore team={game.ateam} score={awayScoreDisplay} align="right" />
           </div>
 
-          {/* Venue + round row — only for upcoming/live games */}
-          {status !== "FINAL" && (
+          {/* Venue + round row — only for upcoming games */}
+          {status === "UPCOMING" && (
             <div style={{
               position: "relative",
               marginTop: 26,
@@ -2091,16 +2097,9 @@ export default function MatchPage() {
                 <span style={{ fontSize: 12, fontWeight: 700, color: "#71717a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   Round {game.round ?? "-"} · {game.venue || "Venue TBA"}
                 </span>
-                {status === "LIVE" && (
-                  <span style={{ fontSize: 12, fontWeight: 800, color: "#4ade80", whiteSpace: "nowrap" }}>
-                    · {game.timestr || getLiveGameClock(liveEvents)}
-                  </span>
-                )}
-                {status !== "LIVE" && (
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "#52525b", whiteSpace: "nowrap" }}>
-                    · {formatDate(game.date)}
-                  </span>
-                )}
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#52525b", whiteSpace: "nowrap" }}>
+                  · {formatDate(game.date)}
+                </span>
               </div>
             </div>
           )}
@@ -2148,6 +2147,12 @@ export default function MatchPage() {
                 <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", borderRadius: 999, background: "#166534", border: "1px solid #4ade80", flexShrink: 0 }}>
                   <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 0 2px rgba(34,197,94,.25)", animation: "livePulse 1.8s ease-in-out infinite", flexShrink: 0 }} />
                   <span style={{ fontSize: 12, fontWeight: 900, color: "#4ade80" }}>Live</span>
+                  {(game.timestr || getLiveGameClock(liveEvents)) && (
+                    <>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(74,222,128,0.5)" }}>·</span>
+                      <span style={{ fontSize: 12, fontWeight: 800, color: "#4ade80" }}>{game.timestr || getLiveGameClock(liveEvents)}</span>
+                    </>
+                  )}
                 </div>
               ) : (
                 <div style={{ padding: "5px 10px", borderRadius: 999, background: statusBadgeTone.bg, border: `1px solid ${statusBadgeTone.border}`, color: statusBadgeTone.color, fontSize: 12, fontWeight: 800, flexShrink: 0, whiteSpace: "nowrap" }}>
