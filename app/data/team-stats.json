@@ -4836,5 +4836,123 @@
       }
     ],
     "savedAt": "2026-05-14T12:15:02.080Z"
+  },
+  "3427": {
+    "gameId": 3427,
+    "date": "2026-05-15",
+    "teams": [
+      {
+        "team": {
+          "id": 4
+        },
+        "statistics": {
+          "disposals": {
+            "disposals": 373,
+            "kicks": 203,
+            "handballs": 170,
+            "free_kicks": 21
+          },
+          "stoppages": {
+            "hitouts": 10,
+            "clearances": 38
+          },
+          "marks": 66,
+          "scoring": {
+            "goals": 10,
+            "assists": 4,
+            "behinds": 11
+          },
+          "defence": {
+            "tackles": 74
+          }
+        }
+      },
+      {
+        "team": {
+          "id": 14
+        },
+        "statistics": {
+          "disposals": {
+            "disposals": 401,
+            "kicks": 233,
+            "handballs": 168,
+            "free_kicks": 31
+          },
+          "stoppages": {
+            "hitouts": 52,
+            "clearances": 41
+          },
+          "marks": 89,
+          "scoring": {
+            "goals": 11,
+            "assists": 3,
+            "behinds": 13
+          },
+          "defence": {
+            "tackles": 56
+          }
+        }
+      }
+    ],
+    "savedAt": "2026-05-15T12:54:06.951Z"
+  },
+  "3428": {
+    "gameId": 3428,
+    "date": "2026-05-15",
+    "teams": [
+      {
+        "team": {
+          "id": 11
+        },
+        "statistics": {
+          "disposals": {
+            "disposals": 355,
+            "kicks": 207,
+            "handballs": 148,
+            "free_kicks": 22
+          },
+          "stoppages": {
+            "hitouts": 33,
+            "clearances": 41
+          },
+          "marks": 58,
+          "scoring": {
+            "goals": 10,
+            "assists": 4,
+            "behinds": 11
+          },
+          "defence": {
+            "tackles": 51
+          }
+        }
+      },
+      {
+        "team": {
+          "id": 17
+        },
+        "statistics": {
+          "disposals": {
+            "disposals": 389,
+            "kicks": 235,
+            "handballs": 154,
+            "free_kicks": 14
+          },
+          "stoppages": {
+            "hitouts": 39,
+            "clearances": 31
+          },
+          "marks": 94,
+          "scoring": {
+            "goals": 15,
+            "assists": 8,
+            "behinds": 6
+          },
+          "defence": {
+            "tackles": 46
+          }
+        }
+      }
+    ],
+    "savedAt": "2026-05-15T12:54:06.951Z"
   }
 }
