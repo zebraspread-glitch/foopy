@@ -56,6 +56,19 @@ function eventKeyAliases(eventKey: string) {
   return Array.from(new Set(aliases.filter(Boolean)));
 }
 
+function eventKeyAliasesFromParams(eventKey: string, rawAliases: string | null) {
+  const aliases = [
+    eventKey,
+    ...(rawAliases ?? "")
+      .split(",")
+      .map((key) => key.trim())
+      .filter(Boolean),
+    ...eventKeyAliases(eventKey),
+  ];
+
+  return Array.from(new Set(aliases.filter(Boolean)));
+}
+
 function mixColor(a: string, b: string, t: number) {
   const ah = a.replace("#", ""), bh = b.replace("#", "");
   const r = Math.round(parseInt(ah.slice(0,2),16) + t*(parseInt(bh.slice(0,2),16)-parseInt(ah.slice(0,2),16)));
@@ -114,7 +127,11 @@ export default function EventCommentsPage() {
 
   const gameId = Number(params?.id ?? 0);
   const eventKey = String(params?.event ?? "");
-  const eventKeys = useMemo(() => eventKeyAliases(eventKey), [eventKey]);
+  const aliasParam = searchParams.get("aliases");
+  const eventKeys = useMemo(
+    () => eventKeyAliasesFromParams(eventKey, aliasParam),
+    [eventKey, aliasParam]
+  );
   const highlight = searchParams.get("highlight");
 
   const [resolvedPlayerName, setResolvedPlayerName] = useState<string | null>(null);
@@ -454,13 +471,14 @@ export default function EventCommentsPage() {
     haptic("medium");
     setSubmitting(true);
     setErrorText(null);
+    const canonicalEventKey = eventKeys[0] ?? eventKey;
 
     const { data: inserted, error } = await supabase.from("feed_comments").insert({
       game_id: gameId,
       user_id: userId,
       parent_id: replyTo?.id ?? null,
       body: cleanBody,
-      event_key: eventKey,
+      event_key: canonicalEventKey,
     }).select("id").single();
 
     if (error) {
@@ -484,7 +502,7 @@ export default function EventCommentsPage() {
           comment_body: cleanBody.slice(0, 100),
           comment_id: replyTo.id,
           game_id: gameId,
-          event_key: eventKey,
+          event_key: canonicalEventKey,
         });
       }
     }
@@ -494,7 +512,7 @@ export default function EventCommentsPage() {
       comment_body: cleanBody.slice(0, 100),
       comment_id: newCommentId,
       game_id: gameId,
-      event_key: eventKey,
+      event_key: canonicalEventKey,
     });
 
     setBody("");

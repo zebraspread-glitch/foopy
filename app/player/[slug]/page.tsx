@@ -11,7 +11,7 @@ const API_SPORTS_TO_SQUIGGLE: Record<number, string> = Object.fromEntries(
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type PlayerInfo  = { id: string; name: string; team: string; apiSportsId?: number | null; statsIds?: number[] };
+type PlayerInfo  = { id: string; name: string; team: string; apiSportsId?: number | null; eventIds?: number[] | number; statsIds?: number[] };
 type SeasonStats = {
   id: string; position?: string; jerseyNumber?: number; games?: number;
   goals?: number; goalAssists?: number; behinds?: number;
@@ -104,6 +104,14 @@ const TEAM_COLORS: Record<string, string> = {
 
 function slugTeam(t: string) { return t.toLowerCase().replace(/[^a-z0-9]/g, ""); }
 function teamColor(t: string) { return TEAM_COLORS[t] ?? "#1e293b"; }
+function idList(value: unknown) {
+  if (Array.isArray(value)) return value.map(Number).filter(Number.isFinite);
+  const id = Number(value);
+  return Number.isFinite(id) ? [id] : [];
+}
+function teamMatches(a: string, b: string) {
+  return slugTeam(a) === slugTeam(b);
+}
 function playerImgSrc(name: string, team: string) {
   const slug   = name.toLowerCase().replace(/[^a-z0-9]/g, "");
   const folder = CLUB_FOLDER[slugTeam(team)] ?? slugTeam(team);
@@ -197,20 +205,25 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
   } catch {}
 
   const recentGames: GamePerf[] = [];
-  // Collect all possible player IDs: apiSportsId + statsIds (API Sports uses different IDs inconsistently)
+  // Collect all possible player IDs: apiSportsId + eventIds + statsIds (API Sports uses different IDs inconsistently)
   const allPlayerIds = new Set<number>();
   if (player.apiSportsId) allPlayerIds.add(player.apiSportsId);
+  for (const eid of idList(player.eventIds)) allPlayerIds.add(eid);
   for (const sid of player.statsIds ?? []) allPlayerIds.add(sid);
 
   if (allPlayerIds.size > 0) {
-    const matchesPlayer = (pid: number) => allPlayerIds.has(pid);
+    const matchesPlayer = (pid: number, teamId?: number) => {
+      if (!allPlayerIds.has(pid)) return false;
+      const statTeam = teamId ? TEAM_ID_MAP[teamId] : "";
+      return !statTeam || teamMatches(statTeam, player.team);
+    };
     const sorted = Object.values(gameStats)
-      .filter(g => g.teams?.some(t => t.players?.some(p => matchesPlayer(p.player?.id))))
+      .filter(g => g.teams?.some(t => t.players?.some(p => matchesPlayer(p.player?.id, t.team?.id))))
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     for (const g of sorted) {
       for (const t of g.teams ?? []) {
-        const ps = t.players?.find(p => matchesPlayer(p.player?.id));
+        const ps = t.players?.find(p => matchesPlayer(p.player?.id, t.team?.id));
         if (!ps) continue;
 
         // Opponent = the other team in this game
@@ -261,13 +274,18 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
   for (const p of players) {
     const pids = new Set<number>();
     if (p.apiSportsId) pids.add(p.apiSportsId);
+    for (const eid of idList((p as PlayerInfo).eventIds)) pids.add(eid);
     for (const sid of (p as PlayerInfo).statsIds ?? []) pids.add(sid);
     if (pids.size === 0) continue;
-    const matchP = (pid: number) => pids.has(pid);
-    const gsAll = Object.values(gameStats).filter(g => g.teams?.some(t => t.players?.some(pp => matchP(pp.player?.id))));
+    const matchP = (pid: number, teamId?: number) => {
+      if (!pids.has(pid)) return false;
+      const statTeam = teamId ? TEAM_ID_MAP[teamId] : "";
+      return !statTeam || teamMatches(statTeam, p.team);
+    };
+    const gsAll = Object.values(gameStats).filter(g => g.teams?.some(t => t.players?.some(pp => matchP(pp.player?.id, t.team?.id))));
     const gsRated = gsAll.filter(g => {
       for (const t of g.teams ?? []) {
-        const ps = t.players?.find(pp => matchP(pp.player?.id));
+        const ps = t.players?.find(pp => matchP(pp.player?.id, t.team?.id));
         if (ps) return foopyRating({
           goals: num(ps.goals?.total), goalAssists: num(ps.goals?.assists),
           behinds: num(ps.behinds), kicks: num(ps.kicks), handballs: num(ps.handballs),
@@ -281,7 +299,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
     if (gsRated.length === 0) continue;
     const avg = gsRated.reduce((s, g) => {
       for (const t of g.teams ?? []) {
-        const ps = t.players?.find(pp => matchP(pp.player?.id));
+        const ps = t.players?.find(pp => matchP(pp.player?.id, t.team?.id));
         if (ps) return s + foopyRating({
           goals: num(ps.goals?.total), goalAssists: num(ps.goals?.assists),
           behinds: num(ps.behinds), kicks: num(ps.kicks), handballs: num(ps.handballs),

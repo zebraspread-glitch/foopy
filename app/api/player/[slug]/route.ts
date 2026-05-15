@@ -9,6 +9,28 @@ function num(v: unknown): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+const TEAM_ID_MAP: Record<number, string> = {
+  1: "Adelaide", 2: "Brisbane Lions", 3: "Carlton", 4: "Collingwood",
+  5: "Essendon", 6: "Fremantle", 7: "Geelong", 8: "Hawthorn",
+  9: "Melbourne", 10: "North Melbourne", 11: "Port Adelaide", 12: "Richmond",
+  13: "St Kilda", 14: "Sydney", 15: "West Coast", 16: "Western Bulldogs",
+  17: "Gold Coast", 18: "GWS",
+};
+
+function slugTeam(value: string) {
+  return String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function teamMatches(a: string, b: string) {
+  return slugTeam(a) === slugTeam(b);
+}
+
+function idList(value: unknown) {
+  if (Array.isArray(value)) return value.map(Number).filter(Number.isFinite);
+  const id = Number(value);
+  return Number.isFinite(id) ? [id] : [];
+}
+
 function foopyRating(p: {
   goals: number; goalAssists: number; behinds: number;
   kicks: number; handballs: number; marks: number; tackles: number;
@@ -53,7 +75,10 @@ export async function GET(
   if (!playerInfo) return NextResponse.json(null, { status: 404 });
 
   const seasonStats = season.find((p: { id: string }) => p.id === slug) ?? null;
-  const apiSportsId = playerInfo.apiSportsId as number | null;
+  const playerIds = new Set<number>();
+  if (playerInfo.apiSportsId) playerIds.add(Number(playerInfo.apiSportsId));
+  for (const eventId of idList(playerInfo.eventIds)) playerIds.add(eventId);
+  for (const statsId of idList(playerInfo.statsIds)) playerIds.add(statsId);
 
   const recentGames: {
     gameId: number; date: string; goals: number; goalAssists: number;
@@ -62,7 +87,7 @@ export async function GET(
     foopy: number;
   }[] = [];
 
-  if (apiSportsId) {
+  if (playerIds.size > 0) {
     const allGames = Object.values(gameStats as Record<string, {
       gameId: number;
       date: string;
@@ -84,14 +109,20 @@ export async function GET(
       }[];
     }>);
 
+    const matchesPlayer = (pid: number, teamId?: number) => {
+      if (!playerIds.has(pid)) return false;
+      const statTeam = teamId ? TEAM_ID_MAP[teamId] : "";
+      return !statTeam || teamMatches(statTeam, playerInfo.team ?? "");
+    };
+
     const matching = allGames
-      .filter(g => g.teams?.some(t => t.players?.some(p => p.player?.id === apiSportsId)))
+      .filter(g => g.teams?.some(t => t.players?.some(p => matchesPlayer(p.player?.id, t.team?.id))))
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 8);
 
     for (const game of matching) {
       for (const teamData of game.teams ?? []) {
-        const ps = teamData.players?.find(p => p.player?.id === apiSportsId);
+        const ps = teamData.players?.find(p => matchesPlayer(p.player?.id, teamData.team?.id));
         if (!ps) continue;
 
         recentGames.push({

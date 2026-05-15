@@ -243,6 +243,15 @@ function clockFromTimestr(timestr?: string) {
   };
 }
 
+function scoreTypeFromDelta(delta: number, goalDelta?: number, behindDelta?: number) {
+  if (goalDelta != null && goalDelta > 0) return "GOAL";
+  if (behindDelta != null && behindDelta > 0 && goalDelta === 0) return "BEHIND";
+  if (delta === 1) return "BEHIND";
+  if (delta === 6) return "GOAL";
+  if (delta > 0) return "SCORE";
+  return "";
+}
+
 function latestFeedScore(events: LiveEvent[], homeTeam?: string, awayTeam?: string) {
   const event = events.find(
     (e) =>
@@ -281,16 +290,18 @@ function eventBelongsToMatch(event: LiveEvent, homeTeam: string, awayTeam: strin
 
   const apiTeam = teamNameFromEvent(event);
   const inferredTeam = safeText((event as any).teamName, "");
-  const player = findPlayerByEventId(event.playerId);
+  const player = findPlayerForLiveEvent(event);
   const playerTeam = safeText(player?.club || player?.team, "");
   const isMatchTeam = (team: string) => teamsMatch(team, homeTeam) || teamsMatch(team, awayTeam);
-
-  if (apiTeam && !isMatchTeam(apiTeam)) return false;
-  if (!apiTeam && playerTeam && !isMatchTeam(playerTeam)) return false;
 
   const candidateTeams = [apiTeam, inferredTeam, playerTeam].filter(Boolean);
   if (candidateTeams.length === 0) return true;
   return candidateTeams.some(isMatchTeam);
+}
+
+function resolvedEventTeam(event: LiveEvent) {
+  const player = findPlayerForLiveEvent(event);
+  return safeText((event as any).teamName || teamNameFromEvent(event) || player?.club || player?.team, "");
 }
 
 function realEventMatchesOptimistic(realEvent: LiveEvent, optimisticEvent: LiveEvent) {
@@ -299,15 +310,14 @@ function realEventMatchesOptimistic(realEvent: LiveEvent, optimisticEvent: LiveE
   const optimisticKey = safeText((optimisticEvent as any).optimisticKey, "");
   if (realScoreKey && optimisticKey && realScoreKey === optimisticKey) return true;
 
-  const alreadyExisted = ((optimisticEvent as any).existingRealEventKeys ?? []).includes(eventIdentityKey(realEvent));
-  if (alreadyExisted) return false;
-
   const optimisticTeam = safeText((optimisticEvent as any).teamName, "");
-  const realTeam = safeText((realEvent as any).teamName || teamNameFromEvent(realEvent), "");
+  const realTeam = resolvedEventTeam(realEvent);
   if (optimisticTeam && realTeam && !teamsMatch(optimisticTeam, realTeam)) return false;
 
   const optimisticType = safeText(optimisticEvent.type, "").toUpperCase();
   const realType = safeText(realEvent.type, "").toUpperCase();
+  const realIsScoreEvent = realType === "GOAL" || realType === "BEHIND" || realType === "SCORE";
+  if (optimisticType === "SCORE" && !realIsScoreEvent) return false;
   if (optimisticType !== "SCORE" && optimisticType !== realType) return false;
 
   const sameScore =
@@ -326,11 +336,52 @@ function realEventMatchesOptimistic(realEvent: LiveEvent, optimisticEvent: LiveE
     optimisticMinute >= 0 &&
     Math.abs(realMinute - optimisticMinute) <= 1;
 
-  return sameScore || sameClock;
+  return sameScore || (sameClock && !!optimisticTeam && !!realTeam);
 }
 
 function slugName(name: any) {
   return safeText(name, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function idList(value: unknown) {
+  if (Array.isArray(value)) return value.map(Number).filter(Number.isFinite);
+  const id = Number(value);
+  return Number.isFinite(id) ? [id] : [];
+}
+
+function playerMatchesLiveId(player: any, id: unknown) {
+  const target = Number(id);
+  if (!Number.isFinite(target)) return false;
+
+  return (
+    Number(player?.apiSportsId) === target ||
+    idList(player?.eventIds).includes(target) ||
+    idList(player?.statsIds).includes(target)
+  );
+}
+
+function playerTeamName(player: any) {
+  return safeText(player?.club || player?.team, "");
+}
+
+function eventPrimaryTeam(event: LiveEvent) {
+  return safeText((event as any).teamName || teamNameFromEvent(event), "");
+}
+
+function findPlayerForLiveEvent(event: LiveEvent) {
+  const target = Number(event.playerId);
+  if (!Number.isFinite(target)) return null;
+
+  const candidates = (playerStatsJson as any[]).filter((player) => playerMatchesLiveId(player, target));
+  if (candidates.length === 0) return null;
+
+  const team = eventPrimaryTeam(event);
+  if (team) {
+    const teamPlayer = candidates.find((player) => teamsMatch(playerTeamName(player), team));
+    if (teamPlayer) return teamPlayer;
+  }
+
+  return candidates[0] ?? null;
 }
 
 function clubToPlayerFolder(club: any) {
@@ -345,18 +396,26 @@ function clubToPlayerFolder(club: any) {
     Fremantle: "dockers",
     Geelong: "cats",
     "Gold Coast": "suns",
+    "Gold Coast Suns": "suns",
     GWS: "giants",
     "GWS Giants": "giants",
     "Greater Western Sydney": "giants",
     "Greater Western Sydney Giants": "giants",
     Hawthorn: "hawks",
     Melbourne: "demons",
+    "Melbourne Demons": "demons",
     "North Melbourne": "kangaroos",
+    "North Melbourne Kangaroos": "kangaroos",
     "Port Adelaide": "power",
+    "Port Adelaide Power": "power",
     Richmond: "tigers",
+    "Richmond Tigers": "tigers",
     "St Kilda": "saints",
+    "St Kilda Saints": "saints",
     Sydney: "swans",
+    "Sydney Swans": "swans",
     "West Coast": "eagles",
+    "West Coast Eagles": "eagles",
     "Western Bulldogs": "bulldogs",
     Bulldogs: "bulldogs",
   };
@@ -372,12 +431,20 @@ function getInitials(name: any) {
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 }
 
-function findPlayerInfo(name: any) {
+function findPlayerInfo(name: any, team?: any) {
   const safeName = safeText(name, "").toLowerCase().trim();
+  const safeTeam = safeText(team, "");
 
-  return (playerStatsJson as any[]).find(
+  const matches = (playerStatsJson as any[]).filter(
     (p) => String(p.name || "").toLowerCase().trim() === safeName
   );
+
+  if (safeTeam) {
+    const teamMatch = matches.find((player) => teamsMatch(playerTeamName(player), safeTeam));
+    if (teamMatch) return teamMatch;
+  }
+
+  return matches[0];
 }
 
 function playerClub(name: any) {
@@ -386,8 +453,8 @@ function playerClub(name: any) {
 
 function playerImagePath(name: any, team?: any) {
   const safeName = safePlayerName(name, "");
-  const found = findPlayerInfo(safeName);
-  const club = safeText(found?.club ?? team, "");
+  const found = findPlayerInfo(safeName, team);
+  const club = safeText(team || found?.club || found?.team, "");
   const folder = clubToPlayerFolder(club);
   const image = found?.image || found?.imagePath || found?.playerImage || `${slugName(safeName)}.png`;
 
@@ -730,6 +797,10 @@ function PlayerAvatar({ name, team }: { name: any; team?: any }) {
   const bg = colours.primary;
   const border = colours.secondary;
 
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
+
   return (
     <span
       style={{
@@ -738,7 +809,7 @@ function PlayerAvatar({ name, team }: { name: any; team?: any }) {
       }}
     >
       {!failed && src ? (
-        <img src={src} alt={safeName} style={playerAvatarImageStyle} onError={() => setFailed(true)} />
+        <img key={src} src={src} alt={safeName} style={playerAvatarImageStyle} onError={() => setFailed(true)} />
       ) : (
         <span style={playerInitialsStyle}>{getInitials(safeName)}</span>
       )}
@@ -777,12 +848,12 @@ function LiveFeedPlayer({
   onCommentClick?: () => void;
 }) {
   const isOptimistic = Boolean((event as any).optimistic);
-  const player = findPlayerByEventId(event.playerId);
   const inferredTeam = safeText((event as any).teamName, "");
-  const playerName = isOptimistic ? inferredTeam : safePlayerName(event.playerName || player?.name, event.playerId);
-
   const apiEventTeam = teamNameFromEvent(event);
-  const team = safeText(player?.club || player?.team || inferredTeam || apiEventTeam, "");
+  const eventTeam = safeText(inferredTeam || apiEventTeam, "");
+  const player = findPlayerForLiveEvent(event);
+  const team = safeText(eventTeam || player?.club || player?.team, "");
+  const playerName = isOptimistic ? team : safePlayerName(player?.name || event.playerName, team || event.playerId);
   const colours = liveFeedTeamColors(team);
 
   const type = safeText(event.type, "event").toUpperCase();
@@ -1120,9 +1191,11 @@ function canonicalTeamKey(team: string) {
     northmelbourne: "northmelbourne",
     northmelbournekangaroos: "northmelbourne",
     kangaroos: "northmelbourne",
-    portalelaide: "portalelaide",
-    portalelaidepower: "portalelaide",
-    power: "portalelaide",
+    portadelaide: "portadelaide",
+    portadelaidepower: "portadelaide",
+    portalelaide: "portadelaide",
+    portalelaidepower: "portadelaide",
+    power: "portadelaide",
     richmond: "richmond",
     richmondtigers: "richmond",
     stkilda: "stkilda",
@@ -1446,6 +1519,56 @@ function getTeamRecordBeforeGame(team: any, games: MatchGame[], beforeGame: Matc
   return draws > 0 ? `${wins}-${losses}-${draws}` : `${wins}-${losses}`;
 }
 
+type LiveScoreSnapshot = {
+  home: number;
+  away: number;
+  homeGoals?: number;
+  awayGoals?: number;
+  homeBehinds?: number;
+  awayBehinds?: number;
+};
+
+function scoreSnapshot(game: MatchGame): LiveScoreSnapshot | null {
+  const home = Number(game.hscore ?? 0);
+  const away = Number(game.ascore ?? 0);
+  if (!Number.isFinite(home) || !Number.isFinite(away)) return null;
+
+  const optionalNumber = (value: unknown) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : undefined;
+  };
+
+  return {
+    home,
+    away,
+    homeGoals: optionalNumber((game as any).hgoals),
+    awayGoals: optionalNumber((game as any).agoals),
+    homeBehinds: optionalNumber((game as any).hbehinds),
+    awayBehinds: optionalNumber((game as any).abehinds),
+  };
+}
+
+function feedScoreSnapshot(events: LiveEvent[], homeTeam: string, awayTeam: string): LiveScoreSnapshot | null {
+  let home = 0;
+  let away = 0;
+
+  for (const event of events) {
+    const type = safeText(event.type, "").toUpperCase();
+    const points = type === "GOAL" ? 6 : type === "BEHIND" ? 1 : 0;
+    if (!points) continue;
+
+    const team = resolvedEventTeam(event);
+    if (teamsMatch(team, homeTeam)) home += points;
+    else if (teamsMatch(team, awayTeam)) away += points;
+  }
+
+  return { home, away };
+}
+
+function optimisticStorageKey(matchKey: string) {
+  return `foopy:optimistic-events:${matchKey}`;
+}
+
 function playerTeamFromStatRow(player: any) {
   const mapped = findPlayerByApiSportsId(getApiPlayerId(player));
   return normalizeTeamName(mapped?.club ?? mapped?.team ?? player?.club ?? player?.team ?? "");
@@ -1570,8 +1693,10 @@ export default function MatchPage() {
   const [roundGames, setRoundGames] = useState<MatchGame[]>([]);
   const [scoreboardPassed, setScoreboardPassed] = useState(false);
   const scoreboardRef = useRef<HTMLDivElement>(null);
-  const previousScoreRef = useRef<{ home: number; away: number } | null>(null);
+  const previousScoreRef = useRef<LiveScoreSnapshot | null>(null);
   const liveEventsRef = useRef<LiveEvent[]>([]);
+  const optimisticStorageLoadedRef = useRef("");
+  const skipNextOptimisticPersistRef = useRef(false);
 
   const apiSportsGameId = useMemo(() => {
     const mapped = (API_SPORTS_MATCH_IDS as Record<string, any>)[id];
@@ -1732,6 +1857,7 @@ export default function MatchPage() {
   const status = getStatus(game);
   const isLiveGame = status === "LIVE";
   const showStatsTabs = status === "LIVE" || status === "FINAL";
+  const optimisticMatchKey = apiSportsGameId || id;
 
   // Current quarter number — max of live events period AND the period parsed from game.timestr
   // (game.timestr like "Q4 2:14" updates faster than events, so avoids stale period after a quarter break)
@@ -1751,6 +1877,170 @@ export default function MatchPage() {
   useEffect(() => {
     liveEventsRef.current = liveEvents;
   }, [liveEvents]);
+
+  useEffect(() => {
+    if (!mounted || !game || !optimisticMatchKey) return;
+
+    if (getStatus(game) !== "LIVE") {
+      localStorage.removeItem(optimisticStorageKey(optimisticMatchKey));
+      setOptimisticScoreEvents([]);
+      optimisticStorageLoadedRef.current = optimisticMatchKey;
+      return;
+    }
+
+    try {
+      const raw = localStorage.getItem(optimisticStorageKey(optimisticMatchKey));
+      const saved = raw ? JSON.parse(raw) : [];
+      optimisticStorageLoadedRef.current = optimisticMatchKey;
+      skipNextOptimisticPersistRef.current = true;
+      if (!Array.isArray(saved)) return;
+
+      const current = scoreSnapshot(game);
+      const restored = saved
+        .filter((event: any) => event?.optimistic)
+        .filter((event: LiveEvent) => eventBelongsToMatch(event, game.hteam, game.ateam))
+        .filter((event: LiveEvent) => {
+          if (!current) return true;
+          return Number(event.homeScore ?? 0) <= current.home && Number(event.awayScore ?? 0) <= current.away;
+        });
+
+      const latestByTeam = new Map<string, LiveEvent>();
+      for (const event of restored) {
+        const team = canonicalTeamKey(safeText((event as any).teamName, ""));
+        if (!team) continue;
+
+        const previous = latestByTeam.get(team);
+        const eventScore = Number(event.homeScore ?? 0) + Number(event.awayScore ?? 0);
+        const previousScore = previous ? Number(previous.homeScore ?? 0) + Number(previous.awayScore ?? 0) : -1;
+        if (!previous || eventScore >= previousScore) latestByTeam.set(team, event);
+      }
+
+      setOptimisticScoreEvents(Array.from(latestByTeam.values()).slice(0, 8));
+    } catch {
+      optimisticStorageLoadedRef.current = optimisticMatchKey;
+      localStorage.removeItem(optimisticStorageKey(optimisticMatchKey));
+    }
+  }, [mounted, game?.id, optimisticMatchKey]);
+
+  useEffect(() => {
+    if (!mounted || !optimisticMatchKey) return;
+    if (optimisticStorageLoadedRef.current !== optimisticMatchKey) return;
+    if (skipNextOptimisticPersistRef.current) {
+      skipNextOptimisticPersistRef.current = false;
+      return;
+    }
+
+    if (optimisticScoreEvents.length === 0) {
+      localStorage.removeItem(optimisticStorageKey(optimisticMatchKey));
+      return;
+    }
+
+    localStorage.setItem(
+      optimisticStorageKey(optimisticMatchKey),
+      JSON.stringify(optimisticScoreEvents.slice(0, 8))
+    );
+  }, [mounted, optimisticMatchKey, optimisticScoreEvents]);
+
+  useEffect(() => {
+    if (optimisticScoreEvents.length === 0 || liveEvents.length === 0) return;
+
+    setOptimisticScoreEvents((events) => {
+      const next = events.filter(
+        (optimisticEvent) => !liveEvents.some((event) => realEventMatchesOptimistic(event, optimisticEvent))
+      );
+      return next.length === events.length ? events : next;
+    });
+  }, [liveEvents, optimisticScoreEvents.length]);
+
+  const addOptimisticScoreEvent = useCallback((
+    scoringTeam: string,
+    home: number,
+    away: number,
+    type: string,
+    existingEvents: LiveEvent[]
+  ) => {
+    const safeType = safeText(type, "").toUpperCase();
+    if (!safeType) return;
+
+    const { period, minute } = clockFromTimestr(game?.timestr);
+    const optimisticKey = scoreBasedEventKey(scoringTeam, home, away, safeType);
+    if (!optimisticKey) return;
+
+    const existingRealEventKeys = existingEvents.map(eventIdentityKey);
+    const optimisticEvent: LiveEvent = {
+      quarter: period ? `Q${period}` : undefined,
+      period: period ?? (currentPeriod || undefined),
+      minute,
+      type: safeType,
+      teamId: getApiTeamId(scoringTeam),
+      playerId: null as any,
+      playerName: null,
+      homeScore: home,
+      awayScore: away,
+      teamName: scoringTeam,
+      optimistic: true,
+      optimisticKey,
+      existingRealEventKeys,
+    } as any;
+
+    setOptimisticScoreEvents((events) => {
+      if (events.some((event) => (event as any).optimisticKey === optimisticKey)) return events;
+      if (existingEvents.some((event) => eventScoreBasedKey(event) === optimisticKey || realEventMatchesOptimistic(event, optimisticEvent))) return events;
+      const withoutSameTeam = events.filter((event) => !teamsMatch((event as any).teamName, scoringTeam));
+      return [optimisticEvent, ...withoutSameTeam].slice(0, 8);
+    });
+  }, [currentPeriod, game?.timestr]);
+
+  useEffect(() => {
+    if (!game || getStatus(game) !== "LIVE") {
+      previousScoreRef.current = null;
+      if (getStatus(game) === "UPCOMING") setOptimisticScoreEvents([]);
+      return;
+    }
+
+    const current = scoreSnapshot(game);
+    if (!current) return;
+
+    const previous = previousScoreRef.current;
+    previousScoreRef.current = current;
+    const feedScore = feedScoreSnapshot(liveEvents, game.hteam, game.ateam);
+    const baseline =
+      previous && (current.home !== previous.home || current.away !== previous.away)
+        ? previous
+        : feedScore && (current.home > feedScore.home || current.away > feedScore.away)
+        ? feedScore
+        : previous;
+
+    if (!baseline) return;
+
+    const homeDelta = current.home - baseline.home;
+    const awayDelta = current.away - baseline.away;
+    const homeScored = homeDelta > 0 && awayDelta === 0;
+    const awayScored = awayDelta > 0 && homeDelta === 0;
+    if (!homeScored && !awayScored) return;
+
+    const type = homeScored
+      ? scoreTypeFromDelta(
+          homeDelta,
+          current.homeGoals != null && baseline.homeGoals != null ? current.homeGoals - baseline.homeGoals : undefined,
+          current.homeBehinds != null && baseline.homeBehinds != null ? current.homeBehinds - baseline.homeBehinds : undefined
+        )
+      : scoreTypeFromDelta(
+          awayDelta,
+          current.awayGoals != null && baseline.awayGoals != null ? current.awayGoals - baseline.awayGoals : undefined,
+          current.awayBehinds != null && baseline.awayBehinds != null ? current.awayBehinds - baseline.awayBehinds : undefined
+        );
+
+    if (!type) return;
+
+    addOptimisticScoreEvent(
+      homeScored ? game.hteam : game.ateam,
+      current.home,
+      current.away,
+      type,
+      liveEventsRef.current
+    );
+  }, [game, liveEvents, addOptimisticScoreEvent]);
 
   const displayLiveEvents = useMemo(() => {
     const pendingOptimistic = optimisticScoreEvents.filter(
@@ -1956,7 +2246,7 @@ export default function MatchPage() {
       const prev = Number(chronological[i - 1].period ?? 0);
       const curr = Number(chronological[i].period ?? 0);
       if (curr > prev && prev > 0) {
-        const lastOfPrev = inferred[i - 1];
+        const lastOfPrev = [...inferred].reverse().find((event: any) => Number(event.period ?? 0) === prev);
         derivedBreaks.push({
           type: "QUARTER_BREAK", quarter: `Q${prev}`, period: prev, minute: 999,
           label: periodLabel(prev),
@@ -2036,8 +2326,12 @@ export default function MatchPage() {
       if (!cancelled) loadFromSupabase();
     });
 
-    // Re-sync every 10s (server cooldown prevents more than 1 external API call per 10s regardless of user count)
-    const syncInterval = setInterval(triggerSync, 10_000);
+    // Re-sync and reload every 10s. Realtime can miss delete/replace cycles, so the poll is the reliability layer.
+    const syncInterval = setInterval(() => {
+      triggerSync().then(() => {
+        if (!cancelled) loadFromSupabase();
+      });
+    }, 10_000);
 
     // ── 3. Subscribe to Realtime — new events pushed automatically ───────────
     const channel = supabase
@@ -2538,19 +2832,22 @@ export default function MatchPage() {
                           eventKey={commentKey}
                           commentCount={commentCountForEvent(eventCommentCounts, event, index)}
                           onCommentClick={() => {
-                            const player = findPlayerByEventId(event.playerId);
                             const inferredTeam = safeText((event as any).teamName, "");
-                            const name = (event as any).optimistic
-                              ? inferredTeam || teamNameFromEvent(event) || "Team"
-                              : event.playerName || safePlayerName(player?.name, event.playerId ?? index + 1);
-                            const label = `${name} · ${safeText(event.type, "").toUpperCase()}`;
                             const apiTeam = teamNameFromEvent(event);
-                            const team = safeText(player?.club || player?.team || inferredTeam || apiTeam, "");
+                            const eventTeam = safeText(inferredTeam || apiTeam, "");
+                            const player = findPlayerForLiveEvent(event);
+                            const team = safeText(eventTeam || player?.club || player?.team, "");
+                            const name = (event as any).optimistic
+                              ? team || "Team"
+                              : safePlayerName(player?.name || event.playerName, team || event.playerId || index + 1);
+                            const label = `${name} · ${safeText(event.type, "").toUpperCase()}`;
                             const type = safeText(event.type, "").toUpperCase();
                             const quarter = eventQuarter(event);
                             const minute = String(event.minute ?? "");
+                            const aliases = eventKeyAliases(event, index);
                             const params = new URLSearchParams({
                               label,
+                              aliases: aliases.join(","),
                               ...(team ? { team } : {}),
                               ...(type ? { type } : {}),
                               ...(quarter ? { quarter } : {}),
