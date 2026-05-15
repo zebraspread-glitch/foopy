@@ -168,9 +168,9 @@ function normaliseTeamKey(team: any) {
 }
 
 function teamsMatch(a: any, b: any) {
-  const ak = normaliseTeamKey(a);
-  const bk = normaliseTeamKey(b);
-  return !!ak && !!bk && (ak === bk || ak.includes(bk) || bk.includes(ak));
+  const ak = canonicalTeamKey(safeText(a, ""));
+  const bk = canonicalTeamKey(safeText(b, ""));
+  return !!ak && !!bk && ak === bk;
 }
 
 function scoreBasedEventKey(team: any, homeScore: any, awayScore: any, type: any) {
@@ -243,12 +243,6 @@ function clockFromTimestr(timestr?: string) {
   };
 }
 
-function scoreTypeFromDelta(delta: number) {
-  if (delta >= 6) return "GOAL";
-  if (delta >= 1) return "BEHIND";
-  return "SCORE";
-}
-
 function latestFeedScore(events: LiveEvent[], homeTeam?: string, awayTeam?: string) {
   const event = events.find(
     (e) =>
@@ -280,6 +274,23 @@ function latestFeedScore(events: LiveEvent[], homeTeam?: string, awayTeam?: stri
   }
 
   return { home, away };
+}
+
+function eventBelongsToMatch(event: LiveEvent, homeTeam: string, awayTeam: string) {
+  if (event.type === "QUARTER_BREAK") return true;
+
+  const apiTeam = teamNameFromEvent(event);
+  const inferredTeam = safeText((event as any).teamName, "");
+  const player = findPlayerByEventId(event.playerId);
+  const playerTeam = safeText(player?.club || player?.team, "");
+  const isMatchTeam = (team: string) => teamsMatch(team, homeTeam) || teamsMatch(team, awayTeam);
+
+  if (apiTeam && !isMatchTeam(apiTeam)) return false;
+  if (!apiTeam && playerTeam && !isMatchTeam(playerTeam)) return false;
+
+  const candidateTeams = [apiTeam, inferredTeam, playerTeam].filter(Boolean);
+  if (candidateTeams.length === 0) return true;
+  return candidateTeams.some(isMatchTeam);
 }
 
 function realEventMatchesOptimistic(realEvent: LiveEvent, optimisticEvent: LiveEvent) {
@@ -1079,20 +1090,73 @@ function getCountdownText(date?: string, now = Date.now()) {
 
 type Insight = { team: string | null; text: string };
 
+function canonicalTeamKey(team: string) {
+  const key = String(team || "").toLowerCase().replace(/[^a-z]/g, "");
+  const aliases: Record<string, string> = {
+    adelaide: "adelaide",
+    adelaidecrows: "adelaide",
+    brisbane: "brisbane",
+    brisbanelions: "brisbane",
+    carlton: "carlton",
+    carltonblues: "carlton",
+    collingwood: "collingwood",
+    collingwoodmagpies: "collingwood",
+    essendon: "essendon",
+    essendonbombers: "essendon",
+    fremantle: "fremantle",
+    fremantledockers: "fremantle",
+    geelong: "geelong",
+    geelongcats: "geelong",
+    goldcoast: "goldcoast",
+    goldcoastsuns: "goldcoast",
+    gws: "gws",
+    gwsgiants: "gws",
+    greaterwesternsydney: "gws",
+    greaterwesternsydneygiants: "gws",
+    hawthorn: "hawthorn",
+    hawthornhawks: "hawthorn",
+    melbourne: "melbourne",
+    melbournedemons: "melbourne",
+    northmelbourne: "northmelbourne",
+    northmelbournekangaroos: "northmelbourne",
+    kangaroos: "northmelbourne",
+    portalelaide: "portalelaide",
+    portalelaidepower: "portalelaide",
+    power: "portalelaide",
+    richmond: "richmond",
+    richmondtigers: "richmond",
+    stkilda: "stkilda",
+    stkildasaints: "stkilda",
+    sydney: "sydney",
+    sydneyswans: "sydney",
+    westcoast: "westcoast",
+    westcoasteagles: "westcoast",
+    westernbulldogs: "westernbulldogs",
+    bulldogs: "westernbulldogs",
+  };
+
+  return aliases[key] ?? key;
+}
+
 function flexMatchTeam(a: string, b: string) {
-  const n = (s: string) => s.toLowerCase().replace(/[^a-z]/g, "");
-  const na = n(a); const nb = n(b);
-  return na === nb || na.includes(nb) || nb.includes(na);
+  return canonicalTeamKey(a) === canonicalTeamKey(b);
 }
 
 function generateInsights(
   homeTeam: string,
   awayTeam: string,
+  currentGame: MatchGame,
   allGames: MatchGame[],
   teamStats: Record<string, any>,
   apiTeamIdByName: Record<string, number>,
 ): Insight[] {
-  const completed = allGames.filter(g => Number(g.complete) === 100);
+  const currentTime = currentGame.date ? new Date(currentGame.date).getTime() : Infinity;
+  const completed = allGames.filter(g => {
+    if (String(g.id) === String(currentGame.id)) return false;
+    if (Number(g.complete) !== 100) return false;
+    const gameTime = g.date ? new Date(g.date).getTime() : 0;
+    return Number.isFinite(currentTime) ? gameTime < currentTime : true;
+  });
 
   const tScore   = (g: MatchGame, n: string) => flexMatchTeam(g.hteam, n) ? Number(g.hscore ?? 0) : Number(g.ascore ?? 0);
   const oppScore = (g: MatchGame, n: string) => flexMatchTeam(g.hteam, n) ? Number(g.ascore ?? 0) : Number(g.hscore ?? 0);
@@ -1106,10 +1170,12 @@ function generateInsights(
   }
 
   function statBlock(name: string) {
-    const tid = apiTeamIdByName[name];
+    const tid = Object.entries(apiTeamIdByName).find(([team]) => flexMatchTeam(team, name))?.[1];
     if (!tid) return null;
     const entries = (Object.values(teamStats) as any[]).filter(e =>
-      Array.isArray(e.teams) && e.teams.some((t: any) => t.team?.id === tid)
+      Array.isArray(e.teams) &&
+      e.teams.some((t: any) => t.team?.id === tid) &&
+      (!e.date || !Number.isFinite(currentTime) || new Date(e.date).getTime() < currentTime)
     );
     if (!entries.length) return null;
     let goals = 0, behinds = 0, tackles = 0, clearances = 0, disposals = 0;
@@ -1132,23 +1198,7 @@ function generateInsights(
     };
   }
 
-  // Deterministic shuffle using team name as seed
-  function seededShuffle<T>(arr: T[], seed: number): T[] {
-    const a = [...arr];
-    let s = seed;
-    for (let i = a.length - 1; i > 0; i--) {
-      s = (Math.imul(s, 1664525) + 1013904223) | 0;
-      const j = Math.abs(s) % (i + 1);
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-  }
-
-  function teamSeed(name: string) {
-    return name.split("").reduce((s, c) => (Math.imul(s, 31) + c.charCodeAt(0)) | 0, 0);
-  }
-
-  function candidatesForTeam(name: string): Insight[] {
+  function candidatesForTeam(name: string, venue: "home" | "away"): Insight[] {
     const games  = sortedGames(name);
     if (!games.length) return [];
     const wins   = games.filter(g => isWin(g, name));
@@ -1157,14 +1207,15 @@ function generateInsights(
     const pool: Insight[] = [];
 
     // Season record
-    pool.push({ team: name, text: `${name} are ${wins.length}-${losses.length} this season` });
+    pool.push({ team: name, text: `${name} are ${wins.length}-${losses.length} so far this season` });
 
     // Win/loss streak
-    const lastType = isWin(games[games.length - 1], name) ? "win" : "loss";
+    const lastType = isWin(games[games.length - 1], name) ? "win" : isLoss(games[games.length - 1], name) ? "loss" : "draw";
     let streak = 0;
     for (let i = games.length - 1; i >= 0; i--) {
       const w = isWin(games[i], name);
-      if ((lastType === "win" && w) || (lastType === "loss" && !w)) streak++;
+      const l = isLoss(games[i], name);
+      if ((lastType === "win" && w) || (lastType === "loss" && l)) streak++;
       else break;
     }
     if (streak >= 2) {
@@ -1176,8 +1227,18 @@ function generateInsights(
 
     // Last 5 form string
     const last5 = games.slice(-5);
-    const formStr = last5.map(g => isWin(g, name) ? "W" : isLoss(g, name) ? "L" : "D").join("·");
+    const formStr = last5.map(g => isWin(g, name) ? "W" : isLoss(g, name) ? "L" : "D").join("-");
     pool.push({ team: name, text: `${name}'s last ${last5.length} results: ${formStr}` });
+
+    // Venue record for this matchup
+    const venueGames = games.filter(g => venue === "home" ? flexMatchTeam(g.hteam, name) : flexMatchTeam(g.ateam, name));
+    if (venueGames.length >= 2) {
+      const venueWins = venueGames.filter(g => isWin(g, name)).length;
+      pool.push({
+        team: name,
+        text: `${name} are ${venueWins}-${venueGames.length - venueWins} ${venue === "home" ? "at home" : "away from home"} this season`,
+      });
+    }
 
     // Biggest win
     if (wins.length > 0) {
@@ -1203,12 +1264,6 @@ function generateInsights(
     const avgFor = Math.round(games.reduce((s, g) => s + tScore(g, name), 0) / games.length);
     const avgAga = Math.round(games.reduce((s, g) => s + oppScore(g, name), 0) / games.length);
     pool.push({ team: name, text: `${name} average ${avgFor} points scored and ${avgAga} conceded per game` });
-
-    // 100+ scoring frequency
-    const century = games.filter(g => tScore(g, name) >= 100).length;
-    if (century >= 1) {
-      pool.push({ team: name, text: `${name} have hit 100+ points in ${century} of their ${games.length} games this season` });
-    }
 
     // Sub-70 conceded frequency
     const shutdowns = games.filter(g => oppScore(g, name) < 70).length;
@@ -1267,39 +1322,24 @@ function generateInsights(
     return pool;
   }
 
-  function pick5(name: string): Insight[] {
-    const pool = candidatesForTeam(name);
-    const shuffled = seededShuffle(pool, teamSeed(name));
-    return shuffled.slice(0, 5);
+  function pick4(name: string, venue: "home" | "away"): Insight[] {
+    const used = new Set<string>();
+    return candidatesForTeam(name, venue).filter((ins) => {
+      const key = ins.text.toLowerCase();
+      if (used.has(key)) return false;
+      used.add(key);
+      return true;
+    }).slice(0, 4);
   }
 
-  const insights: Insight[] = [
-    ...pick5(homeTeam),
-    ...pick5(awayTeam),
+  return [
+    ...pick4(homeTeam, "home"),
+    ...pick4(awayTeam, "away"),
   ];
-
-  // H2H — last meeting
-  const h2h = completed
-    .filter(g =>
-      (flexMatchTeam(g.hteam, homeTeam) && flexMatchTeam(g.ateam, awayTeam)) ||
-      (flexMatchTeam(g.hteam, awayTeam) && flexMatchTeam(g.ateam, homeTeam))
-    )
-    .sort((a, b) => new Date(a.date ?? "").getTime() - new Date(b.date ?? "").getTime());
-
-  if (h2h.length > 0) {
-    const last = h2h[h2h.length - 1];
-    const hScore = tScore(last, homeTeam);
-    const aScore = tScore(last, awayTeam);
-    const lastWinner = hScore > aScore ? homeTeam : awayTeam;
-    const margin = Math.abs(hScore - aScore);
-    insights.push({ team: lastWinner, text: `Last time these sides met, ${lastWinner} won by ${margin} points (${Math.max(hScore, aScore)}–${Math.min(hScore, aScore)})` });
-  }
-
-  return insights;
 }
 
-function InsightsBox({ homeTeam, awayTeam, allGames }: { homeTeam: string; awayTeam: string; allGames: MatchGame[] }) {
-  const insights = generateInsights(homeTeam, awayTeam, allGames, teamStatsJson as Record<string, any>, API_TEAM_ID_BY_NAME);
+function InsightsBox({ game, allGames }: { game: MatchGame; allGames: MatchGame[] }) {
+  const insights = generateInsights(game.hteam, game.ateam, game, allGames, teamStatsJson as Record<string, any>, API_TEAM_ID_BY_NAME);
   if (!insights.length) return null;
 
   let lastTeam: string | null | undefined = undefined;
@@ -1708,107 +1748,9 @@ export default function MatchPage() {
   })();
   const currentPeriod = Math.max(periodFromEvents, periodFromTimestr);
 
-  const addOptimisticScoreEvent = useCallback((
-    scoringTeam: string,
-    home: number,
-    away: number,
-    delta: number,
-    existingEvents: LiveEvent[]
-  ) => {
-    const { period, minute } = clockFromTimestr(game?.timestr);
-    const type = scoreTypeFromDelta(delta);
-    const optimisticKey = scoreBasedEventKey(scoringTeam, home, away, type);
-    if (!optimisticKey) return;
-
-    const existingRealEventKeys = existingEvents.map(eventIdentityKey);
-    const optimisticEvent: LiveEvent = {
-      quarter: period ? `Q${period}` : undefined,
-      period: period ?? (currentPeriod || undefined),
-      minute,
-      type,
-      teamId: getApiTeamId(scoringTeam),
-      playerId: null as any,
-      playerName: null,
-      homeScore: home,
-      awayScore: away,
-      teamName: scoringTeam,
-      optimistic: true,
-      optimisticKey,
-      existingRealEventKeys,
-    } as any;
-
-    setOptimisticScoreEvents((events) => {
-      if (events.some((event) => (event as any).optimisticKey === optimisticKey)) return events;
-      if (existingEvents.some((event) => eventScoreBasedKey(event) === optimisticKey)) return events;
-      return [optimisticEvent, ...events].slice(0, 8);
-    });
-  }, [currentPeriod, game?.timestr]);
-
   useEffect(() => {
     liveEventsRef.current = liveEvents;
-
-    if (!game || getStatus(game) !== "LIVE") return;
-
-    const home = Number(game.hscore ?? 0);
-    const away = Number(game.ascore ?? 0);
-    if (!Number.isFinite(home) || !Number.isFinite(away)) return;
-
-    const feedScore = latestFeedScore(liveEvents, game.hteam, game.ateam);
-    if (!feedScore || (home <= feedScore.home && away <= feedScore.away)) return;
-
-    const homeDelta = home - feedScore.home;
-    const awayDelta = away - feedScore.away;
-    const homeScored = homeDelta > 0 && awayDelta <= 0;
-    const awayScored = awayDelta > 0 && homeDelta <= 0;
-    if (!homeScored && !awayScored) return;
-
-    addOptimisticScoreEvent(
-      homeScored ? game.hteam : game.ateam,
-      home,
-      away,
-      homeScored ? homeDelta : awayDelta,
-      liveEvents
-    );
-  }, [liveEvents, game, addOptimisticScoreEvent]);
-
-  useEffect(() => {
-    if (!game || getStatus(game) !== "LIVE") {
-      previousScoreRef.current = null;
-      if (getStatus(game) === "UPCOMING") setOptimisticScoreEvents([]);
-      return;
-    }
-
-    const home = Number(game.hscore ?? 0);
-    const away = Number(game.ascore ?? 0);
-    if (!Number.isFinite(home) || !Number.isFinite(away)) return;
-
-    const previous = previousScoreRef.current;
-    previousScoreRef.current = { home, away };
-    const feedScore = latestFeedScore(liveEventsRef.current, game.hteam, game.ateam);
-    const sawScoreboardChange = !!previous && (home !== previous.home || away !== previous.away);
-    const baseline =
-      sawScoreboardChange
-        ? previous
-        : feedScore && (home > feedScore.home || away > feedScore.away)
-        ? feedScore
-        : previous;
-
-    if (!baseline) return;
-
-    const homeDelta = home - baseline.home;
-    const awayDelta = away - baseline.away;
-    const homeScored = homeDelta > 0 && awayDelta <= 0;
-    const awayScored = awayDelta > 0 && homeDelta <= 0;
-    if (!homeScored && !awayScored) return;
-
-    addOptimisticScoreEvent(
-      homeScored ? game.hteam : game.ateam,
-      home,
-      away,
-      homeScored ? homeDelta : awayDelta,
-      liveEventsRef.current
-    );
-  }, [game, addOptimisticScoreEvent]);
+  }, [liveEvents]);
 
   const displayLiveEvents = useMemo(() => {
     const pendingOptimistic = optimisticScoreEvents.filter(
@@ -2007,7 +1949,7 @@ export default function MatchPage() {
       else teamName = teamNameFromEvent(e);
       prevHome = curHome; prevAway = curAway;
       return { ...e, teamName };
-    });
+    }).filter((e: any) => eventBelongsToMatch(e, game.hteam, game.ateam));
 
     const derivedBreaks: any[] = [];
     for (let i = 1; i < chronological.length; i++) {
@@ -2554,7 +2496,7 @@ export default function MatchPage() {
                   <div style={countdownTimeStyle}>{getCountdownText(game.date, now)}</div>
                 </div>
                 {new Date(game.date ?? "").getTime() - now < 5 * 24 * 60 * 60 * 1000 && (
-                  <InsightsBox homeTeam={game.hteam} awayTeam={game.ateam} allGames={allGames} />
+                  <InsightsBox game={game} allGames={allGames} />
                 )}
               </>
             )}
