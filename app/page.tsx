@@ -967,7 +967,8 @@ free_kicks?: {
                               src={player.image}
                               alt={player.name}
                               style={topPlayerImageStyle}
-                              loading="lazy"
+                              loading="eager"
+                              decoding="async"
                               onError={(e) => {
                                 e.currentTarget.style.display = "none";
                                 const next = e.currentTarget.nextElementSibling as HTMLElement | null;
@@ -1287,7 +1288,8 @@ const mobileTeamNameStyle: React.CSSProperties = {
 const mobileLogoStyle: React.CSSProperties = {
   width: "28px",
   height: "28px",
-  objectFit: "contain",
+  borderRadius: "50%",
+  objectFit: "cover",
   flexShrink: 0,
 };
 
