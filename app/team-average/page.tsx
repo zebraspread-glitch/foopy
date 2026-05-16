@@ -1,0 +1,348 @@
+import path from "path";
+import fs from "fs";
+import Link from "next/link";
+
+type PlayerInfo = {
+  id: string;
+  name: string;
+  team: string;
+  apiSportsId?: number | null;
+  statsIds?: number[];
+};
+
+type PlayerStatGame = {
+  teams?: {
+    players?: {
+      player?: { id: number };
+      goals?: { total?: number; assists?: number };
+      behinds?: number;
+      disposals?: number;
+      kicks?: number;
+      handballs?: number;
+      marks?: number;
+      tackles?: number;
+      hitouts?: number;
+      clearances?: number;
+      free_kicks?: { for?: number; against?: number };
+    }[];
+  }[];
+};
+
+const TEAMS = [
+  { name: "Adelaide", slug: "adelaide", logo: "/team-logos/crows.png", color: "#002b5c" },
+  { name: "Brisbane Lions", slug: "brisbanelions", logo: "/team-logos/lions.png", color: "#a50034" },
+  { name: "Carlton", slug: "carlton", logo: "/team-logos/blues.png", color: "#031a35" },
+  { name: "Collingwood", slug: "collingwood", logo: "/team-logos/magpies.png", color: "#111111" },
+  { name: "Essendon", slug: "essendon", logo: "/team-logos/bombers.png", color: "#cc0000" },
+  { name: "Fremantle", slug: "fremantle", logo: "/team-logos/dockers.png", color: "#4b1979" },
+  { name: "Geelong", slug: "geelong", logo: "/team-logos/cats.png", color: "#003b73" },
+  { name: "Gold Coast", slug: "goldcoast", logo: "/team-logos/suns.png", color: "#c0392b" },
+  { name: "GWS", slug: "gws", logo: "/team-logos/giants.png", color: "#e05a1a" },
+  { name: "Hawthorn", slug: "hawthorn", logo: "/team-logos/hawks.png", color: "#6b3a1f" },
+  { name: "Melbourne", slug: "melbourne", logo: "/team-logos/demons.png", color: "#c8102e" },
+  { name: "North Melbourne", slug: "northmelbourne", logo: "/team-logos/kangaroos.png", color: "#0055a4" },
+  { name: "Port Adelaide", slug: "portadelaide", logo: "/team-logos/power.png", color: "#008999" },
+  { name: "Richmond", slug: "richmond", logo: "/team-logos/tigers.png", color: "#1a1a1a" },
+  { name: "St Kilda", slug: "stkilda", logo: "/team-logos/saints.png", color: "#c8102e" },
+  { name: "Sydney", slug: "sydney", logo: "/team-logos/swans.png", color: "#c0392b" },
+  { name: "West Coast", slug: "westcoast", logo: "/team-logos/eagles.png", color: "#003087" },
+  { name: "Western Bulldogs", slug: "westernbulldogs", logo: "/team-logos/bulldogs.png", color: "#1a4abf" },
+];
+
+function num(value: unknown) {
+  const n = Number(value ?? 0);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function mixColor(a: string, b: string, amount: number) {
+  const ah = a.replace("#", "");
+  const bh = b.replace("#", "");
+  const ar = parseInt(ah.substring(0, 2), 16);
+  const ag = parseInt(ah.substring(2, 4), 16);
+  const ab = parseInt(ah.substring(4, 6), 16);
+  const br = parseInt(bh.substring(0, 2), 16);
+  const bg = parseInt(bh.substring(2, 4), 16);
+  const bb = parseInt(bh.substring(4, 6), 16);
+  return `rgb(${Math.round(ar + amount * (br - ar))}, ${Math.round(ag + amount * (bg - ag))}, ${Math.round(ab + amount * (bb - ab))})`;
+}
+
+function foopyColor(value: number) {
+  const v = Math.max(1, Math.min(10, value));
+  const anchors: [number, string][] = [
+    [1, "#ef4444"],
+    [3, "#f97316"],
+    [4, "#facc15"],
+    [5, "#84cc16"],
+    [6, "#22c55e"],
+    [7, "#16a34a"],
+    [8.5, "#3b82f6"],
+    [10, "#ffd700"],
+  ];
+  for (let i = 0; i < anchors.length - 1; i++) {
+    const [lo, lowColor] = anchors[i];
+    const [hi, highColor] = anchors[i + 1];
+    if (v <= hi) return mixColor(lowColor, highColor, (v - lo) / (hi - lo));
+  }
+  return "#ffd700";
+}
+
+function foopyRating(p: {
+  goals: number;
+  goalAssists: number;
+  behinds: number;
+  kicks: number;
+  handballs: number;
+  marks: number;
+  tackles: number;
+  hitouts: number;
+  disposals: number;
+  clearances: number;
+  freesFor: number;
+  freesAgainst: number;
+}) {
+  let score =
+    p.goals * 5.5 +
+    p.goalAssists * 1.5 +
+    p.behinds * 1.2 +
+    p.kicks * 0.75 +
+    p.handballs * 0.55 +
+    p.marks * 1 +
+    p.tackles * 1.8 +
+    p.hitouts * 0.35 +
+    p.clearances * 0.5 +
+    p.freesFor * 0.3 -
+    p.freesAgainst * 0.4;
+
+  if (p.goals >= 3) score += 3;
+  if (p.goals >= 5) score += 5;
+  if (p.goals >= 7) score += 10;
+  if (p.goals >= 10) score += 18;
+  if (p.disposals >= 25) score += 3;
+  if (p.disposals >= 30) score += 4;
+  if (p.tackles >= 8) score += 4;
+  if (p.marks >= 10) score += 3;
+  if (p.hitouts >= 25) score += 3;
+  if (score <= 0) return 0;
+  return Number(Math.max(1, Math.min(10, 10 * (1 - Math.exp(-score / 36)))).toFixed(2));
+}
+
+export default function TeamAveragePage() {
+  const dataDir = path.join(process.cwd(), "app", "data");
+  const players: PlayerInfo[] = JSON.parse(fs.readFileSync(path.join(dataDir, "players.json"), "utf8"));
+  const gameStats: Record<string, PlayerStatGame> = JSON.parse(fs.readFileSync(path.join(dataDir, "game-stats.json"), "utf8"));
+
+  const foopyMap = new Map<number, number[]>();
+  for (const game of Object.values(gameStats)) {
+    for (const block of game.teams ?? []) {
+      for (const stats of block.players ?? []) {
+        const playerId = stats.player?.id;
+        if (!playerId) continue;
+
+        const rating = foopyRating({
+          goals: num(stats.goals?.total),
+          goalAssists: num(stats.goals?.assists),
+          behinds: num(stats.behinds),
+          kicks: num(stats.kicks),
+          handballs: num(stats.handballs),
+          marks: num(stats.marks),
+          tackles: num(stats.tackles),
+          hitouts: num(stats.hitouts),
+          disposals: num(stats.disposals),
+          clearances: num(stats.clearances),
+          freesFor: num(stats.free_kicks?.for),
+          freesAgainst: num(stats.free_kicks?.against),
+        });
+
+        if (rating > 0) {
+          if (!foopyMap.has(playerId)) foopyMap.set(playerId, []);
+          foopyMap.get(playerId)!.push(rating);
+        }
+      }
+    }
+  }
+
+  function playerAverageFoopy(player: PlayerInfo) {
+    const statIds = new Set<number>();
+    if (player.apiSportsId) statIds.add(player.apiSportsId);
+    for (const statId of player.statsIds ?? []) statIds.add(statId);
+
+    const ratings: number[] = [];
+    for (const statId of statIds) {
+      for (const rating of foopyMap.get(statId) ?? []) ratings.push(rating);
+    }
+
+    return ratings.length ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length : null;
+  }
+
+  const rankings = TEAMS.map((team) => {
+    const rated = players
+      .filter((player) => player.team === team.name)
+      .map(playerAverageFoopy)
+      .filter((rating): rating is number => rating !== null);
+    const average = rated.length ? rated.reduce((sum, rating) => sum + rating, 0) / rated.length : null;
+    return { ...team, average, ratedCount: rated.length };
+  })
+    .filter((team): team is typeof TEAMS[number] & { average: number; ratedCount: number } => team.average !== null)
+    .sort((a, b) => b.average - a.average);
+
+  return (
+    <main style={pageStyle}>
+      <div style={wrapStyle}>
+        <Link href=".." style={backStyle}>Back</Link>
+        <header style={headerStyle}>
+          <div>
+            <h1 style={titleStyle}>Team Average</h1>
+            <p style={subStyle}>Teams ranked by average player Foopy rating</p>
+          </div>
+          <span style={countStyle}>{rankings.length} teams</span>
+        </header>
+
+        <section style={cardStyle}>
+          {rankings.map((team, index) => (
+            <Link key={team.slug} href={`/team/${team.slug}`} style={rowStyle}>
+              <div style={rankStyle}>{index + 1}</div>
+              <div style={{ ...logoWrapStyle, background: `${team.color}22`, borderColor: `${team.color}55` }}>
+                <img src={team.logo} alt={team.name} style={logoStyle} />
+              </div>
+              <div style={bodyStyle}>
+                <div style={nameStyle}>{team.name}</div>
+                <div style={metaStyle}>{team.ratedCount} rated players</div>
+              </div>
+              <div style={{ ...ratingStyle, background: foopyColor(team.average) }}>{team.average.toFixed(1)}</div>
+            </Link>
+          ))}
+        </section>
+      </div>
+    </main>
+  );
+}
+
+const pageStyle: React.CSSProperties = {
+  minHeight: "100dvh",
+  background: "#000",
+  color: "#fff",
+  paddingBottom: "calc(95px + env(safe-area-inset-bottom))",
+};
+
+const wrapStyle: React.CSSProperties = {
+  maxWidth: 680,
+  margin: "0 auto",
+  padding: "calc(env(safe-area-inset-top) + 14px) 12px 0",
+};
+
+const backStyle: React.CSSProperties = {
+  display: "inline-flex",
+  color: "#60a5fa",
+  textDecoration: "none",
+  fontSize: 15,
+  fontWeight: 900,
+  margin: "0 0 12px 6px",
+};
+
+const headerStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 14,
+  padding: "0 6px 14px",
+};
+
+const titleStyle: React.CSSProperties = {
+  margin: 0,
+  color: "#fff",
+  fontSize: 26,
+  fontWeight: 950,
+  letterSpacing: "-0.04em",
+};
+
+const subStyle: React.CSSProperties = {
+  margin: "4px 0 0",
+  color: "#64748b",
+  fontSize: 12,
+  fontWeight: 800,
+};
+
+const countStyle: React.CSSProperties = {
+  flexShrink: 0,
+  fontSize: 11,
+  fontWeight: 850,
+  color: "#64748b",
+  background: "rgba(255,255,255,.055)",
+  border: "1px solid rgba(255,255,255,.08)",
+  borderRadius: 999,
+  padding: "5px 10px",
+};
+
+const cardStyle: React.CSSProperties = {
+  background: "#080808",
+  border: "1px solid rgba(255,255,255,.1)",
+  borderRadius: 18,
+  overflow: "hidden",
+};
+
+const rowStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 12,
+  padding: "12px 14px",
+  borderBottom: "1px solid rgba(255,255,255,.055)",
+  textDecoration: "none",
+  color: "inherit",
+};
+
+const rankStyle: React.CSSProperties = {
+  width: 24,
+  color: "#64748b",
+  fontSize: 13,
+  fontWeight: 950,
+  textAlign: "right",
+  flexShrink: 0,
+};
+
+const logoWrapStyle: React.CSSProperties = {
+  width: 44,
+  height: 44,
+  borderRadius: "50%",
+  overflow: "hidden",
+  border: "1px solid rgba(255,255,255,.12)",
+  flexShrink: 0,
+};
+
+const logoStyle: React.CSSProperties = {
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+  display: "block",
+};
+
+const bodyStyle: React.CSSProperties = {
+  flex: 1,
+  minWidth: 0,
+};
+
+const nameStyle: React.CSSProperties = {
+  color: "#f8fafc",
+  fontSize: 15,
+  fontWeight: 900,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+};
+
+const metaStyle: React.CSSProperties = {
+  color: "#64748b",
+  fontSize: 11,
+  fontWeight: 800,
+  marginTop: 3,
+};
+
+const ratingStyle: React.CSSProperties = {
+  minWidth: 50,
+  borderRadius: 9,
+  padding: "5px 11px 6px",
+  color: "#fff",
+  fontSize: 16,
+  fontWeight: 950,
+  lineHeight: 1,
+  textAlign: "center",
+};

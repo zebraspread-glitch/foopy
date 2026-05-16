@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-const PREFETCH_ROUTES = ["/", "/ladder", "/cards", "/feed", "/dms", "/profile", "/search", "/stats"];
+const PREFETCH_ROUTES = ["/", "/ladder", "/cards", "/feed", "/dms", "/profile", "/search", "/stats", "/team-stats"];
 
 export default function NavigationEvents() {
   const router = useRouter();

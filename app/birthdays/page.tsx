@@ -101,6 +101,7 @@ function PlayerCard({ entry, isToday }: { entry: BirthdayEntry; isToday?: boolea
   const player = getPlayer(entry.name);
   const team = player?.team;
   const color = team ? (TEAM_COLORS[team] ?? "#1e293b") : "#1e293b";
+  const teamLogo = team ? TEAM_LOGOS[team] : null;
   const imgSrc = team ? playerImagePath(entry.name, team) : null;
   const [imgErr, setImgErr] = useState(false);
   const playerSlug = player?.id ?? entry.name.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
@@ -155,6 +156,12 @@ function PlayerCard({ entry, isToday }: { entry: BirthdayEntry; isToday?: boolea
           </div>
         )}
       </div>
+
+      {teamLogo && (
+        <div style={teamLogoWrapStyle}>
+          <img src={teamLogo} alt={team ?? ""} style={teamLogoStyle} loading="lazy" />
+        </div>
+      )}
 
       {/* Birthday emoji or date */}
       {isToday ? (
@@ -353,4 +360,24 @@ const emptyStyle: React.CSSProperties = {
   background: "rgba(255,255,255,.03)",
   border: "1px solid rgba(255,255,255,.07)",
   borderRadius: 18,
+};
+
+const teamLogoWrapStyle: React.CSSProperties = {
+  width: 34,
+  height: 34,
+  borderRadius: "50%",
+  background: "rgba(0,0,0,.24)",
+  border: "1px solid rgba(255,255,255,.1)",
+  overflow: "hidden",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexShrink: 0,
+};
+
+const teamLogoStyle: React.CSSProperties = {
+  width: "100%",
+  height: "100%",
+  borderRadius: "50%",
+  objectFit: "cover",
 };
