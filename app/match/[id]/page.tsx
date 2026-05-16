@@ -151,9 +151,11 @@ function liveFeedTeamColors(team: any) {
     hawthorn:        { primary: "#f59e0b", secondary: "#78350f", text: "#000000" },
     "hawthorn hawks": { primary: "#f59e0b", secondary: "#78350f", text: "#000000" },
     // Melbourne: Red → Navy
-    melbourne:       { primary: "#ef4444", secondary: "#1e40af", text: "#ffffff" },
+    melbourne:           { primary: "#ef4444", secondary: "#1e40af", text: "#ffffff" },
+    "melbourne demons":  { primary: "#ef4444", secondary: "#1e40af", text: "#ffffff" },
     // North Melbourne: Blue → White
-    "north melbourne": { primary: "#1d4ed8", secondary: "#ffffff", text: "#ffffff" },
+    "north melbourne":             { primary: "#1d4ed8", secondary: "#ffffff", text: "#ffffff" },
+    "north melbourne kangaroos":   { primary: "#1d4ed8", secondary: "#ffffff", text: "#ffffff" },
     // Port Adelaide: Black → Teal
     "port adelaide":       { primary: "#1a1a1a", secondary: "#06b6d4", text: "#000000" },
     "port adelaide power": { primary: "#1a1a1a", secondary: "#06b6d4", text: "#000000" },
