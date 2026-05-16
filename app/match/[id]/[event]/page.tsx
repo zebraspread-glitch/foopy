@@ -48,10 +48,31 @@ type PlayerRecord = { name?: string; player?: string; club?: string; team?: stri
 function slugify(s: string) { return s.toLowerCase().replace(/[^a-z0-9]/g, ""); }
 function playerSlug(s: string) { return s.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""); }
 
+const PLAYER_IMAGE_ID_OVERRIDES: Record<string, string> = {
+  joshuarachele: "joshrachele",
+  lachlanschultz: "lachieschultz",
+  lachlansullivan: "lachiesullivan",
+  samuelwicks: "samwicks",
+  zacharywilliams: "zacwilliams",
+};
+
+function cleanPlayerName(value: string) {
+  return value
+    .replace(/\s*(?:Â·|·|\|)\s*(GOAL|BEHIND|SCORE|MARK|KICK|HANDBALL|TACKLE|HITOUT|CLEARANCE)\s*$/i, "")
+    .trim();
+}
+
 function eventKeyAliases(eventKey: string) {
   const aliases = [eventKey];
   const modern = eventKey.match(/^(q.+?_m.+?_t.+?)_team[^_]*_p([^_]*)_i\d+$/);
   if (modern) aliases.push(`${modern[1]}_p${modern[2]}`);
+  const score = eventKey.match(/^(score_.+?_\d+_\d+)_([^_]+)$/);
+  if (score) {
+    aliases.push(`${score[1]}_SCORE`);
+    if (score[2] === "SCORE") {
+      aliases.push(`${score[1]}_GOAL`, `${score[1]}_BEHIND`);
+    }
+  }
 
   return Array.from(new Set(aliases.filter(Boolean)));
 }
@@ -71,6 +92,7 @@ function eventKeyAliasesFromParams(eventKey: string, rawAliases: string | null) 
 
 function stableEventKey(keys: string[], fallback: string) {
   return (
+    keys.find((key) => key.startsWith("score_") && key.endsWith("_SCORE")) ??
     keys.find((key) => key.startsWith("score_")) ??
     keys.find((key) => key.startsWith("player_")) ??
     keys.find((key) => !key.startsWith("feed_")) ??
@@ -118,12 +140,18 @@ const CLUB_FOLDER: Record<string, string> = {
 };
 
 function resolvePlayerImage(name: string, team: string) {
+  const safeName = cleanPlayerName(name);
   const found = (playerStatsJson as PlayerRecord[]).find(
-    p => slugify(p.name ?? p.player ?? "") === slugify(name)
+    p => {
+      const primaryName = p.name ?? p.player ?? "";
+      const aliases = Array.isArray((p as any).aliases) ? (p as any).aliases : [];
+      return [primaryName, ...aliases].some((alias) => slugify(alias) === slugify(safeName));
+    }
   );
   const club = found?.club ?? found?.team ?? team;
   const folder = CLUB_FOLDER[club] ?? slugify(club);
-  const img = found?.image ?? found?.imagePath ?? found?.playerImage ?? `${slugify(name)}.png`;
+  const imageId = PLAYER_IMAGE_ID_OVERRIDES[slugify(found?.name ?? found?.player ?? safeName)] ?? slugify(found?.name ?? found?.player ?? safeName);
+  const img = found?.image ?? found?.imagePath ?? found?.playerImage ?? `${imageId}.png`;
   if (!folder || !img) return "";
   if (String(img).startsWith("/")) return String(img);
   return `/players/${folder}/${img}`;
@@ -140,6 +168,10 @@ export default function EventCommentsPage() {
   const eventKeys = useMemo(
     () => eventKeyAliasesFromParams(eventKey, aliasParam),
     [eventKey, aliasParam]
+  );
+  const canonicalEventKey = useMemo(
+    () => stableEventKey(eventKeys, eventKey),
+    [eventKeys, eventKey]
   );
   const highlight = searchParams.get("highlight");
 
@@ -330,8 +362,7 @@ export default function EventCommentsPage() {
     const target = idMatch ? Number(idMatch[1]) : null;
     const found = target != null ? players.find(p => Array.isArray(p.eventIds) && p.eventIds.map(Number).includes(target)) : null;
     const team = searchParams.get("team") || found?.club || found?.team || "";
-    // Player name is everything before the " · " separator
-    const playerName = label.includes(" · ") ? label.split(" · ")[0].trim() : label;
+    const playerName = found?.name ?? found?.player ?? cleanPlayerName(label);
     const img = playerName ? resolvePlayerImage(playerName, team) : "";
     return { playerName, team, img };
   }, [isPlayerComment, eventParts, label, searchParams]);
@@ -353,6 +384,21 @@ export default function EventCommentsPage() {
     };
   }, []);
 
+  const migrateEventComments = useCallback(async () => {
+    if (!gameId || !canonicalEventKey) return;
+
+    const keysToMigrate = eventKeys.filter((key) => key && key !== canonicalEventKey);
+    if (keysToMigrate.length === 0) return;
+
+    const { error } = await supabase
+      .from("feed_comments")
+      .update({ event_key: canonicalEventKey })
+      .eq("game_id", gameId)
+      .in("event_key", keysToMigrate);
+
+    if (error) console.error("[event comments] key migration failed:", error);
+  }, [gameId, canonicalEventKey, eventKeys]);
+
   const loadComments = useCallback(async (currentSort: "live" | "top" = "live") => {
     if (!gameId || !eventKey) {
       setLoading(false);
@@ -367,11 +413,13 @@ export default function EventCommentsPage() {
     const uid = sessionData.session?.user.id ?? null;
     setUserId(uid);
 
+    await migrateEventComments();
+
     const query = supabase
       .from("feed_comments")
       .select("id, game_id, user_id, parent_id, body, likes, created_at, event_key")
       .eq("game_id", gameId)
-      .in("event_key", eventKeys);
+      .in("event_key", Array.from(new Set([...eventKeys, canonicalEventKey])));
 
     const { data: rows, error } = currentSort === "top"
       ? await query.order("likes", { ascending: false }).order("created_at", { ascending: false })
@@ -460,7 +508,7 @@ export default function EventCommentsPage() {
 
     setComments(topLevel);
     setLoading(false);
-  }, [gameId, eventKey, eventKeys]);
+  }, [gameId, eventKey, eventKeys, canonicalEventKey, migrateEventComments]);
 
   useEffect(() => {
     loadComments(sort);
@@ -480,7 +528,6 @@ export default function EventCommentsPage() {
     haptic("medium");
     setSubmitting(true);
     setErrorText(null);
-    const canonicalEventKey = stableEventKey(eventKeys, eventKey);
 
     const insertPayload = {
       game_id: gameId,
@@ -499,17 +546,7 @@ export default function EventCommentsPage() {
       return;
     }
 
-    const keysToMigrate = eventKeys.filter((key) => key !== canonicalEventKey);
-    if (keysToMigrate.length > 0) {
-      supabase
-        .from("feed_comments")
-        .update({ event_key: canonicalEventKey })
-        .eq("game_id", gameId)
-        .in("event_key", keysToMigrate)
-        .then(({ error: migrateError }) => {
-          if (migrateError) console.error("[event comments] key migration failed:", migrateError);
-        });
-    }
+    await migrateEventComments();
 
     if (replyTo) {
       setOpenReplies((prev) => {
@@ -582,7 +619,7 @@ export default function EventCommentsPage() {
       comment_body: comment.body.slice(0, 100),
       comment_id: comment.id,
       game_id: gameId,
-      event_key: eventKey,
+      event_key: canonicalEventKey,
     });
   }
 

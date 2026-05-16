@@ -78,7 +78,7 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, ho
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   useEffect(() => {
-    pollRef.current = setInterval(loadVotes, 15_000);
+    pollRef.current = setInterval(loadVotes, 10_000);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [loadVotes]);
 

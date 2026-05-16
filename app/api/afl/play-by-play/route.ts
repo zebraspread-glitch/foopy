@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 const API_BASE = "https://v1.afl.api-sports.io";
-const CACHE_MS = 60_000;
+const CACHE_MS = 30_000;
 
 const cache = new Map<string, { time: number; data: any }>();
 

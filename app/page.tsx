@@ -510,13 +510,14 @@ export default function HomePage() {
     }
   }, []);
 
-  // Auto-poll every 20s so live scores stay current
+  // Auto-poll quickly so live scores stay current without refreshing hidden tabs
   useEffect(() => {
     const timer = setInterval(() => {
+      if (document.hidden) return;
       getGames()
         .then(data => setGames(data as Game[]))
         .catch(() => {});
-    }, 20_000);
+    }, 5_000);
     return () => clearInterval(timer);
   }, []);
 

@@ -272,12 +272,13 @@ export default function LadderPage() {
     activeTab === "live"   ? liveLadder :
     ladder;
 
-  // Poll every 20s when on the live tab so standings stay current
+  // Poll quickly when on the live tab so standings stay current
   useEffect(() => {
     if (activeTab !== "live") return;
     const timer = setInterval(() => {
+      if (document.hidden) return;
       getGames().then(data => setGames(data as Game[])).catch(() => {});
-    }, 20_000);
+    }, 5_000);
     return () => clearInterval(timer);
   }, [activeTab]);
 

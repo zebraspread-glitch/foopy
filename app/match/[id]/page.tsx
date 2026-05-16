@@ -184,6 +184,20 @@ function scoreBasedEventKey(team: any, homeScore: any, awayScore: any, type: any
   return `score_${safeTeam}_${home}_${away}_${safeType}`;
 }
 
+function scoreBasedEventKeyAliases(team: any, homeScore: any, awayScore: any, type: any) {
+  const key = scoreBasedEventKey(team, homeScore, awayScore, type);
+  if (!key) return [];
+
+  const aliases = [key];
+  const safeType = safeText(type, "").toUpperCase();
+  if (safeType === "GOAL" || safeType === "BEHIND" || safeType === "SCORE") {
+    const genericKey = scoreBasedEventKey(team, homeScore, awayScore, "SCORE");
+    if (genericKey) aliases.push(genericKey);
+  }
+
+  return Array.from(new Set(aliases));
+}
+
 function eventScoreBasedKey(event: LiveEvent) {
   if (event.type === "QUARTER_BREAK") return "";
   const type = safeText(event.type, "").toUpperCase();
@@ -198,10 +212,12 @@ function scoreEventKey(event: LiveEvent, index = 0) {
 }
 
 function eventKeyAliases(event: LiveEvent, index = 0) {
+  const team = safeText((event as any).teamName || teamNameFromEvent(event), "");
   const aliases = [
     (event as any).displayEventKey,
     (event as any).optimisticKey,
     eventScoreBasedKey(event),
+    ...scoreBasedEventKeyAliases(team, event.homeScore, event.awayScore, event.type),
     (event as any).rowKey,
     `q${eventQuarter(event)}_m${event.minute ?? 0}_t${event.type ?? ""}_p${(event as any).playerId ?? index}`,
     `q${eventQuarter(event)}_m${event.minute ?? 0}_t${event.type ?? ""}_team${event.teamId ?? ""}_p${(event as any).playerId ?? ""}_i${index}`,
@@ -343,6 +359,20 @@ function slugName(name: any) {
   return safeText(name, "").toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
+const PLAYER_IMAGE_ID_OVERRIDES: Record<string, string> = {
+  joshuarachele: "joshrachele",
+  lachlanschultz: "lachieschultz",
+  lachlansullivan: "lachiesullivan",
+  samuelwicks: "samwicks",
+  zacharywilliams: "zacwilliams",
+};
+
+function cleanPlayerName(value: any) {
+  return safeText(value, "")
+    .replace(/\s*(?:Â·|·|\|)\s*(GOAL|BEHIND|SCORE|MARK|KICK|HANDBALL|TACKLE|HITOUT|CLEARANCE)\s*$/i, "")
+    .trim();
+}
+
 function idList(value: unknown) {
   if (Array.isArray(value)) return value.map(Number).filter(Number.isFinite);
   const id = Number(value);
@@ -432,11 +462,14 @@ function getInitials(name: any) {
 }
 
 function findPlayerInfo(name: any, team?: any) {
-  const safeName = safeText(name, "").toLowerCase().trim();
+  const safeName = cleanPlayerName(name).toLowerCase().trim();
   const safeTeam = safeText(team, "");
 
   const matches = (playerStatsJson as any[]).filter(
-    (p) => String(p.name || "").toLowerCase().trim() === safeName
+    (p) => {
+      const aliases = Array.isArray(p.aliases) ? p.aliases : [];
+      return [p.name, p.player, ...aliases].some((alias) => String(alias || "").toLowerCase().trim() === safeName);
+    }
   );
 
   if (safeTeam) {
@@ -452,11 +485,12 @@ function playerClub(name: any) {
 }
 
 function playerImagePath(name: any, team?: any) {
-  const safeName = safePlayerName(name, "");
+  const safeName = cleanPlayerName(safePlayerName(name, ""));
   const found = findPlayerInfo(safeName, team);
   const club = safeText(team || found?.club || found?.team, "");
   const folder = clubToPlayerFolder(club);
-  const image = found?.image || found?.imagePath || found?.playerImage || `${slugName(safeName)}.png`;
+  const imageId = PLAYER_IMAGE_ID_OVERRIDES[slugName(found?.name || found?.player || safeName)] ?? slugName(found?.name || found?.player || safeName);
+  const image = found?.image || found?.imagePath || found?.playerImage || `${imageId}.png`;
 
   if (!folder || !image) return "";
   if (String(image).startsWith("/")) return String(image);
@@ -1799,11 +1833,20 @@ export default function MatchPage() {
     }
 
     loadMatch(true);
-    const interval = setInterval(() => loadMatch(false), 10_000);
+    const interval = setInterval(() => {
+      if (document.hidden) return;
+      loadMatch(false);
+    }, 5_000);
+
+    const handleVisibility = () => {
+      if (!document.hidden) loadMatch(false);
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
 
     return () => {
       cancelled = true;
       clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, [mounted, id]);
 
@@ -2185,11 +2228,20 @@ export default function MatchPage() {
     }
 
     loadLivePlayerStats();
-    const interval = setInterval(loadLivePlayerStats, 60_000);
+    const interval = setInterval(() => {
+      if (document.hidden) return;
+      loadLivePlayerStats();
+    }, 30_000);
+
+    const handleVisibility = () => {
+      if (!document.hidden) loadLivePlayerStats();
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
 
     return () => {
       cancelled = true;
       clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, [mounted, game, apiSportsGameId]);
 
@@ -2326,12 +2378,21 @@ export default function MatchPage() {
       if (!cancelled) loadFromSupabase();
     });
 
-    // Re-sync and reload every 10s. Realtime can miss delete/replace cycles, so the poll is the reliability layer.
+    // Re-sync and reload every 10s while visible. Realtime can miss delete/replace cycles, so the poll is the reliability layer.
     const syncInterval = setInterval(() => {
+      if (document.hidden) return;
       triggerSync().then(() => {
         if (!cancelled) loadFromSupabase();
       });
     }, 10_000);
+
+    const handleVisibility = () => {
+      if (document.hidden) return;
+      triggerSync().then(() => {
+        if (!cancelled) loadFromSupabase();
+      });
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
 
     // ── 3. Subscribe to Realtime — new events pushed automatically ───────────
     const channel = supabase
@@ -2349,6 +2410,7 @@ export default function MatchPage() {
     return () => {
       cancelled = true;
       clearInterval(syncInterval);
+      document.removeEventListener("visibilitychange", handleVisibility);
       supabase.removeChannel(channel);
     };
   }, [mounted, apiSportsGameId, game, processSupabaseEvents]);

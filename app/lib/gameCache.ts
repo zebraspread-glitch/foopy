@@ -11,9 +11,9 @@
  */
 
 const LS_KEY = "foopy_games_v2";
-const LS_TTL_MS = 5 * 60_000;    // 5 minutes — localStorage freshness window
-const MEM_TTL_MS = 30_000;       // 30 seconds — memory cache freshness
-const MEM_LIVE_TTL_MS = 15_000;  // 15 seconds when a game is live
+const LS_TTL_MS = 60_000;      // 1 minute - localStorage freshness window
+const MEM_TTL_MS = 15_000;     // 15 seconds - memory cache freshness
+const MEM_LIVE_TTL_MS = 5_000; // 5 seconds when a game is live
 
 type CacheEntry = { data: unknown[]; fetchedAt: number };
 

@@ -1,8 +1,8 @@
 export const runtime = "nodejs";
 
-// Cache on the server for 45 seconds (revalidates in background)
-// so the first visitor of each minute gets a warm cache hit
-export const revalidate = 45;
+// Keep scores very fresh while still sharing one short server cache
+// across visitors instead of every browser hitting Squiggle directly.
+export const revalidate = 10;
 
 export async function GET(request: Request) {
   const year = new Date().getFullYear();
@@ -14,8 +14,8 @@ export async function GET(request: Request) {
       headers: {
         "User-Agent": "Foopy AFL App (foopy.app)",
       },
-      // Next.js data cache — revalidate every 45 seconds
-      ...(fresh ? { cache: "no-store" as const } : { next: { revalidate: 45 } }),
+      // Next.js data cache - revalidate every 10 seconds
+      ...(fresh ? { cache: "no-store" as const } : { next: { revalidate: 10 } }),
     }
   );
 
@@ -33,8 +33,8 @@ export async function GET(request: Request) {
     headers: fresh ? {
       "Cache-Control": "no-store",
     } : {
-      // Tell the browser/CDN: serve stale for up to 60s while revalidating
-      "Cache-Control": "public, max-age=45, stale-while-revalidate=60",
+      // Tell the browser/CDN: serve briefly stale data while revalidating
+      "Cache-Control": "public, max-age=10, stale-while-revalidate=20",
     },
   });
 }

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const CACHE_MS = 60_000;
+const CACHE_MS = 30_000;
 const cache = new Map<string, { time: number; data: any }>();
 
 export async function GET(req: Request) {
