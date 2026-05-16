@@ -69,6 +69,15 @@ function eventKeyAliasesFromParams(eventKey: string, rawAliases: string | null) 
   return Array.from(new Set(aliases.filter(Boolean)));
 }
 
+function stableEventKey(keys: string[], fallback: string) {
+  return (
+    keys.find((key) => key.startsWith("score_")) ??
+    keys.find((key) => key.startsWith("player_")) ??
+    keys.find((key) => !key.startsWith("feed_")) ??
+    fallback
+  );
+}
+
 function mixColor(a: string, b: string, t: number) {
   const ah = a.replace("#", ""), bh = b.replace("#", "");
   const r = Math.round(parseInt(ah.slice(0,2),16) + t*(parseInt(bh.slice(0,2),16)-parseInt(ah.slice(0,2),16)));
@@ -471,15 +480,17 @@ export default function EventCommentsPage() {
     haptic("medium");
     setSubmitting(true);
     setErrorText(null);
-    const canonicalEventKey = eventKeys[0] ?? eventKey;
+    const canonicalEventKey = stableEventKey(eventKeys, eventKey);
 
-    const { data: inserted, error } = await supabase.from("feed_comments").insert({
+    const insertPayload = {
       game_id: gameId,
       user_id: userId,
       parent_id: replyTo?.id ?? null,
       body: cleanBody,
       event_key: canonicalEventKey,
-    }).select("id").single();
+    };
+
+    const { error } = await supabase.from("feed_comments").insert(insertPayload);
 
     if (error) {
       console.error(error);
@@ -488,7 +499,17 @@ export default function EventCommentsPage() {
       return;
     }
 
-    const newCommentId = (inserted as { id: string } | null)?.id;
+    const keysToMigrate = eventKeys.filter((key) => key !== canonicalEventKey);
+    if (keysToMigrate.length > 0) {
+      supabase
+        .from("feed_comments")
+        .update({ event_key: canonicalEventKey })
+        .eq("game_id", gameId)
+        .in("event_key", keysToMigrate)
+        .then(({ error: migrateError }) => {
+          if (migrateError) console.error("[event comments] key migration failed:", migrateError);
+        });
+    }
 
     if (replyTo) {
       setOpenReplies((prev) => {
@@ -498,7 +519,7 @@ export default function EventCommentsPage() {
       });
       // Notify parent comment author of reply
       if (replyTo.user_id !== userId) {
-        createNotification(replyTo.user_id, "reply_comment", userId, {
+        void createNotification(replyTo.user_id, "reply_comment", userId, {
           comment_body: cleanBody.slice(0, 100),
           comment_id: replyTo.id,
           game_id: gameId,
@@ -508,12 +529,11 @@ export default function EventCommentsPage() {
     }
 
     // Notify any @mentioned users
-    await notifyMentions(cleanBody, userId, {
+    notifyMentions(cleanBody, userId, {
       comment_body: cleanBody.slice(0, 100),
-      comment_id: newCommentId,
       game_id: gameId,
       event_key: canonicalEventKey,
-    });
+    }).catch((notifyError) => console.error("[event comments] mention notify failed:", notifyError));
 
     setBody("");
     setReplyTo(null);

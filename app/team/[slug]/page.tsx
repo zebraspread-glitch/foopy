@@ -182,6 +182,7 @@ const TEAM_FOLDER: Record<string, string> = {
 };
 
 const PLAYER_IMAGE_ID_OVERRIDES: Record<string, string> = {
+  joshuarachele: "joshrachele",
   lachlanschultz: "lachieschultz",
   lachlansullivan: "lachiesullivan",
   samuelwicks: "samwicks",
