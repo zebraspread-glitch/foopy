@@ -1657,6 +1657,7 @@ export default function MatchPage() {
   const [eventCommentCounts, setEventCommentCounts] = useState<Record<string, number>>({});
   const seenEventKeys = useRef(new Set<string>());
   const initialFeedLoaded = useRef(false);
+  const lastScoreRef = useRef<{ home: number; away: number } | null>(null);
   const [freshEventKeys, setFreshEventKeys] = useState(new Set<string>());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -1853,27 +1854,52 @@ export default function MatchPage() {
   })();
   const currentPeriod = Math.max(periodFromEvents, periodFromTimestr);
 
-  // Send current score to server on every change — server diffs against DB snapshot
+  // Detect score changes client-side and send the specific event to the server
   useEffect(() => {
     if (!game || !apiSportsGameId || getStatus(game) === "FINAL") return;
     const hscore = Number(game.hscore ?? 0);
     const ascore = Number(game.ascore ?? 0);
-    if (hscore === 0 && ascore === 0) return;
+
+    // First load: set baseline without firing any events
+    if (lastScoreRef.current === null) {
+      lastScoreRef.current = { home: hscore, away: ascore };
+      return;
+    }
+
+    const last = lastScoreRef.current;
+    const homeDelta = hscore - last.home;
+    const awayDelta = ascore - last.away;
+
+    // Always advance the ref, even for non-standard deltas
+    lastScoreRef.current = { home: hscore, away: ascore };
+
+    if (homeDelta === 0 && awayDelta === 0) return;
+
+    let teamId: number | null = null;
+    let type: "GOAL" | "BEHIND" | null = null;
+
+    if (homeDelta === 6 && awayDelta === 0) { teamId = getApiTeamId(game.hteam); type = "GOAL"; }
+    else if (homeDelta === 1 && awayDelta === 0) { teamId = getApiTeamId(game.hteam); type = "BEHIND"; }
+    else if (awayDelta === 6 && homeDelta === 0) { teamId = getApiTeamId(game.ateam); type = "GOAL"; }
+    else if (awayDelta === 1 && homeDelta === 0) { teamId = getApiTeamId(game.ateam); type = "BEHIND"; }
+
+    if (!teamId || !type) return;
+
     const { period, minute } = clockFromTimestr(game.timestr);
     fetch("/api/afl/score-check", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         gameId: apiSportsGameId,
-        hteamId: getApiTeamId(game.hteam),
-        ateamId: getApiTeamId(game.ateam),
+        teamId,
+        type,
         hscore,
         ascore,
         period: period ?? currentPeriod ?? null,
         minute: minute ?? null,
       }),
     }).catch(() => {});
-  }, [game?.hscore, game?.ascore, apiSportsGameId, currentPeriod]);
+  }, [game?.hscore, game?.ascore, apiSportsGameId]);
 
   const displayLiveEvents = useMemo(() => liveEvents, [liveEvents]);
 
