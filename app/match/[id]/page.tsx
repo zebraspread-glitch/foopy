@@ -2542,12 +2542,6 @@ export default function MatchPage() {
                       <span style={{ fontSize: 14, fontWeight: 800, color: "#ffffff" }}>{game.timestr || getLiveGameClock(liveEvents)}</span>
                     </>
                   )}
-                  <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.72)" }}>·</span>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                  <span style={{ fontSize: 14, fontWeight: 800, color: "#ffffff" }}>{Math.max(1, liveViewerCount)}</span>
                 </div>
               ) : (
                 <div style={{
@@ -2561,6 +2555,14 @@ export default function MatchPage() {
                   {statusBadgeTone.label}
                 </div>
               )}
+
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#94a3b8" }}>{Math.max(1, liveViewerCount)}</span>
+              </div>
 
             </div>
 
