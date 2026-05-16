@@ -4974,14 +4974,14 @@
             "hitouts": 32,
             "clearances": 41
           },
-          "marks": 104,
+          "marks": 105,
           "scoring": {
             "goals": 20,
             "assists": 13,
             "behinds": 13
           },
           "defence": {
-            "tackles": 72
+            "tackles": 73
           }
         }
       },
@@ -5007,12 +5007,12 @@
             "behinds": 10
           },
           "defence": {
-            "tackles": 43
+            "tackles": 42
           }
         }
       }
     ],
-    "savedAt": "2026-05-16T05:58:16.787Z"
+    "savedAt": "2026-05-16T08:54:08.198Z"
   },
   "3430": {
     "gameId": 3430,
@@ -5024,23 +5024,23 @@
         },
         "statistics": {
           "disposals": {
-            "disposals": 0,
-            "kicks": 0,
-            "handballs": 0,
-            "free_kicks": 0
+            "disposals": 395,
+            "kicks": 225,
+            "handballs": 170,
+            "free_kicks": 19
           },
           "stoppages": {
-            "hitouts": 0,
-            "clearances": 0
+            "hitouts": 42,
+            "clearances": 33
           },
-          "marks": 0,
+          "marks": 109,
           "scoring": {
-            "goals": 0,
-            "assists": 0,
-            "behinds": 0
+            "goals": 12,
+            "assists": 9,
+            "behinds": 6
           },
           "defence": {
-            "tackles": 0
+            "tackles": 46
           }
         }
       },
@@ -5050,28 +5050,28 @@
         },
         "statistics": {
           "disposals": {
-            "disposals": 0,
-            "kicks": 0,
-            "handballs": 0,
-            "free_kicks": 0
+            "disposals": 365,
+            "kicks": 221,
+            "handballs": 144,
+            "free_kicks": 21
           },
           "stoppages": {
-            "hitouts": 0,
-            "clearances": 0
+            "hitouts": 25,
+            "clearances": 39
           },
-          "marks": 0,
+          "marks": 94,
           "scoring": {
-            "goals": 0,
-            "assists": 0,
-            "behinds": 0
+            "goals": 18,
+            "assists": 11,
+            "behinds": 9
           },
           "defence": {
-            "tackles": 0
+            "tackles": 55
           }
         }
       }
     ],
-    "savedAt": "2026-05-16T05:58:16.787Z"
+    "savedAt": "2026-05-16T08:54:08.198Z"
   },
   "3431": {
     "gameId": 3431,
@@ -5130,6 +5130,6 @@
         }
       }
     ],
-    "savedAt": "2026-05-16T05:58:16.787Z"
+    "savedAt": "2026-05-16T08:54:08.198Z"
   }
 }
