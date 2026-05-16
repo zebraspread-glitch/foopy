@@ -192,17 +192,28 @@ export function findPlayerByApiSportsId(id?: number | string) {
   );
 }
 
-export function findPlayerByEventId(id?: number | string) {
+export function findPlayerByEventId(id?: number | string, preferTeam?: string) {
   if (id == null || id === "") return null;
 
   const target = Number(id);
+  const candidates = (playerStatsJson as any[]).filter((p) => {
+    const eventIds = Array.isArray(p.eventIds) ? p.eventIds.map(Number) : [];
+    return eventIds.includes(target);
+  });
 
-  return (
-    (playerStatsJson as any[]).find((p) => {
-      const eventIds = Array.isArray(p.eventIds) ? p.eventIds.map(Number) : [];
-      return eventIds.includes(target);
-    }) ?? null
-  );
+  if (candidates.length === 0) return null;
+  if (candidates.length === 1) return candidates[0];
+
+  if (preferTeam) {
+    const norm = preferTeam.toLowerCase().replace(/[^a-z]/g, "");
+    const match = candidates.find((p) => {
+      const club = String(p.club ?? p.team ?? "").toLowerCase().replace(/[^a-z]/g, "");
+      return club && club.includes(norm);
+    });
+    if (match) return match;
+  }
+
+  return candidates[0] ?? null;
 }
 
 export function foopyRating(p: PlayerStat) {
