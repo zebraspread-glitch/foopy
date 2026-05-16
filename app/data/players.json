@@ -1228,8 +1228,8 @@
     "name": "Jack Ison",
     "team": "Carlton",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 2102,
+    "eventIds": 2103,
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.compp-carlton-blues--jack-ison"
   },
@@ -1500,8 +1500,8 @@
     "name": "Wade Derksen",
     "team": "Carlton",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1906,
+    "eventIds": 1906,
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.compp-carlton-blues--wade-derksen"
   },
@@ -9160,7 +9160,7 @@
     "aliases": [],
     "apiSportsId": 2052,
     "eventIds": [
-      2052
+      2096
     ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.compp-western-bulldogs--louis-emmett"
