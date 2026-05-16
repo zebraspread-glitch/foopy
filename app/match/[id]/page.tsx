@@ -1644,6 +1644,119 @@ function getTeamStatFromBlock(team: any, category: string, key: string) {
   return Number(team.statistics?.[category]?.[key] ?? 0);
 }
 
+function ScoreWorm({
+  events,
+  homeTeam,
+  awayTeam,
+  homeColor,
+  awayColor,
+  homeLogo,
+  awayLogo,
+  homeAbbr,
+  awayAbbr,
+}: {
+  events: LiveEvent[];
+  homeTeam: string;
+  awayTeam: string;
+  homeColor: string;
+  awayColor: string;
+  homeLogo: string;
+  awayLogo: string;
+  homeAbbr: string;
+  awayAbbr: string;
+}) {
+  // Build margin sequence from scoring events that have both scores
+  const scoringEvents = events
+    .filter(
+      (e) =>
+        (e.type === "GOAL" || e.type === "BEHIND") &&
+        e.homeScore != null &&
+        e.awayScore != null
+    )
+    .sort((a, b) => {
+      if (Number(a.period ?? 0) !== Number(b.period ?? 0))
+        return Number(a.period ?? 0) - Number(b.period ?? 0);
+      return Number(a.minute ?? 0) - Number(b.minute ?? 0);
+    });
+
+  if (scoringEvents.length === 0) return null;
+
+  // Points: start at 0, then each scoring event
+  const margins = [
+    0,
+    ...scoringEvents.map((e) => Number(e.homeScore) - Number(e.awayScore)),
+  ];
+
+  const maxAbs = Math.max(...margins.map(Math.abs), 6);
+  const W = 600;
+  const H = 160;
+  const padX = 10;
+  const midY = H / 2;
+
+  const xOf = (i: number) => padX + (i / (margins.length - 1)) * (W - padX * 2);
+  const yOf = (margin: number) => midY - (margin / maxAbs) * (midY - 12);
+
+  const pathD = margins
+    .map((m, i) => `${i === 0 ? "M" : "L"}${xOf(i).toFixed(1)},${yOf(m).toFixed(1)}`)
+    .join(" ");
+
+  // Colour the worm segment by segment based on who's leading
+  const segments: { d: string; color: string }[] = [];
+  for (let i = 1; i < margins.length; i++) {
+    const x1 = xOf(i - 1), y1 = yOf(margins[i - 1]);
+    const x2 = xOf(i), y2 = yOf(margins[i]);
+    const leading = margins[i - 1] > 0 ? homeColor : margins[i - 1] < 0 ? awayColor : "#94a3b8";
+    segments.push({ d: `M${x1.toFixed(1)},${y1.toFixed(1)} L${x2.toFixed(1)},${y2.toFixed(1)}`, color: leading });
+  }
+
+  // Quarter break x positions
+  const quarterBreaks: number[] = [];
+  for (let i = 1; i < scoringEvents.length; i++) {
+    if (Number(scoringEvents[i].period ?? 0) > Number(scoringEvents[i - 1].period ?? 0)) {
+      quarterBreaks.push(xOf(i));
+    }
+  }
+
+  const lastMargin = margins[margins.length - 1];
+  const lastX = xOf(margins.length - 1);
+  const lastY = yOf(lastMargin);
+
+  return (
+    <div style={{ margin: "0 0 20px", background: "#111", borderRadius: 12, padding: "14px 8px 8px", overflow: "hidden" }}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", display: "block" }}>
+        {/* Mid line */}
+        <line x1={padX} y1={midY} x2={W - padX} y2={midY} stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+
+        {/* Quarter break lines */}
+        {quarterBreaks.map((x, i) => (
+          <line key={i} x1={x} y1={8} x2={x} y2={H - 8} stroke="rgba(255,255,255,0.15)" strokeWidth="1" strokeDasharray="3 3" />
+        ))}
+
+        {/* Worm segments coloured by leader */}
+        {segments.map((seg, i) => (
+          <path key={i} d={seg.d} stroke={seg.color} strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        ))}
+
+        {/* Current end dot */}
+        <circle cx={lastX} cy={lastY} r="4" fill={lastMargin > 0 ? homeColor : lastMargin < 0 ? awayColor : "#94a3b8"} />
+
+        {/* Team labels left side */}
+        <text x={padX + 2} y={18} fill={homeColor} fontSize="11" fontWeight="700" fontFamily="sans-serif">{homeAbbr}</text>
+        <text x={padX + 2} y={H - 6} fill={awayColor} fontSize="11" fontWeight="700" fontFamily="sans-serif">{awayAbbr}</text>
+
+        {/* Y-axis tick labels */}
+        {[6, 12].map((v) => (
+          <g key={v}>
+            <text x={W - padX + 2} y={yOf(v) + 4} fill="rgba(255,255,255,0.35)" fontSize="9" fontFamily="sans-serif">{v}</text>
+            <text x={W - padX + 2} y={yOf(-v) + 4} fill="rgba(255,255,255,0.35)" fontSize="9" fontFamily="sans-serif">{v}</text>
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+
 export default function MatchPage() {
   const params = useParams();
   const router = useRouter();
@@ -2789,6 +2902,18 @@ export default function MatchPage() {
         {activeTab === "game" && (
           <section style={sectionStyle}>
             <h2 style={sectionHeadingStyle}>Game Stats</h2>
+
+            <ScoreWorm
+              events={liveEvents}
+              homeTeam={game.hteam}
+              awayTeam={game.ateam}
+              homeColor={teamColor(game.hteam, "primary")}
+              awayColor={teamColor(game.ateam, "primary")}
+              homeLogo={getLogo(game.hteam)}
+              awayLogo={getLogo(game.ateam)}
+              homeAbbr={homeAbbr}
+              awayAbbr={awayAbbr}
+            />
 
             <div style={gameHeaderStyle}>
               <div style={gameTeamStyle}>
