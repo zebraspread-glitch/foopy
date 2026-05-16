@@ -1665,7 +1665,6 @@ function ScoreWorm({
   homeAbbr: string;
   awayAbbr: string;
 }) {
-  // Build margin sequence from scoring events that have both scores
   const scoringEvents = events
     .filter(
       (e) =>
@@ -1681,74 +1680,95 @@ function ScoreWorm({
 
   if (scoringEvents.length === 0) return null;
 
-  // Points: start at 0, then each scoring event
-  const margins = [
-    0,
-    ...scoringEvents.map((e) => Number(e.homeScore) - Number(e.awayScore)),
-  ];
+  const margins = [0, ...scoringEvents.map((e) => Number(e.homeScore) - Number(e.awayScore))];
 
-  const maxAbs = Math.max(...margins.map(Math.abs), 6);
+  const maxAbs = Math.max(...margins.map(Math.abs), 12);
   const W = 600;
-  const H = 160;
-  const padX = 10;
-  const midY = H / 2;
+  const H = 180;
+  const padL = 36; // room for team labels
+  const padR = 28; // room for y-axis numbers
+  const padT = 16;
+  const padB = 16;
+  const midY = padT + (H - padT - padB) / 2;
 
-  const xOf = (i: number) => padX + (i / (margins.length - 1)) * (W - padX * 2);
-  const yOf = (margin: number) => midY - (margin / maxAbs) * (midY - 12);
+  const xOf = (i: number) =>
+    padL + (i / (margins.length - 1)) * (W - padL - padR);
+  const yOf = (margin: number) =>
+    midY - (margin / maxAbs) * (midY - padT);
 
-  const pathD = margins
-    .map((m, i) => `${i === 0 ? "M" : "L"}${xOf(i).toFixed(1)},${yOf(m).toFixed(1)}`)
-    .join(" ");
-
-  // Colour the worm segment by segment based on who's leading
+  // Step path: horizontal first, then vertical (score worm style)
   const segments: { d: string; color: string }[] = [];
   for (let i = 1; i < margins.length; i++) {
     const x1 = xOf(i - 1), y1 = yOf(margins[i - 1]);
-    const x2 = xOf(i), y2 = yOf(margins[i]);
-    const leading = margins[i - 1] > 0 ? homeColor : margins[i - 1] < 0 ? awayColor : "#94a3b8";
-    segments.push({ d: `M${x1.toFixed(1)},${y1.toFixed(1)} L${x2.toFixed(1)},${y2.toFixed(1)}`, color: leading });
+    const x2 = xOf(i),     y2 = yOf(margins[i]);
+    const col = margins[i - 1] > 0 ? homeColor : margins[i - 1] < 0 ? awayColor : "#64748b";
+    // horizontal leg (before the score change)
+    segments.push({ d: `M${x1.toFixed(1)},${y1.toFixed(1)} H${x2.toFixed(1)}`, color: col });
+    // vertical leg (the score change itself)
+    segments.push({ d: `M${x2.toFixed(1)},${y1.toFixed(1)} V${y2.toFixed(1)}`, color: col });
   }
 
-  // Quarter break x positions
-  const quarterBreaks: number[] = [];
+  // Quarter break x positions (index into margins array = scoringEvent index + 1)
+  const quarterBreakXs: number[] = [];
   for (let i = 1; i < scoringEvents.length; i++) {
     if (Number(scoringEvents[i].period ?? 0) > Number(scoringEvents[i - 1].period ?? 0)) {
-      quarterBreaks.push(xOf(i));
+      quarterBreakXs.push(xOf(i));
     }
   }
 
   const lastMargin = margins[margins.length - 1];
   const lastX = xOf(margins.length - 1);
   const lastY = yOf(lastMargin);
+  const endColor = lastMargin > 0 ? homeColor : lastMargin < 0 ? awayColor : "#64748b";
+
+  // Y-axis ticks — round up to nearest 6
+  const tickStep = maxAbs <= 12 ? 4 : maxAbs <= 24 ? 8 : 12;
+  const ticks = Array.from({ length: Math.floor(maxAbs / tickStep) }, (_, i) => (i + 1) * tickStep);
 
   return (
-    <div style={{ margin: "0 0 20px", background: "#111", borderRadius: 12, padding: "14px 8px 8px", overflow: "hidden" }}>
+    <div style={{ margin: "0 0 20px", background: "#111", borderRadius: 12, padding: "10px 4px 6px", overflow: "hidden" }}>
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", display: "block" }}>
-        {/* Mid line */}
-        <line x1={padX} y1={midY} x2={W - padX} y2={midY} stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+        {/* Mid zero line */}
+        <line x1={padL} y1={midY} x2={W - padR} y2={midY} stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
 
-        {/* Quarter break lines */}
-        {quarterBreaks.map((x, i) => (
-          <line key={i} x1={x} y1={8} x2={x} y2={H - 8} stroke="rgba(255,255,255,0.15)" strokeWidth="1" strokeDasharray="3 3" />
+        {/* Horizontal grid lines */}
+        {ticks.map((v) => [v, -v].map((signed) => (
+          <line
+            key={signed}
+            x1={padL} y1={yOf(signed)}
+            x2={W - padR} y2={yOf(signed)}
+            stroke="rgba(255,255,255,0.06)" strokeWidth="1"
+          />
+        )))}
+
+        {/* Quarter break verticals */}
+        {quarterBreakXs.map((x, i) => (
+          <line key={i} x1={x} y1={padT} x2={x} y2={H - padB}
+            stroke="rgba(255,255,255,0.18)" strokeWidth="1" strokeDasharray="4 3" />
         ))}
 
-        {/* Worm segments coloured by leader */}
+        {/* Worm — stepped segments */}
         {segments.map((seg, i) => (
-          <path key={i} d={seg.d} stroke={seg.color} strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          <path key={i} d={seg.d} stroke={seg.color} strokeWidth="2.5"
+            fill="none" strokeLinecap="square" strokeLinejoin="miter" />
         ))}
 
-        {/* Current end dot */}
-        <circle cx={lastX} cy={lastY} r="4" fill={lastMargin > 0 ? homeColor : lastMargin < 0 ? awayColor : "#94a3b8"} />
+        {/* End dot */}
+        <circle cx={lastX} cy={lastY} r="4.5" fill={endColor} />
 
-        {/* Team labels left side */}
-        <text x={padX + 2} y={18} fill={homeColor} fontSize="11" fontWeight="700" fontFamily="sans-serif">{homeAbbr}</text>
-        <text x={padX + 2} y={H - 6} fill={awayColor} fontSize="11" fontWeight="700" fontFamily="sans-serif">{awayAbbr}</text>
+        {/* Team labels (left) */}
+        <text x={padL - 4} y={padT + 8} fill={homeColor} fontSize="11" fontWeight="700"
+          fontFamily="sans-serif" textAnchor="end">{homeAbbr}</text>
+        <text x={padL - 4} y={H - padB - 2} fill={awayColor} fontSize="11" fontWeight="700"
+          fontFamily="sans-serif" textAnchor="end">{awayAbbr}</text>
 
-        {/* Y-axis tick labels */}
-        {[6, 12].map((v) => (
+        {/* Y-axis numbers (right) */}
+        {ticks.map((v) => (
           <g key={v}>
-            <text x={W - padX + 2} y={yOf(v) + 4} fill="rgba(255,255,255,0.35)" fontSize="9" fontFamily="sans-serif">{v}</text>
-            <text x={W - padX + 2} y={yOf(-v) + 4} fill="rgba(255,255,255,0.35)" fontSize="9" fontFamily="sans-serif">{v}</text>
+            <text x={W - padR + 4} y={yOf(v) + 4} fill="rgba(255,255,255,0.3)"
+              fontSize="9" fontFamily="sans-serif">{v}</text>
+            <text x={W - padR + 4} y={yOf(-v) + 4} fill="rgba(255,255,255,0.3)"
+              fontSize="9" fontFamily="sans-serif">{v}</text>
           </g>
         ))}
       </svg>
