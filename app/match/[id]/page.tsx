@@ -1906,73 +1906,31 @@ export default function MatchPage() {
   })();
   const currentPeriod = Math.max(periodFromEvents, periodFromTimestr);
 
-  // Detect score changes from Squiggle and write an inferred event to the DB so all users see it
+  // Detect score changes — server-side baseline so it works even after page reloads
   useEffect(() => {
-    if (!game || !apiSportsGameId) {
-      previousScoreRef.current = null;
-      return;
-    }
-    // Allow detection during UPCOMING too — early Q1 has complete===0 so getStatus returns "UPCOMING"
-    if (getStatus(game) === "FINAL") {
-      previousScoreRef.current = null;
-      return;
-    }
-
-    const current = scoreSnapshot(game);
-    if (!current) return;
-
-    const previous = previousScoreRef.current;
-    previousScoreRef.current = current;
-    const feedScore = feedScoreSnapshot(liveEvents, game.hteam, game.ateam);
-    const baseline =
-      previous && (current.home !== previous.home || current.away !== previous.away)
-        ? previous
-        : feedScore && (current.home > feedScore.home || current.away > feedScore.away)
-        ? feedScore
-        : previous;
-
-    if (!baseline) return;
-
-    const homeDelta = current.home - baseline.home;
-    const awayDelta = current.away - baseline.away;
-    const homeScored = homeDelta > 0 && awayDelta === 0;
-    const awayScored = awayDelta > 0 && homeDelta === 0;
-    if (!homeScored && !awayScored) return;
-
-    const scoringTeam = homeScored ? game.hteam : game.ateam;
-    const type = homeScored
-      ? scoreTypeFromDelta(
-          homeDelta,
-          current.homeGoals != null && baseline.homeGoals != null ? current.homeGoals - baseline.homeGoals : undefined,
-          current.homeBehinds != null && baseline.homeBehinds != null ? current.homeBehinds - baseline.homeBehinds : undefined
-        )
-      : scoreTypeFromDelta(
-          awayDelta,
-          current.awayGoals != null && baseline.awayGoals != null ? current.awayGoals - baseline.awayGoals : undefined,
-          current.awayBehinds != null && baseline.awayBehinds != null ? current.awayBehinds - baseline.awayBehinds : undefined
-        );
-
-    if (!type) return;
-
-    const teamId = getApiTeamId(scoringTeam);
-    if (!teamId) return;
-
-    const { period, minute } = clockFromTimestr(game?.timestr);
-
-    fetch("/api/afl/infer-event", {
+    if (!game || !apiSportsGameId || getStatus(game) === "FINAL") return;
+    const hscore = Number(game.hscore ?? 0);
+    const ascore = Number(game.ascore ?? 0);
+    if (hscore === 0 && ascore === 0) return;
+    const { period, minute } = clockFromTimestr(game.timestr);
+    fetch("/api/afl/score-check", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         gameId: apiSportsGameId,
-        teamId,
-        type,
-        homeScore: current.home,
-        awayScore: current.away,
+        hteamId: getApiTeamId(game.hteam),
+        ateamId: getApiTeamId(game.ateam),
+        hscore,
+        ascore,
+        hgoals: game.hgoals ?? null,
+        hbehinds: game.hbehinds ?? null,
+        agoals: game.agoals ?? null,
+        abehinds: game.abehinds ?? null,
         period: period ?? currentPeriod ?? null,
         minute: minute ?? null,
       }),
     }).catch(() => {});
-  }, [game, liveEvents, apiSportsGameId, currentPeriod]);
+  }, [game?.hscore, game?.ascore, apiSportsGameId]);
 
   const displayLiveEvents = useMemo(() => liveEvents, [liveEvents]);
 
