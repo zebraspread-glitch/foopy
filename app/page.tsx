@@ -856,8 +856,10 @@ free_kicks?: {
                 >
                   <aside style={infoStyle}>
                     <div style={{ ...timeStyle, color: status === "LIVE" ? "#4ade80" : undefined }}>{getTime(game, selectedRound !== currentRound)}</div>
-                    {status === "LIVE" && <LiveViewerCount gameId={game.id} />}
-                    <div style={venueStyle}>{game.venue || "Venue TBA"}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <div style={venueStyle}>{game.venue || "Venue TBA"}</div>
+                      {status === "LIVE" && <LiveViewerCount gameId={game.id} />}
+                    </div>
                   </aside>
 
                   <section style={teamsStyle}>
