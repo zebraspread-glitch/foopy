@@ -1906,51 +1906,27 @@ export default function MatchPage() {
   })();
   const currentPeriod = Math.max(periodFromEvents, periodFromTimestr);
 
-  // Detect score changes by comparing Squiggle score against what's already in the feed.
-  // The feed (liveEvents) is the baseline — if the Squiggle total is higher, something
-  // happened that isn't in the feed yet, so we infer an event.
+  // Send current score to server on every change — server diffs against DB snapshot
   useEffect(() => {
     if (!game || !apiSportsGameId || getStatus(game) === "FINAL") return;
-
-    const current = scoreSnapshot(game);
-    if (!current || (current.home === 0 && current.away === 0)) return;
-
-    const feedScore = feedScoreSnapshot(liveEvents, game.hteam, game.ateam);
-    const feedHome = feedScore?.home ?? 0;
-    const feedAway = feedScore?.away ?? 0;
-
-    const homeDelta = current.home - feedHome;
-    const awayDelta = current.away - feedAway;
-
-    // Only infer when exactly one team's score is ahead — avoids double-firing
-    const homeScored = homeDelta > 0 && awayDelta === 0;
-    const awayScored = awayDelta > 0 && homeDelta === 0;
-    if (!homeScored && !awayScored) return;
-
-    const scoringTeam = homeScored ? game.hteam : game.ateam;
-    const teamId = getApiTeamId(scoringTeam);
-    if (!teamId) return;
-
-    const delta = homeScored ? homeDelta : awayDelta;
-    // Use only the point delta — goal/behind math from feed score is unreliable
-    const type = scoreTypeFromDelta(delta);
-    if (!type) return;
-
+    const hscore = Number(game.hscore ?? 0);
+    const ascore = Number(game.ascore ?? 0);
+    if (hscore === 0 && ascore === 0) return;
     const { period, minute } = clockFromTimestr(game.timestr);
-    fetch("/api/afl/infer-event", {
+    fetch("/api/afl/score-check", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         gameId: apiSportsGameId,
-        teamId,
-        type,
-        homeScore: current.home,
-        awayScore: current.away,
+        hteamId: getApiTeamId(game.hteam),
+        ateamId: getApiTeamId(game.ateam),
+        hscore,
+        ascore,
         period: period ?? currentPeriod ?? null,
         minute: minute ?? null,
       }),
     }).catch(() => {});
-  }, [game?.hscore, game?.ascore, liveEvents, apiSportsGameId, currentPeriod]);
+  }, [game?.hscore, game?.ascore, apiSportsGameId, currentPeriod]);
 
   const displayLiveEvents = useMemo(() => liveEvents, [liveEvents]);
 
