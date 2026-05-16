@@ -14,81 +14,53 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Invalid body" }, { status: 400 });
 
-  const { gameId, hteamId, ateamId, hscore, ascore, period, minute } = body;
+  const { gameId, teamId, type, hscore, ascore, period, minute } = body;
 
-  if (!gameId || hteamId == null || ateamId == null || hscore == null || ascore == null) {
+  if (!gameId || !teamId || !type || hscore == null || ascore == null) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
 
-  const currentHome = Number(hscore);
-  const currentAway = Number(ascore);
+  if (type !== "GOAL" && type !== "BEHIND") {
+    return NextResponse.json({ error: "Invalid type" }, { status: 400 });
+  }
+
   const supabase = adminSupabase();
+  const home = Number(hscore);
+  const away = Number(ascore);
+  const tid = Number(teamId);
 
-  // Read last confirmed score from DB
-  const { data: snapshot } = await supabase
-    .from("match_score_snapshots")
-    .select("home_score, away_score")
-    .eq("game_id", String(gameId))
-    .single();
+  // Dedup: skip if identical event already exists for this game/team/score/type
+  const { data: existing } = await supabase
+    .from("live_game_feed")
+    .select("id")
+    .eq("api_game_id", String(gameId))
+    .eq("team_id", tid)
+    .eq("home_score", home)
+    .eq("away_score", away)
+    .eq("type", type)
+    .limit(1);
 
-  const lastHome = snapshot ? Number(snapshot.home_score) : 0;
-  const lastAway = snapshot ? Number(snapshot.away_score) : 0;
-
-  // Nothing changed
-  if (currentHome === lastHome && currentAway === lastAway) {
-    return NextResponse.json({ inserted: [] });
+  if (existing && existing.length > 0) {
+    return NextResponse.json({ inserted: false, reason: "duplicate" });
   }
 
-  // Always update snapshot so next call has correct baseline
-  await supabase
-    .from("match_score_snapshots")
-    .upsert({
-      game_id: String(gameId),
-      home_score: currentHome,
-      away_score: currentAway,
-      updated_at: new Date().toISOString(),
-    });
+  const { error } = await supabase.from("live_game_feed").insert({
+    api_game_id: String(gameId),
+    period: period != null ? Number(period) : null,
+    minute: minute != null ? Number(minute) : null,
+    type,
+    team_id: tid,
+    player_id: null,
+    player_name: null,
+    home_score: home,
+    away_score: away,
+    inferred: true,
+  });
 
-  const homeDelta = currentHome - lastHome;
-  const awayDelta = currentAway - lastAway;
-  const inserted: string[] = [];
-
-  // Only handle clean single-score deltas — ambiguous multi-score gaps are left to API-Sports
-  const toInsert: { teamId: number; type: "GOAL" | "BEHIND" }[] = [];
-
-  if (homeDelta === 6 && awayDelta === 0) toInsert.push({ teamId: Number(hteamId), type: "GOAL" });
-  else if (homeDelta === 1 && awayDelta === 0) toInsert.push({ teamId: Number(hteamId), type: "BEHIND" });
-  else if (awayDelta === 6 && homeDelta === 0) toInsert.push({ teamId: Number(ateamId), type: "GOAL" });
-  else if (awayDelta === 1 && homeDelta === 0) toInsert.push({ teamId: Number(ateamId), type: "BEHIND" });
-
-  for (const { teamId, type } of toInsert) {
-    // Skip if a real (non-inferred) event already exists for this exact score + team
-    const { data: existing } = await supabase
-      .from("live_game_feed")
-      .select("id")
-      .eq("api_game_id", String(gameId))
-      .eq("team_id", teamId)
-      .eq("home_score", currentHome)
-      .eq("away_score", currentAway)
-      .limit(1);
-
-    if (existing && existing.length > 0) continue;
-
-    const { error } = await supabase.from("live_game_feed").insert({
-      api_game_id: String(gameId),
-      period: period != null ? Number(period) : null,
-      minute: minute != null ? Number(minute) : null,
-      type,
-      team_id: teamId,
-      player_id: null,
-      player_name: null,
-      home_score: currentHome,
-      away_score: currentAway,
-      inferred: true,
-    });
-
-    if (!error) inserted.push(type);
+  if (error) {
+    console.error("[score-check] insert error:", error.message);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ inserted });
+  return NextResponse.json({ inserted: true, type });
 }
