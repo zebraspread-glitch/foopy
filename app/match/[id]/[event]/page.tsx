@@ -669,6 +669,15 @@ export default function EventCommentsPage() {
         <MatchScoreBar game={matchGame} gameId={gameId} />
       )}
 
+      {eventKey.startsWith("poll_") && searchParams.get("stats") && (
+        <PollStatCard
+          question={label}
+          stat={searchParams.get("stat") ?? ""}
+          pollType={(searchParams.get("pollType") ?? "player") as "team" | "player"}
+          stats={searchParams.get("stats") ?? ""}
+        />
+      )}
+
       {eventParts && eventCard && (
         <EventCard
           playerName={eventCard.playerName}
@@ -910,6 +919,69 @@ const TEAM_COLOR_MAP: Record<string, { primary: string; bg: string }> = {
 
 function getTeamColors(team: string) {
   return TEAM_COLOR_MAP[team.toLowerCase().trim()] ?? { primary: "#3b82f6", bg: "#0d1b44" };
+}
+
+function PollStatCard({ question, stat, pollType, stats }: {
+  question: string;
+  stat: string;
+  pollType: "team" | "player";
+  stats: string;
+}) {
+  // Parse "Name:value,Name2:value2" into entries
+  const entries = stats.split(",").map(s => {
+    const idx = s.lastIndexOf(":");
+    if (idx === -1) return null;
+    return { label: s.slice(0, idx).trim(), value: s.slice(idx + 1).trim() };
+  }).filter(Boolean) as { label: string; value: string }[];
+
+  const statLabel = stat === "foopy" ? "Foopy" : stat.charAt(0).toUpperCase() + stat.slice(1);
+
+  return (
+    <section style={{
+      margin: "10px 16px",
+      background: "rgba(109,40,217,0.08)",
+      border: "1.5px solid rgba(109,40,217,0.25)",
+      borderRadius: 18,
+      padding: "14px 14px 12px",
+    }}>
+      {/* Poll label */}
+      <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 10 }}>
+        <div style={{ width: 26, height: 26, borderRadius: "50%", background: "#6d28d9", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="white">
+            <rect x="18" y="4" width="4" height="16" rx="1" />
+            <rect x="10" y="9" width="4" height="11" rx="1" />
+            <rect x="2" y="13" width="4" height="7" rx="1" />
+          </svg>
+        </div>
+        <span style={{ fontSize: 13, fontWeight: 900, color: "#f8fafc", flex: 1, minWidth: 0 }}>{question}</span>
+      </div>
+
+      {/* Stat rows */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {entries.map((entry, i) => {
+          const folder = CLUB_FOLDER[entry.label] ?? slugify(entry.label);
+          const teamLogo = `/team-logos/${folder}.png`;
+          const isTeam = pollType === "team";
+          return (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              {isTeam ? (
+                <img src={teamLogo} alt={entry.label} style={{ width: 28, height: 28, objectFit: "contain", borderRadius: 6, flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+              ) : (
+                <div style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+                  <img src={resolvePlayerImage(entry.label, "")} alt={entry.label} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                </div>
+              )}
+              <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: "#e2e8f0", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{entry.label}</span>
+              <div style={{ textAlign: "right" as const, flexShrink: 0 }}>
+                <span style={{ fontSize: 18, fontWeight: 900, color: "#a78bfa", lineHeight: 1 }}>{entry.value}</span>
+                <span style={{ fontSize: 10, fontWeight: 700, color: "#64748b", marginLeft: 4 }}>{statLabel}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
 }
 
 function EventCard({ playerName, team, img, type, quarter, minute }: {

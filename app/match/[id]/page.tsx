@@ -3833,10 +3833,10 @@ function PollCard({
   homeTeam: string;
   awayTeam: string;
 }) {
+  const router = useRouter();
   const hasVoted = !!userVote;
   const totalVotes = poll.options.reduce((sum, o) => sum + (voteCounts[o.id] ?? 0), 0);
   const sorted = [...poll.options].sort((a, b) => a.position - b.position);
-  const [showComments, setShowComments] = useState(false);
 
   const optionColor = (label: string) => {
     const c = pollOptionColors(label, poll.poll_type);
@@ -3951,264 +3951,42 @@ function PollCard({
         })}
       </div>
 
-      {/* Comments toggle */}
+      {/* Comments button — opens full-screen comment page */}
       <button
-        onClick={() => setShowComments(v => !v)}
-        style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: "12px 2px 0", fontSize: 12, fontWeight: 800, color: showComments ? "#a78bfa" : "#64748b", cursor: "pointer", width: "100%" }}
+        onClick={() => {
+          const cat = poll.category_key ? POLL_CATEGORIES[poll.category_key] : null;
+          const statsStr = cat ? sorted.map(opt => {
+            let val: number | string = "–";
+            if (cat.type === "player") {
+              const ps = [...homeStats, ...awayStats].find(p =>
+                ((p as any).name || (p as any).player || "").toLowerCase() === opt.label.toLowerCase()
+              );
+              if (ps) val = cat.stat === "foopy" ? foopyRating(ps) : num(ps[cat.stat as keyof PlayerStat]);
+            } else {
+              const isHome = normaliseTeamKey(opt.label) === normaliseTeamKey(homeTeam);
+              const isAway = normaliseTeamKey(opt.label) === normaliseTeamKey(awayTeam);
+              if (isHome) val = homeStats.reduce((s, p) => s + num(p[cat.stat as keyof PlayerStat]), 0);
+              else if (isAway) val = awayStats.reduce((s, p) => s + num(p[cat.stat as keyof PlayerStat]), 0);
+            }
+            return `${opt.label}:${val}`;
+          }).join(",") : "";
+          const params = new URLSearchParams({
+            label: poll.question,
+            ...(cat ? { stat: cat.stat, pollType: poll.poll_type } : {}),
+            ...(statsStr ? { stats: statsStr } : {}),
+          });
+          router.push(`/match/${gameId}/poll_${poll.id}?${params}`);
+        }}
+        style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: "12px 2px 0", fontSize: 12, fontWeight: 800, color: "#64748b", cursor: "pointer", width: "100%" }}
       >
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
         </svg>
-        {showComments ? "Hide comments" : "Comments"}
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-          style={{ marginLeft: "auto", transform: showComments ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
-          <polyline points="6 9 12 15 18 9" />
+        Comments
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: "auto" }}>
+          <polyline points="9 18 15 12 9 6" />
         </svg>
       </button>
-
-      {showComments && (
-        <PollCommentSection
-          poll={poll}
-          gameId={gameId}
-          userId={userId}
-          homeStats={homeStats}
-          awayStats={awayStats}
-          homeTeam={homeTeam}
-          awayTeam={awayTeam}
-        />
-      )}
-    </div>
-  );
-}
-
-function PollCommentSection({
-  poll,
-  gameId,
-  userId,
-  homeStats,
-  awayStats,
-  homeTeam,
-  awayTeam,
-}: {
-  poll: Poll;
-  gameId: number;
-  userId: string | null;
-  homeStats: PlayerStat[];
-  awayStats: PlayerStat[];
-  homeTeam: string;
-  awayTeam: string;
-}) {
-  const [comments, setComments] = useState<MatchComment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [body, setBody] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [replyTo, setReplyTo] = useState<MatchComment | null>(null);
-  const [liking, setLiking] = useState<Set<string>>(new Set());
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-  const eventKey = `poll_${poll.id}`;
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    const { data: rows } = await supabase
-      .from("feed_comments")
-      .select("id, game_id, user_id, parent_id, body, likes, created_at, event_key")
-      .eq("event_key", eventKey)
-      .order("created_at", { ascending: true });
-
-    if (!rows) { setLoading(false); return; }
-
-    const userIds = [...new Set((rows as any[]).map(r => r.user_id))];
-    const profileMap = new Map<string, CommentProfile>();
-    if (userIds.length > 0) {
-      const { data: profiles } = await supabase.from("profiles").select("id, username, display_name, avatar_url").in("id", userIds);
-      for (const p of (profiles ?? []) as any[]) profileMap.set(p.id, p);
-    }
-
-    let likedIds = new Set<string>();
-    const uid = (await supabase.auth.getSession()).data.session?.user.id;
-    if (uid) {
-      const { data: likes } = await supabase.from("feed_comment_likes").select("comment_id").eq("user_id", uid);
-      likedIds = new Set(((likes ?? []) as any[]).map(l => l.comment_id));
-    }
-
-    const all: MatchComment[] = (rows as unknown[]).map((r: unknown) => {
-      const row = r as MatchComment;
-      return { ...row, profile: profileMap.get(row.user_id) ?? null, liked: likedIds.has(row.id), replies: [] };
-    });
-
-    const byId: Record<string, MatchComment> = {};
-    const topLevel: MatchComment[] = [];
-    for (const c of all) byId[c.id] = c;
-    for (const c of all) {
-      if (c.parent_id && byId[c.parent_id]) byId[c.parent_id].replies!.push(c);
-      else topLevel.push(c);
-    }
-
-    setComments(topLevel);
-    setLoading(false);
-  }, [eventKey]);
-
-  useEffect(() => { load(); }, [load]);
-
-  async function submit() {
-    if (!body.trim() || !userId || submitting) return;
-    setSubmitting(true);
-    const trimmedBody = body.trim();
-    const { data: inserted, error } = await supabase.from("feed_comments").insert({
-      game_id: gameId,
-      user_id: userId,
-      parent_id: replyTo?.id ?? null,
-      body: trimmedBody,
-      event_key: eventKey,
-    }).select("id").single();
-    if (!error) {
-      if (replyTo && replyTo.user_id !== userId) {
-        await createNotification(replyTo.user_id, "reply_comment", userId, {
-          comment_body: trimmedBody.slice(0, 100),
-          comment_id: replyTo.id,
-          game_id: gameId,
-          event_key: eventKey,
-        });
-      }
-      await notifyMentions(trimmedBody, userId, {
-        comment_body: trimmedBody.slice(0, 100),
-        comment_id: (inserted as any)?.id,
-        game_id: gameId,
-        event_key: eventKey,
-      });
-      setBody(""); setReplyTo(null);
-      await load();
-    }
-    setSubmitting(false);
-  }
-
-  async function handleLike(c: MatchComment) {
-    if (!userId || liking.has(c.id)) return;
-    setLiking(prev => new Set(prev).add(c.id));
-    if (c.liked) {
-      await supabase.from("feed_comment_likes").delete().eq("comment_id", c.id).eq("user_id", userId);
-    } else {
-      await supabase.from("feed_comment_likes").insert({ comment_id: c.id, user_id: userId });
-      if (c.user_id !== userId) {
-        createNotification(c.user_id, "like_comment", userId, {
-          comment_body: c.body.slice(0, 100),
-          comment_id: c.id,
-          game_id: gameId,
-          event_key: eventKey,
-        });
-      }
-    }
-    await load();
-    setLiking(prev => { const s = new Set(prev); s.delete(c.id); return s; });
-  }
-
-  async function handleDelete(id: string) {
-    await supabase.from("feed_comments").delete().eq("id", id);
-    await load();
-  }
-
-  const cat = poll.category_key ? POLL_CATEGORIES[poll.category_key] : null;
-  const sorted = [...poll.options].sort((a, b) => a.position - b.position);
-
-  return (
-    <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", marginTop: 8 }}>
-      {/* Stat header */}
-      {cat && (
-        <div style={{ padding: "10px 2px 6px", display: "flex", gap: 6, flexWrap: "wrap" as const }}>
-          {sorted.map(opt => {
-            let statVal: number | string = "–";
-            if (cat.type === "player") {
-              const ps = [...homeStats, ...awayStats].find(p =>
-                (p.name || (p as any).player || "").toLowerCase() === opt.label.toLowerCase()
-              );
-              if (ps) {
-                statVal = cat.stat === "foopy"
-                  ? foopyRating(ps)
-                  : num(ps[cat.stat as keyof PlayerStat]);
-              }
-            } else {
-              const isHome = normaliseTeamKey(opt.label) === normaliseTeamKey(homeTeam);
-              const isAway = normaliseTeamKey(opt.label) === normaliseTeamKey(awayTeam);
-              if (isHome) statVal = homeStats.reduce((s, p) => s + num(p[cat.stat as keyof PlayerStat]), 0);
-              else if (isAway) statVal = awayStats.reduce((s, p) => s + num(p[cat.stat as keyof PlayerStat]), 0);
-            }
-            const colorStr = String((pollOptionColors(opt.label, poll.poll_type) as any).background ?? "#a78bfa");
-            return (
-              <div key={opt.id} style={{
-                display: "flex", alignItems: "center", gap: 8,
-                background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)",
-                borderRadius: 10, padding: "8px 10px", flex: "1 1 0", minWidth: 0,
-              }}>
-                <PollOptionInner label={opt.label} pollType={poll.poll_type} />
-                <div style={{ marginLeft: "auto", textAlign: "right" as const, flexShrink: 0 }}>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: colorStr, lineHeight: 1 }}>{statVal}</div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "#64748b", textTransform: "uppercase" as const, marginTop: 2 }}>
-                    {cat.stat === "foopy" ? "Foopy" : cat.stat}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Comment list */}
-      <div>
-        {loading ? (
-          <div style={{ display: "flex", justifyContent: "center", padding: "14px 0" }}>
-            <div style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,.08)", borderTop: "2px solid #7c3aed", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
-          </div>
-        ) : comments.length === 0 ? (
-          <div style={{ textAlign: "center" as const, padding: "12px 0 6px", fontSize: 12, color: "#475569", fontWeight: 600 }}>
-            No comments yet — be the first!
-          </div>
-        ) : (
-          comments.map(c => (
-            <MCRow key={c.id} comment={c} userId={userId} onLike={handleLike} onDelete={handleDelete}
-              onReply={r => { setReplyTo(r); setTimeout(() => inputRef.current?.focus(), 50); }} liking={liking} />
-          ))
-        )}
-      </div>
-
-      {/* Input */}
-      <div style={{ padding: "8px 0 4px", borderTop: comments.length > 0 ? "1px solid rgba(255,255,255,.05)" : "none" }}>
-        {!userId ? (
-          <div style={{ fontSize: 12, color: "#64748b", textAlign: "center" as const, padding: "6px 0" }}>Sign in to comment</div>
-        ) : (
-          <>
-            {replyTo && (
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, padding: "6px 10px", background: "rgba(109,40,217,.1)", borderRadius: 10, border: "1px solid rgba(109,40,217,.22)" }}>
-                <span style={{ color: "#94a3b8", fontSize: 12, fontWeight: 700 }}>
-                  Replying to <span style={{ color: "#a78bfa", fontWeight: 900 }}>{replyTo.profile?.display_name || replyTo.profile?.username || "user"}</span>
-                </span>
-                <button onClick={() => setReplyTo(null)} style={{ width: 20, height: 20, borderRadius: "50%", background: "rgba(255,255,255,0.08)", border: "none", color: "#94a3b8", fontSize: 11, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
-              </div>
-            )}
-            <div style={{ display: "flex", alignItems: "flex-end", gap: 8 }}>
-              <MentionTextarea
-                textareaRef={inputRef}
-                value={body}
-                onChange={setBody}
-                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); } }}
-                placeholder={replyTo ? "Write a reply…" : "Comment on this poll…"}
-                rows={1}
-                maxLength={500}
-                style={{ width: "100%", minHeight: 40, maxHeight: 100, background: "rgba(255,255,255,.06)", border: "1.5px solid rgba(255,255,255,.1)", borderRadius: 20, color: "#f8fafc", fontSize: 13, padding: "9px 14px", resize: "none", outline: "none", fontFamily: "inherit", lineHeight: 1.45 }}
-              />
-              <button
-                onClick={submit}
-                disabled={!body.trim() || submitting}
-                style={{ width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg,#7c3aed,#6d28d9)", border: "none", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, opacity: !body.trim() || submitting ? 0.38 : 1, transition: "opacity 0.15s" }}
-              >
-                {submitting
-                  ? <div style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
-                  : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" fill="currentColor" stroke="none" /></svg>
-                }
-              </button>
-            </div>
-          </>
-        )}
-      </div>
     </div>
   );
 }
