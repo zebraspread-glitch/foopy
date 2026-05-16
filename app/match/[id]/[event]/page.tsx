@@ -989,9 +989,14 @@ function EventCard({ playerName, team, img, type, quarter, minute }: {
   type: string; quarter: string; minute: string;
 }) {
   const [imgFailed, setImgFailed] = useState(false);
+  const [logoFailed, setLogoFailed] = useState(false);
   const initials = playerName.trim().split(/\s+/).map(p => p[0]).join("").toUpperCase().slice(0, 2) || "?";
   const { primary, bg } = getTeamColors(team);
   const typeColor = type === "GOAL" ? "#22c55e" : type === "BEHIND" ? "#f8fafc" : "#facc15";
+
+  const folder = CLUB_FOLDER[team] ?? slugify(team);
+  const teamLogo = folder ? `/team-logos/${folder}.png` : "";
+  const isTeamEvent = !img || imgFailed;
 
   return (
     <div style={{
@@ -1007,15 +1012,17 @@ function EventCard({ playerName, team, img, type, quarter, minute }: {
       border: `2px solid ${primary}`,
       overflow: "hidden",
     }}>
-      {/* Player avatar — matches playerAvatarWrapStyle */}
+      {/* Avatar: player photo, or team logo, or initials fallback */}
       <div style={{
         width: 56, height: 56, borderRadius: "50%",
         background: `${primary}55`,
         overflow: "hidden", flexShrink: 0,
         display: "inline-flex", alignItems: "center", justifyContent: "center",
       }}>
-        {img && !imgFailed
+        {!isTeamEvent
           ? <img src={img} alt={playerName} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} onError={() => setImgFailed(true)} />
+          : teamLogo && !logoFailed
+          ? <img src={teamLogo} alt={team} style={{ width: "70%", height: "70%", objectFit: "contain", display: "block" }} onError={() => setLogoFailed(true)} />
           : <span style={{ color: "#fff", fontSize: 18, fontWeight: 1000 }}>{initials}</span>
         }
       </div>
