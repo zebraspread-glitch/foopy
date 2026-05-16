@@ -869,37 +869,43 @@ function LiveFeedPlayer({
         }
       }}
       style={{
-        ...liveFeedBoxStyle,
-        background: `linear-gradient(135deg, ${colours.primary}22 0%, ${colours.secondary}18 100%)`,
-        border: `1.5px solid ${colours.primary}55`,
-        minHeight: type === "BEHIND" ? 50 : liveFeedBoxStyle.minHeight,
-        padding: type === "BEHIND" ? "6px 16px 6px 12px" : liveFeedBoxStyle.padding,
+        background: `linear-gradient(135deg, ${colours.primary}, ${colours.secondary})`,
+        padding: 2,
+        borderRadius: 20,
         cursor: "pointer",
       }}
     >
-      {isInferred ? <TeamEventAvatar team={team} /> : <PlayerAvatar name={playerName} team={team} />}
+      <div style={{
+        ...liveFeedBoxStyle,
+        background: "#050505",
+        border: "none",
+        borderRadius: 18,
+        minHeight: type === "BEHIND" ? 50 : liveFeedBoxStyle.minHeight,
+        padding: type === "BEHIND" ? "6px 16px 6px 12px" : liveFeedBoxStyle.padding,
+      }}>
+        {isInferred ? <TeamEventAvatar team={team} /> : <PlayerAvatar name={playerName} team={team} />}
 
-      <div style={liveFeedInfoStyle}>
-        <div style={liveFeedNameStyle}>{playerName}</div>
-        <div style={{ ...liveFeedActionStyle, color: type === "GOAL" ? "#22c55e" : type === "BEHIND" ? "#f8fafc" : "#facc15" }}>
-          {type}
+        <div style={liveFeedInfoStyle}>
+          <div style={liveFeedNameStyle}>{playerName}</div>
+          <div style={{ ...liveFeedActionStyle, color: type === "GOAL" ? "#22c55e" : type === "BEHIND" ? "#f8fafc" : "#facc15" }}>
+            {type}
+          </div>
         </div>
-      </div>
 
-      <div style={liveFeedRightStyle}>
-        {/* Quarter + time badge */}
-        <div style={liveFeedTimeBadgeStyle}>
-          <span style={liveFeedQuarterStyle}>{eventQuarter(event)}</span>
-          <span style={liveFeedTimeDotStyle}>·</span>
-          <span style={liveFeedMinuteStyle}>{event.minute ?? "-"}'</span>
+        <div style={liveFeedRightStyle}>
+          <div style={liveFeedTimeBadgeStyle}>
+            <span style={liveFeedQuarterStyle}>{eventQuarter(event)}</span>
+            <span style={liveFeedTimeDotStyle}>·</span>
+            <span style={liveFeedMinuteStyle}>{event.minute ?? "-"}'</span>
+          </div>
+
+          <button onClick={onCommentClick} style={commentBubbleBtnStyle}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            {(commentCount ?? 0) > 0 && <span style={commentCountStyle}>{commentCount}</span>}
+          </button>
         </div>
-
-        <button onClick={onCommentClick} style={commentBubbleBtnStyle}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-          </svg>
-          {(commentCount ?? 0) > 0 && <span style={commentCountStyle}>{commentCount}</span>}
-        </button>
       </div>
     </div>
   );
