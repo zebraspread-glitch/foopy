@@ -901,7 +901,7 @@ function LiveFeedPlayer({
     >
       <div style={{
         ...liveFeedBoxStyle,
-        background: "#050505",
+        background: "#000000",
         border: "none",
         borderRadius: 18,
         minHeight: type === "BEHIND" ? 50 : liveFeedBoxStyle.minHeight,
