@@ -855,11 +855,11 @@ free_kicks?: {
                   }}
                 >
                   <aside style={infoStyle}>
-                    <div style={{ ...timeStyle, color: status === "LIVE" ? "#4ade80" : undefined }}>{getTime(game, selectedRound !== currentRound)}</div>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <div style={venueStyle}>{game.venue || "Venue TBA"}</div>
                       {status === "LIVE" && <LiveViewerCount gameId={game.id} />}
                     </div>
+                    <div style={{ ...timeStyle, color: status === "LIVE" ? "#4ade80" : undefined }}>{getTime(game, selectedRound !== currentRound)}</div>
                   </aside>
 
                   <section style={teamsStyle}>
@@ -1028,11 +1028,11 @@ function LiveViewerCount({ gameId }: { gameId: number }) {
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
         <circle cx="12" cy="12" r="3" />
       </svg>
-      <span style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8" }}>{Math.max(1, count)}</span>
+      <span style={{ fontSize: 10, fontWeight: 700, color: "#ffffff" }}>{Math.max(1, count)}</span>
     </div>
   );
 }
@@ -1490,28 +1490,25 @@ const cardStyle: React.CSSProperties = {
 };
 
 const infoStyle: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "auto 1fr",
+  display: "flex",
   alignItems: "center",
-  columnGap: "10px",
+  justifyContent: "space-between",
+  gap: "10px",
   padding: "11px 16px",
   background: "rgba(255,255,255,.02)",
   borderBottom: "1px solid rgba(255,255,255,.08)",
 };
 
 const timeStyle: React.CSSProperties = {
-  gridColumn: "2",
-  justifySelf: "end",
   fontSize: "14px",
   fontWeight: 950,
   textAlign: "right",
   lineHeight: 1.1,
   whiteSpace: "nowrap",
+  flexShrink: 0,
 };
 
 const venueStyle: React.CSSProperties = {
-  gridColumn: "1",
-  gridRow: "1",
   minWidth: 0,
   color: "#9aa7b8",
   fontSize: "11px",
