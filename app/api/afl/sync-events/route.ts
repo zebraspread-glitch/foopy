@@ -21,12 +21,9 @@ export async function GET(req: Request) {
   if (!gameId) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
   const now = Date.now();
-  const last = lastSync.get(gameId) ?? 0;
-
-  if (now - last < COOLDOWN_MS) {
+  if (now - (lastSync.get(gameId) ?? 0) < COOLDOWN_MS) {
     return NextResponse.json({ synced: false, reason: "cooldown" });
   }
-
   lastSync.set(gameId, now);
 
   const res = await fetch(`${API_BASE}/games/events?id=${gameId}`, {
@@ -47,77 +44,87 @@ export async function GET(req: Request) {
   }
 
   const supabase = adminSupabase();
-  const apiRows = rawEvents.map((e: any) => ({
-    api_game_id: gameId,
-    period: e.period ?? e.quarter ?? null,
-    minute: e.minute ?? null,
-    type: e.type ?? null,
-    team_id: e.team?.id ?? null,
-    player_id: e.player?.id ?? null,
-    player_name: e.player?.name ?? null,
-    home_score: e.homeScore ?? e.home_score ?? e.score?.home ?? e.scores?.home ?? null,
-    away_score: e.awayScore ?? e.away_score ?? e.score?.away ?? e.scores?.away ?? null,
-  }));
 
+  // Build deduplicated real event rows from API-Sports
   const key = (r: any) =>
     `${r.period}|${r.minute}|${r.type}|${r.team_id}|${r.player_id}|${r.home_score}|${r.away_score}`;
 
-  const uniqueRows = Array.from(new Map(apiRows.map((row) => [key(row), row])).values());
+  const apiRows = Array.from(
+    new Map(
+      rawEvents.map((e: any) => {
+        const row = {
+          api_game_id: gameId,
+          period: e.period ?? e.quarter ?? null,
+          minute: e.minute ?? null,
+          type: e.type ?? null,
+          team_id: e.team?.id ?? null,
+          player_id: e.player?.id ?? null,
+          player_name: e.player?.name ?? null,
+          home_score: e.homeScore ?? e.home_score ?? e.score?.home ?? e.scores?.home ?? null,
+          away_score: e.awayScore ?? e.away_score ?? e.score?.away ?? e.scores?.away ?? null,
+        };
+        return [key(row), row];
+      })
+    ).values()
+  );
 
-  const { data: existing, error: fetchError } = await supabase
+  // Fetch all current events for this game
+  const { data: existing } = await supabase
     .from("live_game_feed")
     .select("id, period, minute, type, team_id, player_id, home_score, away_score, inferred")
-    .eq("api_game_id", gameId)
-    .order("period", { ascending: true })
-    .order("minute", { ascending: true });
+    .eq("api_game_id", gameId);
 
-  if (fetchError) {
-    lastSync.delete(gameId);
-    return NextResponse.json({ error: fetchError.message }, { status: 500 });
-  }
+  const realExisting = (existing ?? []).filter((r: any) => !r.inferred);
 
-  // Compare only against real (non-inferred) rows to avoid unnecessary replaces
-  const uniqueKeys = new Set(uniqueRows.map(key));
-  const realExisting = (existing ?? []).filter((row: any) => !row.inferred);
-  const alreadyMatches =
-    realExisting.length === uniqueRows.length &&
-    realExisting.every((row: any) => uniqueKeys.has(key(row)));
-
-  if (alreadyMatches) {
+  // Skip if real events are already identical
+  const apiKeys = new Set(apiRows.map(key));
+  if (
+    realExisting.length === apiRows.length &&
+    realExisting.every((r: any) => apiKeys.has(key(r)))
+  ) {
     return NextResponse.json({ synced: true, inserted: 0 });
   }
 
-  // Delete inferred events that are now covered by a real event (same team+type+score)
-  const realCoverageKeys = new Set(
-    uniqueRows.map((r) => `${r.team_id}|${r.type}|${r.home_score}|${r.away_score}`)
-  );
-  const inferredToDelete = (existing ?? [])
-    .filter((r: any) => r.inferred && realCoverageKeys.has(`${r.team_id}|${r.type}|${r.home_score}|${r.away_score}`))
-    .map((r: any) => r.id);
+  // Delete inferred events that a real event now covers.
+  // Match by (team_id, type, home_score, away_score) when scores are known,
+  // or by (team_id, type) in order (chronologically) when real event has no score.
+  const inferred = (existing ?? []).filter((r: any) => r.inferred);
+  const toDeleteIds: number[] = [];
 
-  if (inferredToDelete.length > 0) {
-    await supabase.from("live_game_feed").delete().in("id", inferredToDelete);
+  for (const real of apiRows) {
+    if (real.home_score != null && real.away_score != null) {
+      // Exact score match
+      const match = inferred.find(
+        (r: any) =>
+          !toDeleteIds.includes(r.id) &&
+          r.team_id === real.team_id &&
+          r.type === real.type &&
+          Number(r.home_score) === Number(real.home_score) &&
+          Number(r.away_score) === Number(real.away_score)
+      );
+      if (match) toDeleteIds.push(match.id);
+    } else {
+      // No score on real event — match the earliest unclaimed inferred event of same team+type
+      const match = inferred
+        .filter((r: any) => !toDeleteIds.includes(r.id) && r.team_id === real.team_id && r.type === real.type)
+        .sort((a: any, b: any) => (Number(a.home_score) || 0) - (Number(b.home_score) || 0))[0];
+      if (match) toDeleteIds.push(match.id);
+    }
   }
 
-  // Delete all real (non-inferred) events for this game, then reinsert fresh from API
-  const { error: deleteError } = await supabase
-    .from("live_game_feed")
-    .delete()
-    .eq("api_game_id", gameId)
-    .eq("inferred", false);
+  if (toDeleteIds.length > 0) {
+    await supabase.from("live_game_feed").delete().in("id", toDeleteIds);
+  }
 
-  if (deleteError) {
+  // Replace all real events with fresh data from API-Sports
+  await supabase.from("live_game_feed").delete().eq("api_game_id", gameId).eq("inferred", false);
+  const { error } = await supabase.from("live_game_feed").insert(apiRows);
+
+  if (error) {
     lastSync.delete(gameId);
-    return NextResponse.json({ error: deleteError.message }, { status: 500 });
+    console.error("[sync-events] insert error:", error.message);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const { error: insertError } = await supabase.from("live_game_feed").insert(uniqueRows);
-
-  if (insertError) {
-    lastSync.delete(gameId);
-    console.error("[sync-events] insert error:", insertError.message);
-    return NextResponse.json({ error: insertError.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ synced: true, replaced: true, total: uniqueRows.length });
+  return NextResponse.json({ synced: true, replaced: true, total: apiRows.length });
 }
