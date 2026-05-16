@@ -185,6 +185,7 @@ const PLAYER_IMAGE_ID_OVERRIDES: Record<string, string> = {
   lachlanschultz: "lachieschultz",
   lachlansullivan: "lachiesullivan",
   samuelwicks: "samwicks",
+  zacharywilliams: "zacwilliams",
 };
 
 function num(value: unknown) {
