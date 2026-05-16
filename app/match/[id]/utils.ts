@@ -137,8 +137,10 @@ export function teamColors(team: string): TeamColourSet {
     "hawthorn hawks": { primary: "#f59e0b", secondary: "#5b2a00", home: "#f59e0b", away: "#5b2a00", text: "#000000" },
 
     melbourne: { primary: "#ef4444", secondary: "#1e3a8a", home: "#ef4444", away: "#1e3a8a", text: "#ffffff" },
+    "melbourne demons": { primary: "#ef4444", secondary: "#1e3a8a", home: "#ef4444", away: "#1e3a8a", text: "#ffffff" },
 
     "north melbourne": { primary: "#3b82f6", secondary: "#ffffff", home: "#3b82f6", away: "#ffffff", text: "#ffffff" },
+    "north melbourne kangaroos": { primary: "#3b82f6", secondary: "#ffffff", home: "#3b82f6", away: "#ffffff", text: "#ffffff" },
 
     "port adelaide": { primary: "#06b6d4", secondary: "#000000", home: "#06b6d4", away: "#000000", text: "#000000" },
     "port adelaide power": { primary: "#06b6d4", secondary: "#000000", home: "#06b6d4", away: "#000000", text: "#000000" },
