@@ -381,11 +381,23 @@ function findPlayerForLiveEvent(event: LiveEvent) {
 
   const candidates = (playerStatsJson as any[]).filter((player) => playerMatchesLiveId(player, target));
   if (candidates.length === 0) return null;
+  if (candidates.length === 1) return candidates[0];
 
+  // Prefer the candidate whose team matches the scoring team
   const team = eventPrimaryTeam(event);
   if (team) {
     const teamPlayer = candidates.find((player) => teamsMatch(playerTeamName(player), team));
     if (teamPlayer) return teamPlayer;
+  }
+
+  // Tiebreak by player name when team is unknown (real API-Sports events carry player_name)
+  const rawName = safeText(event.playerName, "").toLowerCase().replace(/[^a-z]/g, "");
+  if (rawName) {
+    const namePlayer = candidates.find((player) => {
+      const pName = safeText(player?.name ?? player?.player, "").toLowerCase().replace(/[^a-z]/g, "");
+      return pName && (pName === rawName || pName.includes(rawName) || rawName.includes(pName));
+    });
+    if (namePlayer) return namePlayer;
   }
 
   return candidates[0] ?? null;
