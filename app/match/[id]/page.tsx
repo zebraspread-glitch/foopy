@@ -1720,6 +1720,7 @@ export default function MatchPage() {
   const [scoreboardPassed, setScoreboardPassed] = useState(false);
   const scoreboardRef = useRef<HTMLDivElement>(null);
   const previousScoreRef = useRef<LiveScoreSnapshot | null>(null);
+  const [liveViewerCount, setLiveViewerCount] = useState(0);
 
   const apiSportsGameId = useMemo(() => {
     const mapped = (API_SPORTS_MATCH_IDS as Record<string, any>)[id];
@@ -1907,7 +1908,12 @@ export default function MatchPage() {
 
   // Detect score changes from Squiggle and write an inferred event to the DB so all users see it
   useEffect(() => {
-    if (!game || getStatus(game) !== "LIVE" || !apiSportsGameId) {
+    if (!game || !apiSportsGameId) {
+      previousScoreRef.current = null;
+      return;
+    }
+    // Allow detection during UPCOMING too — early Q1 has complete===0 so getStatus returns "UPCOMING"
+    if (getStatus(game) === "FINAL") {
       previousScoreRef.current = null;
       return;
     }
@@ -2277,6 +2283,25 @@ export default function MatchPage() {
     };
   }, [mounted, apiSportsGameId, game, processSupabaseEvents]);
 
+  // Track live viewers via Supabase Realtime Presence
+  useEffect(() => {
+    if (!id) return;
+    const presenceChannel = supabase.channel(`match-viewers-${id}`, {
+      config: { presence: { key: typeof crypto !== "undefined" ? crypto.randomUUID() : `${Date.now()}-${Math.random()}` } },
+    });
+    presenceChannel
+      .on("presence", { event: "sync" }, () => {
+        const state = presenceChannel.presenceState();
+        setLiveViewerCount(Object.keys(state).length);
+      })
+      .subscribe(async (status) => {
+        if (status === "SUBSCRIBED") {
+          await presenceChannel.track({ joined_at: Date.now() });
+        }
+      });
+    return () => { supabase.removeChannel(presenceChannel); };
+  }, [id]);
+
   useEffect(() => {
     if (!id) return;
 
@@ -2300,7 +2325,7 @@ export default function MatchPage() {
   }, [id, liveEvents]);
 
   const backButton = (
-    <div style={{ padding: "calc(env(safe-area-inset-top) + 10px) 16px 0", display: "flex", alignItems: "center" }}>
+    <div style={{ padding: "calc(env(safe-area-inset-top) + 10px) 16px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
       <button
         onClick={() => router.back()}
         style={{
@@ -2323,6 +2348,13 @@ export default function MatchPage() {
         </svg>
         Scores
       </button>
+      <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "8px 12px" }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+        <span style={{ fontSize: 13, fontWeight: 700, color: "#94a3b8" }}>{Math.max(1, liveViewerCount)}</span>
+      </div>
     </div>
   );
 
@@ -2475,6 +2507,7 @@ export default function MatchPage() {
             <div aria-hidden="true" />
           </div>
 
+
           {/* Scores row */}
           <div style={{
             position: "relative",
@@ -2509,6 +2542,12 @@ export default function MatchPage() {
                       <span style={{ fontSize: 14, fontWeight: 800, color: "#ffffff" }}>{game.timestr || getLiveGameClock(liveEvents)}</span>
                     </>
                   )}
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.72)" }}>·</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                  <span style={{ fontSize: 14, fontWeight: 800, color: "#ffffff" }}>{Math.max(1, liveViewerCount)}</span>
                 </div>
               ) : (
                 <div style={{
@@ -3652,6 +3691,7 @@ function MatchPolls({
   const [allVotes, setAllVotes] = useState<{ poll_id: string; option_id: string; user_id: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [pollCommentCounts, setPollCommentCounts] = useState<Record<string, number>>({});
   const { awardXP } = useXP();
 
   const isAdmin = !!ADMIN_USER_ID && userId === ADMIN_USER_ID;
@@ -3671,6 +3711,24 @@ function MatchPolls({
 
     if (!pollRows) { setLoading(false); return; }
     setPolls(pollRows as Poll[]);
+
+    // Fetch comment counts for all polls in this game
+    const pollKeys = (pollRows as any[]).map((p) => `poll_${p.id}`);
+    if (pollKeys.length > 0) {
+      supabase
+        .from("feed_comments")
+        .select("event_key")
+        .eq("game_id", gameId)
+        .in("event_key", pollKeys)
+        .then(({ data }) => {
+          if (!data) return;
+          const counts: Record<string, number> = {};
+          for (const row of data as { event_key: string }[]) {
+            counts[row.event_key] = (counts[row.event_key] ?? 0) + 1;
+          }
+          setPollCommentCounts(counts);
+        });
+    }
 
     const pollIds = (pollRows as any[]).map((p) => p.id);
     if (pollIds.length > 0) {
@@ -3818,6 +3876,7 @@ function MatchPolls({
                   awayStats={awayStats}
                   homeTeam={homeTeam}
                   awayTeam={awayTeam}
+                  commentCount={pollCommentCounts[`poll_${poll.id}`] ?? 0}
                 />
               );
             })}
@@ -3845,6 +3904,7 @@ function PollCard({
   awayStats,
   homeTeam,
   awayTeam,
+  commentCount,
 }: {
   poll: Poll;
   userVote?: string;
@@ -3863,6 +3923,7 @@ function PollCard({
   awayStats: PlayerStat[];
   homeTeam: string;
   awayTeam: string;
+  commentCount?: number;
 }) {
   const router = useRouter();
   const hasVoted = !!userVote;
@@ -4014,6 +4075,11 @@ function PollCard({
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
         </svg>
         Comments
+        {(commentCount ?? 0) > 0 && (
+          <span style={{ fontSize: 11, fontWeight: 800, color: "#a78bfa", background: "rgba(167,139,250,0.15)", borderRadius: 999, padding: "1px 7px" }}>
+            {commentCount}
+          </span>
+        )}
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: "auto" }}>
           <polyline points="9 18 15 12 9 6" />
         </svg>
