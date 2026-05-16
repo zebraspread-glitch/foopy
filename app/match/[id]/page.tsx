@@ -2059,12 +2059,29 @@ export default function MatchPage() {
       return p === 1 ? "1/4 TIME" : p === 2 ? "HALF TIME" : p === 3 ? "3/4 TIME" : p === 4 ? "FULL TIME" : `Q${p} TIME`;
     }
 
+    // For scoring events, prefer the real (non-inferred) event when both exist at the same score.
+    // Sort real events first so they win the dedup check.
+    const sortedRows = [...rows].sort((a, b) => {
+      if (a.inferred === b.inferred) return 0;
+      return a.inferred ? 1 : -1;
+    });
+
     const seen = new Set<string>();
-    const normalised = rows
+    const scoreKey = new Set<string>(); // tracks (game, team, type, score) — prevents inferred shadowing real
+    const normalised = sortedRows
       .filter((e: any) => {
         const k = `${e.period}|${e.minute}|${e.type}|${e.team_id}|${e.player_id}|${e.home_score}|${e.away_score}`;
         if (seen.has(k)) return false;
         seen.add(k);
+
+        // If a scoring event shares (team, type, score) with an already-accepted real event, drop it
+        const isScoring = e.type === "GOAL" || e.type === "BEHIND";
+        if (isScoring && e.home_score != null && e.away_score != null) {
+          const sk = `${e.team_id}|${e.type}|${e.home_score}|${e.away_score}`;
+          if (scoreKey.has(sk)) return false;
+          scoreKey.add(sk);
+        }
+
         return true;
       })
       .map((e: any) => ({
