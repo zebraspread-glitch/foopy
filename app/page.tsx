@@ -8,6 +8,7 @@ import { API_SPORTS_MATCH_IDS } from "./data/apiSportsMatchIds";
 import { getGames, getGamesCached, invalidateGames } from "./lib/gameCache";
 import { foopyRating } from "./match/[id]/utils";
 import { haptic } from "./lib/haptic";
+import { supabase } from "./lib/supabase";
 
 type Game = {
   id: number;
@@ -855,6 +856,7 @@ free_kicks?: {
                 >
                   <aside style={infoStyle}>
                     <div style={{ ...timeStyle, color: status === "LIVE" ? "#4ade80" : undefined }}>{getTime(game, selectedRound !== currentRound)}</div>
+                    {status === "LIVE" && <LiveViewerCount gameId={game.id} />}
                     <div style={venueStyle}>{game.venue || "Venue TBA"}</div>
                   </aside>
 
@@ -933,6 +935,7 @@ free_kicks?: {
                         awayLost={status === "COMPLETED" && (game.ascore ?? 0) < (game.hscore ?? 0)}
                         isUpcoming={isUpcoming}
                         isLive={status === "LIVE"}
+                        gameId={game.id}
                       />
                     </Link>
                   );
@@ -1008,6 +1011,31 @@ free_kicks?: {
   );
 }
 
+function LiveViewerCount({ gameId }: { gameId: number }) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    const ch = supabase.channel(`match-viewers-${gameId}`, {
+      config: { presence: { key: "" } },
+    });
+    ch.on("presence", { event: "sync" }, () => {
+      setCount(Object.keys(ch.presenceState()).length);
+    }).subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [gameId]);
+
+  if (count === 0) return null;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+        <circle cx="12" cy="12" r="3" />
+      </svg>
+      <span style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8" }}>{count}</span>
+    </div>
+  );
+}
+
 function MobileMatchRow({
   homeLogo,
   awayLogo,
@@ -1025,6 +1053,7 @@ function MobileMatchRow({
   awayLost,
   isUpcoming,
   isLive,
+  gameId,
 }: {
   homeLogo: string;
   awayLogo: string;
@@ -1042,11 +1071,15 @@ function MobileMatchRow({
   awayLost: boolean;
   isUpcoming: boolean;
   isLive: boolean;
+  gameId: number;
 }) {
   return (
     <div style={mobileMatchInnerStyle}>
       <div style={mobileMatchHeaderStyle}>
-        <div style={mobileVenueStyle}>{venue}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={mobileVenueStyle}>{venue}</div>
+          {isLive && <LiveViewerCount gameId={gameId} />}
+        </div>
         <strong style={{ ...mobileHeaderTimeStyle, color: isLive ? "#4ade80" : "#ffffff" }}>
           {isUpcoming ? timeText : isLive ? timeText : "Full Time"}
         </strong>
