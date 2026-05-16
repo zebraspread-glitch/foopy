@@ -3,6 +3,10 @@ import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
+// Server-side cooldown — don't re-run for the same game+score within 8s
+const lastRun = new Map<string, number>();
+const COOLDOWN_MS = 8_000;
+
 function adminSupabase() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,13 +16,10 @@ function adminSupabase() {
 
 function scoreType(delta: number, goalsDelta?: number, behindsDelta?: number): "GOAL" | "BEHIND" | null {
   if (delta <= 0) return null;
-  if (goalsDelta != null && behindsDelta != null) {
-    if (goalsDelta > 0) return "GOAL";
-    if (behindsDelta > 0) return "BEHIND";
-  }
+  if (goalsDelta != null && goalsDelta > 0) return "GOAL";
+  if (behindsDelta != null && behindsDelta > 0) return "BEHIND";
   if (delta % 6 === 0) return "GOAL";
-  if (delta === 1) return "BEHIND";
-  // Ambiguous delta (e.g. 7 = goal + behind) — treat as GOAL
+  if (delta === 1 || delta === 2) return "BEHIND";
   return "GOAL";
 }
 
@@ -26,14 +27,7 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Invalid body" }, { status: 400 });
 
-  const {
-    gameId,
-    hteamId, ateamId,
-    hscore, ascore,
-    hgoals, hbehinds,
-    agoals, abehinds,
-    period, minute,
-  } = body;
+  const { gameId, hteamId, ateamId, hscore, ascore, hgoals, hbehinds, agoals, abehinds, period, minute } = body;
 
   if (!gameId || hteamId == null || ateamId == null || hscore == null || ascore == null) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
@@ -42,48 +36,47 @@ export async function POST(req: Request) {
   const currentHome = Number(hscore);
   const currentAway = Number(ascore);
 
-  if (currentHome === 0 && currentAway === 0) {
-    return NextResponse.json({ inserted: [] });
+  if (currentHome === 0 && currentAway === 0) return NextResponse.json({ inserted: [] });
+
+  // Cooldown per game+score to avoid hammering on every re-render
+  const cooldownKey = `${gameId}|${currentHome}|${currentAway}`;
+  const now = Date.now();
+  if ((lastRun.get(cooldownKey) ?? 0) + COOLDOWN_MS > now) {
+    return NextResponse.json({ inserted: [], reason: "cooldown" });
   }
+  lastRun.set(cooldownKey, now);
 
   const supabase = adminSupabase();
 
-  // Derive last known scores from the highest scores recorded in the feed
+  // Get all events for this game to derive baselines and check for existing coverage
   const { data: events } = await supabase
     .from("live_game_feed")
-    .select("home_score, away_score")
+    .select("home_score, away_score, team_id")
     .eq("api_game_id", String(gameId));
 
-  const lastHomeScore = events && events.length > 0
-    ? Math.max(...events.map((e: any) => Number(e.home_score ?? 0)))
-    : 0;
-  const lastAwayScore = events && events.length > 0
-    ? Math.max(...events.map((e: any) => Number(e.away_score ?? 0)))
-    : 0;
+  const rows = events ?? [];
+
+  // Last known home score = highest home_score seen in any event
+  // Last known away score = highest away_score seen in any event
+  // These are independent — correct because each represents the running total for that team
+  const lastHomeScore = rows.length > 0 ? Math.max(...rows.map((e: any) => Number(e.home_score ?? 0))) : 0;
+  const lastAwayScore = rows.length > 0 ? Math.max(...rows.map((e: any) => Number(e.away_score ?? 0))) : 0;
 
   const homeDelta = currentHome - lastHomeScore;
   const awayDelta = currentAway - lastAwayScore;
 
   const inserted: string[] = [];
 
-  // Home scored (and only home scored this interval)
-  if (homeDelta > 0 && awayDelta >= 0) {
-    const type = scoreType(
-      homeDelta,
-      hgoals != null && lastHomeScore != null ? Number(hgoals) - Math.floor(lastHomeScore / 6) : undefined,
-      hbehinds != null ? Number(hbehinds) - (lastHomeScore % 6 === 0 ? 0 : lastHomeScore % 6) : undefined,
-    );
-    if (type) {
-      const { data: existing } = await supabase
-        .from("live_game_feed")
-        .select("id")
-        .eq("api_game_id", String(gameId))
-        .eq("team_id", Number(hteamId))
-        .eq("home_score", currentHome)
-        .eq("away_score", currentAway)
-        .limit(1);
-
-      if (!existing || existing.length === 0) {
+  // Home team scored — check if any event already covers Melbourne reaching this score
+  if (homeDelta > 0) {
+    const alreadyCovered = rows.some((e: any) => Number(e.home_score ?? 0) >= currentHome);
+    if (!alreadyCovered) {
+      const type = scoreType(
+        homeDelta,
+        hgoals != null ? Number(hgoals) - Math.floor(lastHomeScore / 6) : undefined,
+        hbehinds != null ? Number(hbehinds) - Math.round((lastHomeScore % 6)) : undefined,
+      );
+      if (type) {
         await supabase.from("live_game_feed").insert({
           api_game_id: String(gameId),
           period: period != null ? Number(period) : null,
@@ -101,24 +94,16 @@ export async function POST(req: Request) {
     }
   }
 
-  // Away scored (and only away scored this interval)
-  if (awayDelta > 0 && homeDelta >= 0) {
-    const type = scoreType(
-      awayDelta,
-      agoals != null && lastAwayScore != null ? Number(agoals) - Math.floor(lastAwayScore / 6) : undefined,
-      abehinds != null ? Number(abehinds) - (lastAwayScore % 6 === 0 ? 0 : lastAwayScore % 6) : undefined,
-    );
-    if (type) {
-      const { data: existing } = await supabase
-        .from("live_game_feed")
-        .select("id")
-        .eq("api_game_id", String(gameId))
-        .eq("team_id", Number(ateamId))
-        .eq("home_score", currentHome)
-        .eq("away_score", currentAway)
-        .limit(1);
-
-      if (!existing || existing.length === 0) {
+  // Away team scored — check if any event already covers Hawthorn reaching this score
+  if (awayDelta > 0) {
+    const alreadyCovered = rows.some((e: any) => Number(e.away_score ?? 0) >= currentAway);
+    if (!alreadyCovered) {
+      const type = scoreType(
+        awayDelta,
+        agoals != null ? Number(agoals) - Math.floor(lastAwayScore / 6) : undefined,
+        abehinds != null ? Number(abehinds) - Math.round((lastAwayScore % 6)) : undefined,
+      );
+      if (type) {
         await supabase.from("live_game_feed").insert({
           api_game_id: String(gameId),
           period: period != null ? Number(period) : null,
