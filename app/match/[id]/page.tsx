@@ -1646,123 +1646,130 @@ function getTeamStatFromBlock(team: any, category: string, key: string) {
 
 function ScoreWorm({
   events,
-  homeTeam,
-  awayTeam,
+  homeTeamId,
+  awayTeamId,
   homeColor,
   awayColor,
-  homeLogo,
-  awayLogo,
   homeAbbr,
   awayAbbr,
 }: {
   events: LiveEvent[];
-  homeTeam: string;
-  awayTeam: string;
+  homeTeamId: number;
+  awayTeamId: number;
   homeColor: string;
   awayColor: string;
-  homeLogo: string;
-  awayLogo: string;
   homeAbbr: string;
   awayAbbr: string;
 }) {
+  // Sort all goal/behind events by period then minute
   const scoringEvents = events
-    .filter(
-      (e) =>
-        (e.type === "GOAL" || e.type === "BEHIND") &&
-        e.homeScore != null &&
-        e.awayScore != null
-    )
+    .filter((e) => e.type === "GOAL" || e.type === "BEHIND")
     .sort((a, b) => {
-      if (Number(a.period ?? 0) !== Number(b.period ?? 0))
-        return Number(a.period ?? 0) - Number(b.period ?? 0);
+      const pd = Number(a.period ?? 0) - Number(b.period ?? 0);
+      if (pd !== 0) return pd;
       return Number(a.minute ?? 0) - Number(b.minute ?? 0);
     });
 
   if (scoringEvents.length === 0) return null;
 
-  const margins = [0, ...scoringEvents.map((e) => Number(e.homeScore) - Number(e.awayScore))];
+  // Reconstruct running score from team_id + type — no reliance on homeScore/awayScore
+  const pts = (type: string) => (type === "GOAL" ? 6 : 1);
+  let home = 0, away = 0;
+  const points: { home: number; away: number; period: number }[] = [{ home: 0, away: 0, period: 1 }];
 
+  for (const e of scoringEvents) {
+    const tid = Number(e.teamId);
+    if (tid === homeTeamId) home += pts(e.type ?? "");
+    else if (tid === awayTeamId) away += pts(e.type ?? "");
+    else {
+      // Fallback: use stored homeScore/awayScore if team_id doesn't match either team
+      if (e.homeScore != null && e.awayScore != null) {
+        home = Number(e.homeScore);
+        away = Number(e.awayScore);
+      } else continue;
+    }
+    points.push({ home, away, period: Number(e.period ?? points[points.length - 1].period) });
+  }
+
+  if (points.length < 2) return null;
+
+  const margins = points.map((p) => p.home - p.away);
   const maxAbs = Math.max(...margins.map(Math.abs), 12);
+
   const W = 600;
   const H = 180;
-  const padL = 36; // room for team labels
-  const padR = 28; // room for y-axis numbers
+  const padL = 36;
+  const padR = 28;
   const padT = 16;
   const padB = 16;
   const midY = padT + (H - padT - padB) / 2;
 
   const xOf = (i: number) =>
-    padL + (i / (margins.length - 1)) * (W - padL - padR);
+    padL + (i / (points.length - 1)) * (W - padL - padR);
   const yOf = (margin: number) =>
     midY - (margin / maxAbs) * (midY - padT);
 
-  // Step path: horizontal first, then vertical (score worm style)
+  // Stepped segments: horizontal then vertical
   const segments: { d: string; color: string }[] = [];
-  for (let i = 1; i < margins.length; i++) {
+  for (let i = 1; i < points.length; i++) {
     const x1 = xOf(i - 1), y1 = yOf(margins[i - 1]);
     const x2 = xOf(i),     y2 = yOf(margins[i]);
     const col = margins[i - 1] > 0 ? homeColor : margins[i - 1] < 0 ? awayColor : "#64748b";
-    // horizontal leg (before the score change)
     segments.push({ d: `M${x1.toFixed(1)},${y1.toFixed(1)} H${x2.toFixed(1)}`, color: col });
-    // vertical leg (the score change itself)
     segments.push({ d: `M${x2.toFixed(1)},${y1.toFixed(1)} V${y2.toFixed(1)}`, color: col });
   }
 
-  // Quarter break x positions (index into margins array = scoringEvent index + 1)
+  // Quarter break lines where period changes
   const quarterBreakXs: number[] = [];
-  for (let i = 1; i < scoringEvents.length; i++) {
-    if (Number(scoringEvents[i].period ?? 0) > Number(scoringEvents[i - 1].period ?? 0)) {
+  for (let i = 1; i < points.length; i++) {
+    if (points[i].period > points[i - 1].period) {
       quarterBreakXs.push(xOf(i));
     }
   }
 
   const lastMargin = margins[margins.length - 1];
-  const lastX = xOf(margins.length - 1);
+  const lastX = xOf(points.length - 1);
   const lastY = yOf(lastMargin);
   const endColor = lastMargin > 0 ? homeColor : lastMargin < 0 ? awayColor : "#64748b";
 
-  // Y-axis ticks — round up to nearest 6
-  const tickStep = maxAbs <= 12 ? 4 : maxAbs <= 24 ? 8 : 12;
+  const tickStep = maxAbs <= 12 ? 4 : maxAbs <= 30 ? 8 : 12;
   const ticks = Array.from({ length: Math.floor(maxAbs / tickStep) }, (_, i) => (i + 1) * tickStep);
 
   return (
     <div style={{ margin: "0 0 20px", background: "#111", borderRadius: 12, padding: "10px 4px 6px", overflow: "hidden" }}>
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", display: "block" }}>
-        {/* Mid zero line */}
-        <line x1={padL} y1={midY} x2={W - padR} y2={midY} stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
-
-        {/* Horizontal grid lines */}
-        {ticks.map((v) => [v, -v].map((signed) => (
-          <line
-            key={signed}
-            x1={padL} y1={yOf(signed)}
-            x2={W - padR} y2={yOf(signed)}
-            stroke="rgba(255,255,255,0.06)" strokeWidth="1"
-          />
+        {/* Grid lines */}
+        {ticks.flatMap((v) => [v, -v].map((s) => (
+          <line key={s} x1={padL} y1={yOf(s)} x2={W - padR} y2={yOf(s)}
+            stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
         )))}
 
-        {/* Quarter break verticals */}
+        {/* Zero line */}
+        <line x1={padL} y1={midY} x2={W - padR} y2={midY}
+          stroke="rgba(255,255,255,0.18)" strokeWidth="1" />
+
+        {/* Quarter breaks */}
         {quarterBreakXs.map((x, i) => (
           <line key={i} x1={x} y1={padT} x2={x} y2={H - padB}
-            stroke="rgba(255,255,255,0.18)" strokeWidth="1" strokeDasharray="4 3" />
+            stroke="rgba(255,255,255,0.2)" strokeWidth="1" strokeDasharray="4 3" />
         ))}
 
-        {/* Worm — stepped segments */}
+        {/* Worm */}
         {segments.map((seg, i) => (
           <path key={i} d={seg.d} stroke={seg.color} strokeWidth="2.5"
-            fill="none" strokeLinecap="square" strokeLinejoin="miter" />
+            fill="none" strokeLinecap="square" />
         ))}
 
         {/* End dot */}
         <circle cx={lastX} cy={lastY} r="4.5" fill={endColor} />
 
-        {/* Team labels (left) */}
+        {/* Team labels */}
         <text x={padL - 4} y={padT + 8} fill={homeColor} fontSize="11" fontWeight="700"
           fontFamily="sans-serif" textAnchor="end">{homeAbbr}</text>
         <text x={padL - 4} y={H - padB - 2} fill={awayColor} fontSize="11" fontWeight="700"
           fontFamily="sans-serif" textAnchor="end">{awayAbbr}</text>
 
-        {/* Y-axis numbers (right) */}
+        {/* Y-axis numbers */}
         {ticks.map((v) => (
           <g key={v}>
             <text x={W - padR + 4} y={yOf(v) + 4} fill="rgba(255,255,255,0.3)"
@@ -2925,12 +2932,10 @@ export default function MatchPage() {
 
             <ScoreWorm
               events={liveEvents}
-              homeTeam={game.hteam}
-              awayTeam={game.ateam}
+              homeTeamId={getApiTeamId(game.hteam)}
+              awayTeamId={getApiTeamId(game.ateam)}
               homeColor={teamColor(game.hteam, "primary")}
               awayColor={teamColor(game.ateam, "primary")}
-              homeLogo={getLogo(game.hteam)}
-              awayLogo={getLogo(game.ateam)}
               homeAbbr={homeAbbr}
               awayAbbr={awayAbbr}
             />
