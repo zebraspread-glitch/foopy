@@ -1026,14 +1026,13 @@ function LiveViewerCount({ gameId }: { gameId: number }) {
     return () => { supabase.removeChannel(ch); };
   }, [gameId]);
 
-  if (count === 0) return null;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
         <circle cx="12" cy="12" r="3" />
       </svg>
-      <span style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8" }}>{count}</span>
+      <span style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8" }}>{Math.max(1, count)}</span>
     </div>
   );
 }
