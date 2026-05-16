@@ -66,7 +66,7 @@ export async function GET(req: Request) {
 
   const { data: existing, error: fetchError } = await supabase
     .from("live_game_feed")
-    .select("period, minute, type, team_id, player_id, home_score, away_score")
+    .select("id, period, minute, type, team_id, player_id, home_score, away_score, inferred")
     .eq("api_game_id", gameId)
     .order("period", { ascending: true })
     .order("minute", { ascending: true });
@@ -76,19 +76,35 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: fetchError.message }, { status: 500 });
   }
 
+  // Compare only against real (non-inferred) rows to avoid unnecessary replaces
   const uniqueKeys = new Set(uniqueRows.map(key));
+  const realExisting = (existing ?? []).filter((row: any) => !row.inferred);
   const alreadyMatches =
-    (existing ?? []).length === uniqueRows.length &&
-    (existing ?? []).every((row) => uniqueKeys.has(key(row)));
+    realExisting.length === uniqueRows.length &&
+    realExisting.every((row: any) => uniqueKeys.has(key(row)));
 
   if (alreadyMatches) {
     return NextResponse.json({ synced: true, inserted: 0 });
   }
 
+  // Delete inferred events that are now covered by a real event (same team+type+score)
+  const realCoverageKeys = new Set(
+    uniqueRows.map((r) => `${r.team_id}|${r.type}|${r.home_score}|${r.away_score}`)
+  );
+  const inferredToDelete = (existing ?? [])
+    .filter((r: any) => r.inferred && realCoverageKeys.has(`${r.team_id}|${r.type}|${r.home_score}|${r.away_score}`))
+    .map((r: any) => r.id);
+
+  if (inferredToDelete.length > 0) {
+    await supabase.from("live_game_feed").delete().in("id", inferredToDelete);
+  }
+
+  // Delete all real (non-inferred) events for this game, then reinsert fresh from API
   const { error: deleteError } = await supabase
     .from("live_game_feed")
     .delete()
-    .eq("api_game_id", gameId);
+    .eq("api_game_id", gameId)
+    .eq("inferred", false);
 
   if (deleteError) {
     lastSync.delete(gameId);
