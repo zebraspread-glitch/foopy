@@ -121,38 +121,56 @@ function safePlayerName(value: any, fallbackId?: any) {
 function liveFeedTeamColors(team: any) {
   const key = String(team || "").toLowerCase().trim();
 
-  const map: Record<string, { primary: string; secondary: string; text: string }> = {
-    adelaide: { primary: "#002b5c", secondary: "#facc15", text: "#ffffff" },
-    "adelaide crows": { primary: "#002b5c", secondary: "#facc15", text: "#ffffff" },
-    brisbane: { primary: "#a50034", secondary: "#facc15", text: "#ffffff" },
-    "brisbane lions": { primary: "#a50034", secondary: "#facc15", text: "#ffffff" },
-    carlton: { primary: "#031a35", secondary: "#ffffff", text: "#ffffff" },
-    collingwood: { primary: "#ffffff", secondary: "#000000", text: "#000000" },
-    essendon: { primary: "#ef4444", secondary: "#1a1a1a", text: "#000000" },
-    fremantle: { primary: "#7c3aed", secondary: "#ffffff", text: "#ffffff" },
-    geelong: { primary: "#60a5fa", secondary: "#ffffff", text: "#000000" },
-    "geelong cats": { primary: "#60a5fa", secondary: "#ffffff", text: "#000000" },
-    "gold coast": { primary: "#ef4444", secondary: "#facc15", text: "#ffffff" },
-    "gold coast suns": { primary: "#ef4444", secondary: "#facc15", text: "#ffffff" },
-    gws: { primary: "#f97316", secondary: "#1a1a1a", text: "#000000" },
-    "gws giants": { primary: "#f97316", secondary: "#1a1a1a", text: "#000000" },
-    "greater western sydney": { primary: "#f97316", secondary: "#1a1a1a", text: "#000000" },
-    "greater western sydney giants": { primary: "#f97316", secondary: "#1a1a1a", text: "#000000" },
-    hawthorn: { primary: "#f59e0b", secondary: "#5b2a00", text: "#000000" },
-    "hawthorn hawks": { primary: "#f59e0b", secondary: "#5b2a00", text: "#000000" },
-    melbourne: { primary: "#ef4444", secondary: "#3b82f6", text: "#ffffff" },
-    "north melbourne": { primary: "#3b82f6", secondary: "#ffffff", text: "#ffffff" },
-    "port adelaide": { primary: "#06b6d4", secondary: "#1a1a1a", text: "#000000" },
-    "port adelaide power": { primary: "#06b6d4", secondary: "#1a1a1a", text: "#000000" },
-    richmond: { primary: "#facc15", secondary: "#1a1a1a", text: "#000000" },
-    "richmond tigers": { primary: "#facc15", secondary: "#1a1a1a", text: "#000000" },
-    "st kilda": { primary: "#ef4444", secondary: "#1a1a1a", text: "#ffffff" },
-    "st kilda saints": { primary: "#ef4444", secondary: "#1a1a1a", text: "#ffffff" },
-    sydney: { primary: "#ef4444", secondary: "#ffffff", text: "#ffffff" },
-    "sydney swans": { primary: "#ef4444", secondary: "#ffffff", text: "#ffffff" },
-    "west coast": { primary: "#facc15", secondary: "#003087", text: "#000000" },
-    "west coast eagles": { primary: "#facc15", secondary: "#003087", text: "#000000" },
-    "western bulldogs": { primary: "#2563eb", secondary: "#ef4444", text: "#ffffff" },
+  const map: Record<string, { primary: string; secondary: string; tertiary?: string; text: string }> = {
+    // Adelaide: Navy → Yellow → Red
+    adelaide:        { primary: "#002b5c", secondary: "#facc15", tertiary: "#dc2626", text: "#ffffff" },
+    "adelaide crows": { primary: "#002b5c", secondary: "#facc15", tertiary: "#dc2626", text: "#ffffff" },
+    // Brisbane: Maroon → Blue → Yellow
+    brisbane:        { primary: "#8b1a2e", secondary: "#1d4ed8", tertiary: "#facc15", text: "#ffffff" },
+    "brisbane lions": { primary: "#8b1a2e", secondary: "#1d4ed8", tertiary: "#facc15", text: "#ffffff" },
+    // Carlton: Navy (solid)
+    carlton:         { primary: "#002b5c", secondary: "#002b5c", text: "#ffffff" },
+    // Collingwood: Black → White
+    collingwood:     { primary: "#1a1a1a", secondary: "#ffffff", text: "#000000" },
+    // Essendon: Red → Black
+    essendon:        { primary: "#ef4444", secondary: "#1a1a1a", text: "#000000" },
+    // Fremantle: Purple → White
+    fremantle:       { primary: "#7c3aed", secondary: "#ffffff", text: "#ffffff" },
+    // Geelong: Navy → White
+    geelong:         { primary: "#1e40af", secondary: "#ffffff", text: "#000000" },
+    "geelong cats":  { primary: "#1e40af", secondary: "#ffffff", text: "#000000" },
+    // Gold Coast: Red (solid)
+    "gold coast":    { primary: "#ef4444", secondary: "#ef4444", text: "#ffffff" },
+    "gold coast suns": { primary: "#ef4444", secondary: "#ef4444", text: "#ffffff" },
+    // GWS: Orange → White
+    gws:                          { primary: "#f97316", secondary: "#ffffff", text: "#000000" },
+    "gws giants":                 { primary: "#f97316", secondary: "#ffffff", text: "#000000" },
+    "greater western sydney":     { primary: "#f97316", secondary: "#ffffff", text: "#000000" },
+    "greater western sydney giants": { primary: "#f97316", secondary: "#ffffff", text: "#000000" },
+    // Hawthorn: Yellow → Brown
+    hawthorn:        { primary: "#f59e0b", secondary: "#78350f", text: "#000000" },
+    "hawthorn hawks": { primary: "#f59e0b", secondary: "#78350f", text: "#000000" },
+    // Melbourne: Red → Navy
+    melbourne:       { primary: "#ef4444", secondary: "#1e40af", text: "#ffffff" },
+    // North Melbourne: Blue → White
+    "north melbourne": { primary: "#1d4ed8", secondary: "#ffffff", text: "#ffffff" },
+    // Port Adelaide: Black → Teal
+    "port adelaide":       { primary: "#1a1a1a", secondary: "#06b6d4", text: "#000000" },
+    "port adelaide power": { primary: "#1a1a1a", secondary: "#06b6d4", text: "#000000" },
+    // Richmond: Black → Yellow
+    richmond:        { primary: "#1a1a1a", secondary: "#facc15", text: "#000000" },
+    "richmond tigers": { primary: "#1a1a1a", secondary: "#facc15", text: "#000000" },
+    // St Kilda: Red → White → Black
+    "st kilda":      { primary: "#ef4444", secondary: "#ffffff", tertiary: "#1a1a1a", text: "#ffffff" },
+    "st kilda saints": { primary: "#ef4444", secondary: "#ffffff", tertiary: "#1a1a1a", text: "#ffffff" },
+    // Sydney: White → Red
+    sydney:          { primary: "#ffffff", secondary: "#ef4444", text: "#ffffff" },
+    "sydney swans":  { primary: "#ffffff", secondary: "#ef4444", text: "#ffffff" },
+    // West Coast: Blue → Yellow
+    "west coast":        { primary: "#1d4ed8", secondary: "#facc15", text: "#000000" },
+    "west coast eagles": { primary: "#1d4ed8", secondary: "#facc15", text: "#000000" },
+    // Western Bulldogs: Blue → White → Red
+    "western bulldogs": { primary: "#2563eb", secondary: "#ffffff", tertiary: "#ef4444", text: "#ffffff" },
   };
 
   return map[key] ?? { primary: "#1f2937", secondary: "#94a3b8", text: "#ffffff" };
@@ -869,7 +887,9 @@ function LiveFeedPlayer({
         }
       }}
       style={{
-        background: `linear-gradient(135deg, ${colours.primary}, ${colours.secondary})`,
+        background: colours.tertiary
+          ? `linear-gradient(135deg, ${colours.primary}, ${colours.secondary}, ${colours.tertiary})`
+          : `linear-gradient(135deg, ${colours.primary}, ${colours.secondary})`,
         padding: 2,
         borderRadius: 20,
         cursor: "pointer",
