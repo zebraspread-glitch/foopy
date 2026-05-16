@@ -1932,14 +1932,8 @@ export default function MatchPage() {
     if (!teamId) return;
 
     const delta = homeScored ? homeDelta : awayDelta;
-    const goalDelta = homeScored
-      ? (current.homeGoals != null ? current.homeGoals - Math.floor(feedHome / 6) : undefined)
-      : (current.awayGoals != null ? current.awayGoals - Math.floor(feedAway / 6) : undefined);
-    const behindDelta = homeScored
-      ? (current.homeBehinds != null ? current.homeBehinds - (feedHome % 6) : undefined)
-      : (current.awayBehinds != null ? current.awayBehinds - (feedAway % 6) : undefined);
-
-    const type = scoreTypeFromDelta(delta, goalDelta, behindDelta);
+    // Use only the point delta — goal/behind math from feed score is unreliable
+    const type = scoreTypeFromDelta(delta);
     if (!type) return;
 
     const { period, minute } = clockFromTimestr(game.timestr);
