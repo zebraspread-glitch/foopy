@@ -10,12 +10,6 @@ function adminSupabase() {
   );
 }
 
-function eventType(delta: number): "GOAL" | "BEHIND" | null {
-  if (delta === 6) return "GOAL";
-  if (delta === 1) return "BEHIND";
-  return null;
-}
-
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Invalid body" }, { status: 400 });
@@ -30,7 +24,7 @@ export async function POST(req: Request) {
   const currentAway = Number(ascore);
   const supabase = adminSupabase();
 
-  // Get last known score
+  // Read last confirmed score from DB
   const { data: snapshot } = await supabase
     .from("match_score_snapshots")
     .select("home_score, away_score")
@@ -45,52 +39,55 @@ export async function POST(req: Request) {
     return NextResponse.json({ inserted: [] });
   }
 
-  // Update snapshot immediately so concurrent calls don't double-fire
+  // Always update snapshot so next call has correct baseline
   await supabase
     .from("match_score_snapshots")
-    .upsert({ game_id: String(gameId), home_score: currentHome, away_score: currentAway, updated_at: new Date().toISOString() });
-
-  const inserted: string[] = [];
+    .upsert({
+      game_id: String(gameId),
+      home_score: currentHome,
+      away_score: currentAway,
+      updated_at: new Date().toISOString(),
+    });
 
   const homeDelta = currentHome - lastHome;
   const awayDelta = currentAway - lastAway;
+  const inserted: string[] = [];
 
-  if (homeDelta > 0) {
-    const type = eventType(homeDelta);
-    if (type) {
-      await supabase.from("live_game_feed").insert({
-        api_game_id: String(gameId),
-        period: period != null ? Number(period) : null,
-        minute: minute != null ? Number(minute) : null,
-        type,
-        team_id: Number(hteamId),
-        player_id: null,
-        player_name: null,
-        home_score: currentHome,
-        away_score: currentAway,
-        inferred: true,
-      });
-      inserted.push(`home:${type}`);
-    }
-  }
+  // Only handle clean single-score deltas — ambiguous multi-score gaps are left to API-Sports
+  const toInsert: { teamId: number; type: "GOAL" | "BEHIND" }[] = [];
 
-  if (awayDelta > 0) {
-    const type = eventType(awayDelta);
-    if (type) {
-      await supabase.from("live_game_feed").insert({
-        api_game_id: String(gameId),
-        period: period != null ? Number(period) : null,
-        minute: minute != null ? Number(minute) : null,
-        type,
-        team_id: Number(ateamId),
-        player_id: null,
-        player_name: null,
-        home_score: currentHome,
-        away_score: currentAway,
-        inferred: true,
-      });
-      inserted.push(`away:${type}`);
-    }
+  if (homeDelta === 6 && awayDelta === 0) toInsert.push({ teamId: Number(hteamId), type: "GOAL" });
+  else if (homeDelta === 1 && awayDelta === 0) toInsert.push({ teamId: Number(hteamId), type: "BEHIND" });
+  else if (awayDelta === 6 && homeDelta === 0) toInsert.push({ teamId: Number(ateamId), type: "GOAL" });
+  else if (awayDelta === 1 && homeDelta === 0) toInsert.push({ teamId: Number(ateamId), type: "BEHIND" });
+
+  for (const { teamId, type } of toInsert) {
+    // Skip if a real (non-inferred) event already exists for this exact score + team
+    const { data: existing } = await supabase
+      .from("live_game_feed")
+      .select("id")
+      .eq("api_game_id", String(gameId))
+      .eq("team_id", teamId)
+      .eq("home_score", currentHome)
+      .eq("away_score", currentAway)
+      .limit(1);
+
+    if (existing && existing.length > 0) continue;
+
+    const { error } = await supabase.from("live_game_feed").insert({
+      api_game_id: String(gameId),
+      period: period != null ? Number(period) : null,
+      minute: minute != null ? Number(minute) : null,
+      type,
+      team_id: teamId,
+      player_id: null,
+      player_name: null,
+      home_score: currentHome,
+      away_score: currentAway,
+      inferred: true,
+    });
+
+    if (!error) inserted.push(type);
   }
 
   return NextResponse.json({ inserted });

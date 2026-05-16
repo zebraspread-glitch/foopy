@@ -279,14 +279,6 @@ function clockFromTimestr(timestr?: string) {
   };
 }
 
-function scoreTypeFromDelta(delta: number, goalDelta?: number, behindDelta?: number) {
-  if (goalDelta != null && goalDelta > 0) return "GOAL";
-  if (behindDelta != null && behindDelta > 0 && goalDelta === 0) return "BEHIND";
-  if (delta === 1) return "BEHIND";
-  if (delta === 6) return "GOAL";
-  if (delta > 0) return "SCORE";
-  return "";
-}
 
 function latestFeedScore(events: LiveEvent[], homeTeam?: string, awayTeam?: string) {
   const event = events.find(
@@ -1549,51 +1541,6 @@ function getTeamRecordBeforeGame(team: any, games: MatchGame[], beforeGame: Matc
   return draws > 0 ? `${wins}-${losses}-${draws}` : `${wins}-${losses}`;
 }
 
-type LiveScoreSnapshot = {
-  home: number;
-  away: number;
-  homeGoals?: number;
-  awayGoals?: number;
-  homeBehinds?: number;
-  awayBehinds?: number;
-};
-
-function scoreSnapshot(game: MatchGame): LiveScoreSnapshot | null {
-  const home = Number(game.hscore ?? 0);
-  const away = Number(game.ascore ?? 0);
-  if (!Number.isFinite(home) || !Number.isFinite(away)) return null;
-
-  const optionalNumber = (value: unknown) => {
-    const n = Number(value);
-    return Number.isFinite(n) ? n : undefined;
-  };
-
-  return {
-    home,
-    away,
-    homeGoals: optionalNumber((game as any).hgoals),
-    awayGoals: optionalNumber((game as any).agoals),
-    homeBehinds: optionalNumber((game as any).hbehinds),
-    awayBehinds: optionalNumber((game as any).abehinds),
-  };
-}
-
-function feedScoreSnapshot(events: LiveEvent[], homeTeam: string, awayTeam: string): LiveScoreSnapshot | null {
-  let home = 0;
-  let away = 0;
-
-  for (const event of events) {
-    const type = safeText(event.type, "").toUpperCase();
-    const points = type === "GOAL" ? 6 : type === "BEHIND" ? 1 : 0;
-    if (!points) continue;
-
-    const team = resolvedEventTeam(event);
-    if (teamsMatch(team, homeTeam)) home += points;
-    else if (teamsMatch(team, awayTeam)) away += points;
-  }
-
-  return { home, away };
-}
 
 
 function playerTeamFromStatRow(player: any) {
@@ -1719,7 +1666,7 @@ export default function MatchPage() {
   const [roundGames, setRoundGames] = useState<MatchGame[]>([]);
   const [scoreboardPassed, setScoreboardPassed] = useState(false);
   const scoreboardRef = useRef<HTMLDivElement>(null);
-  const previousScoreRef = useRef<LiveScoreSnapshot | null>(null);
+
   const [liveViewerCount, setLiveViewerCount] = useState(0);
 
   const apiSportsGameId = useMemo(() => {
@@ -3293,7 +3240,7 @@ function MCRow({ comment, userId, onLike, onDelete, onReply, liking, isReply = f
             </svg>
             {comment.likes > 0 && comment.likes}
           </button>
-          {!isReply && userId && (
+          {userId && (
             <button onClick={() => onReply(comment)} style={{ background: "none", border: "none", padding: 0, fontSize: 12, fontWeight: 800, cursor: "pointer", color: "#475569" }}>
               Reply
             </button>
