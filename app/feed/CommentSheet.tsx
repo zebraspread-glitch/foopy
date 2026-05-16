@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "@/app/lib/supabase";
 import { useRouter } from "next/navigation";
@@ -44,6 +44,7 @@ export default function CommentSheet({ gameId, gameLabel, eventKey, onClose }: P
   const [replyTo, setReplyTo] = useState<Comment | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [liking, setLiking] = useState<Set<string>>(new Set());
+  const [replyThreadId, setReplyThreadId] = useState<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
 
@@ -168,9 +169,15 @@ export default function CommentSheet({ gameId, gameLabel, eventKey, onClose }: P
   }
 
   function startReply(comment: Comment) {
+    setReplyThreadId(null);
     setReplyTo(comment);
     setTimeout(() => inputRef.current?.focus(), 50);
   }
+
+  const replyThread = useMemo(
+    () => (replyThreadId ? findFeedCommentById(comments, replyThreadId) : null),
+    [comments, replyThreadId]
+  );
 
   return (
     <div style={backdropStyle} onClick={handleBackdropClick}>
@@ -206,11 +213,25 @@ export default function CommentSheet({ gameId, gameLabel, eventKey, onClose }: P
                 onLike={handleLike}
                 onDelete={handleDelete}
                 onReply={startReply}
+                onViewReplies={(comment) => setReplyThreadId(comment.id)}
                 liking={liking}
               />
             ))
           )}
         </div>
+
+        {replyThread && (
+          <FeedRepliesPopup
+            comment={replyThread}
+            userId={userId}
+            onClose={() => setReplyThreadId(null)}
+            onLike={handleLike}
+            onDelete={handleDelete}
+            onReply={startReply}
+            onViewReplies={(comment) => setReplyThreadId(comment.id)}
+            liking={liking}
+          />
+        )}
 
         {/* Input area */}
         <div style={inputAreaStyle}>
@@ -272,6 +293,7 @@ function CommentRow({
   onLike,
   onDelete,
   onReply,
+  onViewReplies,
   liking,
   isReply = false,
 }: {
@@ -280,6 +302,7 @@ function CommentRow({
   onLike: (c: Comment) => void;
   onDelete: (id: string) => void;
   onReply: (c: Comment) => void;
+  onViewReplies: (c: Comment) => void;
   liking: Set<string>;
   isReply?: boolean;
 }) {
@@ -330,8 +353,7 @@ function CommentRow({
             {comment.likes > 0 && <span style={{ marginLeft: 4 }}>{comment.likes}</span>}
           </button>
 
-          {/* Reply (only on top-level) */}
-          {!isReply && userId && (
+          {userId && (
             <button onClick={() => onReply(comment)} style={{ ...actionBtnStyle, color: "#64748b" }}>
               Reply
             </button>
@@ -347,24 +369,55 @@ function CommentRow({
 
         {/* Replies */}
         {comment.replies && comment.replies.length > 0 && (
-          <div style={{ marginTop: 8 }}>
-            {comment.replies.map(r => (
-              <CommentRow
-                key={r.id}
-                comment={r}
-                userId={userId}
-                onLike={onLike}
-                onDelete={onDelete}
-                onReply={onReply}
-                liking={liking}
-                isReply
-              />
-            ))}
-          </div>
+          <button onClick={() => onViewReplies(comment)} style={viewRepliesBtnStyle}>
+            View {comment.replies.length} {comment.replies.length === 1 ? "reply" : "replies"}
+          </button>
         )}
       </div>
     </div>
   );
+}
+
+function FeedRepliesPopup({ comment, userId, onClose, onLike, onDelete, onReply, onViewReplies, liking }: {
+  comment: Comment; userId: string | null; onClose: () => void;
+  onLike: (c: Comment) => void; onDelete: (id: string) => void; onReply: (c: Comment) => void;
+  onViewReplies: (c: Comment) => void; liking: Set<string>;
+}) {
+  const replyCount = comment.replies?.length ?? 0;
+  return (
+    <div style={replyModalBackdropStyle} onClick={onClose}>
+      <section style={replyModalStyle} onClick={(event) => event.stopPropagation()}>
+        <div style={replyModalHeaderStyle}>
+          <div>
+            <div style={replyModalTitleStyle}>Replies</div>
+            <div style={replyModalSubStyle}>{replyCount} {replyCount === 1 ? "reply" : "replies"}</div>
+          </div>
+          <button onClick={onClose} style={replyModalCloseStyle}>×</button>
+        </div>
+        <div style={replyModalParentStyle}>
+          <CommentRow comment={comment} userId={userId} onLike={onLike} onDelete={onDelete} onReply={onReply} onViewReplies={onViewReplies} liking={liking} />
+        </div>
+        <div style={replyModalRepliesStyle}>
+          {replyCount === 0 ? (
+            <div style={replyModalEmptyStyle}>No replies yet.</div>
+          ) : (
+            comment.replies!.map((reply) => (
+              <CommentRow key={reply.id} comment={reply} userId={userId} onLike={onLike} onDelete={onDelete} onReply={onReply} onViewReplies={onViewReplies} liking={liking} isReply />
+            ))
+          )}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function findFeedCommentById(comments: Comment[], id: string): Comment | null {
+  for (const comment of comments) {
+    if (comment.id === id) return comment;
+    const found = findFeedCommentById(comment.replies ?? [], id);
+    if (found) return found;
+  }
+  return null;
 }
 
 /* ── Icons ── */
@@ -398,6 +451,7 @@ const backdropStyle: CSSProperties = {
 };
 
 const sheetStyle: CSSProperties = {
+  position: "relative",
   width: "100%",
   maxHeight: "85dvh",
   background: "#0a0a0a",
@@ -542,6 +596,82 @@ const actionBtnStyle: CSSProperties = {
   fontSize: 12,
   fontWeight: 700,
   cursor: "pointer",
+};
+
+const viewRepliesBtnStyle: CSSProperties = {
+  marginTop: 8,
+  background: "none",
+  border: "none",
+  color: "#60a5fa",
+  fontSize: 12,
+  fontWeight: 800,
+  cursor: "pointer",
+  padding: 0,
+};
+
+const replyModalBackdropStyle: CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  zIndex: 80,
+  background: "rgba(0,0,0,0.72)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "12px",
+};
+
+const replyModalStyle: CSSProperties = {
+  width: "100%",
+  maxWidth: 640,
+  maxHeight: "72%",
+  background: "#050505",
+  border: "1px solid rgba(255,255,255,0.12)",
+  borderRadius: 22,
+  overflow: "hidden",
+  boxShadow: "0 24px 80px rgba(0,0,0,0.72)",
+  display: "flex",
+  flexDirection: "column",
+};
+
+const replyModalHeaderStyle: CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  padding: "14px 16px",
+  borderBottom: "1px solid rgba(255,255,255,0.08)",
+};
+
+const replyModalTitleStyle: CSSProperties = { color: "#f8fafc", fontSize: 16, fontWeight: 1000 };
+const replyModalSubStyle: CSSProperties = { marginTop: 2, color: "#64748b", fontSize: 12, fontWeight: 800 };
+
+const replyModalCloseStyle: CSSProperties = {
+  width: 34,
+  height: 34,
+  borderRadius: "50%",
+  border: "1px solid rgba(255,255,255,0.1)",
+  background: "rgba(255,255,255,0.07)",
+  color: "#e2e8f0",
+  fontSize: 24,
+  lineHeight: 1,
+  cursor: "pointer",
+};
+
+const replyModalParentStyle: CSSProperties = {
+  padding: "4px 0 10px",
+  borderBottom: "1px solid rgba(255,255,255,0.08)",
+};
+
+const replyModalRepliesStyle: CSSProperties = {
+  overflowY: "auto",
+  padding: "8px 0 14px",
+};
+
+const replyModalEmptyStyle: CSSProperties = {
+  padding: "22px 16px",
+  color: "#64748b",
+  fontSize: 13,
+  fontWeight: 800,
+  textAlign: "center",
 };
 
 const inputAreaStyle: CSSProperties = {

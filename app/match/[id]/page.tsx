@@ -2953,6 +2953,7 @@ function MatchComments({ gameId, highlight }: { gameId: number; highlight: strin
   const [sort, setSort] = useState<"live" | "top">("live");
   const [cooldown, setCooldown] = useState(0);
   const [commentsSent, setCommentsSent] = useState(0);
+  const [replyThreadId, setReplyThreadId] = useState<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -2965,6 +2966,17 @@ function MatchComments({ gameId, highlight }: { gameId: number; highlight: strin
     setDupToast(true);
     setTimeout(() => setDupToast(false), 2500);
   }
+
+  function startReply(comment: MatchComment) {
+    setReplyThreadId(null);
+    setReplyTo(comment);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  }
+
+  const replyThread = useMemo(
+    () => (replyThreadId ? findMatchCommentById(comments, replyThreadId) : null),
+    [comments, replyThreadId]
+  );
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setUserId(data.session?.user.id ?? null));
@@ -3169,10 +3181,23 @@ function MatchComments({ gameId, highlight }: { gameId: number; highlight: strin
         ) : (
           comments.map(c => (
             <MCRow key={c.id} comment={c} userId={userId} onLike={handleLike} onDelete={handleDelete}
-              onReply={r => { setReplyTo(r); setTimeout(() => inputRef.current?.focus(), 50); }} liking={liking} />
+              onReply={startReply} onViewReplies={(comment) => setReplyThreadId(comment.id)} liking={liking} />
           ))
         )}
       </div>
+
+      {replyThread && (
+        <MatchRepliesPopup
+          comment={replyThread}
+          userId={userId}
+          onClose={() => setReplyThreadId(null)}
+          onLike={handleLike}
+          onDelete={handleDelete}
+          onReply={startReply}
+          onViewReplies={(comment) => setReplyThreadId(comment.id)}
+          liking={liking}
+        />
+      )}
 
       {/* Input — sticky within the match container */}
       <div style={{ position: "sticky", bottom: 0, zIndex: 50, borderTop: "1px solid rgba(255,255,255,.08)", padding: "10px 14px calc(14px + env(safe-area-inset-bottom))", background: "rgba(5,5,5,0.92)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
@@ -3246,10 +3271,10 @@ function CommentBody({ text }: { text: string }) {
   );
 }
 
-function MCRow({ comment, userId, onLike, onDelete, onReply, liking, isReply = false }: {
+function MCRow({ comment, userId, onLike, onDelete, onReply, onViewReplies, liking, isReply = false }: {
   comment: MatchComment; userId: string | null;
   onLike: (c: MatchComment) => void; onDelete: (id: string) => void;
-  onReply: (c: MatchComment) => void; liking: Set<string>; isReply?: boolean;
+  onReply: (c: MatchComment) => void; onViewReplies: (c: MatchComment) => void; liking: Set<string>; isReply?: boolean;
 }) {
   const router = useRouter();
   const name = comment.profile?.display_name || comment.profile?.username || "User";
@@ -3258,7 +3283,6 @@ function MCRow({ comment, userId, onLike, onDelete, onReply, liking, isReply = f
   const isOwn = userId === comment.user_id;
   const isLiked = comment.liked;
   const isLiking = liking.has(comment.id);
-  const [showReplies, setShowReplies] = useState(false);
   const replyCount = comment.replies?.length ?? 0;
 
   return (
@@ -3293,7 +3317,7 @@ function MCRow({ comment, userId, onLike, onDelete, onReply, liking, isReply = f
             </svg>
             {comment.likes > 0 && comment.likes}
           </button>
-          {!isReply && userId && (
+          {userId && (
             <button onClick={() => onReply(comment)} style={{ background: "none", border: "none", padding: 0, fontSize: 12, fontWeight: 800, cursor: "pointer", color: "#475569" }}>
               Reply
             </button>
@@ -3306,31 +3330,107 @@ function MCRow({ comment, userId, onLike, onDelete, onReply, liking, isReply = f
         </div>
 
         {/* View replies toggle */}
-        {!isReply && replyCount > 0 && (
+        {replyCount > 0 && (
           <button
-            onClick={() => setShowReplies(v => !v)}
+            onClick={() => onViewReplies(comment)}
             style={{ display: "flex", alignItems: "center", gap: 5, background: "none", border: "none", padding: "6px 4px 2px", fontSize: 12, fontWeight: 800, color: "#3b82f6", cursor: "pointer" }}
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-              style={{ transform: showReplies ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="6 9 12 15 18 9" />
             </svg>
-            {showReplies ? "Hide replies" : `View ${replyCount} ${replyCount === 1 ? "reply" : "replies"}`}
+            {`View ${replyCount} ${replyCount === 1 ? "reply" : "replies"}`}
           </button>
-        )}
-
-        {/* Replies */}
-        {!isReply && showReplies && comment.replies && comment.replies.length > 0 && (
-          <div style={{ marginTop: 4 }}>
-            {comment.replies.map(r => (
-              <MCRow key={r.id} comment={r} userId={userId} onLike={onLike} onDelete={onDelete} onReply={onReply} liking={liking} isReply />
-            ))}
-          </div>
         )}
       </div>
     </div>
   );
 }
+
+function MatchRepliesPopup({ comment, userId, onClose, onLike, onDelete, onReply, onViewReplies, liking }: {
+  comment: MatchComment; userId: string | null; onClose: () => void;
+  onLike: (c: MatchComment) => void; onDelete: (id: string) => void; onReply: (c: MatchComment) => void;
+  onViewReplies: (c: MatchComment) => void; liking: Set<string>;
+}) {
+  const replyCount = comment.replies?.length ?? 0;
+  return (
+    <div style={matchReplyModalBackdropStyle} onClick={onClose}>
+      <section style={matchReplyModalStyle} onClick={(event) => event.stopPropagation()}>
+        <div style={matchReplyModalHeaderStyle}>
+          <div>
+            <div style={{ color: "#f8fafc", fontSize: 16, fontWeight: 1000 }}>Replies</div>
+            <div style={{ marginTop: 2, color: "#64748b", fontSize: 12, fontWeight: 800 }}>{replyCount} {replyCount === 1 ? "reply" : "replies"}</div>
+          </div>
+          <button onClick={onClose} style={matchReplyModalCloseStyle}>×</button>
+        </div>
+        <div style={{ padding: "4px 0 10px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+          <MCRow comment={comment} userId={userId} onLike={onLike} onDelete={onDelete} onReply={onReply} onViewReplies={onViewReplies} liking={liking} />
+        </div>
+        <div style={{ overflowY: "auto", padding: "8px 0 14px" }}>
+          {replyCount === 0 ? (
+            <div style={{ padding: "22px 16px", color: "#64748b", fontSize: 13, fontWeight: 800, textAlign: "center" }}>No replies yet.</div>
+          ) : (
+            comment.replies!.map((reply) => (
+              <MCRow key={reply.id} comment={reply} userId={userId} onLike={onLike} onDelete={onDelete} onReply={onReply} onViewReplies={onViewReplies} liking={liking} isReply />
+            ))
+          )}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function findMatchCommentById(comments: MatchComment[], id: string): MatchComment | null {
+  for (const comment of comments) {
+    if (comment.id === id) return comment;
+    const found = findMatchCommentById(comment.replies ?? [], id);
+    if (found) return found;
+  }
+  return null;
+}
+
+const matchReplyModalBackdropStyle: CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  zIndex: 9998,
+  background: "rgba(0,0,0,0.72)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "20px 10px",
+};
+
+const matchReplyModalStyle: CSSProperties = {
+  width: "100%",
+  maxWidth: 720,
+  maxHeight: "78dvh",
+  background: "#050505",
+  border: "1px solid rgba(255,255,255,0.12)",
+  borderRadius: 24,
+  overflow: "hidden",
+  boxShadow: "0 24px 80px rgba(0,0,0,0.72)",
+  display: "flex",
+  flexDirection: "column",
+};
+
+const matchReplyModalHeaderStyle: CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  padding: "14px 16px",
+  borderBottom: "1px solid rgba(255,255,255,0.08)",
+};
+
+const matchReplyModalCloseStyle: CSSProperties = {
+  width: 34,
+  height: 34,
+  borderRadius: "50%",
+  border: "1px solid rgba(255,255,255,0.1)",
+  background: "rgba(255,255,255,0.07)",
+  color: "#e2e8f0",
+  fontSize: 24,
+  lineHeight: 1,
+  cursor: "pointer",
+};
 
 /* ================= POLLS ================= */
 

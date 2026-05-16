@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties, Dispatch, SetStateAction } from "react";
+import type { CSSProperties } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
 import { createNotification, notifyMentions } from "@/app/lib/notifications";
@@ -246,7 +246,7 @@ export default function EventCommentsPage() {
 
   const [userId, setUserId] = useState<string | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
-  const [openReplies, setOpenReplies] = useState<Set<string>>(new Set());
+  const [replyThreadId, setReplyThreadId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [body, setBody] = useState("");
   const [replyTo, setReplyTo] = useState<Comment | null>(null);
@@ -521,9 +521,9 @@ export default function EventCommentsPage() {
     if (el) el.scrollIntoView({ block: "start", behavior: "smooth" });
   }, [highlight, loading]);
 
-  async function handleSubmit() {
-    const cleanBody = body.trim();
-    if (!cleanBody || !userId || submitting) return;
+  async function submitCommentText(text: string, parent: Comment | null) {
+    const cleanBody = text.trim();
+    if (!cleanBody || !userId || submitting) return false;
 
     haptic("medium");
     setSubmitting(true);
@@ -532,7 +532,7 @@ export default function EventCommentsPage() {
     const insertPayload = {
       game_id: gameId,
       user_id: userId,
-      parent_id: replyTo?.id ?? null,
+      parent_id: parent?.id ?? null,
       body: cleanBody,
       event_key: canonicalEventKey,
     };
@@ -543,22 +543,17 @@ export default function EventCommentsPage() {
       console.error(error);
       setErrorText(error.message || "Could not post comment.");
       setSubmitting(false);
-      return;
+      return false;
     }
 
     await migrateEventComments();
 
-    if (replyTo) {
-      setOpenReplies((prev) => {
-        const next = new Set(prev);
-        next.add(replyTo.id);
-        return next;
-      });
+    if (parent) {
       // Notify parent comment author of reply
-      if (replyTo.user_id !== userId) {
-        void createNotification(replyTo.user_id, "reply_comment", userId, {
+      if (parent.user_id !== userId) {
+        void createNotification(parent.user_id, "reply_comment", userId, {
           comment_body: cleanBody.slice(0, 100),
-          comment_id: replyTo.id,
+          comment_id: parent.id,
           game_id: gameId,
           event_key: canonicalEventKey,
         });
@@ -572,13 +567,19 @@ export default function EventCommentsPage() {
       event_key: canonicalEventKey,
     }).catch((notifyError) => console.error("[event comments] mention notify failed:", notifyError));
 
-    setBody("");
-    setReplyTo(null);
     const newCount = commentsSent + 1;
     setCommentsSent(newCount);
     if (newCount > 3) setCooldown(30);
     await loadComments(sort);
     setSubmitting(false);
+    return true;
+  }
+
+  async function handleSubmit() {
+    const ok = await submitCommentText(body, replyTo);
+    if (!ok) return;
+    setBody("");
+    setReplyTo(null);
   }
 
   async function handleLike(comment: Comment) {
@@ -644,9 +645,15 @@ export default function EventCommentsPage() {
   }
 
   function startReply(comment: Comment) {
+    setReplyThreadId(null);
     setReplyTo(comment);
     setTimeout(() => inputRef.current?.focus(), 60);
   }
+
+  const replyThread = useMemo(
+    () => (replyThreadId ? findCommentById(comments, replyThreadId) : null),
+    [comments, replyThreadId]
+  );
 
   return (
     <main style={pageStyle}>
@@ -756,14 +763,29 @@ export default function EventCommentsPage() {
               onDelete={handleDelete}
               onReply={startReply}
               likingIds={likingIds}
-              openReplies={openReplies}
-              setOpenReplies={setOpenReplies}
+              onViewReplies={(comment) => setReplyThreadId(comment.id)}
             />
           ))
         )}
       </section>
 
-      <section style={inputAreaStyle}>
+      {replyThread && (
+        <RepliesPopup
+          comment={replyThread}
+          userId={userId}
+          onClose={() => setReplyThreadId(null)}
+          onLike={handleLike}
+          onDelete={handleDelete}
+          onReply={startReply}
+          likingIds={likingIds}
+          onViewReplies={(comment) => setReplyThreadId(comment.id)}
+          onSubmitReply={(parent, text) => submitCommentText(text, parent)}
+          submitting={submitting}
+          cooldown={cooldown}
+        />
+      )}
+
+      {!replyThread && <section style={inputAreaStyle}>
         {!userId ? (
           <button onClick={() => router.push("/login")} style={signInBtnStyle}>
             Sign in to comment
@@ -820,7 +842,7 @@ export default function EventCommentsPage() {
             </div>
           </>
         )}
-      </section>
+      </section>}
     </main>
   );
 }
@@ -1108,8 +1130,8 @@ function CommentRow({
   onDelete,
   onReply,
   likingIds,
-  openReplies,
-  setOpenReplies,
+  onViewReplies,
+  hideThreadActions = false,
   isReply = false,
 }: {
   comment: Comment;
@@ -1118,8 +1140,8 @@ function CommentRow({
   onDelete: (comment: Comment) => void;
   onReply: (comment: Comment) => void;
   likingIds: Set<string>;
-  openReplies: Set<string>;
-  setOpenReplies: Dispatch<SetStateAction<Set<string>>>;
+  onViewReplies: (comment: Comment) => void;
+  hideThreadActions?: boolean;
   isReply?: boolean;
 }) {
   const router = useRouter();
@@ -1130,16 +1152,6 @@ function CommentRow({
   const isLiking = likingIds.has(comment.id);
 
   const replyCount = comment.replies.length;
-  const repliesOpen = openReplies.has(comment.id);
-
-  function toggleReplies() {
-    setOpenReplies((prev) => {
-      const next = new Set(prev);
-      if (next.has(comment.id)) next.delete(comment.id);
-      else next.add(comment.id);
-      return next;
-    });
-  }
 
   return (
     <article id={`c-${comment.id}`} style={{ ...commentRowStyle, marginLeft: isReply ? 42 : 0 }}>
@@ -1183,7 +1195,7 @@ function CommentRow({
             {comment.likes > 0 && <span>{comment.likes}</span>}
           </button>
 
-          {!isReply && userId && (
+          {userId && !hideThreadActions && (
             <button onClick={() => onReply(comment)} style={actionBtnStyle}>
               Reply
             </button>
@@ -1196,17 +1208,79 @@ function CommentRow({
           )}
         </div>
 
-        {!isReply && replyCount > 0 && (
-          <button onClick={toggleReplies} style={viewRepliesBtnStyle}>
-            {repliesOpen
-              ? "Hide replies"
-              : `View ${replyCount} ${replyCount === 1 ? "reply" : "replies"}`}
+        {replyCount > 0 && !hideThreadActions && (
+          <button onClick={() => onViewReplies(comment)} style={viewRepliesBtnStyle}>
+            {`View ${replyCount} ${replyCount === 1 ? "reply" : "replies"}`}
           </button>
         )}
+      </div>
+    </article>
+  );
+}
 
-        {!isReply && repliesOpen && (
-          <div style={repliesStyle}>
-            {comment.replies.map((reply) => (
+function RepliesPopup({
+  comment,
+  userId,
+  onClose,
+  onLike,
+  onDelete,
+  onReply,
+  likingIds,
+  onViewReplies,
+  onSubmitReply,
+  submitting,
+  cooldown,
+}: {
+  comment: Comment;
+  userId: string | null;
+  onClose: () => void;
+  onLike: (comment: Comment) => void;
+  onDelete: (comment: Comment) => void;
+  onReply: (comment: Comment) => void;
+  likingIds: Set<string>;
+  onViewReplies: (comment: Comment) => void;
+  onSubmitReply: (parent: Comment, body: string) => Promise<boolean>;
+  submitting: boolean;
+  cooldown: number;
+}) {
+  const router = useRouter();
+  const [replyBody, setReplyBody] = useState("");
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  async function submitReply() {
+    const ok = await onSubmitReply(comment, replyBody);
+    if (ok) setReplyBody("");
+  }
+
+  return (
+    <div style={replyModalBackdropStyle} onClick={onClose}>
+      <section style={replyModalStyle} onClick={(event) => event.stopPropagation()}>
+        <div style={replyModalHeaderStyle}>
+          <div>
+            <div style={replyModalTitleStyle}>Replies</div>
+            <div style={replyModalSubStyle}>{comment.replies.length} {comment.replies.length === 1 ? "reply" : "replies"}</div>
+          </div>
+          <button onClick={onClose} style={replyModalCloseStyle}>×</button>
+        </div>
+
+        <div style={replyModalParentStyle}>
+          <CommentRow
+            comment={comment}
+            userId={userId}
+            onLike={onLike}
+            onDelete={onDelete}
+            onReply={onReply}
+            likingIds={likingIds}
+            onViewReplies={onViewReplies}
+            hideThreadActions
+          />
+        </div>
+
+        <div style={replyModalRepliesStyle}>
+          {comment.replies.length === 0 ? (
+            <div style={replyModalEmptyStyle}>No replies yet.</div>
+          ) : (
+            comment.replies.map((reply) => (
               <CommentRow
                 key={reply.id}
                 comment={reply}
@@ -1215,15 +1289,59 @@ function CommentRow({
                 onDelete={onDelete}
                 onReply={onReply}
                 likingIds={likingIds}
-                openReplies={openReplies}
-                setOpenReplies={setOpenReplies}
+                onViewReplies={onViewReplies}
                 isReply
               />
-            ))}
-          </div>
-        )}
-      </div>
-    </article>
+            ))
+          )}
+        </div>
+
+        <div style={replyModalInputStyle}>
+          {!userId ? (
+            <button onClick={() => router.push("/login")} style={signInBtnStyle}>
+              Sign in to reply
+            </button>
+          ) : (
+            <div style={inputRowStyle}>
+              <MentionTextarea
+                textareaRef={inputRef}
+                value={replyBody}
+                onChange={setReplyBody}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.shiftKey && !cooldown) {
+                    event.preventDefault();
+                    submitReply();
+                  }
+                }}
+                placeholder={cooldown > 0 ? `Wait ${cooldown}s...` : "Write a reply..."}
+                rows={1}
+                maxLength={500}
+                style={textareaStyle}
+              />
+              <button
+                onClick={submitReply}
+                disabled={!replyBody.trim() || submitting || cooldown > 0}
+                style={{
+                  ...sendBtnStyle,
+                  opacity: !replyBody.trim() || submitting || cooldown > 0 ? 0.38 : 1,
+                }}
+              >
+                {submitting ? (
+                  <div className="spinner spinner-sm spinner-white" />
+                ) : cooldown > 0 ? (
+                  <span style={{ fontSize: 11, fontWeight: 900 }}>{cooldown}s</span>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13" />
+                    <polygon points="22 2 15 22 11 13 2 9 22 2" fill="currentColor" stroke="none" />
+                  </svg>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
+    </div>
   );
 }
 
@@ -1258,6 +1376,15 @@ function updateCommentTree(
       replies: updateCommentTree(comment.replies, commentId, updater),
     };
   });
+}
+
+function findCommentById(comments: Comment[], id: string): Comment | null {
+  for (const comment of comments) {
+    if (comment.id === id) return comment;
+    const found = findCommentById(comment.replies, id);
+    if (found) return found;
+  }
+  return null;
 }
 
 // Bottom nav is hidden on match pages, so no offset needed
@@ -1588,8 +1715,78 @@ const viewRepliesBtnStyle: CSSProperties = {
   padding: 0,
 };
 
-const repliesStyle: CSSProperties = {
-  marginTop: 6,
+const replyModalBackdropStyle: CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  zIndex: 9998,
+  background: "rgba(0,0,0,0.72)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "20px 10px",
+};
+
+const replyModalStyle: CSSProperties = {
+  width: "100%",
+  maxWidth: 720,
+  maxHeight: "78dvh",
+  background: "#050505",
+  border: "1px solid rgba(255,255,255,0.12)",
+  borderRadius: 24,
+  overflow: "hidden",
+  boxShadow: "0 24px 80px rgba(0,0,0,0.72)",
+  display: "flex",
+  flexDirection: "column",
+};
+
+const replyModalHeaderStyle: CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  padding: "14px 16px",
+  borderBottom: "1px solid rgba(255,255,255,0.08)",
+};
+
+const replyModalTitleStyle: CSSProperties = { color: "#f8fafc", fontSize: 16, fontWeight: 1000 };
+const replyModalSubStyle: CSSProperties = { marginTop: 2, color: "#64748b", fontSize: 12, fontWeight: 800 };
+
+const replyModalCloseStyle: CSSProperties = {
+  width: 34,
+  height: 34,
+  borderRadius: "50%",
+  border: "1px solid rgba(255,255,255,0.1)",
+  background: "rgba(255,255,255,0.07)",
+  color: "#e2e8f0",
+  fontSize: 24,
+  lineHeight: 1,
+  cursor: "pointer",
+};
+
+const replyModalParentStyle: CSSProperties = {
+  padding: "4px 0 10px",
+  borderBottom: "1px solid rgba(255,255,255,0.08)",
+};
+
+const replyModalRepliesStyle: CSSProperties = {
+  flex: 1,
+  overflowY: "auto",
+  padding: "8px 0 14px",
+};
+
+const replyModalEmptyStyle: CSSProperties = {
+  padding: "22px 16px",
+  color: "#64748b",
+  fontSize: 13,
+  fontWeight: 800,
+  textAlign: "center",
+};
+
+const replyModalInputStyle: CSSProperties = {
+  flexShrink: 0,
+  padding: "10px 14px",
+  paddingBottom: "calc(12px + env(safe-area-inset-bottom))",
+  borderTop: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(5,5,5,0.96)",
 };
 
 const inputAreaStyle: CSSProperties = {
