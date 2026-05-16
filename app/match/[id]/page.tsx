@@ -870,7 +870,8 @@ function LiveFeedPlayer({
       }}
       style={{
         ...liveFeedBoxStyle,
-        border: `2px solid ${colours.primary}`,
+        background: `linear-gradient(135deg, ${colours.primary}22 0%, ${colours.secondary}18 100%)`,
+        border: `1.5px solid ${colours.primary}55`,
         minHeight: type === "BEHIND" ? 50 : liveFeedBoxStyle.minHeight,
         padding: type === "BEHIND" ? "6px 16px 6px 12px" : liveFeedBoxStyle.padding,
         cursor: "pointer",
