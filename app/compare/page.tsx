@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -209,7 +209,7 @@ function CardPhoto({ statsId, photoUrl, name, team }: {
       width: "100%", height: "100%", flexShrink: 0,
       background: `linear-gradient(160deg, ${color}88 0%, ${color}22 100%)`,
       display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: 52, fontWeight: 900, color: "rgba(255,255,255,.18)", letterSpacing: "-0.04em",
+      fontSize: 52, fontWeight: 900, color: "var(--border-3)", letterSpacing: "-0.04em",
     }}>
       {ini}
     </div>
@@ -241,7 +241,7 @@ function PlayerAvatar({ statsId, photoUrl, name, team, size }: {
       width: size, height: size, borderRadius: "50%", flexShrink: 0,
       background: `linear-gradient(135deg, ${color}cc 0%, ${color}44 100%)`,
       display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: size * 0.3, fontWeight: 900, color: "#fff",
+      fontSize: size * 0.3, fontWeight: 900, color: "var(--text-1)",
     }}>
       {ini}
     </div>
@@ -258,11 +258,11 @@ function ComparePlayerSlot({ player, label, onPick, onClear }: {
   if (!player) {
     return (
       <button onClick={onPick} style={{
-        flex: 1, height: 200, borderRadius: 18, border: "2px dashed rgba(255,255,255,.1)",
-        background: "rgba(255,255,255,.03)", display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center", gap: 10, cursor: "pointer", color: "#3a3a3a",
+        flex: 1, height: 200, borderRadius: 18, border: "2px dashed var(--border-2)",
+        background: "var(--surface-2)", display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center", gap: 10, cursor: "pointer", color: "var(--text-3)",
       }}>
-        <div style={{ width: 40, height: 40, borderRadius: "50%", border: "2px dashed rgba(255,255,255,.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ width: 40, height: 40, borderRadius: "50%", border: "2px dashed var(--border-2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
         </div>
         <div style={{ fontSize: 12, fontWeight: 700 }}>Pick Player {label}</div>
@@ -317,7 +317,7 @@ function ComparePlayerSlot({ player, label, onPick, onClear }: {
 
       {/* Bottom info */}
       <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "12px 14px" }}>
-        <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1.1 }}>
+        <div style={{ fontSize: 20, fontWeight: 900, color: "var(--text-1)", letterSpacing: "-0.03em", lineHeight: 1.1 }}>
           {shortName(player.name)}
         </div>
         <div style={{ fontSize: 11, color: "rgba(255,255,255,.45)", fontWeight: 600, marginTop: 3 }}>
@@ -344,7 +344,7 @@ function CompareStatRow({ label, valA, valB, leagueMax, colorA, colorB }: {
     <div style={{
       display: "grid", gridTemplateColumns: "1fr auto 1fr",
       alignItems: "center",
-      borderBottom: "1px solid rgba(255,255,255,.04)",
+      borderBottom: "1px solid var(--border-1)",
       padding: "9px 0",
     }}>
       {/* Left — Player A: number then bar extending right toward center */}
@@ -352,7 +352,7 @@ function CompareStatRow({ label, valA, valB, leagueMax, colorA, colorB }: {
         <div style={{ fontSize: 17, fontWeight: 900, letterSpacing: "-0.04em", color: winA ? "#fff" : "#2e2e2e", lineHeight: 1, flexShrink: 0 }}>
           {fmtVal(valA)}
         </div>
-        <div style={{ flex: 1, height: 4, background: "rgba(255,255,255,.07)", borderRadius: 99, overflow: "hidden", minWidth: 40 }}>
+        <div style={{ flex: 1, height: 4, background: "var(--surface-3)", borderRadius: 99, overflow: "hidden", minWidth: 40 }}>
           <div style={{
             height: "100%", width: `${pctA}%`,
             background: winA ? colorA : `${colorA}50`,
@@ -364,12 +364,12 @@ function CompareStatRow({ label, valA, valB, leagueMax, colorA, colorB }: {
 
       {/* Center label */}
       <div style={{ padding: "0 14px", textAlign: "center", flexShrink: 0, minWidth: 80 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "#fff", whiteSpace: "nowrap" }}>{label}</div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-1)", whiteSpace: "nowrap" }}>{label}</div>
       </div>
 
       {/* Right — Player B: bar extending left from center then number */}
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <div style={{ flex: 1, height: 4, background: "rgba(255,255,255,.07)", borderRadius: 99, overflow: "hidden", minWidth: 40 }}>
+        <div style={{ flex: 1, height: 4, background: "var(--surface-3)", borderRadius: 99, overflow: "hidden", minWidth: 40 }}>
           <div style={{
             height: "100%", width: `${pctB}%`,
             background: winB ? colorB : `${colorB}50`,
@@ -447,16 +447,16 @@ export default function ComparePage() {
       `}</style>
 
       <main style={{
-        minHeight: "100dvh", background: "#1a1a24", color: "#f0f0f0",
+        minHeight: "100dvh", background: "var(--bg)", color: "var(--text-1)",
         paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
       }}>
 
         {/* Header */}
         <header style={{
           position: "sticky", top: 0, zIndex: 50,
-          background: "rgba(8,8,8,0.92)", backdropFilter: "blur(24px)",
+          background: "var(--bottom-nav-bg)", backdropFilter: "blur(24px)",
           WebkitBackdropFilter: "blur(24px)",
-          borderBottom: "1px solid rgba(255,255,255,0.07)",
+          borderBottom: "1px solid var(--border-1)",
           padding: "env(safe-area-inset-top) 16px 0 58px",
           height: "calc(52px + env(safe-area-inset-top))",
           display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -467,16 +467,16 @@ export default function ComparePage() {
               color: "#60a5fa", fontSize: 15, fontWeight: 900,
             }}>← Stats</button>
             <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-              <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.03em", color: "#fff" }}>
+              <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--text-1)" }}>
                 Compare
               </span>
             </div>
           </div>
-          <div style={{ display: "inline-flex", background: "rgba(255,255,255,.06)", borderRadius: 9, padding: 2 }}>
+          <div style={{ display: "inline-flex", background: "var(--surface-3)", borderRadius: 9, padding: 2 }}>
             {(["avg", "total"] as const).map(m => (
               <button key={m} className="c-btn" onClick={() => setMode(m)} style={{
                 padding: "4px 11px", borderRadius: 7, border: "none", cursor: "pointer",
-                background: mode === m ? "rgba(255,255,255,.12)" : "transparent",
+                background: mode === m ? "var(--border-3)" : "transparent",
                 color: mode === m ? "#fff" : "#3a3a3a",
                 fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase",
               }}>
@@ -496,7 +496,7 @@ export default function ComparePage() {
               onClear={() => setCompareA(null)}
             />
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <div style={{ fontSize: 11, fontWeight: 900, color: "#2a2a2a", letterSpacing: "0.05em" }}>VS</div>
+              <div style={{ fontSize: 11, fontWeight: 900, color: "var(--text-4)", letterSpacing: "0.05em" }}>VS</div>
             </div>
             <ComparePlayerSlot
               player={compareB} label="B"
@@ -508,9 +508,9 @@ export default function ComparePage() {
 
           {/* Stat rows */}
           {compareA && compareB && (
-            <div style={{ borderRadius: 16, overflow: "hidden", border: "1px solid rgba(255,255,255,.07)", background: "#1e1e28", padding: "0 16px" }}>
+            <div style={{ borderRadius: 16, overflow: "hidden", border: "1px solid var(--border-1)", background: "var(--surface-1)", padding: "0 16px" }}>
               {/* Column headers */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", padding: "12px 0 6px", borderBottom: "1px solid rgba(255,255,255,.06)" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", padding: "12px 0 6px", borderBottom: "1px solid var(--border-1)" }}>
                 <div style={{ textAlign: "right", fontSize: 11, fontWeight: 800, color: colorA, paddingRight: 10 }}>{shortName(compareA.name)}</div>
                 <div style={{ width: 90 }} />
                 <div style={{ textAlign: "left", fontSize: 11, fontWeight: 800, color: colorB, paddingLeft: 10 }}>{shortName(compareB.name)}</div>
@@ -531,9 +531,9 @@ export default function ComparePage() {
                 const aMore = compareA.games >= compareB.games;
                 const bMore = compareB.games >= compareA.games;
                 return (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", padding: "10px 0", borderTop: "1px solid rgba(255,255,255,.06)" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", padding: "10px 0", borderTop: "1px solid var(--border-1)" }}>
                     <div style={{ textAlign: "right", fontSize: 18, fontWeight: 900, color: aMore ? "#fff" : "#2e2e2e", paddingRight: 10 }}>{compareA.games}</div>
-                    <div style={{ width: 90, textAlign: "center", fontSize: 11, fontWeight: 700, color: "#fff" }}>Games</div>
+                    <div style={{ width: 90, textAlign: "center", fontSize: 11, fontWeight: 700, color: "var(--text-1)" }}>Games</div>
                     <div style={{ textAlign: "left", fontSize: 18, fontWeight: 900, color: bMore ? "#fff" : "#2e2e2e", paddingLeft: 10 }}>{compareB.games}</div>
                   </div>
                 );
@@ -543,17 +543,17 @@ export default function ComparePage() {
                 const fA = avgFoopy(compareA);
                 const fB = avgFoopy(compareB);
                 return (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", padding: "10px 0", borderTop: "1px solid rgba(255,255,255,.06)" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", padding: "10px 0", borderTop: "1px solid var(--border-1)" }}>
                     <div style={{ textAlign: "right", paddingRight: 10 }}>
                       {fA !== null
-                        ? <span style={{ display: "inline-block", background: foopyColor(fA), borderRadius: 8, padding: "4px 10px", fontSize: 16, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em" }}>{fA.toFixed(1)}</span>
-                        : <span style={{ fontSize: 13, color: "#334155" }}>—</span>}
+                        ? <span style={{ display: "inline-block", background: foopyColor(fA), borderRadius: 8, padding: "4px 10px", fontSize: 16, fontWeight: 900, color: "var(--text-1)", letterSpacing: "-0.03em" }}>{fA.toFixed(1)}</span>
+                        : <span style={{ fontSize: 13, color: "var(--text-4)" }}>—</span>}
                     </div>
-                    <div style={{ width: 90, textAlign: "center", fontSize: 11, fontWeight: 600, color: "#2a2a2a" }}>Avg Foopy</div>
+                    <div style={{ width: 90, textAlign: "center", fontSize: 11, fontWeight: 600, color: "var(--text-4)" }}>Avg Foopy</div>
                     <div style={{ textAlign: "left", paddingLeft: 10 }}>
                       {fB !== null
-                        ? <span style={{ display: "inline-block", background: foopyColor(fB), borderRadius: 8, padding: "4px 10px", fontSize: 16, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em" }}>{fB.toFixed(1)}</span>
-                        : <span style={{ fontSize: 13, color: "#334155" }}>—</span>}
+                        ? <span style={{ display: "inline-block", background: foopyColor(fB), borderRadius: 8, padding: "4px 10px", fontSize: 16, fontWeight: 900, color: "var(--text-1)", letterSpacing: "-0.03em" }}>{fB.toFixed(1)}</span>
+                        : <span style={{ fontSize: 13, color: "var(--text-4)" }}>—</span>}
                     </div>
                   </div>
                 );
@@ -563,7 +563,7 @@ export default function ComparePage() {
 
           {/* Prompt when slots empty */}
           {(!compareA || !compareB) && (
-            <div style={{ textAlign: "center", padding: "32px 24px", color: "#334155" }}>
+            <div style={{ textAlign: "center", padding: "32px 24px", color: "var(--text-4)" }}>
               <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>
                 {!compareA && !compareB ? "Pick two players to compare" : "Pick one more player"}
               </div>
@@ -576,10 +576,10 @@ export default function ComparePage() {
         {compareSlot && (
           <>
             <div onClick={() => setCompareSlot(null)} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }} />
-            <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 101, width: "min(380px, 92vw)", maxHeight: "82dvh", background: "#1e1e28", border: "1px solid rgba(255,255,255,.1)", borderRadius: 22, display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 32px 80px rgba(0,0,0,.85)" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px 12px", borderBottom: "1px solid rgba(255,255,255,.07)", flexShrink: 0 }}>
-                <span style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>Pick Player {compareSlot}</span>
-                <button onClick={() => setCompareSlot(null)} style={{ background: "rgba(255,255,255,.08)", border: "none", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#888" }}>
+            <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 101, width: "min(380px, 92vw)", maxHeight: "82dvh", background: "var(--surface-1)", border: "1px solid var(--border-2)", borderRadius: 22, display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 32px 80px rgba(0,0,0,.85)" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px 12px", borderBottom: "1px solid var(--border-1)", flexShrink: 0 }}>
+                <span style={{ fontSize: 15, fontWeight: 800, color: "var(--text-1)" }}>Pick Player {compareSlot}</span>
+                <button onClick={() => setCompareSlot(null)} style={{ background: "var(--surface-3)", border: "none", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-2)" }}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
                 </button>
               </div>
@@ -593,13 +593,13 @@ export default function ComparePage() {
                     value={compareSearch}
                     onChange={e => handleSearch(e.target.value)}
                     placeholder="Search by name or team…"
-                    style={{ width: "100%", background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 12, padding: "9px 12px 9px 32px", color: "#fff", fontSize: 13, outline: "none", boxSizing: "border-box" }}
+                    style={{ width: "100%", background: "var(--surface-3)", border: "1px solid var(--border-2)", borderRadius: 12, padding: "9px 12px 9px 32px", color: "var(--text-1)", fontSize: 13, outline: "none", boxSizing: "border-box" }}
                   />
                 </div>
               </div>
               <div style={{ overflowY: "auto", flex: 1 }}>
                 {comparePlayers.length === 0 && (
-                  <div style={{ padding: "32px", textAlign: "center", color: "#334155", fontSize: 13 }}>No players found</div>
+                  <div style={{ padding: "32px", textAlign: "center", color: "var(--text-4)", fontSize: 13 }}>No players found</div>
                 )}
                 {comparePlayers.map(p => {
                   const color = TEAM_COLOR[p.team] ?? "#1e293b";
@@ -610,24 +610,24 @@ export default function ComparePage() {
                       if (compareSlot === "A") setCompareA(p);
                       else setCompareB(p);
                       setCompareSlot(null);
-                    }} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "10px 16px", background: "none", border: "none", borderBottom: "1px solid rgba(255,255,255,.04)", cursor: "pointer", textAlign: "left" }}>
+                    }} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "10px 16px", background: "none", border: "none", borderBottom: "1px solid var(--border-1)", cursor: "pointer", textAlign: "left" }}>
                       {/* Static avatar — no hooks, no image loading */}
-                      <div style={{ width: 36, height: 36, borderRadius: "50%", flexShrink: 0, background: `linear-gradient(135deg, ${color}99 0%, ${color}33 100%)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 900, color: "#fff" }}>
+                      <div style={{ width: 36, height: 36, borderRadius: "50%", flexShrink: 0, background: `linear-gradient(135deg, ${color}99 0%, ${color}33 100%)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 900, color: "var(--text-1)" }}>
                         {ini}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 700, color: "#e8e8e8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
                         <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
                           {logo && <img src={logo} alt="" style={{ width: 10, height: 10, objectFit: "contain", opacity: 0.5 }} />}
-                          <span style={{ fontSize: 10, color: "#475569", fontWeight: 600 }}>{playerSubtitle(p)}</span>
+                          <span style={{ fontSize: 10, color: "var(--text-3)", fontWeight: 600 }}>{playerSubtitle(p)}</span>
                         </div>
                       </div>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: "#334155" }}>{p.games}GP</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-4)" }}>{p.games}GP</div>
                     </button>
                   );
                 })}
                 {debouncedSearch.trim() === "" && allPlayers.length > 60 && (
-                  <div style={{ padding: "12px 16px", textAlign: "center", fontSize: 11, color: "#334155" }}>
+                  <div style={{ padding: "12px 16px", textAlign: "center", fontSize: 11, color: "var(--text-4)" }}>
                     Type to search all {allPlayers.length} players
                   </div>
                 )}

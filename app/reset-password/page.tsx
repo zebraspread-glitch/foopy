@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -70,8 +70,8 @@ export default function ResetPasswordPage() {
 
 const page: CSSProperties = {
   minHeight: "100vh",
-  background: "#14141e",
-  color: "white",
+  background: "var(--bg)",
+  color: "var(--text-1)",
   paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
 };
 
@@ -85,7 +85,7 @@ const wrap: CSSProperties = {
 };
 
 const card: CSSProperties = {
-  background: "#050505",
+  background: "var(--bg)",
   border: "1px solid rgba(255,255,255,.13)",
   borderRadius: 15,
   boxShadow: "0 18px 45px rgba(0,0,0,.22)",
@@ -122,8 +122,8 @@ const input: CSSProperties = {
   padding: "13px 16px",
   borderRadius: 10,
   border: "1px solid rgba(255,255,255,.13)",
-  background: "rgba(255,255,255,.04)",
-  color: "white",
+  background: "var(--surface-2)",
+  color: "var(--text-1)",
   fontSize: 15,
   fontWeight: 650,
   outline: "none",
@@ -135,7 +135,7 @@ const primaryBtn: CSSProperties = {
   borderRadius: 10,
   border: "none",
   background: "linear-gradient(135deg,#3b82f6,#6366f1)",
-  color: "white",
+  color: "var(--text-1)",
   fontWeight: 950,
   fontSize: 15,
   cursor: "pointer",

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -111,7 +111,7 @@ export default function UserAlbumPage() {
 
   if (notFound) {
     return (
-      <main style={{ minHeight: "100dvh", background: "#1a1a24", color: "#f8fafc", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
+      <main style={{ minHeight: "100dvh", background: "var(--bg)", color: "var(--text-1)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
         <div style={{ fontSize: 40 }}>🔍</div>
         <div style={{ fontSize: 18, fontWeight: 900 }}>User not found</div>
         <button onClick={() => router.back()} style={{ marginTop: 8, fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,.5)", background: "none", border: "none", cursor: "pointer" }}>← Go back</button>
@@ -120,7 +120,7 @@ export default function UserAlbumPage() {
   }
 
   return (
-    <main style={{ minHeight: "100dvh", background: "#1a1a24", color: "#f8fafc", paddingBottom: "calc(80px + env(safe-area-inset-bottom))" }}>
+    <main style={{ minHeight: "100dvh", background: "var(--bg)", color: "var(--text-1)", paddingBottom: "calc(80px + env(safe-area-inset-bottom))" }}>
       <style>{`
         .album-grid {
           display: grid;
@@ -157,10 +157,10 @@ export default function UserAlbumPage() {
       {/* Sticky header */}
       <div style={{
         position: "sticky", top: 0, zIndex: 20,
-        background: "rgba(8,8,8,0.92)",
+        background: "var(--bottom-nav-bg)",
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
-        borderBottom: "1px solid rgba(255,255,255,.06)",
+        borderBottom: "1px solid var(--border-1)",
       }}>
         {/* Top row */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px 10px" }}>
@@ -168,10 +168,10 @@ export default function UserAlbumPage() {
             onClick={() => router.back()}
             style={{
               appearance: "none", border: "none",
-              background: "rgba(255,255,255,.08)",
+              background: "var(--surface-3)",
               borderRadius: "50%", width: 36, height: 36,
               display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: "pointer", color: "#f8fafc", fontSize: 17, flexShrink: 0,
+              cursor: "pointer", color: "var(--text-1)", fontSize: 17, flexShrink: 0,
               transition: "background 0.15s ease",
             }}
           >
@@ -191,7 +191,7 @@ export default function UserAlbumPage() {
 
           {/* Progress bar */}
           {!loading && (
-            <div style={{ width: 52, height: 4, borderRadius: 99, background: "rgba(255,255,255,.08)", overflow: "hidden", flexShrink: 0 }}>
+            <div style={{ width: 52, height: 4, borderRadius: 99, background: "var(--surface-3)", overflow: "hidden", flexShrink: 0 }}>
               <div style={{ height: "100%", width: `${pct}%`, borderRadius: 99, background: "linear-gradient(90deg,#60a5fa,#a78bfa)", transition: "width 0.4s ease" }} />
             </div>
           )}
@@ -285,7 +285,7 @@ function AlbumSlot({ player, ownedCards }: {
         position: "absolute", inset: 0, borderRadius: 9, overflow: "hidden", zIndex: 10,
         boxShadow: unlocked && meta
           ? `0 0 0 1.5px ${meta.color}99, 0 6px 20px ${meta.glow}`
-          : "0 0 0 1px rgba(255,255,255,.07)",
+          : "0 0 0 1px var(--border-1)",
         filter: unlocked ? "none" : "grayscale(1) brightness(0.18)",
         transition: "box-shadow 0.2s ease",
       }}>
@@ -323,12 +323,12 @@ function AlbumSlot({ player, ownedCards }: {
             </div>
 
             <div style={{ position: "absolute", top: "71%", left: 0, right: 0, textAlign: "center", padding: "0 5px" }}>
-              <div className="ac-name" style={{ fontWeight: 900, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: `0 0 10px ${meta.glow}` }}>
+              <div className="ac-name" style={{ fontWeight: 900, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: `0 0 10px ${meta.glow}` }}>
                 {player.name}
               </div>
             </div>
 
-            <div className="ac-logo" style={{ background: "rgba(0,0,0,.55)", border: "1.5px solid rgba(255,255,255,.18)" }}>
+            <div className="ac-logo" style={{ background: "rgba(0,0,0,.55)", border: "1.5px solid var(--border-3)" }}>
               <img src={player.teamLogo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
 

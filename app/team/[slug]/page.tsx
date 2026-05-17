@@ -1,4 +1,4 @@
-﻿import path from "path";
+import path from "path";
 import fs from "fs";
 import Link from "next/link";
 import { BackButton, TeamLogoImage } from "./TeamClient";
@@ -309,7 +309,7 @@ export default async function TeamProfilePage({ params }: { params: Promise<{ sl
           <BackButton />
         </div>
         <div style={emptyStateStyle}>
-          <p style={{ color: "#64748b", fontWeight: 900, fontSize: 16 }}>Team not found</p>
+          <p style={{ color: "var(--text-3)", fontWeight: 900, fontSize: 16 }}>Team not found</p>
         </div>
       </main>
     );
@@ -503,7 +503,7 @@ export default async function TeamProfilePage({ params }: { params: Promise<{ sl
                   </span>
                 )}
                 {teamAvgFoopy !== null && (
-                  <span style={{ ...recordPillStyle, color: foopyColor(teamAvgFoopy), background: "rgba(255,255,255,.06)" }}>
+                  <span style={{ ...recordPillStyle, color: foopyColor(teamAvgFoopy), background: "var(--surface-3)" }}>
                     {teamAvgFoopy.toFixed(1)} Foopy
                   </span>
                 )}
@@ -647,8 +647,8 @@ function MetricCard({ label, value, accent, compact }: { label: string; value: s
         ...metricCardStyle,
         gridColumn: compact ? "span 2" : "span 3",
         minHeight: compact ? 56 : 78,
-        background: accent ? `${accent}18` : "rgba(255,255,255,.035)",
-        borderColor: accent ? `${accent}3d` : "rgba(255,255,255,.07)",
+        background: accent ? `${accent}18` : "var(--border-1)",
+        borderColor: accent ? `${accent}3d` : "var(--border-1)",
       }}
     >
       <div style={{ ...metricLabelStyle, color: accent ? `${accent}dd` : "#64748b" }}>{label}</div>
@@ -659,8 +659,8 @@ function MetricCard({ label, value, accent, compact }: { label: string; value: s
 
 const pageStyle: React.CSSProperties = {
   minHeight: "100dvh",
-  background: "#14141e",
-  color: "#fff",
+  background: "var(--bg)",
+  color: "var(--text-1)",
   paddingBottom: "calc(95px + env(safe-area-inset-bottom))",
 };
 
@@ -683,8 +683,8 @@ const heroStyle: React.CSSProperties = {
   minHeight: 158,
   borderRadius: 20,
   overflow: "hidden",
-  border: "1px solid rgba(255,255,255,.1)",
-  background: "#1a1a24",
+  border: "1px solid var(--border-2)",
+  background: "var(--bg)",
   position: "relative",
 };
 
@@ -699,7 +699,7 @@ const heroContentStyle: React.CSSProperties = {
 
 const heroTitleStyle: React.CSSProperties = {
   margin: "0 0 9px",
-  color: "#fff",
+  color: "var(--text-1)",
   fontSize: 25,
   fontWeight: 950,
   letterSpacing: "-0.04em",
@@ -719,14 +719,14 @@ const recordPillStyle: React.CSSProperties = {
   fontWeight: 900,
   color: "#cbd5e1",
   background: "rgba(0,0,0,.28)",
-  border: "1px solid rgba(255,255,255,.12)",
+  border: "1px solid var(--border-3)",
   borderRadius: 999,
   padding: "4px 8px",
 };
 
 const cardStyle: React.CSSProperties = {
-  background: "#1a1a24",
-  border: "1px solid rgba(255,255,255,.1)",
+  background: "var(--bg)",
+  border: "1px solid var(--border-2)",
   borderRadius: 18,
   padding: "17px 14px 18px",
 };
@@ -742,7 +742,7 @@ const sectionHeaderStyle: React.CSSProperties = {
 const sectionLabel: React.CSSProperties = {
   fontSize: 12,
   fontWeight: 900,
-  color: "#64748b",
+  color: "var(--text-3)",
   textTransform: "uppercase",
   letterSpacing: "0.08em",
 };
@@ -751,9 +751,9 @@ const countPillStyle: React.CSSProperties = {
   flexShrink: 0,
   fontSize: 11,
   fontWeight: 850,
-  color: "#64748b",
-  background: "rgba(255,255,255,.055)",
-  border: "1px solid rgba(255,255,255,.08)",
+  color: "var(--text-3)",
+  background: "var(--border-1)",
+  border: "1px solid var(--border-2)",
   borderRadius: 999,
   padding: "4px 10px",
 };
@@ -765,7 +765,7 @@ const recordGridStyle: React.CSSProperties = {
 };
 
 const metricCardStyle: React.CSSProperties = {
-  border: "1px solid rgba(255,255,255,.07)",
+  border: "1px solid var(--border-1)",
   borderRadius: 14,
   padding: "12px 12px",
   display: "flex",
@@ -803,7 +803,7 @@ const chartItemStyle: React.CSSProperties = {
 
 const chartValueStyle: React.CSSProperties = {
   minHeight: 13,
-  color: "#94a3b8",
+  color: "var(--text-2)",
   fontSize: 10,
   fontWeight: 900,
   lineHeight: 1,
@@ -821,7 +821,7 @@ const chartMidlineStyle: React.CSSProperties = {
   right: 0,
   top: "50%",
   height: 1,
-  background: "rgba(255,255,255,.16)",
+  background: "var(--border-3)",
 };
 
 const chartBarStyle: React.CSSProperties = {
@@ -835,8 +835,8 @@ const smallLogoStyle: React.CSSProperties = {
   height: 25,
   borderRadius: "50%",
   overflow: "hidden",
-  background: "rgba(255,255,255,.08)",
-  border: "1px solid rgba(255,255,255,.1)",
+  background: "var(--surface-3)",
+  border: "1px solid var(--border-2)",
 };
 
 const logoImgStyle: React.CSSProperties = {
@@ -847,7 +847,7 @@ const logoImgStyle: React.CSSProperties = {
 };
 
 const roundStyle: React.CSSProperties = {
-  color: "#334155",
+  color: "var(--text-4)",
   fontSize: 9,
   fontWeight: 900,
   whiteSpace: "nowrap",
@@ -865,8 +865,8 @@ const resultRowStyle: React.CSSProperties = {
   gap: 12,
   padding: "12px 13px",
   borderRadius: 14,
-  background: "rgba(255,255,255,.04)",
-  border: "1px solid rgba(255,255,255,.07)",
+  background: "var(--surface-2)",
+  border: "1px solid var(--border-1)",
   textDecoration: "none",
   color: "inherit",
 };
@@ -877,7 +877,7 @@ const resultLogoWrapStyle: React.CSSProperties = {
   borderRadius: "50%",
   overflow: "hidden",
   flexShrink: 0,
-  background: "rgba(255,255,255,.08)",
+  background: "var(--surface-3)",
 };
 
 const resultBodyStyle: React.CSSProperties = {
@@ -886,7 +886,7 @@ const resultBodyStyle: React.CSSProperties = {
 };
 
 const resultTitleStyle: React.CSSProperties = {
-  color: "#e2e8f0",
+  color: "var(--text-1)",
   fontSize: 14,
   fontWeight: 850,
   overflow: "hidden",
@@ -895,7 +895,7 @@ const resultTitleStyle: React.CSSProperties = {
 };
 
 const resultSubStyle: React.CSSProperties = {
-  color: "#64748b",
+  color: "var(--text-3)",
   fontSize: 11,
   fontWeight: 750,
   marginTop: 3,
@@ -917,7 +917,7 @@ const squadAverageStyle: React.CSSProperties = {
   gap: 8,
   padding: "0 2px",
   marginBottom: 12,
-  color: "#64748b",
+  color: "var(--text-3)",
   fontWeight: 850,
   textDecoration: "none",
 };
@@ -931,7 +931,7 @@ const averageRatingBadgeStyle: React.CSSProperties = {
   minWidth: 50,
   borderRadius: 9,
   padding: "5px 11px 6px",
-  color: "#fff",
+  color: "var(--text-1)",
   fontSize: 16,
   fontWeight: 950,
   lineHeight: 1,
@@ -939,7 +939,7 @@ const averageRatingBadgeStyle: React.CSSProperties = {
 };
 
 const teamRankStyle: React.CSSProperties = {
-  color: "#64748b",
+  color: "var(--text-3)",
   fontSize: 12,
   fontWeight: 900,
 };
@@ -962,7 +962,7 @@ const playerTileStyle: React.CSSProperties = {
 
 const tileRankStyle: React.CSSProperties = {
   height: 15,
-  color: "#64748b",
+  color: "var(--text-3)",
   fontSize: 11,
   fontWeight: 950,
   lineHeight: 1,
@@ -974,7 +974,7 @@ const playerImageWrapStyle: React.CSSProperties = {
   height: 62,
   borderRadius: "50%",
   overflow: "hidden",
-  border: "1px solid rgba(255,255,255,.12)",
+  border: "1px solid var(--border-3)",
   flexShrink: 0,
   position: "relative",
   zIndex: 1,
@@ -993,7 +993,7 @@ const tileRatingStyle: React.CSSProperties = {
   marginTop: -12,
   borderRadius: 9,
   padding: "4px 9px 5px",
-  color: "#fff",
+  color: "var(--text-1)",
   fontSize: 16,
   fontWeight: 950,
   lineHeight: 1,

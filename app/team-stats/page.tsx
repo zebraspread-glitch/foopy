@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -239,7 +239,7 @@ export default function TeamStatsPage() {
         .ts-btn { -webkit-tap-highlight-color: transparent; }
         .ts-btn:active { opacity: .65; }
         .ts-row { transition: background .12s; }
-        .ts-row:active { background: rgba(255,255,255,.05) !important; }
+        .ts-row:active { background: var(--border-1) !important; }
         ::-webkit-scrollbar { display: none; }
       `}</style>
 
@@ -257,7 +257,7 @@ export default function TeamStatsPage() {
                 onClick={() => setMode(item)}
                 style={{
                   ...toggleButtonStyle,
-                  background: mode === item ? "rgba(255,255,255,.14)" : "transparent",
+                  background: mode === item ? "var(--border-3)" : "transparent",
                   color: mode === item ? "#fff" : "#515151",
                 }}
               >
@@ -338,8 +338,8 @@ export default function TeamStatsPage() {
 
 const pageStyle: React.CSSProperties = {
   minHeight: "100dvh",
-  background: "#1a1a24",
-  color: "#f0f0f0",
+  background: "var(--bg)",
+  color: "var(--text-1)",
   paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
 };
 
@@ -347,10 +347,10 @@ const headerStyle: React.CSSProperties = {
   position: "sticky",
   top: 0,
   zIndex: 50,
-  background: "rgba(8,8,8,.92)",
+  background: "var(--bottom-nav-bg)",
   backdropFilter: "blur(24px)",
   WebkitBackdropFilter: "blur(24px)",
-  borderBottom: "1px solid rgba(255,255,255,.07)",
+  borderBottom: "1px solid var(--border-1)",
   padding: "env(safe-area-inset-top) 16px 0 58px",
   height: "calc(52px + env(safe-area-inset-top))",
   display: "flex",
@@ -363,21 +363,21 @@ const titleStyle: React.CSSProperties = {
   fontSize: 18,
   fontWeight: 900,
   letterSpacing: "-0.03em",
-  color: "#fff",
+  color: "var(--text-1)",
 };
 
 const seasonStyle: React.CSSProperties = {
   fontSize: 10,
   fontWeight: 800,
-  color: "#3a3a3a",
+  color: "var(--text-3)",
   letterSpacing: ".06em",
   textTransform: "uppercase",
 };
 
 const toggleStyle: React.CSSProperties = {
   display: "inline-flex",
-  background: "rgba(255,255,255,.05)",
-  border: "1px solid rgba(255,255,255,.07)",
+  background: "var(--surface-2)",
+  border: "1px solid var(--border-1)",
   borderRadius: 10,
   padding: 2,
   flexShrink: 0,
@@ -398,8 +398,8 @@ const tabsStyle: React.CSSProperties = {
   overflowX: "auto",
   scrollbarWidth: "none",
   display: "flex",
-  background: "rgba(8,8,8,.98)",
-  borderBottom: "1px solid rgba(255,255,255,.06)",
+  background: "var(--bottom-nav-bg)",
+  borderBottom: "1px solid var(--border-1)",
   position: "sticky",
   top: "calc(52px + env(safe-area-inset-top))",
   zIndex: 49,
@@ -429,7 +429,7 @@ const rowStyle: React.CSSProperties = {
   padding: "12px 18px",
   background: "transparent",
   border: "none",
-  borderTop: "1px solid rgba(255,255,255,.045)",
+  borderTop: "1px solid var(--border-1)",
   color: "inherit",
   textAlign: "left",
   cursor: "pointer",
@@ -450,7 +450,7 @@ const logoWrapStyle: React.CSSProperties = {
   borderRadius: "50%",
   overflow: "hidden",
   flexShrink: 0,
-  border: "1px solid rgba(255,255,255,.1)",
+  border: "1px solid var(--border-2)",
 };
 
 const logoStyle: React.CSSProperties = {
@@ -492,7 +492,7 @@ const gamesStyle: React.CSSProperties = {
 const barTrackStyle: React.CSSProperties = {
   height: 3,
   borderRadius: 3,
-  background: "rgba(255,255,255,.06)",
+  background: "var(--surface-3)",
   overflow: "hidden",
 };
 
@@ -505,7 +505,7 @@ const barFillStyle: React.CSSProperties = {
 const valueStyle: React.CSSProperties = {
   minWidth: 58,
   textAlign: "right",
-  color: "#fff",
+  color: "var(--text-1)",
   fontSize: 21,
   fontWeight: 950,
   letterSpacing: "-0.04em",

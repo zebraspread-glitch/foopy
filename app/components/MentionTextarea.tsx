@@ -138,7 +138,7 @@ export default function MentionTextarea({
                 padding: "9px 12px",
                 background: i === selectedIdx ? "rgba(59,130,246,.15)" : "transparent",
                 border: "none",
-                borderBottom: i < results.length - 1 ? "1px solid rgba(255,255,255,.06)" : "none",
+                borderBottom: i < results.length - 1 ? "1px solid var(--border-1)" : "none",
                 cursor: "pointer",
               }}
             >
@@ -155,10 +155,10 @@ export default function MentionTextarea({
                 }
               </div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 800, color: "#f1f5f9" }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text-1)" }}>
                   {user.display_name || user.username}
                 </div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: "#64748b" }}>@{user.username}</div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-3)" }}>@{user.username}</div>
               </div>
             </button>
           ))}

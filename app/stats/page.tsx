@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -183,7 +183,7 @@ function PlayerAvatar({
       width: size, height: size, borderRadius: radius, flexShrink: 0,
       background: `linear-gradient(135deg, ${color}cc 0%, ${color}44 100%)`,
       display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: size * 0.3, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em",
+      fontSize: size * 0.3, fontWeight: 900, color: "var(--text-1)", letterSpacing: "-0.02em",
     }}>
       {ini}
     </div>
@@ -240,7 +240,7 @@ export default function StatsPage() {
         .s-tab   { -webkit-tap-highlight-color: transparent; transition: color .15s; }
         .s-tab:active { opacity: .55; }
         .s-row   { transition: background .12s; }
-        .s-row:active { background: rgba(255,255,255,0.05) !important; }
+        .s-row:active { background: var(--border-1) !important; }
         .s-btn   { -webkit-tap-highlight-color: transparent; }
         .s-btn:active { opacity: .65; }
         .s-pg    { -webkit-tap-highlight-color: transparent; transition: background .12s, color .12s; }
@@ -249,25 +249,25 @@ export default function StatsPage() {
       `}</style>
 
       <main style={{
-        minHeight: "100dvh", background: "#1a1a24", color: "#f0f0f0",
+        minHeight: "100dvh", background: "var(--bg)", color: "var(--text-1)",
         paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
       }}>
 
         {/* ── Header ── */}
         <header style={{
           position: "sticky", top: 0, zIndex: 50,
-          background: "rgba(8,8,8,0.92)", backdropFilter: "blur(24px)",
+          background: "var(--bottom-nav-bg)", backdropFilter: "blur(24px)",
           WebkitBackdropFilter: "blur(24px)",
-          borderBottom: "1px solid rgba(255,255,255,0.07)",
+          borderBottom: "1px solid var(--border-1)",
           padding: "env(safe-area-inset-top) 16px 0 58px",
           height: "calc(52px + env(safe-area-inset-top))",
           display: "flex", alignItems: "center", justifyContent: "space-between",
         }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-            <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.03em", color: "#fff" }}>
+            <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--text-1)" }}>
               Player Stats
             </span>
-            <span style={{ fontSize: 10, fontWeight: 700, color: "#3a3a3a", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
               AFL 2026
             </span>
           </div>
@@ -279,10 +279,10 @@ export default function StatsPage() {
               onClick={() => setShowPicker(true)}
               style={{
                 display: "flex", alignItems: "center", gap: 6,
-                background: team !== "All" ? `${TEAM_COLOR[team]}20` : "rgba(255,255,255,0.06)",
-                border: team !== "All" ? `1px solid ${TEAM_COLOR[team]}50` : "1px solid rgba(255,255,255,0.09)",
+                background: team !== "All" ? `${TEAM_COLOR[team]}20` : "var(--border-1)",
+                border: team !== "All" ? `1px solid ${TEAM_COLOR[team]}50` : "1px solid var(--border-2)",
                 borderRadius: 10, padding: "6px 10px 6px 8px",
-                color: team !== "All" ? "#fff" : "#888",
+                color: team !== "All" ? "var(--text-1)" : "var(--text-3)",
                 fontSize: 12, fontWeight: 600, cursor: "pointer",
               }}
             >
@@ -312,8 +312,8 @@ export default function StatsPage() {
         {/* ── Tabs ── */}
         <div style={{
           overflowX: "auto", scrollbarWidth: "none", display: "flex",
-          background: "rgba(8,8,8,0.98)",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          background: "var(--bottom-nav-bg)",
+          borderBottom: "1px solid var(--border-1)",
           position: "sticky", top: `calc(52px + env(safe-area-inset-top))`, zIndex: 49,
         }}>
           {CATEGORIES.map(c => {
@@ -322,8 +322,8 @@ export default function StatsPage() {
               <button key={c.key} className="s-tab" onClick={() => setCat(c.key)} style={{
                 flexShrink: 0, padding: "12px 15px 10px",
                 background: "none", border: "none",
-                borderBottom: active ? "2px solid #fff" : "2px solid transparent",
-                color: active ? "#fff" : "#3d3d3d",
+                borderBottom: active ? "2px solid var(--text-1)" : "2px solid transparent",
+                color: active ? "var(--text-1)" : "var(--text-3)",
                 fontSize: 13, fontWeight: active ? 700 : 500,
                 cursor: "pointer", whiteSpace: "nowrap", letterSpacing: active ? "-0.02em" : "0",
               }}>
@@ -336,34 +336,34 @@ export default function StatsPage() {
         <div style={{ maxWidth: 760, margin: "0 auto" }}>
           <>
             {!mounted && (
-                <div style={{ padding: "60px 24px", textAlign: "center", color: "#222", fontSize: 13 }}>Loading…</div>
+                <div style={{ padding: "60px 24px", textAlign: "center", color: "var(--text-4)", fontSize: 13 }}>Loading…</div>
               )}
               {mounted && isEmpty && (
                 <div style={{ padding: "80px 24px", textAlign: "center" }}>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 6 }}>No data yet</div>
-                  <div style={{ fontSize: 13, color: "#444", lineHeight: 1.7, marginBottom: 20 }}>Run the fetch script to pull 2026 stats</div>
-                  <code style={{ display: "inline-block", background: "#1e1e28", border: "1px solid #1e1e1e", borderRadius: 8, padding: "8px 14px", fontSize: 12, color: "#22c55e" }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)", marginBottom: 6 }}>No data yet</div>
+                  <div style={{ fontSize: 13, color: "var(--text-3)", lineHeight: 1.7, marginBottom: 20 }}>Run the fetch script to pull 2026 stats</div>
+                  <code style={{ display: "inline-block", background: "var(--surface-1)", border: "1px solid var(--border-2)", borderRadius: 8, padding: "8px 14px", fontSize: 12, color: "#22c55e" }}>
                     npm run fetch:stats
                   </code>
                 </div>
               )}
               {mounted && !isEmpty && sorted.length === 0 && (
-                <div style={{ padding: "80px 24px", textAlign: "center", color: "#333", fontSize: 14 }}>No players for this team</div>
+                <div style={{ padding: "80px 24px", textAlign: "center", color: "var(--text-3)", fontSize: 14 }}>No players for this team</div>
               )}
               {mounted && !isEmpty && sorted.length > 0 && (
                 <>
                   {/* Podium top 3 */}
                   <div style={{ padding: "16px 12px 8px" }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, paddingLeft: 2 }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: "#2e2e2e", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-4)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
                         Top 3 · {catMeta.label}
                       </div>
-                      <div style={{ display: "inline-flex", background: "rgba(255,255,255,0.05)", borderRadius: 8, padding: 2 }}>
+                      <div style={{ display: "inline-flex", background: "var(--surface-2)", borderRadius: 8, padding: 2 }}>
                         {(["avg", "total"] as const).map(m => (
                           <button key={m} className="s-btn" onClick={() => setMode(m)} style={{
                             padding: "4px 11px", borderRadius: 6,
-                            background: mode === m ? "rgba(255,255,255,0.12)" : "transparent",
-                            border: "none", color: mode === m ? "#fff" : "#3a3a3a",
+                            background: mode === m ? "var(--border-3)" : "transparent",
+                            border: "none", color: mode === m ? "var(--text-1)" : "var(--text-3)",
                             fontSize: 10, fontWeight: 700, cursor: "pointer", letterSpacing: "0.05em", textTransform: "uppercase",
                           }}>
                             {m === "avg" ? "Avg" : "Total"}
@@ -384,27 +384,27 @@ export default function StatsPage() {
                         return (
                           <div key={p.apiSportsId} onClick={() => router.push(`/player/${p.id}`)} style={{
                             flex: isFirst ? 1.1 : 1, borderRadius: 16, overflow: "hidden",
-                            background: "#1e1e28", cursor: "pointer",
-                            border: isFirst ? `1px solid ${rc}40` : "1px solid rgba(255,255,255,0.06)",
+                            background: "var(--surface-1)", cursor: "pointer",
+                            border: isFirst ? `1px solid ${rc}40` : "1px solid var(--border-1)",
                             display: "flex", flexDirection: "column",
                             boxShadow: isFirst ? `0 8px 32px ${color}22` : "none",
                           }}>
                             <div style={{ height: photoH, overflow: "hidden", position: "relative", background: `linear-gradient(180deg, ${color}28 0%, ${color}10 100%)`, flexShrink: 0 }}>
                               <PlayerAvatar statsId={p.id} photoUrl={p.photoUrl} name={p.name} team={p.team} size={220} radius="0" />
-                              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, transparent 55%, #111 100%)" }} />
-                              <div style={{ position: "absolute", top: 8, left: 8, fontSize: 9, fontWeight: 800, color: isFirst ? "#14141e" : "#fff", background: isFirst ? rc : "rgba(0,0,0,0.55)", borderRadius: 5, padding: "2px 7px", letterSpacing: "0.05em" }}>
+                              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, transparent 55%, var(--surface-1) 100%)" }} />
+                              <div style={{ position: "absolute", top: 8, left: 8, fontSize: 9, fontWeight: 800, color: isFirst ? "var(--bg)" : "var(--text-1)", background: isFirst ? rc : "rgba(0,0,0,0.55)", borderRadius: 5, padding: "2px 7px", letterSpacing: "0.05em" }}>
                                 #{rank}
                               </div>
                               {logo && <img src={logo} alt="" style={{ position: "absolute", top: 8, right: 8, width: 16, height: 16, objectFit: "contain", opacity: 0.4 }} />}
                             </div>
                             <div style={{ padding: "8px 10px 12px" }}>
-                              <div style={{ fontSize: isFirst ? 30 : 24, fontWeight: 900, color: "#fff", letterSpacing: "-0.05em", lineHeight: 1, marginBottom: 5 }}>
+                              <div style={{ fontSize: isFirst ? 30 : 24, fontWeight: 900, color: "var(--text-1)", letterSpacing: "-0.05em", lineHeight: 1, marginBottom: 5 }}>
                                 {fmt(val, displayUnit)}
                               </div>
-                              <div style={{ fontSize: isFirst ? 12 : 11, fontWeight: 700, color: "#ddd", letterSpacing: "-0.01em", marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                              <div style={{ fontSize: isFirst ? 12 : 11, fontWeight: 700, color: "var(--text-1)", letterSpacing: "-0.01em", marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                                 {shortName(p.name)}
                               </div>
-                              <div style={{ fontSize: 10, color: "#454545", fontWeight: 500 }}>{playerSubtitle(p)}</div>
+                              <div style={{ fontSize: 10, color: "var(--text-3)", fontWeight: 500 }}>{playerSubtitle(p)}</div>
                             </div>
                           </div>
                         );
@@ -416,8 +416,8 @@ export default function StatsPage() {
                   {allRest.length > 0 && (
                     <div style={{ marginTop: 8 }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 18px 8px" }}>
-                        <span style={{ fontSize: 10, fontWeight: 700, color: "#2d2d2d", letterSpacing: "0.09em" }}>RANKINGS</span>
-                        <span style={{ fontSize: 10, color: "#2d2d2d", fontWeight: 600 }}>{mode === "avg" ? "AVG / GAME" : "SEASON TOTAL"}</span>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text-4)", letterSpacing: "0.09em" }}>RANKINGS</span>
+                        <span style={{ fontSize: 10, color: "var(--text-4)", fontWeight: 600 }}>{mode === "avg" ? "AVG / GAME" : "SEASON TOTAL"}</span>
                       </div>
                       {rest.map((player, idx) => {
                         const rank  = page * PAGE_SIZE + idx + 4;
@@ -426,22 +426,22 @@ export default function StatsPage() {
                         const logo  = TEAM_LOGO[player.team];
                         const pct   = topVal > 0 ? Math.max(4, (val / topVal) * 100) : 0;
                         return (
-                          <div key={player.apiSportsId} className="s-row" onClick={() => router.push(`/player/${player.id}`)} style={{ display: "flex", alignItems: "center", gap: 11, padding: "9px 18px", borderTop: "1px solid rgba(255,255,255,0.035)", cursor: "pointer" }}>
-                            <div style={{ width: 24, flexShrink: 0, textAlign: "right", fontSize: 11, fontWeight: 700, color: rank <= 10 ? "#555" : "#2c2c2c" }}>{rank}</div>
+                          <div key={player.apiSportsId} className="s-row" onClick={() => router.push(`/player/${player.id}`)} style={{ display: "flex", alignItems: "center", gap: 11, padding: "9px 18px", borderTop: "1px solid var(--border-1)", cursor: "pointer" }}>
+                            <div style={{ width: 24, flexShrink: 0, textAlign: "right", fontSize: 11, fontWeight: 700, color: rank <= 10 ? "var(--text-3)" : "var(--text-4)" }}>{rank}</div>
                             <div style={{ width: 42, height: 42, flexShrink: 0, borderRadius: "50%", overflow: "hidden", background: `${color}18` }}>
                               <PlayerAvatar statsId={player.id} photoUrl={player.photoUrl} name={player.name} team={player.team} size={42} />
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: 13.5, fontWeight: 700, color: "#e8e8e8", letterSpacing: "-0.02em", lineHeight: 1.2, marginBottom: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{player.name}</div>
+                              <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text-1)", letterSpacing: "-0.02em", lineHeight: 1.2, marginBottom: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{player.name}</div>
                               <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 4 }}>
                                 {logo && <img src={logo} alt="" style={{ width: 10, height: 10, objectFit: "contain", opacity: 0.4 }} />}
-                                <span style={{ fontSize: 10.5, color: "#383838", fontWeight: 500 }}>{playerSubtitle(player)}</span>
+                                <span style={{ fontSize: 10.5, color: "var(--text-3)", fontWeight: 500 }}>{playerSubtitle(player)}</span>
                               </div>
-                              <div style={{ height: 2, borderRadius: 2, background: "rgba(255,255,255,0.05)", overflow: "hidden" }}>
+                              <div style={{ height: 2, borderRadius: 2, background: "var(--surface-2)", overflow: "hidden" }}>
                                 <div style={{ height: "100%", borderRadius: 2, width: `${pct}%`, background: `${color}99` }} />
                               </div>
                             </div>
-                            <div style={{ flexShrink: 0, minWidth: 40, textAlign: "right", fontSize: 19, fontWeight: 800, color: "#f0f0f0", letterSpacing: "-0.04em", lineHeight: 1 }}>
+                            <div style={{ flexShrink: 0, minWidth: 40, textAlign: "right", fontSize: 19, fontWeight: 800, color: "var(--text-1)", letterSpacing: "-0.04em", lineHeight: 1 }}>
                               {fmt(val, displayUnit)}
                             </div>
                           </div>
@@ -451,26 +451,26 @@ export default function StatsPage() {
                       {/* Pagination */}
                       {totalPages > 1 && (
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "20px 18px 16px", flexWrap: "wrap" }}>
-                          <button className="s-pg" onClick={() => goPage(Math.max(0, page - 1))} disabled={page === 0} style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: page === 0 ? "#2a2a2a" : "#aaa", cursor: page === 0 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <button className="s-pg" onClick={() => goPage(Math.max(0, page - 1))} disabled={page === 0} style={{ width: 34, height: 34, borderRadius: 10, background: "var(--surface-2)", border: "1px solid var(--border-2)", color: page === 0 ? "var(--text-4)" : "var(--text-2)", cursor: page === 0 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
                           </button>
                           {paginate(page, totalPages).map((pg, i) =>
                             pg === "…" ? (
-                              <span key={`e${i}`} style={{ color: "#333", fontSize: 13, padding: "0 2px" }}>…</span>
+                              <span key={`e${i}`} style={{ color: "var(--text-3)", fontSize: 13, padding: "0 2px" }}>…</span>
                             ) : (
-                              <button key={pg} className="s-pg" onClick={() => goPage(pg as number)} style={{ width: 34, height: 34, borderRadius: 10, background: pg === page ? "#fff" : "rgba(255,255,255,0.05)", border: pg === page ? "none" : "1px solid rgba(255,255,255,0.08)", color: pg === page ? "#14141e" : "#666", fontWeight: pg === page ? 800 : 500, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                              <button key={pg} className="s-pg" onClick={() => goPage(pg as number)} style={{ width: 34, height: 34, borderRadius: 10, background: pg === page ? "var(--text-1)" : "var(--border-1)", border: pg === page ? "none" : "1px solid var(--border-2)", color: pg === page ? "var(--bg)" : "var(--text-2)", fontWeight: pg === page ? 800 : 500, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                                 {(pg as number) + 1}
                               </button>
                             )
                           )}
-                          <button className="s-pg" onClick={() => goPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1} style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: page >= totalPages - 1 ? "#2a2a2a" : "#aaa", cursor: page >= totalPages - 1 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <button className="s-pg" onClick={() => goPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1} style={{ width: 34, height: 34, borderRadius: 10, background: "var(--surface-2)", border: "1px solid var(--border-2)", color: page >= totalPages - 1 ? "var(--text-4)" : "var(--text-2)", cursor: page >= totalPages - 1 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
                           </button>
                         </div>
                       )}
 
                       {updatedAt && (
-                        <div style={{ textAlign: "center", padding: "4px 18px 20px", fontSize: 10, color: "#222", fontWeight: 600, letterSpacing: "0.04em" }}>
+                        <div style={{ textAlign: "center", padding: "4px 18px 20px", fontSize: 10, color: "var(--text-4)", fontWeight: 600, letterSpacing: "0.04em" }}>
                           Updated {updatedAt.toLocaleDateString("en-AU", { day: "numeric", month: "long" })}
                         </div>
                       )}
@@ -485,10 +485,10 @@ export default function StatsPage() {
         {showPicker && (
           <>
             <div onClick={() => setShowPicker(false)} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)" }} />
-            <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 101, width: "min(340px, 88vw)", maxHeight: "78dvh", background: "#131313", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 20, display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 32px 80px rgba(0,0,0,0.8)" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "15px 18px 13px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
-                <span style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Filter by Team</span>
-                <button onClick={() => setShowPicker(false)} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#888" }}>
+            <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 101, width: "min(340px, 88vw)", maxHeight: "78dvh", background: "var(--surface-1)", border: "1px solid var(--border-2)", borderRadius: 20, display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 32px 80px rgba(0,0,0,0.8)" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "15px 18px 13px", borderBottom: "1px solid var(--border-1)", flexShrink: 0 }}>
+                <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>Filter by Team</span>
+                <button onClick={() => setShowPicker(false)} style={{ background: "var(--surface-3)", border: "none", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-2)" }}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
                 </button>
               </div>
@@ -497,15 +497,15 @@ export default function StatsPage() {
                   const active = team === t;
                   const tc = t !== "All" ? TEAM_COLOR[t] : null;
                   return (
-                    <button key={t} className="s-btn" onClick={() => { setTeam(t); setShowPicker(false); }} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "12px 18px", background: active ? "rgba(255,255,255,0.06)" : "none", border: "none", borderBottom: "1px solid rgba(255,255,255,0.04)", color: active ? "#fff" : "#999", fontSize: 14, fontWeight: active ? 700 : 400, cursor: "pointer", textAlign: "left" }}>
+                    <button key={t} className="s-btn" onClick={() => { setTeam(t); setShowPicker(false); }} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "12px 18px", background: active ? "var(--border-1)" : "none", border: "none", borderBottom: "1px solid var(--border-1)", color: active ? "var(--text-1)" : "var(--text-2)", fontSize: 14, fontWeight: active ? 700 : 400, cursor: "pointer", textAlign: "left" }}>
                       {t !== "All" && (
-                        <div style={{ width: 30, height: 30, borderRadius: "50%", flexShrink: 0, overflow: "hidden", background: tc ? `${tc}18` : "#272731", border: `1px solid ${tc}33` }}>
+                        <div style={{ width: 30, height: 30, borderRadius: "50%", flexShrink: 0, overflow: "hidden", background: tc ? `${tc}18` : "var(--surface-3)", border: `1px solid ${tc}33` }}>
                           {TEAM_LOGO[t] && <img src={TEAM_LOGO[t]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
                         </div>
                       )}
                       {t}
                       {active && (
-                        <svg style={{ marginLeft: "auto", flexShrink: 0 }} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <svg style={{ marginLeft: "auto", flexShrink: 0 }} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                           <polyline points="20 6 9 17 4 12" />
                         </svg>
                       )}

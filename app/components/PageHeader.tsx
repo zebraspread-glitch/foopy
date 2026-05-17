@@ -24,7 +24,7 @@ export default function PageHeader({
   noBorder?: boolean;
 }) {
   return (
-    <header style={{ ...headerStyle, borderBottom: noBorder ? "none" : "1px solid rgba(255,255,255,0.06)" }}>
+    <header style={{ ...headerStyle, borderBottom: noBorder ? "none" : "1px solid var(--border-1)" }}>
       <div style={leftStyle}>
         <span style={titleStyle}>{title}</span>
         {subtitle && <span style={subtitleStyle}>{subtitle}</span>}
@@ -44,10 +44,10 @@ const headerStyle: CSSProperties = {
   gap: 12,
   height: "calc(56px + env(safe-area-inset-top))",
   padding: "env(safe-area-inset-top) 16px 0",
-  background: "rgba(24,24,31,0.96)",
+  background: "var(--bottom-nav-bg)",
   backdropFilter: "blur(28px) saturate(200%)",
   WebkitBackdropFilter: "blur(28px) saturate(200%)",
-  borderBottom: "0.5px solid rgba(255,255,255,0.08)",
+  borderBottom: "0.5px solid var(--border-2)",
   willChange: "transform",
 };
 
@@ -63,13 +63,13 @@ const titleStyle: CSSProperties = {
   fontWeight: 950,
   letterSpacing: "-0.03em",
   lineHeight: 1,
-  color: "#f8fafc",
+  color: "var(--text-1)",
 };
 
 const subtitleStyle: CSSProperties = {
   fontSize: 12,
   fontWeight: 700,
-  color: "#475569",
+  color: "var(--text-3)",
   lineHeight: 1,
 };
 

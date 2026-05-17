@@ -1,4 +1,4 @@
-﻿import path from "path";
+import path from "path";
 import fs from "fs";
 import Link from "next/link";
 import { BackButton, PlayerHeroImage } from "./PlayerClient";
@@ -181,7 +181,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
         <div style={topBarStyle}><BackButton /></div>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "50vh", gap: 12 }}>
           <div style={{ fontSize: 48 }}>🏈</div>
-          <p style={{ color: "#64748b", fontWeight: 800, fontSize: 16 }}>Player not found</p>
+          <p style={{ color: "var(--text-3)", fontWeight: 800, fontSize: 16 }}>Player not found</p>
         </div>
       </main>
     );
@@ -335,22 +335,22 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
       <div style={wrapStyle}>
 
         {/* ── Hero ── */}
-        <section style={{ borderRadius: 20, overflow: "hidden", border: "1px solid rgba(255,255,255,.1)", background: "#1a1a24" }}>
+        <section style={{ borderRadius: 20, overflow: "hidden", border: "1px solid var(--border-2)", background: "var(--bg)" }}>
           <div style={{ height: 90, background: `linear-gradient(135deg,${color}cc,${color}44)`, position: "relative" }}>
-            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom,transparent 40%,#080808)" }} />
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom,transparent 40%,var(--bg))" }} />
           </div>
           <div style={{ padding: "0 20px 24px", marginTop: -56, position: "relative" }}>
             <div style={{ display: "flex", alignItems: "flex-end", gap: 16, marginBottom: 16 }}>
               <PlayerHeroImage src={imgSrc} name={player.name} color={color} />
               <div style={{ paddingBottom: 4 }}>
-                <h1 style={{ margin: "0 0 6px", fontSize: 22, fontWeight: 950, letterSpacing: "-0.04em", color: "#fff", lineHeight: 1.1 }}>{player.name}</h1>
+                <h1 style={{ margin: "0 0 6px", fontSize: 22, fontWeight: 950, letterSpacing: "-0.04em", color: "var(--text-1)", lineHeight: 1.1 }}>{player.name}</h1>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: "#94a3b8" }}>{player.team}</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: "var(--text-2)" }}>{player.team}</span>
                   {season?.position && (
                     <span style={{ fontSize: 11, fontWeight: 800, color: color, background: `${color}22`, border: `1px solid ${color}44`, borderRadius: 999, padding: "2px 8px" }}>{season.position}</span>
                   )}
                   {season?.jerseyNumber && (
-                    <span style={{ fontSize: 11, fontWeight: 900, color: "#64748b" }}>#{season.jerseyNumber}</span>
+                    <span style={{ fontSize: 11, fontWeight: 900, color: "var(--text-3)" }}>#{season.jerseyNumber}</span>
                   )}
                 </div>
               </div>
@@ -363,24 +363,24 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
         {avgFoopy !== null && (
           <section style={{ ...cardStyle, display: "flex", gap: 0, padding: 0, overflow: "hidden" }}>
             {/* Left — avg rating */}
-            <div style={{ flexShrink: 0, width: 90, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: "20px 0", borderRight: "1px solid rgba(255,255,255,.08)" }}>
-              <div style={{ fontSize: 10, fontWeight: 800, color: "#64748b", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>Avg Foopy</div>
+            <div style={{ flexShrink: 0, width: 90, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: "20px 0", borderRight: "1px solid var(--border-2)" }}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: "var(--text-3)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>Avg Foopy</div>
               <div style={{ fontSize: 40, fontWeight: 950, letterSpacing: "-0.05em", lineHeight: 1, color: foopyColor(avgFoopy) }}>{avgFoopy.toFixed(1)}</div>
               {foopyRank !== null && (
-                <div style={{ fontSize: 10, fontWeight: 800, color: "#475569", marginTop: 6, letterSpacing: "0.02em" }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: "var(--text-3)", marginTop: 6, letterSpacing: "0.02em" }}>
                   #{foopyRank} of {foopyTotal}
                 </div>
               )}
             </div>
             {/* Right — bar chart */}
             <div style={{ flex: 1, padding: "16px 14px 12px", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-              <div style={{ fontSize: 10, fontWeight: 800, color: "#64748b", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Last 10 games</div>
+              <div style={{ fontSize: 10, fontWeight: 800, color: "var(--text-3)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Last 10 games</div>
               <div style={{ display: "flex", gap: 5, alignItems: "flex-end" }}>
                 {[...playedGames].slice(0, 10).reverse().map((g, i) => (
                   <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                    <span style={{ fontSize: 9, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{g.foopy.toFixed(1)}</span>
+                    <span style={{ fontSize: 9, fontWeight: 900, color: "var(--text-1)", lineHeight: 1 }}>{g.foopy.toFixed(1)}</span>
                     <div style={{ width: "70%", borderRadius: 4, background: foopyColor(g.foopy), height: Math.max(14, (g.foopy / 10) * 52) }} />
-                    <div style={{ width: 22, height: 22, borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,.08)", flexShrink: 0 }}>
+                    <div style={{ width: 22, height: 22, borderRadius: "50%", overflow: "hidden", background: "var(--surface-3)", flexShrink: 0 }}>
                       {g.opponentTeam && <img src={getLogoSrc(g.opponentTeam)} alt={g.opponentTeam} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
                     </div>
                   </div>
@@ -396,7 +396,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
             {/* Header */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
               <div style={sectionLabel}>Season averages</div>
-              <span style={{ fontSize: 11, fontWeight: 800, color: "#475569", background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 999, padding: "3px 10px", letterSpacing: "0.04em" }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: "var(--text-3)", background: "var(--surface-3)", border: "1px solid var(--border-2)", borderRadius: 999, padding: "3px 10px", letterSpacing: "0.04em" }}>
                 {games} games
               </span>
             </div>
@@ -408,8 +408,8 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                 { label: "Disposals", value: statGrid[1].value, accent: false },
               ].map(({ label, value, accent }) => (
                 <div key={label} style={{
-                  background: accent ? `${color}18` : "rgba(255,255,255,.04)",
-                  border: `1px solid ${accent ? `${color}35` : "rgba(255,255,255,.07)"}`,
+                  background: accent ? `${color}18` : "var(--border-1)",
+                  border: `1px solid ${accent ? `${color}35` : "var(--border-1)"}`,
                   borderRadius: 16,
                   padding: "16px 14px",
                   display: "flex",
@@ -418,7 +418,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                 }}>
                   <div style={{ fontSize: 11, fontWeight: 800, color: accent ? `${color}cc` : "#475569", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>{label}</div>
                   <div style={{ fontSize: 32, fontWeight: 950, letterSpacing: "-0.04em", lineHeight: 1, color: accent ? color : "#f8fafc" }}>{value}</div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "#334155" }}>per game</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-4)" }}>per game</div>
                 </div>
               ))}
             </div>
@@ -427,14 +427,14 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
               {statGrid.slice(2).map(({ label, value }) => (
                 <div key={label} style={{
-                  background: "rgba(255,255,255,.03)",
-                  border: "1px solid rgba(255,255,255,.06)",
+                  background: "var(--surface-2)",
+                  border: "1px solid var(--border-1)",
                   borderRadius: 12,
                   padding: "11px 10px",
                   textAlign: "center" as const,
                 }}>
-                  <div style={{ fontSize: 19, fontWeight: 950, letterSpacing: "-0.03em", color: "#e2e8f0", lineHeight: 1 }}>{value}</div>
-                  <div style={{ fontSize: 9, fontWeight: 800, color: "#475569", marginTop: 4, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>{label}</div>
+                  <div style={{ fontSize: 19, fontWeight: 950, letterSpacing: "-0.03em", color: "var(--text-1)", lineHeight: 1 }}>{value}</div>
+                  <div style={{ fontSize: 9, fontWeight: 800, color: "var(--text-3)", marginTop: 4, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>{label}</div>
                 </div>
               ))}
             </div>
@@ -447,19 +447,19 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
             <div style={sectionLabel}>Season performances</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {playedGames.map((g, i) => (
-                <Link key={i} href={g.squiggleId ? `/match/${g.squiggleId}` : "#"} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 14, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.07)", textDecoration: "none", color: "inherit" }}>
+                <Link key={i} href={g.squiggleId ? `/match/${g.squiggleId}` : "#"} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 14, background: "var(--surface-2)", border: "1px solid var(--border-1)", textDecoration: "none", color: "inherit" }}>
                   <div style={{ minWidth: 52, display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, gap: 4 }}>
                     {g.round !== null
-                      ? <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b", whiteSpace: "nowrap" }}>Rd {g.round}</div>
-                      : <div style={{ fontSize: 11, fontWeight: 900, color: "#64748b" }}>{formatDate(g.date)}</div>
+                      ? <div style={{ fontSize: 11, fontWeight: 900, color: "var(--text-3)", whiteSpace: "nowrap" }}>Rd {g.round}</div>
+                      : <div style={{ fontSize: 11, fontWeight: 900, color: "var(--text-3)" }}>{formatDate(g.date)}</div>
                     }
                     {g.opponentTeam && (
-                      <div style={{ width: 28, height: 28, borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,.08)", flexShrink: 0 }}>
+                      <div style={{ width: 28, height: 28, borderRadius: "50%", overflow: "hidden", background: "var(--surface-3)", flexShrink: 0 }}>
                         <img src={getLogoSrc(g.opponentTeam)} alt={g.opponentTeam} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                       </div>
                     )}
                   </div>
-                  <div style={{ width: 1, height: 40, background: "rgba(255,255,255,.08)", flexShrink: 0 }} />
+                  <div style={{ width: 1, height: 40, background: "var(--surface-3)", flexShrink: 0 }} />
                   <div style={{ flex: 1, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
                     {g.goals > 0 && <StatChip label="G"  value={g.goals} />}
                     <StatChip label="D"  value={g.disposals} />
@@ -470,7 +470,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                   </div>
                   <div style={{ flexShrink: 0, minWidth: 42, textAlign: "center" }}>
                     <div style={{ fontSize: 18, fontWeight: 950, letterSpacing: "-0.04em", color: foopyColor(g.foopy) }}>{g.foopy.toFixed(1)}</div>
-                    <div style={{ fontSize: 9, fontWeight: 800, color: "#334155", letterSpacing: "0.06em" }}>FOOPY</div>
+                    <div style={{ fontSize: 9, fontWeight: 800, color: "var(--text-4)", letterSpacing: "0.06em" }}>FOOPY</div>
                   </div>
                 </Link>
               ))}
@@ -480,7 +480,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
 
         {!season && playedGames.length === 0 && (
           <section style={cardStyle}>
-            <p style={{ textAlign: "center", color: "#334155", fontWeight: 700, fontSize: 14, padding: "24px 0", margin: 0 }}>
+            <p style={{ textAlign: "center", color: "var(--text-4)", fontWeight: 700, fontSize: 14, padding: "24px 0", margin: 0 }}>
               No stats available for this player yet.
             </p>
           </section>
@@ -494,8 +494,8 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
 function StatChip({ label, value }: { label: string; value: number }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 24 }}>
-      <span style={{ fontSize: 17, fontWeight: 900, color: "#e2e8f0" }}>{value}</span>
-      <span style={{ fontSize: 11, fontWeight: 800, color: "#475569", letterSpacing: "0.04em" }}>{label}</span>
+      <span style={{ fontSize: 17, fontWeight: 900, color: "var(--text-1)" }}>{value}</span>
+      <span style={{ fontSize: 11, fontWeight: 800, color: "var(--text-3)", letterSpacing: "0.04em" }}>{label}</span>
     </div>
   );
 }
@@ -503,7 +503,7 @@ function StatChip({ label, value }: { label: string; value: number }) {
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const pageStyle: React.CSSProperties = {
-  minHeight: "100dvh", background: "#14141e", color: "#fff",
+  minHeight: "100dvh", background: "var(--bg)", color: "var(--text-1)",
   paddingBottom: "calc(95px + env(safe-area-inset-bottom))",
 };
 const topBarStyle: React.CSSProperties = {
@@ -515,10 +515,10 @@ const wrapStyle: React.CSSProperties = {
   display: "flex", flexDirection: "column", gap: 12,
 };
 const cardStyle: React.CSSProperties = {
-  background: "#1a1a24", border: "1px solid rgba(255,255,255,.1)",
+  background: "var(--bg)", border: "1px solid var(--border-2)",
   borderRadius: 18, padding: "18px 16px 20px",
 };
 const sectionLabel: React.CSSProperties = {
-  fontSize: 12, fontWeight: 800, color: "#64748b",
+  fontSize: 12, fontWeight: 800, color: "var(--text-3)",
   textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 14,
 };

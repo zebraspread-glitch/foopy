@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -817,7 +817,7 @@ free_kicks?: {
         <div style={headerTopStyle}>
           <div style={logoWrapStyle}>
             <div style={logoIconStyle}>
-              <span style={{ fontSize: 15, fontWeight: 950, color: "white", letterSpacing: "-0.03em" }}>F</span>
+              <span style={{ fontSize: 15, fontWeight: 950, color: "var(--text-1)", letterSpacing: "-0.03em" }}>F</span>
             </div>
           </div>
 
@@ -878,7 +878,7 @@ free_kicks?: {
                 style={{
                   ...cardStyle,
                   minHeight: 210,
-                  border: "1px solid rgba(255,255,255,.06)",
+                  border: "1px solid var(--border-1)",
                   background: "none",
                   pointerEvents: "none",
                 }}
@@ -1142,7 +1142,7 @@ function LiveViewerCount({ gameId }: { gameId: number }) {
         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
         <circle cx="12" cy="12" r="3" />
       </svg>
-      <span style={{ fontSize: 12, fontWeight: 700, color: "#ffffff" }}>{Math.max(1, count)}</span>
+      <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-1)" }}>{Math.max(1, count)}</span>
     </div>
   );
 }
@@ -1800,7 +1800,7 @@ const topPlayerCircleStyle: React.CSSProperties = {
   overflow: "hidden",
   display: "grid",
   placeItems: "center",
-  border: "1.5px solid rgba(255,255,255,.14)",
+  border: "1.5px solid var(--border-3)",
   boxShadow: "0 2px 10px rgba(0,0,0,.4), inset 0 -8px 14px rgba(0,0,0,.3)",
 };
 
@@ -1817,7 +1817,7 @@ const topPlayerInitialsStyle: React.CSSProperties = {
   placeItems: "center",
   fontWeight: 950,
   fontSize: "15px",
-  color: "white",
+  color: "var(--text-1)",
 };
 
 const topPlayerLogoStyle: React.CSSProperties = {
@@ -1828,8 +1828,8 @@ const topPlayerLogoStyle: React.CSSProperties = {
   height: "19px",
   objectFit: "contain",
   borderRadius: "50%",
-  border: "2px solid #1e1e28",
-  background: "#1e1e28",
+  border: "2px solid var(--surface-1)",
+  background: "var(--surface-1)",
 };
 
 const topRatingRowStyle: React.CSSProperties = {
@@ -1842,7 +1842,7 @@ const topRatingRowStyle: React.CSSProperties = {
   justifyContent: "center",
   fontSize: "12px",
   fontWeight: 900,
-  color: "white",
+  color: "var(--text-1)",
   textShadow: "0 1px 2px rgba(0,0,0,.45)",
   boxShadow: "inset 0 -1px 0 rgba(0,0,0,.18)",
 };
@@ -1850,7 +1850,7 @@ const topRatingRowStyle: React.CSSProperties = {
 const noTopPlayersStyle: React.CSSProperties = {
   padding: "18px",
   borderRadius: "16px",
-  border: "1px dashed rgba(255,255,255,.14)",
+  border: "1px dashed var(--border-3)",
   color: "rgba(255,255,255,.55)",
   fontSize: "13px",
   fontWeight: 800,

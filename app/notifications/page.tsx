@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -257,7 +257,7 @@ export default function NotificationsPage() {
 
   if (!userId && !loading) {
     return (
-      <div style={{ minHeight: "100dvh", background: "#14141e", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#64748b" }}>
+      <div style={{ minHeight: "100dvh", background: "var(--bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "var(--text-3)" }}>
         <BellIcon />
         <div style={{ marginTop: 12, fontSize: 15, fontWeight: 700 }}>Sign in to see notifications</div>
       </div>
@@ -265,27 +265,27 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div style={{ minHeight: "100dvh", background: "#14141e", color: "#f8fafc", paddingBottom: "calc(80px + env(safe-area-inset-bottom))" }}>
-      <div style={{ maxWidth: 600, margin: "0 auto", background: "#020202", minHeight: "100dvh", borderLeft: "1px solid rgba(255,255,255,.07)", borderRight: "1px solid rgba(255,255,255,.07)" }}>
+    <div style={{ minHeight: "100dvh", background: "var(--bg)", color: "var(--text-1)", paddingBottom: "calc(80px + env(safe-area-inset-bottom))" }}>
+      <div style={{ maxWidth: 600, margin: "0 auto", background: "var(--bg)", minHeight: "100dvh", borderLeft: "1px solid var(--border-1)", borderRight: "1px solid var(--border-1)" }}>
 
         {/* Header */}
-        <div style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(2,2,2,0.92)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: "1px solid rgba(255,255,255,0.06)", padding: "calc(16px + env(safe-area-inset-top)) 18px 12px" }}>
+        <div style={{ position: "sticky", top: 0, zIndex: 20, background: "var(--bottom-nav-bg)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: "1px solid var(--border-1)", padding: "calc(16px + env(safe-area-inset-top)) 18px 12px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <button onClick={() => router.back()} style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer", padding: 0, display: "flex" }}>
+              <button onClick={() => router.back()} style={{ background: "none", border: "none", color: "var(--text-2)", cursor: "pointer", padding: 0, display: "flex" }}>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="15 18 9 12 15 6" />
                 </svg>
               </button>
-              <span style={{ fontSize: 20, fontWeight: 900, color: "#f8fafc" }}>Notifications</span>
+              <span style={{ fontSize: 20, fontWeight: 900, color: "var(--text-1)" }}>Notifications</span>
               {unreadCount > 0 && (
-                <span style={{ fontSize: 11, fontWeight: 800, background: "#ef4444", color: "#fff", borderRadius: 999, padding: "2px 7px", minWidth: 20, textAlign: "center" }}>
+                <span style={{ fontSize: 11, fontWeight: 800, background: "#ef4444", color: "var(--text-1)", borderRadius: 999, padding: "2px 7px", minWidth: 20, textAlign: "center" }}>
                   {unreadCount}
                 </span>
               )}
             </div>
             {notifs.length > 0 && (
-              <button onClick={clearAll} style={{ background: "none", border: "none", color: "#475569", fontSize: 12, fontWeight: 700, cursor: "pointer", padding: "4px 8px" }}>
+              <button onClick={clearAll} style={{ background: "none", border: "none", color: "var(--text-3)", fontSize: 12, fontWeight: 700, cursor: "pointer", padding: "4px 8px" }}>
                 Clear all
               </button>
             )}
@@ -299,8 +299,8 @@ export default function NotificationsPage() {
                 onClick={() => setFilter(f)}
                 style={{
                   padding: "5px 14px", borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: "pointer", border: "none",
-                  background: filter === f ? "#f8fafc" : "rgba(255,255,255,0.06)",
-                  color: filter === f ? "#020202" : "#64748b",
+                  background: filter === f ? "var(--text-1)" : "var(--border-1)",
+                  color: filter === f ? "var(--bg)" : "var(--text-3)",
                   transition: "all 0.15s",
                 }}
               >
@@ -316,14 +316,14 @@ export default function NotificationsPage() {
             <div className="spinner" />
           </div>
         ) : displayed.length === 0 ? (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "72px 24px", color: "#475569", textAlign: "center" }}>
-            <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16, color: "#334155" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "72px 24px", color: "var(--text-3)", textAlign: "center" }}>
+            <div style={{ width: 56, height: 56, borderRadius: "50%", background: "var(--surface-2)", border: "1px solid var(--border-1)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16, color: "var(--text-4)" }}>
               <BellIcon />
             </div>
-            <div style={{ fontSize: 16, fontWeight: 900, color: "#f8fafc", marginBottom: 6 }}>
+            <div style={{ fontSize: 16, fontWeight: 900, color: "var(--text-1)", marginBottom: 6 }}>
               {filter === "unread" ? "All caught up!" : "No notifications yet"}
             </div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-4)" }}>
               {filter === "unread" ? "You've read everything" : "We'll let you know when something happens"}
             </div>
           </div>
@@ -362,7 +362,7 @@ export default function NotificationsPage() {
                   style={{
                     display: "flex", alignItems: "center", gap: 12,
                     padding: "13px 16px",
-                    borderBottom: i < displayed.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none",
+                    borderBottom: i < displayed.length - 1 ? "1px solid var(--border-1)" : "none",
                     background: n.read ? "transparent" : "rgba(59,130,246,0.05)",
                     cursor: "pointer",
                     transition: "background 0.15s",
@@ -374,15 +374,15 @@ export default function NotificationsPage() {
                       <img src={n.actor.avatar_url} alt={actorName}
                         style={{ width: 42, height: 42, borderRadius: "50%", objectFit: "cover" }} />
                     ) : (
-                      <div style={{ width: 42, height: 42, borderRadius: "50%", background: "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <span style={{ fontSize: 16, fontWeight: 900, color: "#94a3b8" }}>{actorName[0]?.toUpperCase()}</span>
+                      <div style={{ width: 42, height: 42, borderRadius: "50%", background: "var(--surface-3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <span style={{ fontSize: 16, fontWeight: 900, color: "var(--text-2)" }}>{actorName[0]?.toUpperCase()}</span>
                       </div>
                     )}
                     {/* Type icon pip */}
                     <div style={{
                       position: "absolute", bottom: -1, right: -1,
                       width: 18, height: 18, borderRadius: "50%",
-                      background: "#1e1e28", border: "1.5px solid #000",
+                      background: "var(--surface-1)", border: "1.5px solid #000",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       color,
                     }}>
@@ -400,11 +400,11 @@ export default function NotificationsPage() {
                       </span>
                     </div>
                     {sub && (
-                      <div style={{ fontSize: 12, color: "#475569", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <div style={{ fontSize: 12, color: "var(--text-3)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {sub}
                       </div>
                     )}
-                    <div style={{ fontSize: 11, color: "#334155", fontWeight: 600, marginTop: 3 }}>
+                    <div style={{ fontSize: 11, color: "var(--text-4)", fontWeight: 600, marginTop: 3 }}>
                       {relTime(n.created_at)}
                     </div>
                   </div>

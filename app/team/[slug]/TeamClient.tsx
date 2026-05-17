@@ -40,8 +40,8 @@ export function TeamLogoImage({ src, name, color }: { src: string; name: string;
         height: 82,
         borderRadius: "50%",
         background: `${color}22`,
-        border: "2px solid #080808",
-        boxShadow: "0 0 0 1px rgba(255,255,255,.14)",
+        border: "2px solid var(--bg)",
+        boxShadow: "0 0 0 1px var(--border-3)",
         flexShrink: 0,
         overflow: "hidden",
         display: "flex",
@@ -57,7 +57,7 @@ export function TeamLogoImage({ src, name, color }: { src: string; name: string;
           style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
         />
       ) : (
-        <span style={{ fontSize: 30, fontWeight: 950, color: "#fff" }}>{initials}</span>
+        <span style={{ fontSize: 30, fontWeight: 950, color: "var(--text-1)" }}>{initials}</span>
       )}
     </div>
   );

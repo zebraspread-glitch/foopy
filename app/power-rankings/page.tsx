@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
@@ -220,7 +220,7 @@ function PlayerAvatar({ name, team, size = 44 }: { name: string; team: string; s
       overflow: "hidden", flexShrink: 0, display: "inline-flex",
       alignItems: "center", justifyContent: "center",
       background: bg, fontWeight: 900, fontSize: size * 0.33,
-      color: "#fff", letterSpacing: "-0.02em",
+      color: "var(--text-1)", letterSpacing: "-0.02em",
     }}>
       {!failed && src ? (
         <img src={src} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={() => setFailed(true)} />
@@ -377,15 +377,15 @@ function PlayerItem({ player, rank, period }: { player: PlayerRank; rank: number
       </div>
       <PlayerAvatar name={player.name} team={player.team} size={44} />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 800, fontSize: 15, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} className="pr-name">
+        <div style={{ fontWeight: 800, fontSize: 15, color: "var(--text-1)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} className="pr-name">
           {player.name}
         </div>
-        <div style={{ fontSize: 12, color: "#64748b", fontWeight: 700, marginTop: 2 }}>
+        <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 700, marginTop: 2 }}>
           {player.team} · {player.games}GP
         </div>
       </div>
       <div style={{ textAlign: "right", flexShrink: 0 }}>
-        <div style={{ fontWeight: 900, fontSize: 20, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1 }} className="pr-score">
+        <div style={{ fontWeight: 900, fontSize: 20, color: "var(--text-1)", letterSpacing: "-0.03em", lineHeight: 1 }} className="pr-score">
           {scoreLabel}
         </div>
       </div>
@@ -411,7 +411,7 @@ function TeamItem({ team, rank }: { team: TeamRank; rank: number }) {
         <span style={{ width: 40, height: 40, borderRadius: "50%", background: "#1e293b", display: "block", flexShrink: 0 }} />
       )}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 800, fontSize: 15, color: "#fff", whiteSpace: "nowrap" }} className="pr-name">
+        <div style={{ fontWeight: 800, fontSize: 15, color: "var(--text-1)", whiteSpace: "nowrap" }} className="pr-name">
           {displayTeamName(team.team)}
         </div>
       </div>
@@ -458,8 +458,8 @@ function SkeletonTeamItem() {
 
 const pageStyle: CSSProperties = {
   minHeight: "100dvh",
-  background: "#14141e",
-  color: "#fff",
+  background: "var(--bg)",
+  color: "var(--text-1)",
   paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
 };
 
@@ -473,10 +473,10 @@ const headerStyle: CSSProperties = {
   gap: 12,
   height: "calc(56px + env(safe-area-inset-top))",
   padding: "env(safe-area-inset-top) 16px 0 58px",
-  background: "rgba(24,24,31,0.96)",
+  background: "var(--bottom-nav-bg)",
   backdropFilter: "blur(28px) saturate(200%)",
   WebkitBackdropFilter: "blur(28px) saturate(200%)",
-  borderBottom: "0.5px solid rgba(255,255,255,.08)",
+  borderBottom: "0.5px solid var(--border-2)",
 };
 
 const titleStyle: CSSProperties = {
@@ -485,17 +485,17 @@ const titleStyle: CSSProperties = {
 
 const toggleWrapStyle: CSSProperties = {
   display: "flex", padding: 3, borderRadius: 999,
-  background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)", gap: 2,
+  background: "var(--surface-3)", border: "1px solid var(--border-2)", gap: 2,
 };
 
 const toggleBtnStyle: CSSProperties = {
   border: "none", borderRadius: 999, padding: "7px 14px",
-  background: "transparent", color: "#64748b",
+  background: "transparent", color: "var(--text-3)",
   fontSize: 12, fontWeight: 900, cursor: "pointer",
   letterSpacing: "0.01em", transition: "background 0.15s, color 0.15s",
 };
 
-const toggleActiveStyle: CSSProperties = { background: "white", color: "#14141e" };
+const toggleActiveStyle: CSSProperties = { background: "var(--text-1)", color: "var(--bg)" };
 
 const periodBarStyle: CSSProperties = {
   position: "sticky",
@@ -506,20 +506,20 @@ const periodBarStyle: CSSProperties = {
   background: "rgba(0,0,0,0.88)",
   backdropFilter: "blur(20px)",
   WebkitBackdropFilter: "blur(20px)",
-  borderBottom: "0.5px solid rgba(255,255,255,.07)",
+  borderBottom: "0.5px solid var(--border-1)",
   padding: "0 16px",
 };
 
 const periodBtnStyle: CSSProperties = {
   border: "none", background: "transparent",
-  color: "#475569", fontWeight: 800, fontSize: 13,
+  color: "var(--text-3)", fontWeight: 800, fontSize: 13,
   padding: "13px 18px 11px", cursor: "pointer",
   letterSpacing: "0.01em", borderBottom: "2px solid transparent",
   transition: "color 0.15s, border-color 0.15s",
 };
 
 const periodActiveStyle: CSSProperties = {
-  color: "#fff", borderBottom: "2px solid #fff",
+  color: "var(--text-1)", borderBottom: "2px solid #fff",
 };
 
 const wrapStyle: CSSProperties = {
@@ -527,23 +527,23 @@ const wrapStyle: CSSProperties = {
 };
 
 const cardStyle: CSSProperties = {
-  borderRadius: 18, border: "1px solid rgba(255,255,255,.08)",
-  background: "#1a1a24", overflow: "hidden",
+  borderRadius: 18, border: "1px solid var(--border-2)",
+  background: "var(--bg)", overflow: "hidden",
 };
 
 const itemStyle: CSSProperties = {
   display: "flex", alignItems: "center", gap: 14,
   padding: "14px 18px",
-  borderBottom: "1px solid rgba(255,255,255,.055)",
+  borderBottom: "1px solid var(--border-1)",
 };
 
 const emptyStyle: CSSProperties = {
   padding: "48px 24px", textAlign: "center",
-  color: "#475569", fontSize: 14, fontWeight: 700,
+  color: "var(--text-3)", fontSize: 14, fontWeight: 700,
 };
 
 const footerNoteStyle: CSSProperties = {
   padding: "12px 18px",
-  fontSize: 11, color: "#334155", fontWeight: 700,
+  fontSize: 11, color: "var(--text-4)", fontWeight: 700,
   textAlign: "center", letterSpacing: "0.02em",
 };

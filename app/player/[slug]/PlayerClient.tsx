@@ -38,8 +38,8 @@ export function PlayerHeroImage({ src, name, color }: { src: string; name: strin
         height: 100,
         borderRadius: "50%",
         background: color,
-        border: "3px solid #080808",
-        boxShadow: "0 0 0 2px rgba(255,255,255,.12)",
+        border: "3px solid var(--bg)",
+        boxShadow: "0 0 0 2px var(--border-3)",
         flexShrink: 0,
         overflow: "hidden",
         display: "flex",
@@ -55,7 +55,7 @@ export function PlayerHeroImage({ src, name, color }: { src: string; name: strin
           style={{ width: "100%", height: "100%", objectFit: "cover" }}
         />
       ) : (
-        <span style={{ fontSize: 36, fontWeight: 950, color: "#fff" }}>{initials}</span>
+        <span style={{ fontSize: 36, fontWeight: 950, color: "var(--text-1)" }}>{initials}</span>
       )}
     </div>
   );

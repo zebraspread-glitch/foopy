@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
@@ -86,7 +86,7 @@ function PlayerAvatar({ player }: { player: Player }) {
     <div style={{ width: 46, height: 46, borderRadius: "50%", background: color, flexShrink: 0, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
       {!err
         ? <img src={imgSrc} alt={player.name} onError={() => setErr(true)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        : <span style={{ fontSize: 16, fontWeight: 950, color: "#fff" }}>{getInitials(player.name)}</span>
+        : <span style={{ fontSize: 16, fontWeight: 950, color: "var(--text-1)" }}>{getInitials(player.name)}</span>
       }
     </div>
   );
@@ -94,7 +94,7 @@ function PlayerAvatar({ player }: { player: Player }) {
 
 function SectionLabel({ label, count }: { label: string; count: number }) {
   return (
-    <div style={{ fontSize: 11, fontWeight: 900, color: "#475569", textTransform: "uppercase" as const, letterSpacing: "0.07em", paddingLeft: 4, marginBottom: 8 }}>
+    <div style={{ fontSize: 11, fontWeight: 900, color: "var(--text-3)", textTransform: "uppercase" as const, letterSpacing: "0.07em", paddingLeft: 4, marginBottom: 8 }}>
       {label} · {count}
     </div>
   );
@@ -172,8 +172,8 @@ export default function SearchPage() {
         {!query.trim() && (
           <div style={emptyStateStyle}>
             <div style={{ fontSize: 48, marginBottom: 4 }}>🔍</div>
-            <div style={{ fontSize: 18, fontWeight: 950, color: "#f1f5f9" }}>Search</div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#475569" }}>Find players and users</div>
+            <div style={{ fontSize: 18, fontWeight: 950, color: "var(--text-1)" }}>Search</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-3)" }}>Find players and users</div>
           </div>
         )}
 
@@ -188,8 +188,8 @@ export default function SearchPage() {
         {!loading && searched && !hasResults && (
           <div style={emptyStateStyle}>
             <div style={{ fontSize: 48, marginBottom: 4 }}>😶</div>
-            <div style={{ fontSize: 18, fontWeight: 950, color: "#f1f5f9" }}>No results</div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#475569" }}>Try a different name</div>
+            <div style={{ fontSize: 18, fontWeight: 950, color: "var(--text-1)" }}>No results</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-3)" }}>Try a different name</div>
           </div>
         )}
 
@@ -208,7 +208,7 @@ export default function SearchPage() {
                       <Link key={u.id} href={`/profile/${u.username}`} style={rowStyle} className="pressable">
                         <UserAvatar username={uname} url={u.avatar_url} />
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontWeight: 900, fontSize: 15, color: "#fff", letterSpacing: "-0.01em" }}>@{uname}</div>
+                          <div style={{ fontWeight: 900, fontSize: 15, color: "var(--text-1)", letterSpacing: "-0.01em" }}>@{uname}</div>
                         </div>
                         <svg width="7" height="13" viewBox="0 0 7 13" fill="none" style={{ opacity: 0.25, flexShrink: 0 }}>
                           <path d="M1 1.5l5 5-5 5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -219,7 +219,7 @@ export default function SearchPage() {
                   {users.length > visibleUsers && (
                     <button
                       onClick={() => setVisibleUsers(v => v + 5)}
-                      style={{ padding: "12px", borderRadius: 14, border: "1px solid rgba(255,255,255,.1)", background: "transparent", color: "#60a5fa", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}
+                      style={{ padding: "12px", borderRadius: 14, border: "1px solid var(--border-2)", background: "transparent", color: "#60a5fa", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}
                     >
                       Load more ({users.length - visibleUsers} remaining)
                     </button>
@@ -242,8 +242,8 @@ export default function SearchPage() {
                     >
                       <PlayerAvatar player={p} />
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 900, fontSize: 15, color: "#fff", letterSpacing: "-0.01em" }}>{p.name}</div>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: "#64748b", marginTop: 2 }}>{p.team}</div>
+                        <div style={{ fontWeight: 900, fontSize: 15, color: "var(--text-1)", letterSpacing: "-0.01em" }}>{p.name}</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-3)", marginTop: 2 }}>{p.team}</div>
                       </div>
                       <svg width="7" height="13" viewBox="0 0 7 13" fill="none" style={{ opacity: 0.25, flexShrink: 0 }}>
                         <path d="M1 1.5l5 5-5 5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -265,8 +265,8 @@ export default function SearchPage() {
 
 const pageStyle: CSSProperties = {
   minHeight: "100dvh",
-  background: "#14141e",
-  color: "#fff",
+  background: "var(--bg)",
+  color: "var(--text-1)",
   paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
 };
 
@@ -279,10 +279,10 @@ const headerStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   padding: "env(safe-area-inset-top) 20px 0 58px",
-  background: "rgba(24,24,31,0.96)",
+  background: "var(--bottom-nav-bg)",
   backdropFilter: "blur(28px) saturate(200%)",
   WebkitBackdropFilter: "blur(28px) saturate(200%)",
-  borderBottom: "0.5px solid rgba(255,255,255,0.08)",
+  borderBottom: "0.5px solid var(--border-2)",
 };
 
 const titleStyle: CSSProperties = { fontSize: 18, fontWeight: 950, letterSpacing: "-0.02em" };
@@ -303,8 +303,8 @@ const searchBarWrapStyle: CSSProperties = {
   padding: "0 16px",
   height: 52,
   borderRadius: 16,
-  background: "#1e1e28",
-  border: "1px solid rgba(255,255,255,0.1)",
+  background: "var(--surface-1)",
+  border: "1px solid var(--border-2)",
 };
 
 const searchInputStyle: CSSProperties = {
@@ -312,7 +312,7 @@ const searchInputStyle: CSSProperties = {
   background: "transparent",
   border: "none",
   outline: "none",
-  color: "#fff",
+  color: "var(--text-1)",
   fontSize: 16,
   fontWeight: 600,
   fontFamily: "inherit",
@@ -321,9 +321,9 @@ const searchInputStyle: CSSProperties = {
 };
 
 const clearBtnStyle: CSSProperties = {
-  background: "rgba(255,255,255,0.1)",
+  background: "var(--border-2)",
   border: "none",
-  color: "#94a3b8",
+  color: "var(--text-2)",
   width: 22,
   height: 22,
   borderRadius: "50%",
@@ -353,9 +353,9 @@ const rowStyle: CSSProperties = {
   gap: 14,
   padding: "12px 14px",
   borderRadius: 16,
-  background: "#1e1e28",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#fff",
+  background: "var(--surface-1)",
+  border: "1px solid var(--border-2)",
+  color: "var(--text-1)",
   textDecoration: "none",
   width: "100%",
   fontFamily: "inherit",

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
@@ -726,8 +726,8 @@ export default function EventCommentsPage() {
           {(["live", "top"] as const).map(s => (
             <button key={s} onClick={() => setSort(s)} style={{
               padding: "4px 14px", borderRadius: 999, fontSize: 12, fontWeight: 700, border: "none", cursor: "pointer",
-              background: sort === s ? "#f8fafc" : "rgba(255,255,255,0.07)",
-              color: sort === s ? "#020202" : "#64748b",
+              background: sort === s ? "var(--text-1)" : "var(--border-1)",
+              color: sort === s ? "var(--bg)" : "var(--text-3)",
               transition: "all 0.15s",
             }}>
               {s === "live" ? "Live" : "Top"}
@@ -744,7 +744,7 @@ export default function EventCommentsPage() {
         ) : comments.length === 0 ? (
           <div style={emptyStyle}>
             <div style={emptyIconStyle}>
-              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--border-3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                 <line x1="9" y1="10" x2="15" y2="10" strokeWidth="1.5" />
                 <line x1="9" y1="14" x2="13" y2="14" strokeWidth="1.5" />
@@ -867,9 +867,9 @@ function MatchScoreBar({ game, gameId }: { game: { hteam: string; ateam: string;
       style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
         width: "100%", margin: "10px 0 0", padding: "10px 16px",
-        background: "rgba(255,255,255,0.04)", borderTop: "1px solid rgba(255,255,255,0.07)",
-        borderBottom: "1px solid rgba(255,255,255,0.07)", border: "none",
-        cursor: "pointer", color: "#fff", fontFamily: "inherit",
+        background: "var(--surface-2)", borderTop: "1px solid var(--border-1)",
+        borderBottom: "1px solid var(--border-1)", border: "none",
+        cursor: "pointer", color: "var(--text-1)", fontFamily: "inherit",
       }}
     >
       {/* Home team */}
@@ -878,22 +878,22 @@ function MatchScoreBar({ game, gameId }: { game: { hteam: string; ateam: string;
           ? <img src={hLogo} alt={game.hteam} onError={() => setHErr(true)} style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover" }} />
           : <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#1e293b" }} />}
         <div style={{ textAlign: "left" as const }}>
-          <div style={{ fontSize: 13, fontWeight: 900, color: "#f8fafc" }}>{game.hteam.split(" ").pop()}</div>
-          <div style={{ fontSize: 22, fontWeight: 1000, color: "#f8fafc", lineHeight: 1 }}>{hScore}</div>
+          <div style={{ fontSize: 13, fontWeight: 900, color: "var(--text-1)" }}>{game.hteam.split(" ").pop()}</div>
+          <div style={{ fontSize: 22, fontWeight: 1000, color: "var(--text-1)", lineHeight: 1 }}>{hScore}</div>
         </div>
       </div>
 
       {/* Centre */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "0 10px" }}>
         <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.1em", color: status === "LIVE" ? "#22c55e" : "#64748b" }}>{status}</span>
-        <span style={{ fontSize: 10, fontWeight: 700, color: "#334155" }}>Rd {game.round}</span>
+        <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text-4)" }}>Rd {game.round}</span>
       </div>
 
       {/* Away team */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, justifyContent: "flex-end" }}>
         <div style={{ textAlign: "right" as const }}>
-          <div style={{ fontSize: 13, fontWeight: 900, color: "#f8fafc" }}>{game.ateam.split(" ").pop()}</div>
-          <div style={{ fontSize: 22, fontWeight: 1000, color: "#f8fafc", lineHeight: 1 }}>{aScore}</div>
+          <div style={{ fontSize: 13, fontWeight: 900, color: "var(--text-1)" }}>{game.ateam.split(" ").pop()}</div>
+          <div style={{ fontSize: 22, fontWeight: 1000, color: "var(--text-1)", lineHeight: 1 }}>{aScore}</div>
         </div>
         {!aErr
           ? <img src={aLogo} alt={game.ateam} onError={() => setAErr(true)} style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover" }} />
@@ -975,7 +975,7 @@ function PollStatCard({ question, stat, pollType, stats }: {
             <rect x="2" y="13" width="4" height="7" rx="1" />
           </svg>
         </div>
-        <span style={{ fontSize: 13, fontWeight: 900, color: "#f8fafc", flex: 1, minWidth: 0 }}>{question}</span>
+        <span style={{ fontSize: 13, fontWeight: 900, color: "var(--text-1)", flex: 1, minWidth: 0 }}>{question}</span>
       </div>
 
       {/* Stat rows */}
@@ -989,14 +989,14 @@ function PollStatCard({ question, stat, pollType, stats }: {
               {isTeam ? (
                 <img src={teamLogo} alt={entry.label} style={{ width: 28, height: 28, objectFit: "contain", borderRadius: 6, flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
               ) : (
-                <div style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+                <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--surface-3)", border: "1px solid var(--border-3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
                   <img src={resolvePlayerImage(entry.label, "")} alt={entry.label} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
                 </div>
               )}
-              <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: "#e2e8f0", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{entry.label}</span>
+              <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: "var(--text-1)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{entry.label}</span>
               <div style={{ textAlign: "right" as const, flexShrink: 0 }}>
                 <span style={{ fontSize: 18, fontWeight: 900, color: "#a78bfa", lineHeight: 1 }}>{entry.value}</span>
-                <span style={{ fontSize: 10, fontWeight: 700, color: "#64748b", marginLeft: 4 }}>{statLabel}</span>
+                <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text-3)", marginLeft: 4 }}>{statLabel}</span>
               </div>
             </div>
           );
@@ -1028,7 +1028,7 @@ function EventCard({ playerName, team, img, type, quarter, minute }: {
       gridTemplateColumns: "68px 1fr auto",
       alignItems: "center",
       gap: 14,
-      background: "#020202",
+      background: "var(--bg)",
       borderRadius: 18,
       padding: "11px 16px 11px 12px",
       border: `2px solid ${primary}`,
@@ -1045,13 +1045,13 @@ function EventCard({ playerName, team, img, type, quarter, minute }: {
           ? <img src={img} alt={playerName} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} onError={() => setImgFailed(true)} />
           : teamLogo && !logoFailed
           ? <img src={teamLogo} alt={team} style={{ width: "70%", height: "70%", objectFit: "contain", display: "block" }} onError={() => setLogoFailed(true)} />
-          : <span style={{ color: "#fff", fontSize: 18, fontWeight: 1000 }}>{initials}</span>
+          : <span style={{ color: "var(--text-1)", fontSize: 18, fontWeight: 1000 }}>{initials}</span>
         }
       </div>
 
       {/* Name + event type — matches liveFeedInfoStyle */}
       <div style={{ minWidth: 0 }}>
-        <div style={{ color: "#f8fafc", fontSize: 18, fontWeight: 1000, lineHeight: 1.1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+        <div style={{ color: "var(--text-1)", fontSize: 18, fontWeight: 1000, lineHeight: 1.1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           {playerName}
         </div>
         <div style={{ marginTop: 8, fontSize: 28, lineHeight: 1, fontWeight: 1000, letterSpacing: ".08em", color: typeColor }}>
@@ -1061,10 +1061,10 @@ function EventCard({ playerName, team, img, type, quarter, minute }: {
 
       {/* Time badge — matches liveFeedTimeBadgeStyle */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 999, padding: "3px 8px" }}>
-          <span style={{ fontSize: 11, fontWeight: 900, color: "#94a3b8", letterSpacing: "0.02em" }}>{quarter}</span>
-          <span style={{ fontSize: 11, color: "#334155", fontWeight: 700 }}>·</span>
-          <span style={{ fontSize: 11, fontWeight: 900, color: "#94a3b8" }}>{minute}&apos;</span>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "var(--surface-3)", border: "1px solid var(--border-2)", borderRadius: 999, padding: "3px 8px" }}>
+          <span style={{ fontSize: 11, fontWeight: 900, color: "var(--text-2)", letterSpacing: "0.02em" }}>{quarter}</span>
+          <span style={{ fontSize: 11, color: "var(--text-4)", fontWeight: 700 }}>·</span>
+          <span style={{ fontSize: 11, fontWeight: 900, color: "var(--text-2)" }}>{minute}&apos;</span>
         </div>
       </div>
     </div>
@@ -1395,13 +1395,13 @@ const pageStyle: CSSProperties = {
   width: "100%",
   maxWidth: 760,
   margin: "0 auto",
-  background: "#050505",
-  color: "#fff",
+  background: "var(--bg)",
+  color: "var(--text-1)",
   display: "flex",
   flexDirection: "column",
   paddingBottom: `calc(90px + env(safe-area-inset-bottom))`,
-  borderLeft: "1px solid rgba(255,255,255,0.08)",
-  borderRight: "1px solid rgba(255,255,255,0.08)",
+  borderLeft: "1px solid var(--border-2)",
+  borderRight: "1px solid var(--border-2)",
 };
 
 const headerStyle: CSSProperties = {
@@ -1416,19 +1416,19 @@ const headerStyle: CSSProperties = {
   paddingLeft: 10,
   paddingRight: 16,
   boxSizing: "border-box",
-  background: "rgba(5,5,5,0.88)",
+  background: "var(--bottom-nav-bg)",
   backdropFilter: "blur(20px)",
   WebkitBackdropFilter: "blur(20px)",
-  borderBottom: "1px solid rgba(255,255,255,0.08)",
+  borderBottom: "1px solid var(--border-2)",
 };
 
 const backBtnStyle: CSSProperties = {
   width: 38,
   height: 38,
   borderRadius: 12,
-  background: "rgba(255,255,255,0.07)",
-  border: "1px solid rgba(255,255,255,0.1)",
-  color: "#f8fafc",
+  background: "var(--surface-3)",
+  border: "1px solid var(--border-2)",
+  color: "var(--text-1)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -1449,7 +1449,7 @@ const headerTitleStyle: CSSProperties = {
 
 const headerSubStyle: CSSProperties = {
   fontSize: 12,
-  color: "#94a3b8",
+  color: "var(--text-2)",
   fontWeight: 700,
 };
 
@@ -1457,8 +1457,8 @@ const headerSubStyle: CSSProperties = {
 const playerCardStyle: CSSProperties = {
   margin: "12px 14px",
   borderRadius: 18,
-  background: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03))",
-  border: "1px solid rgba(255,255,255,0.1)",
+  background: "linear-gradient(180deg, var(--border-1), rgba(255,255,255,0.03))",
+  border: "1px solid var(--border-2)",
   overflow: "hidden",
 };
 
@@ -1499,14 +1499,14 @@ const playerCardInfoStyle: CSSProperties = {
 const playerCardNameStyle: CSSProperties = {
   fontSize: 17,
   fontWeight: 950,
-  color: "#f8fafc",
+  color: "var(--text-1)",
   letterSpacing: "-0.02em",
 };
 
 const playerCardTeamStyle: CSSProperties = {
   fontSize: 12,
   fontWeight: 700,
-  color: "#64748b",
+  color: "var(--text-3)",
 };
 
 const playerRatingPillStyle: CSSProperties = {
@@ -1522,7 +1522,7 @@ const playerRatingPillStyle: CSSProperties = {
 const playerRatingNumStyle: CSSProperties = {
   fontSize: 20,
   fontWeight: 950,
-  color: "#fff",
+  color: "var(--text-1)",
   lineHeight: 1,
 };
 
@@ -1536,7 +1536,7 @@ const playerRatingLabelStyle: CSSProperties = {
 
 const statChipsStyle: CSSProperties = {
   display: "flex",
-  borderTop: "1px solid rgba(255,255,255,0.07)",
+  borderTop: "1px solid var(--border-1)",
 };
 
 const statChipStyle: CSSProperties = {
@@ -1545,19 +1545,19 @@ const statChipStyle: CSSProperties = {
   flexDirection: "column",
   alignItems: "center",
   padding: "10px 4px",
-  borderRight: "1px solid rgba(255,255,255,0.06)",
+  borderRight: "1px solid var(--border-1)",
 };
 
 const statChipValueStyle: CSSProperties = {
   fontSize: 14,
   fontWeight: 900,
-  color: "#f1f5f9",
+  color: "var(--text-1)",
 };
 
 const statChipLabelStyle: CSSProperties = {
   fontSize: 9,
   fontWeight: 800,
-  color: "#475569",
+  color: "var(--text-3)",
   letterSpacing: "0.06em",
   marginTop: 2,
 };
@@ -1592,7 +1592,7 @@ const emptyStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  color: "#94a3b8",
+  color: "var(--text-2)",
 };
 
 const emptyIconStyle: CSSProperties = {
@@ -1601,7 +1601,7 @@ const emptyIconStyle: CSSProperties = {
 };
 
 const emptyTitleStyle: CSSProperties = {
-  color: "#f8fafc",
+  color: "var(--text-1)",
   fontSize: 17,
   fontWeight: 900,
   marginBottom: 5,
@@ -1610,7 +1610,7 @@ const emptyTitleStyle: CSSProperties = {
 const emptySubStyle: CSSProperties = {
   fontSize: 13,
   fontWeight: 650,
-  color: "#64748b",
+  color: "var(--text-3)",
 };
 
 const commentRowStyle: CSSProperties = {
@@ -1623,8 +1623,8 @@ const avatarStyle: CSSProperties = {
   width: 36,
   height: 36,
   borderRadius: "50%",
-  background: "#1e2438",
-  border: "1px solid rgba(255,255,255,0.1)",
+  background: "var(--surface-2)",
+  border: "1px solid var(--border-2)",
   flexShrink: 0,
   display: "flex",
   alignItems: "center",
@@ -1650,8 +1650,8 @@ const commentMainStyle: CSSProperties = {
 };
 
 const commentBubbleStyle: CSSProperties = {
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.09)",
+  background: "var(--surface-3)",
+  border: "1px solid var(--border-2)",
   borderRadius: 18,
   borderTopLeftRadius: 4,
   padding: "10px 14px",
@@ -1667,12 +1667,12 @@ const commentMetaStyle: CSSProperties = {
 const commentNameStyle: CSSProperties = {
   fontSize: 13,
   fontWeight: 900,
-  color: "#f8fafc",
+  color: "var(--text-1)",
 };
 
 const commentTimeStyle: CSSProperties = {
   fontSize: 11,
-  color: "#64748b",
+  color: "var(--text-3)",
   fontWeight: 800,
 };
 
@@ -1680,7 +1680,7 @@ const commentBodyStyle: CSSProperties = {
   margin: 0,
   fontSize: 14,
   lineHeight: 1.45,
-  color: "#e2e8f0",
+  color: "var(--text-1)",
   wordBreak: "break-word",
   whiteSpace: "pre-wrap",
 };
@@ -1697,7 +1697,7 @@ const actionBtnStyle: CSSProperties = {
   background: "none",
   border: "none",
   padding: 0,
-  color: "#94a3b8",
+  color: "var(--text-2)",
   fontSize: 12,
   fontWeight: 850,
   cursor: "pointer",
@@ -1730,8 +1730,8 @@ const replyModalStyle: CSSProperties = {
   width: "100%",
   maxWidth: 720,
   maxHeight: "78dvh",
-  background: "#050505",
-  border: "1px solid rgba(255,255,255,0.12)",
+  background: "var(--bg)",
+  border: "1px solid var(--border-3)",
   borderRadius: 24,
   overflow: "hidden",
   boxShadow: "0 24px 80px rgba(0,0,0,0.72)",
@@ -1744,19 +1744,19 @@ const replyModalHeaderStyle: CSSProperties = {
   justifyContent: "space-between",
   alignItems: "center",
   padding: "14px 16px",
-  borderBottom: "1px solid rgba(255,255,255,0.08)",
+  borderBottom: "1px solid var(--border-2)",
 };
 
-const replyModalTitleStyle: CSSProperties = { color: "#f8fafc", fontSize: 16, fontWeight: 1000 };
-const replyModalSubStyle: CSSProperties = { marginTop: 2, color: "#64748b", fontSize: 12, fontWeight: 800 };
+const replyModalTitleStyle: CSSProperties = { color: "var(--text-1)", fontSize: 16, fontWeight: 1000 };
+const replyModalSubStyle: CSSProperties = { marginTop: 2, color: "var(--text-3)", fontSize: 12, fontWeight: 800 };
 
 const replyModalCloseStyle: CSSProperties = {
   width: 34,
   height: 34,
   borderRadius: "50%",
-  border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.07)",
-  color: "#e2e8f0",
+  border: "1px solid var(--border-2)",
+  background: "var(--surface-3)",
+  color: "var(--text-1)",
   fontSize: 24,
   lineHeight: 1,
   cursor: "pointer",
@@ -1764,7 +1764,7 @@ const replyModalCloseStyle: CSSProperties = {
 
 const replyModalParentStyle: CSSProperties = {
   padding: "4px 0 10px",
-  borderBottom: "1px solid rgba(255,255,255,0.08)",
+  borderBottom: "1px solid var(--border-2)",
 };
 
 const replyModalRepliesStyle: CSSProperties = {
@@ -1775,7 +1775,7 @@ const replyModalRepliesStyle: CSSProperties = {
 
 const replyModalEmptyStyle: CSSProperties = {
   padding: "22px 16px",
-  color: "#64748b",
+  color: "var(--text-3)",
   fontSize: 13,
   fontWeight: 800,
   textAlign: "center",
@@ -1785,8 +1785,8 @@ const replyModalInputStyle: CSSProperties = {
   flexShrink: 0,
   padding: "10px 14px",
   paddingBottom: "calc(12px + env(safe-area-inset-bottom))",
-  borderTop: "1px solid rgba(255,255,255,0.08)",
-  background: "rgba(5,5,5,0.96)",
+  borderTop: "1px solid var(--border-2)",
+  background: "var(--bottom-nav-bg)",
 };
 
 const inputAreaStyle: CSSProperties = {
@@ -1799,12 +1799,12 @@ const inputAreaStyle: CSSProperties = {
   zIndex: 9999,
   padding: "10px 14px",
   paddingBottom: "calc(14px + env(safe-area-inset-bottom))",
-  background: "rgba(5,5,5,0.94)",
+  background: "var(--bottom-nav-bg)",
   backdropFilter: "blur(20px)",
   WebkitBackdropFilter: "blur(20px)",
-  borderTop: "1px solid rgba(255,255,255,0.1)",
-  borderLeft: "1px solid rgba(255,255,255,0.07)",
-  borderRight: "1px solid rgba(255,255,255,0.07)",
+  borderTop: "1px solid var(--border-2)",
+  borderLeft: "1px solid var(--border-1)",
+  borderRight: "1px solid var(--border-1)",
   boxShadow: "0 -24px 48px rgba(0,0,0,0.6)",
 };
 
@@ -1814,7 +1814,7 @@ const signInBtnStyle: CSSProperties = {
   borderRadius: 16,
   border: "none",
   background: "#2563eb",
-  color: "#fff",
+  color: "var(--text-1)",
   fontSize: 15,
   fontWeight: 900,
   cursor: "pointer",
@@ -1832,7 +1832,7 @@ const replyBannerStyle: CSSProperties = {
 };
 
 const replyBannerTextStyle: CSSProperties = {
-  color: "#94a3b8",
+  color: "var(--text-2)",
   fontSize: 12,
   fontWeight: 800,
 };
@@ -1842,7 +1842,7 @@ const cancelReplyBtnStyle: CSSProperties = {
   height: 24,
   borderRadius: "50%",
   border: "none",
-  background: "rgba(255,255,255,0.08)",
+  background: "var(--surface-3)",
   color: "#cbd5e1",
   cursor: "pointer",
 };
@@ -1857,10 +1857,10 @@ const textareaStyle: CSSProperties = {
   flex: 1,
   minHeight: 44,
   maxHeight: 110,
-  background: "rgba(255,255,255,0.07)",
-  border: "1.5px solid rgba(255,255,255,0.12)",
+  background: "var(--surface-3)",
+  border: "1.5px solid var(--border-3)",
   borderRadius: 22,
-  color: "#f8fafc",
+  color: "var(--text-1)",
   fontSize: 14,
   padding: "11px 16px",
   resize: "none",
@@ -1876,7 +1876,7 @@ const sendBtnStyle: CSSProperties = {
   border: "none",
   background: "linear-gradient(135deg, #3b82f6, #2563eb)",
   boxShadow: "0 2px 12px rgba(59,130,246,0.35)",
-  color: "#fff",
+  color: "var(--text-1)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",

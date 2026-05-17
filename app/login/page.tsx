@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -98,8 +98,8 @@ export default function LoginPage() {
             <Mail size={28} color="white" />
           </div>
           <h1 style={{ fontSize: 22, fontWeight: 950, textAlign: "center", margin: "8px 0 6px" }}>Check your email</h1>
-          <p style={{ color: "#64748b", textAlign: "center", fontSize: 14, fontWeight: 600, lineHeight: 1.6, margin: 0 }}>
-            We sent a confirmation link to <strong style={{ color: "#94a3b8" }}>{email}</strong>.<br />
+          <p style={{ color: "var(--text-3)", textAlign: "center", fontSize: 14, fontWeight: 600, lineHeight: 1.6, margin: 0 }}>
+            We sent a confirmation link to <strong style={{ color: "var(--text-2)" }}>{email}</strong>.<br />
             Click it to activate your account, then sign in.
           </p>
           <button onClick={() => { setCheckEmail(false); setMode("login"); }} style={guestBtnStyle}>
@@ -200,7 +200,7 @@ export default function LoginPage() {
 /* ── Styles ── */
 
 const pageStyle: React.CSSProperties = {
-  minHeight: "100dvh", background: "#14141e", color: "white",
+  minHeight: "100dvh", background: "var(--bg)", color: "var(--text-1)",
   display: "flex", alignItems: "center", justifyContent: "center",
   padding: "calc(32px + env(safe-area-inset-top)) 20px calc(90px + env(safe-area-inset-bottom))",
 };
@@ -217,17 +217,17 @@ const logoIconStyle: React.CSSProperties = {
   boxShadow: "0 8px 32px rgba(99,102,241,.45)", marginBottom: 4,
 };
 const logoTextStyle: React.CSSProperties = { fontSize: 28, fontWeight: 950, letterSpacing: "-0.05em" };
-const taglineStyle:  React.CSSProperties = { margin: 0, fontSize: 13, color: "#475569", fontWeight: 700 };
+const taglineStyle:  React.CSSProperties = { margin: 0, fontSize: 13, color: "var(--text-3)", fontWeight: 700 };
 const modeToggleStyle: React.CSSProperties = {
   display: "flex", padding: 4, borderRadius: 999,
-  background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.08)",
+  background: "var(--surface-2)", border: "1px solid var(--border-2)",
 };
 const modeBtnStyle: React.CSSProperties = {
   flex: 1, padding: "11px 0", borderRadius: 999, border: "none",
-  background: "transparent", color: "#64748b", fontSize: 14, fontWeight: 800, cursor: "pointer",
+  background: "transparent", color: "var(--text-3)", fontSize: 14, fontWeight: 800, cursor: "pointer",
 };
 const modeActiveBtnStyle: React.CSSProperties = {
-  background: "white", color: "#14141e", boxShadow: "0 2px 8px rgba(0,0,0,.2)",
+  background: "var(--text-1)", color: "var(--bg)", boxShadow: "0 2px 8px rgba(0,0,0,.2)",
 };
 const formStyle: React.CSSProperties = { display: "flex", flexDirection: "column", gap: 12 };
 const fieldWrapStyle: React.CSSProperties = { position: "relative", display: "flex", alignItems: "center" };
@@ -236,14 +236,14 @@ const fieldIconStyle: React.CSSProperties = {
 };
 const inputStyle: React.CSSProperties = {
   width: "100%", padding: "16px 14px 16px 44px", borderRadius: 999,
-  border: "1px solid rgba(255,255,255,.08)", background: "#1e2438",
-  color: "white", fontSize: 16, fontWeight: 500, outline: "none",
+  border: "1px solid var(--border-2)", background: "var(--surface-2)",
+  color: "var(--text-1)", fontSize: 16, fontWeight: 500, outline: "none",
   transition: "border-color 0.15s ease, box-shadow 0.2s ease",
 };
 const eyeBtnStyle: React.CSSProperties = {
   position: "absolute", right: 14, display: "flex", alignItems: "center",
   justifyContent: "center", background: "none", border: "none", padding: 4,
-  color: "#64748b", cursor: "pointer",
+  color: "var(--text-3)", cursor: "pointer",
 };
 const errorStyle: React.CSSProperties = {
   margin: 0, padding: "12px 14px", borderRadius: 12,
@@ -253,16 +253,16 @@ const errorStyle: React.CSSProperties = {
 const submitBtnStyle: React.CSSProperties = {
   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
   width: "100%", padding: "17px 24px", borderRadius: 999, border: "none",
-  background: "linear-gradient(135deg,#3b82f6,#6366f1)", color: "white",
+  background: "linear-gradient(135deg,#3b82f6,#6366f1)", color: "var(--text-1)",
   fontSize: 16, fontWeight: 900, boxShadow: "0 4px 20px rgba(59,130,246,.35)",
   marginTop: 4, cursor: "pointer",
 };
 const dividerStyle: React.CSSProperties = { display: "flex", alignItems: "center", gap: 12 };
-const dividerLineStyle: React.CSSProperties = { flex: 1, height: 1, background: "rgba(255,255,255,.08)", display: "block" };
-const dividerTextStyle: React.CSSProperties = { fontSize: 12, color: "#334155", fontWeight: 700 };
+const dividerLineStyle: React.CSSProperties = { flex: 1, height: 1, background: "var(--surface-3)", display: "block" };
+const dividerTextStyle: React.CSSProperties = { fontSize: 12, color: "var(--text-4)", fontWeight: 700 };
 const guestBtnStyle: React.CSSProperties = {
   display: "flex", alignItems: "center", justifyContent: "center",
-  padding: "15px 24px", borderRadius: 999, border: "1px solid rgba(255,255,255,.08)",
-  background: "rgba(255,255,255,.04)", color: "#94a3b8", fontSize: 14, fontWeight: 800,
+  padding: "15px 24px", borderRadius: 999, border: "1px solid var(--border-2)",
+  background: "var(--surface-2)", color: "var(--text-2)", fontSize: 14, fontWeight: 800,
   textDecoration: "none", cursor: "pointer",
 };

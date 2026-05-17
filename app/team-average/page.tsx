@@ -1,4 +1,4 @@
-﻿import path from "path";
+import path from "path";
 import fs from "fs";
 import Link from "next/link";
 
@@ -219,8 +219,8 @@ export default function TeamAveragePage() {
 
 const pageStyle: React.CSSProperties = {
   minHeight: "100dvh",
-  background: "#14141e",
-  color: "#fff",
+  background: "var(--bg)",
+  color: "var(--text-1)",
   paddingBottom: "calc(95px + env(safe-area-inset-bottom))",
 };
 
@@ -249,7 +249,7 @@ const headerStyle: React.CSSProperties = {
 
 const titleStyle: React.CSSProperties = {
   margin: 0,
-  color: "#fff",
+  color: "var(--text-1)",
   fontSize: 26,
   fontWeight: 950,
   letterSpacing: "-0.04em",
@@ -257,7 +257,7 @@ const titleStyle: React.CSSProperties = {
 
 const subStyle: React.CSSProperties = {
   margin: "4px 0 0",
-  color: "#64748b",
+  color: "var(--text-3)",
   fontSize: 12,
   fontWeight: 800,
 };
@@ -266,16 +266,16 @@ const countStyle: React.CSSProperties = {
   flexShrink: 0,
   fontSize: 11,
   fontWeight: 850,
-  color: "#64748b",
-  background: "rgba(255,255,255,.055)",
-  border: "1px solid rgba(255,255,255,.08)",
+  color: "var(--text-3)",
+  background: "var(--border-1)",
+  border: "1px solid var(--border-2)",
   borderRadius: 999,
   padding: "5px 10px",
 };
 
 const cardStyle: React.CSSProperties = {
-  background: "#1a1a24",
-  border: "1px solid rgba(255,255,255,.1)",
+  background: "var(--bg)",
+  border: "1px solid var(--border-2)",
   borderRadius: 18,
   overflow: "hidden",
 };
@@ -285,14 +285,14 @@ const rowStyle: React.CSSProperties = {
   alignItems: "center",
   gap: 12,
   padding: "12px 14px",
-  borderBottom: "1px solid rgba(255,255,255,.055)",
+  borderBottom: "1px solid var(--border-1)",
   textDecoration: "none",
   color: "inherit",
 };
 
 const rankStyle: React.CSSProperties = {
   width: 24,
-  color: "#64748b",
+  color: "var(--text-3)",
   fontSize: 13,
   fontWeight: 950,
   textAlign: "right",
@@ -304,7 +304,7 @@ const logoWrapStyle: React.CSSProperties = {
   height: 44,
   borderRadius: "50%",
   overflow: "hidden",
-  border: "1px solid rgba(255,255,255,.12)",
+  border: "1px solid var(--border-3)",
   flexShrink: 0,
 };
 
@@ -321,7 +321,7 @@ const bodyStyle: React.CSSProperties = {
 };
 
 const nameStyle: React.CSSProperties = {
-  color: "#f8fafc",
+  color: "var(--text-1)",
   fontSize: 15,
   fontWeight: 900,
   overflow: "hidden",
@@ -330,7 +330,7 @@ const nameStyle: React.CSSProperties = {
 };
 
 const metaStyle: React.CSSProperties = {
-  color: "#64748b",
+  color: "var(--text-3)",
   fontSize: 11,
   fontWeight: 800,
   marginTop: 3,
@@ -340,7 +340,7 @@ const ratingStyle: React.CSSProperties = {
   minWidth: 50,
   borderRadius: 9,
   padding: "5px 11px 6px",
-  color: "#fff",
+  color: "var(--text-1)",
   fontSize: 16,
   fontWeight: 950,
   lineHeight: 1,

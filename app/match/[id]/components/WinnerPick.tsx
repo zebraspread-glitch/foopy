@@ -147,14 +147,14 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, ho
           </div>
           <span style={{ fontSize: 13, fontWeight: 900, color: "#a78bfa", letterSpacing: "0.08em" }}>POLL</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#64748b" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--text-3)" }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
             <circle cx="9" cy="7" r="4" />
             <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
             <path d="M16 3.13a4 4 0 0 1 0 7.75" />
           </svg>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "#94a3b8" }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-2)" }}>
             {votes.total === 0 ? "No votes yet" : `${votes.total.toLocaleString()} votes`}
           </span>
         </div>
@@ -162,16 +162,16 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, ho
 
       {/* ── Question ── */}
       <div style={{ marginBottom: 4 }}>
-        <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em", lineHeight: 1.2 }}>
+        <div style={{ fontSize: 20, fontWeight: 900, color: "var(--text-1)", letterSpacing: "-0.02em", lineHeight: 1.2 }}>
           Who will win?
         </div>
         {!votingLocked && (
-          <div style={{ fontSize: 13, color: "#64748b", fontWeight: 600, marginTop: 4 }}>
+          <div style={{ fontSize: 13, color: "var(--text-3)", fontWeight: 600, marginTop: 4 }}>
             Vote before the match starts
           </div>
         )}
         {votingLocked && (
-          <div style={{ fontSize: 13, color: "#64748b", fontWeight: 600, marginTop: 4 }}>
+          <div style={{ fontSize: 13, color: "var(--text-3)", fontWeight: 600, marginTop: 4 }}>
             🔒 Voting closed — game in progress
           </div>
         )}
@@ -204,7 +204,7 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, ho
                 gap: 12,
                 padding: "14px 16px",
                 borderRadius: 14,
-                border: `1.5px solid ${wrong ? "#ef4444" : selected ? color : "rgba(255,255,255,0.1)"}`,
+                border: `1.5px solid ${wrong ? "#ef4444" : selected ? color : "var(--border-2)"}`,
                 background: wrong ? "rgba(239,68,68,.12)" : selected ? `${color}18` : "rgba(255,255,255,0.03)",
                 cursor: "pointer",
                 textAlign: "left",
@@ -228,11 +228,11 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, ho
 
               {/* Name + bar */}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 15, fontWeight: 800, color: "#f1f5f9", marginBottom: 6, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "var(--text-1)", marginBottom: 6, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {team}
                   {isWinner && <CheckCircle size={15} color="#22c55e" style={{ display: "inline-block", verticalAlign: "-2px", marginLeft: 7 }} />}
                 </div>
-                <div style={{ height: 6, borderRadius: 999, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                <div style={{ height: 6, borderRadius: 999, background: "var(--surface-3)", overflow: "hidden" }}>
                   <div style={{
                     height: "100%",
                     width: `${percent}%`,
@@ -246,7 +246,7 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, ho
               {/* % + votes */}
               <div style={{ flexShrink: 0, textAlign: "right" }}>
                 <div style={{ fontSize: 18, fontWeight: 900, color: selected ? color : "#94a3b8", lineHeight: 1 }}>{percent}%</div>
-                <div style={{ fontSize: 11, color: "#475569", fontWeight: 700, marginTop: 3 }}>{voteCount} votes</div>
+                <div style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 700, marginTop: 3 }}>{voteCount} votes</div>
               </div>
             </button>
           );
@@ -257,8 +257,8 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, ho
 }
 
 const boxStyle: React.CSSProperties = {
-  background: "#070707",
-  border: "1px solid rgba(255,255,255,.12)",
+  background: "var(--surface-1)",
+  border: "1px solid var(--border-3)",
   borderRadius: 20,
   padding: 20,
 };

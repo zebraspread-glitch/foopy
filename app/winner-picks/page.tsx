@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { CheckCircle, Lock } from "lucide-react";
@@ -178,9 +178,9 @@ export default function WinnerPicksPage() {
               onClick={() => setSelectedRound(r)}
               style={{
                 ...roundBtnStyle,
-                background: active ? "white" : "rgba(255,255,255,.06)",
-                color: active ? "#14141e" : "#94a3b8",
-                border: `1px solid ${active ? "white" : "rgba(255,255,255,.12)"}`,
+                background: active ? "var(--text-1)" : "var(--border-1)",
+                color: active ? "var(--bg)" : "var(--text-2)",
+                border: `1px solid ${active ? "var(--text-1)" : "var(--border-3)"}`,
               }}
             >
               {r}
@@ -335,13 +335,13 @@ function PickButton({
           ? wrong
             ? "rgba(239,68,68,.15)"
             : "rgba(59,130,246,.16)"
-          : "rgba(255,255,255,.04)",
+          : "var(--border-1)",
         border: `2px solid ${
           selected
             ? wrong
               ? "#ef4444"
               : "#3b82f6"
-            : "rgba(255,255,255,.1)"
+            : "var(--border-2)"
         }`,
         opacity: dimmed ? 0.35 : 1,
       }}
@@ -382,8 +382,8 @@ function PickButton({
 
 const pageStyle: React.CSSProperties = {
   minHeight: "100dvh",
-  background: "#14141e",
-  color: "white",
+  background: "var(--bg)",
+  color: "var(--text-1)",
   paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
 };
 
@@ -439,8 +439,8 @@ const gamesListStyle: React.CSSProperties = {
 
 const gameCardStyle: React.CSSProperties = {
   borderRadius: 18,
-  background: "#0c0c0f",
-  border: "1px solid rgba(255,255,255,.09)",
+  background: "var(--surface-1)",
+  border: "1px solid var(--border-2)",
   overflow: "hidden",
 };
 
@@ -449,11 +449,11 @@ const lockBarStyle: React.CSSProperties = {
   alignItems: "center",
   gap: 6,
   padding: "8px 14px",
-  background: "rgba(255,255,255,.04)",
-  borderBottom: "1px solid rgba(255,255,255,.07)",
+  background: "var(--surface-2)",
+  borderBottom: "1px solid var(--border-1)",
   fontSize: 11,
   fontWeight: 800,
-  color: "#475569",
+  color: "var(--text-3)",
 };
 
 const pickRowStyle: React.CSSProperties = {
@@ -471,7 +471,7 @@ const pickBtnBase: React.CSSProperties = {
   gap: 7,
   padding: "14px 8px",
   borderRadius: 16,
-  color: "white",
+  color: "var(--text-1)",
   width: "100%",
   transition:
     "transform 0.12s cubic-bezier(0.34,1.56,0.64,1), opacity 0.12s ease, background 0.15s ease, border-color 0.15s ease",
@@ -518,7 +518,7 @@ const saveAreaStyle: React.CSSProperties = {
 const progressStyle: React.CSSProperties = {
   margin: 0,
   fontSize: 13,
-  color: "#475569",
+  color: "var(--text-3)",
   fontWeight: 700,
 };
 
@@ -528,7 +528,7 @@ const saveButtonStyle: React.CSSProperties = {
   padding: "17px 24px",
   borderRadius: 16,
   border: "none",
-  color: "white",
+  color: "var(--text-1)",
   fontSize: 16,
   fontWeight: 900,
   letterSpacing: "-0.02em",
@@ -539,5 +539,5 @@ const saveButtonStyle: React.CSSProperties = {
 const emptyStyle: React.CSSProperties = {
   padding: "60px 20px",
   textAlign: "center",
-  color: "#475569",
+  color: "var(--text-3)",
 };

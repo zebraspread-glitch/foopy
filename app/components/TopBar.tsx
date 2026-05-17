@@ -57,7 +57,7 @@ export default function TopBar() {
       </Link>
 
       <Link href="/notifications" style={{ position: "relative", color: "inherit", display: "flex", alignItems: "center", padding: "4px 6px" }}>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#64748b" }}>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--text-3)" }}>
           <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
           <path d="M13.73 21a2 2 0 0 1-3.46 0" />
         </svg>
@@ -68,7 +68,7 @@ export default function TopBar() {
             background: "#ef4444",
             borderRadius: 999,
             fontSize: 10, fontWeight: 800,
-            color: "#fff",
+            color: "var(--text-1)",
             display: "flex", alignItems: "center", justifyContent: "center",
             padding: "0 3px",
             lineHeight: 1,

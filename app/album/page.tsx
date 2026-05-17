@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -185,7 +185,7 @@ export default function AlbumPage() {
   if (authLoading) return null;
 
   return (
-    <main style={{ minHeight: "100dvh", background: "#1a1a24", color: "#f8fafc", paddingBottom: "calc(80px + env(safe-area-inset-bottom))" }}>
+    <main style={{ minHeight: "100dvh", background: "var(--bg)", color: "var(--text-1)", paddingBottom: "calc(80px + env(safe-area-inset-bottom))" }}>
       <style>{`
         .album-grid {
           display: grid;
@@ -223,10 +223,10 @@ export default function AlbumPage() {
       {/* Sticky header */}
       <div style={{
         position: "sticky", top: 0, zIndex: 20,
-        background: "rgba(8,8,8,0.92)",
+        background: "var(--bottom-nav-bg)",
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
-        borderBottom: "1px solid rgba(255,255,255,.06)",
+        borderBottom: "1px solid var(--border-1)",
         paddingTop: "env(safe-area-inset-top)",
       }}>
         {/* Top row */}
@@ -235,10 +235,10 @@ export default function AlbumPage() {
             onClick={() => router.back()}
             style={{
               appearance: "none", border: "none",
-              background: "rgba(255,255,255,.08)",
+              background: "var(--surface-3)",
               borderRadius: "50%", width: 36, height: 36,
               display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: "pointer", color: "#f8fafc", fontSize: 17, flexShrink: 0,
+              cursor: "pointer", color: "var(--text-1)", fontSize: 17, flexShrink: 0,
               transition: "background 0.15s ease",
             }}
           >
@@ -253,7 +253,7 @@ export default function AlbumPage() {
           </div>
 
           {/* Progress bar */}
-          <div style={{ width: 52, height: 4, borderRadius: 99, background: "rgba(255,255,255,.08)", overflow: "hidden", flexShrink: 0 }}>
+          <div style={{ width: 52, height: 4, borderRadius: 99, background: "var(--surface-3)", overflow: "hidden", flexShrink: 0 }}>
             <div style={{ height: "100%", width: `${pct}%`, borderRadius: 99, background: "linear-gradient(90deg,#60a5fa,#a78bfa)", transition: "width 0.4s ease" }} />
           </div>
         </div>
@@ -292,7 +292,7 @@ export default function AlbumPage() {
       <div style={{ padding: "10px 10px 0" }}>
         {loading ? (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 0", gap: 14 }}>
-            <div style={{ width: 28, height: 28, border: "2.5px solid rgba(255,255,255,.08)", borderTop: "2.5px solid #60a5fa", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+            <div style={{ width: 28, height: 28, border: "2.5px solid var(--border-2)", borderTop: "2.5px solid #60a5fa", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
             <div style={{ fontSize: 13, color: "rgba(255,255,255,.3)", fontWeight: 600 }}>Loading collection…</div>
           </div>
         ) : (
@@ -350,7 +350,7 @@ function AlbumCardModal({ player, card, isFeatured, featuredCount, selling, onTo
       onClick={onClose}
     >
       <div
-        style={{ background: "#1e1e28", border: "1px solid rgba(255,255,255,.1)", borderRadius: 24, padding: "24px 20px", width: "100%", maxWidth: 360 }}
+        style={{ background: "var(--surface-1)", border: "1px solid var(--border-2)", borderRadius: 24, padding: "24px 20px", width: "100%", maxWidth: 360 }}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -358,7 +358,7 @@ function AlbumCardModal({ player, card, isFeatured, featuredCount, selling, onTo
           <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: ".14em", color: "rgba(255,255,255,.35)", marginBottom: 8 }}>
             {step === "confirm" ? "ARE YOU SURE?" : "CARD OPTIONS"}
           </div>
-          <div style={{ fontSize: 20, fontWeight: 1000, color: "#f8fafc" }}>{player.name}</div>
+          <div style={{ fontSize: 20, fontWeight: 1000, color: "var(--text-1)" }}>{player.name}</div>
           <div style={{ fontSize: 13, fontWeight: 700, color: meta.color, marginTop: 3 }}>
             {card.rarity.charAt(0).toUpperCase() + card.rarity.slice(1)}
           </div>
@@ -369,14 +369,14 @@ function AlbumCardModal({ player, card, isFeatured, featuredCount, selling, onTo
             {/* Feature / Unfeature */}
             <button
               onClick={() => { onToggleFeatured(); onClose(); }}
-              style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 18px", borderRadius: 16, border: `1px solid ${isFeatured ? "rgba(255,215,0,.35)" : "rgba(255,255,255,.1)"}`, background: isFeatured ? "rgba(255,215,0,.08)" : "rgba(255,255,255,.04)", color: isFeatured ? "#ffd700" : "#f1f5f9", cursor: "pointer", fontFamily: "inherit", textAlign: "left" as const }}
+              style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 18px", borderRadius: 16, border: `1px solid ${isFeatured ? "rgba(255,215,0,.35)" : "var(--border-2)"}`, background: isFeatured ? "rgba(255,215,0,.08)" : "var(--border-1)", color: isFeatured ? "#ffd700" : "#f1f5f9", cursor: "pointer", fontFamily: "inherit", textAlign: "left" as const }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill={isFeatured ? "#ffd700" : "none"} stroke={isFeatured ? "#ffd700" : "#94a3b8"} strokeWidth="2" style={{ flexShrink: 0 }}>
                 <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
               </svg>
               <div>
                 <div style={{ fontSize: 15, fontWeight: 900 }}>{isFeatured ? "Remove from Featured" : "Add to Featured"}</div>
-                <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
+                <div style={{ fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>
                   {isFeatured ? "Currently in your featured cards" : featuredCount >= 5 ? "Featured slots full (5/5)" : `${featuredCount}/5 slots used`}
                 </div>
               </div>
@@ -389,7 +389,7 @@ function AlbumCardModal({ player, card, isFeatured, featuredCount, selling, onTo
             >
               <div>
                 <div style={{ fontSize: 15, fontWeight: 900 }}>Sell Card</div>
-                <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
+                <div style={{ fontSize: 11, color: "var(--text-2)", marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
                   <img src="/coin/coin.png" alt="" style={{ width: 12, height: 12, objectFit: "contain" }} />
                   {sellValue} coins
                 </div>
@@ -399,7 +399,7 @@ function AlbumCardModal({ player, card, isFeatured, featuredCount, selling, onTo
             {/* Cancel */}
             <button
               onClick={onClose}
-              style={{ padding: "14px", borderRadius: 16, border: "1px solid rgba(255,255,255,.08)", background: "transparent", color: "#64748b", fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}
+              style={{ padding: "14px", borderRadius: 16, border: "1px solid var(--border-2)", background: "transparent", color: "var(--text-3)", fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}
             >
               Cancel
             </button>
@@ -420,14 +420,14 @@ function AlbumCardModal({ player, card, isFeatured, featuredCount, selling, onTo
             <div style={{ display: "flex", gap: 10 }}>
               <button
                 onClick={() => setStep("options")}
-                style={{ flex: 1, padding: "13px", borderRadius: 14, border: "1px solid rgba(255,255,255,.1)", background: "transparent", color: "rgba(255,255,255,.6)", fontWeight: 900, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}
+                style={{ flex: 1, padding: "13px", borderRadius: 14, border: "1px solid var(--border-2)", background: "transparent", color: "rgba(255,255,255,.6)", fontWeight: 900, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}
               >
                 Go Back
               </button>
               <button
                 onClick={onSell}
                 disabled={selling}
-                style={{ flex: 1, padding: "13px", borderRadius: 14, border: "none", background: selling ? "rgba(239,68,68,.4)" : "#ef4444", color: "#fff", fontWeight: 900, fontSize: 14, cursor: selling ? "default" : "pointer", fontFamily: "inherit" }}
+                style={{ flex: 1, padding: "13px", borderRadius: 14, border: "none", background: selling ? "rgba(239,68,68,.4)" : "#ef4444", color: "var(--text-1)", fontWeight: 900, fontSize: 14, cursor: selling ? "default" : "pointer", fontFamily: "inherit" }}
               >
                 {selling ? "Selling…" : "Yes, Sell"}
               </button>
@@ -481,7 +481,7 @@ function AlbumSlot({ player, ownedCards, isFeatured, onCardClick }: {
         position: "absolute", inset: 0, borderRadius: 9, overflow: "hidden", zIndex: 10,
         boxShadow: unlocked && meta
           ? `0 0 0 1.5px ${meta.color}99, 0 6px 20px ${meta.glow}`
-          : "0 0 0 1px rgba(255,255,255,.07)",
+          : "0 0 0 1px var(--border-1)",
         filter: unlocked ? "none" : "grayscale(1) brightness(0.18)",
         transition: "box-shadow 0.2s ease",
       }}>
@@ -523,13 +523,13 @@ function AlbumSlot({ player, ownedCards, isFeatured, onCardClick }: {
 
             {/* Player name */}
             <div style={{ position: "absolute", top: "71%", left: 0, right: 0, textAlign: "center", padding: "0 5px" }}>
-              <div className="ac-name" style={{ fontWeight: 900, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: `0 0 10px ${meta.glow}` }}>
+              <div className="ac-name" style={{ fontWeight: 900, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: `0 0 10px ${meta.glow}` }}>
                 {player.name}
               </div>
             </div>
 
             {/* Team logo — bottom left */}
-            <div className="ac-logo" style={{ background: "rgba(0,0,0,.55)", border: "1.5px solid rgba(255,255,255,.18)" }}>
+            <div className="ac-logo" style={{ background: "rgba(0,0,0,.55)", border: "1.5px solid var(--border-3)" }}>
               <img src={player.teamLogo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
 

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import type { CSSProperties } from "react";
@@ -39,7 +39,7 @@ export default function ForgotPasswordPage() {
           </div>
           <h1 style={titleStyle}>Check your email</h1>
           <p style={bodyStyle}>
-            We sent a password reset link to <strong style={{ color: "#94a3b8" }}>{email}</strong>. Click it to set a new password.
+            We sent a password reset link to <strong style={{ color: "var(--text-2)" }}>{email}</strong>. Click it to set a new password.
           </p>
           <Link href="/login" style={backBtnStyle}>
             <ArrowLeft size={16} />
@@ -91,8 +91,8 @@ export default function ForgotPasswordPage() {
 
 const pageStyle: CSSProperties = {
   minHeight: "100dvh",
-  background: "#14141e",
-  color: "white",
+  background: "var(--bg)",
+  color: "var(--text-1)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -131,7 +131,7 @@ const titleStyle: CSSProperties = {
 const bodyStyle: CSSProperties = {
   margin: 0,
   fontSize: 14,
-  color: "#475569",
+  color: "var(--text-3)",
   fontWeight: 600,
   textAlign: "center",
   lineHeight: 1.6,
@@ -163,9 +163,9 @@ const inputStyle: CSSProperties = {
   width: "100%",
   padding: "16px 14px 16px 44px",
   borderRadius: 999,
-  border: "1px solid rgba(255,255,255,.08)",
-  background: "#1e2438",
-  color: "white",
+  border: "1px solid var(--border-2)",
+  background: "var(--surface-2)",
+  color: "var(--text-1)",
   fontSize: 15,
   fontWeight: 500,
   outline: "none",
@@ -192,7 +192,7 @@ const submitBtnStyle: CSSProperties = {
   borderRadius: 999,
   border: "none",
   background: "linear-gradient(135deg,#3b82f6,#6366f1)",
-  color: "white",
+  color: "var(--text-1)",
   fontSize: 16,
   fontWeight: 900,
   boxShadow: "0 4px 20px rgba(59,130,246,.35)",
@@ -215,9 +215,9 @@ const backBtnStyle: CSSProperties = {
   gap: 8,
   padding: "15px 24px",
   borderRadius: 999,
-  border: "1px solid rgba(255,255,255,.08)",
-  background: "rgba(255,255,255,.04)",
-  color: "#94a3b8",
+  border: "1px solid var(--border-2)",
+  background: "var(--surface-2)",
+  color: "var(--text-2)",
   fontSize: 14,
   fontWeight: 800,
   textDecoration: "none",

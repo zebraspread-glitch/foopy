@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { createPortal } from "react-dom";
@@ -379,9 +379,9 @@ function FavouritesPicker({
           <button
             onClick={onClose}
             style={{
-              background: "rgba(255,255,255,.08)",
+              background: "var(--surface-3)",
               border: "none",
-              color: "#94a3b8",
+              color: "var(--text-2)",
               width: 32,
               height: 32,
               borderRadius: "50%",
@@ -402,8 +402,8 @@ function FavouritesPicker({
               onClick={() => setTab(t)}
               style={{
                 ...pickerTabBtnStyle,
-                background: tab === t ? "white" : "transparent",
-                color: tab === t ? "#14141e" : "#64748b",
+                background: tab === t ? "var(--text-1)" : "transparent",
+                color: tab === t ? "var(--bg)" : "var(--text-3)",
                 fontWeight: tab === t ? 900 : 700,
               }}
             >
@@ -458,9 +458,9 @@ function FavouritesPicker({
                   boxSizing: "border-box",
                   padding: "12px 14px 12px 40px",
                   borderRadius: 12,
-                  border: "1px solid rgba(255,255,255,.1)",
-                  background: "#1e1e28",
-                  color: "#fff",
+                  border: "1px solid var(--border-2)",
+                  background: "var(--surface-1)",
+                  color: "var(--text-1)",
                   fontSize: 14,
                   outline: "none",
                   fontFamily: "inherit",
@@ -482,15 +482,15 @@ function FavouritesPicker({
                       justifyContent: "center",
                       fontSize: 13,
                       fontWeight: 950,
-                      color: "white",
+                      color: "var(--text-1)",
                       flexShrink: 0,
                     }}
                   >
                     {getInitials(p.name!)}
                   </div>
                   <div style={{ textAlign: "left", minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: "#f1f5f9" }}>{p.name}</div>
-                    <div style={{ fontSize: 12, color: "#475569", fontWeight: 600 }}>{p.team}</div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: "var(--text-1)" }}>{p.name}</div>
+                    <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 600 }}>{p.team}</div>
                   </div>
                 </button>
               ))}
@@ -544,7 +544,7 @@ function FavSlotButton({
                 onError={() => setImgError(true)}
               />
             ) : (
-              <span style={{ fontSize: 16, fontWeight: 950, color: "white" }}>{getInitials(slot.label)}</span>
+              <span style={{ fontSize: 16, fontWeight: 950, color: "var(--text-1)" }}>{getInitials(slot.label)}</span>
             )}
           </button>
         )}
@@ -1242,7 +1242,7 @@ export default function ProfilePage() {
           <div style={{ fontSize: 52 }}>👤</div>
           <div>
             <h2 style={{ margin: "0 0 8px", fontSize: 22, fontWeight: 950 }}>Sign in to see your profile</h2>
-            <p style={{ margin: 0, color: "#64748b", fontSize: 14 }}>
+            <p style={{ margin: 0, color: "var(--text-3)", fontSize: 14 }}>
               Create an account to track your picks and connect with friends.
             </p>
           </div>
@@ -1255,7 +1255,7 @@ export default function ProfilePage() {
               padding: 16,
               borderRadius: 16,
               background: "linear-gradient(135deg,#3b82f6,#6366f1)",
-              color: "#fff",
+              color: "var(--text-1)",
               fontWeight: 900,
               fontSize: 16,
               textAlign: "center",
@@ -1298,9 +1298,9 @@ export default function ProfilePage() {
             {/* Avatar */}
             <div style={{ flexShrink: 0 }}>
               {profile?.avatar_url ? (
-                <img src={profile.avatar_url} alt="Profile" style={{ width: 90, height: 90, borderRadius: "50%", objectFit: "cover", border: "3px solid #111", boxShadow: "0 0 0 2px rgba(255,255,255,.12)" }} />
+                <img src={profile.avatar_url} alt="Profile" style={{ width: 90, height: 90, borderRadius: "50%", objectFit: "cover", border: "3px solid var(--bg)", boxShadow: "0 0 0 2px var(--border-3)" }} />
               ) : (
-                <div style={{ width: 90, height: 90, borderRadius: "50%", background: `linear-gradient(135deg,${avBg},#050505)`, color: avFg, display: "grid", placeItems: "center", fontSize: 32, fontWeight: 950, border: "3px solid #111", boxShadow: `0 0 0 2px rgba(255,255,255,.12),0 0 30px ${avFg}44` }}>
+                <div style={{ width: 90, height: 90, borderRadius: "50%", background: `linear-gradient(135deg,${avBg},var(--surface-1))`, color: avFg, display: "grid", placeItems: "center", fontSize: 32, fontWeight: 950, border: "3px solid var(--bg)", boxShadow: `0 0 0 2px var(--border-3),0 0 30px ${avFg}44` }}>
                   {label[0].toUpperCase()}
                 </div>
               )}
@@ -1308,20 +1308,20 @@ export default function ProfilePage() {
 
             {/* Username + pills */}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <h1 style={{ margin: "0 0 10px", fontSize: 18, fontWeight: 950, letterSpacing: "-0.04em", lineHeight: 1, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
+              <h1 style={{ margin: "0 0 10px", fontSize: 18, fontWeight: 950, letterSpacing: "-0.04em", lineHeight: 1, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
                 @{username || "—"}
               </h1>
 
               {/* Pills: xp · coins · friends */}
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as const, alignItems: "center" }}>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 999, background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.1)" }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 999, background: "var(--surface-3)", border: "1px solid var(--border-2)" }}>
                   <XPBar xp={xp} />
                 </div>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 999, background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.1)" }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 999, background: "var(--surface-3)", border: "1px solid var(--border-2)" }}>
                   <img src="/coin/coin.png" alt="coins" style={{ width: 16, height: 16, objectFit: "contain" }} />
-                  <span style={{ fontSize: 13, fontWeight: 800, color: "#e2e8f0" }}>{(profile?.coins ?? 0).toLocaleString()}</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: "var(--text-1)" }}>{(profile?.coins ?? 0).toLocaleString()}</span>
                 </div>
-                <button onClick={openFriends} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 999, background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.1)", color: "#e2e8f0", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
+                <button onClick={openFriends} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 999, background: "var(--surface-3)", border: "1px solid var(--border-2)", color: "var(--text-1)", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
                   <Users size={14} color="#94a3b8" strokeWidth={2} />
                   <span>{friends.length} friends</span>
                 </button>
@@ -1333,7 +1333,7 @@ export default function ProfilePage() {
           {bannerErr && <div style={{ ...errBoxSty, margin: "0 16px 12px" }}>{bannerErr}</div>}
 
           {/* Bio section */}
-          <div style={{ margin: "0 14px", padding: "14px 16px", borderRadius: 16, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)" }}>
+          <div style={{ margin: "0 14px", padding: "14px 16px", borderRadius: 16, background: "var(--surface-2)", border: "1px solid var(--border-2)" }}>
             <p style={{ margin: 0, color: profile?.bio ? "#cbd5e1" : "#475569", fontSize: 14, fontWeight: 600, lineHeight: 1.6, fontStyle: profile?.bio ? "normal" : "italic" }}>
               {profile?.bio || "No bio yet."}
             </p>
@@ -1347,14 +1347,14 @@ export default function ProfilePage() {
         </div>
 
         {/* ── XP ── */}
-        <div style={{ background: "#1a1a24", border: "1px solid rgba(255,255,255,.1)", borderRadius: 18, padding: "20px 24px", display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18, padding: "20px 24px", display: "flex", alignItems: "center", gap: 12 }}>
           <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.45)" }}>Total XP</span>
           <XPBar xp={xp} />
         </div>
 
         {/* ── Favourites ── */}
         <div style={sectionCardStyle}>
-          <div style={{ marginBottom: 16, fontSize: 12, fontWeight: 800, color: "#64748b", textTransform: "uppercase" as const, letterSpacing: "0.08em" }}>
+          <div style={{ marginBottom: 16, fontSize: 12, fontWeight: 800, color: "var(--text-3)", textTransform: "uppercase" as const, letterSpacing: "0.08em" }}>
             favorites
           </div>
           <div style={favsGridStyle}>
@@ -1373,11 +1373,11 @@ export default function ProfilePage() {
           const hasFeatured = featuredWithData.length > 0;
 
           return (
-            <Link href="/album" style={{ textDecoration: "none", color: "#fff" }}>
+            <Link href="/album" style={{ textDecoration: "none", color: "var(--text-1)" }}>
               <div style={sectionCardStyle}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: "#64748b", textTransform: "uppercase" as const, letterSpacing: "0.08em" }}>featured cards</div>
-                  {hasFeatured && <div style={{ fontSize: 11, fontWeight: 700, color: "#334155" }}>{featuredWithData.length}/5</div>}
+                  <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text-3)", textTransform: "uppercase" as const, letterSpacing: "0.08em" }}>featured cards</div>
+                  {hasFeatured && <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-4)" }}>{featuredWithData.length}/5</div>}
                 </div>
                 {hasFeatured ? (
                   <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 2, scrollbarWidth: "none" as const }}>
@@ -1387,14 +1387,14 @@ export default function ProfilePage() {
                         <div key={idx} style={{ flexShrink: 0, position: "relative", width: 110, height: 154, borderRadius: 14, overflow: "hidden", border: `1.5px solid ${meta.color}99`, boxShadow: `0 2px 16px ${meta.glow}, 0 0 0 0px ${meta.color}` }}>
                           <img src={`/cards/${fc.rarity}.png`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.04) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,.5) 65%, rgba(0,0,0,.88) 100%)" }} />
-                          <div style={{ position: "absolute", top: "11%", left: "50%", transform: "translateX(-50%)", width: "66%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", border: `2px solid ${meta.color}`, boxShadow: `0 0 12px ${meta.glow}`, background: "#1a1a24" }}>
+                          <div style={{ position: "absolute", top: "11%", left: "50%", transform: "translateX(-50%)", width: "66%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", border: `2px solid ${meta.color}`, boxShadow: `0 0 12px ${meta.glow}`, background: "var(--bg)" }}>
                             <img src={`/players/${player.folder}/${player.id}.png`} alt={player.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
                           </div>
                           <div style={{ position: "absolute", top: 5, right: 5, background: "rgba(0,0,0,.85)", color: meta.color, fontSize: 7, fontWeight: 1000, padding: "2px 5px", borderRadius: 5, border: `1px solid ${meta.color}44`, letterSpacing: ".04em" }}>
                             {fc.rarity.toUpperCase()}
                           </div>
                           <div style={{ position: "absolute", bottom: 10, left: 0, right: 0, textAlign: "center", padding: "0 5px" }}>
-                            <div style={{ fontSize: 9, fontWeight: 900, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: `0 0 10px ${meta.glow}` }}>
+                            <div style={{ fontSize: 9, fontWeight: 900, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: `0 0 10px ${meta.glow}` }}>
                               {player.name}
                             </div>
                           </div>
@@ -1408,7 +1408,7 @@ export default function ProfilePage() {
                       <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
                     </svg>
                     <div style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: "#334155" }}>No featured cards yet</div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text-4)" }}>No featured cards yet</div>
                       <div style={{ fontSize: 11, fontWeight: 600, color: "#1e293b", marginTop: 4 }}>Tap ⭐ on cards in your album</div>
                     </div>
                   </div>
@@ -1419,11 +1419,11 @@ export default function ProfilePage() {
         })()}
 
         {/* ── Stats row ── */}
-        <div style={{ background: "#1a1a24", border: "1px solid rgba(255,255,255,.1)", borderRadius: 18, display: "flex" }}>
+        <div style={{ background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18, display: "flex" }}>
           {(
             [
-              { label: "Games",     value: profile?.matches_viewed ?? 0,           color: "#f8fafc",  onClick: openGamesPopup },
-              { label: "Likes",     value: profile?.total_likes ?? totalLikes ?? "—", color: "#f8fafc",  onClick: openLikesPopup },
+              { label: "Games",     value: profile?.matches_viewed ?? 0,           color: "var(--text-1)",  onClick: openGamesPopup },
+              { label: "Likes",     value: profile?.total_likes ?? totalLikes ?? "—", color: "var(--text-1)",  onClick: openLikesPopup },
               { label: "Polls Won", value: (log.correct ?? []).length,             color: "#22c55e",  onClick: openPollsPopup },
               { label: "Cards",     value: cardCount ?? "—",                        color: "#c084fc",  onClick: () => router.push("/album") },
             ] as const
@@ -1436,9 +1436,9 @@ export default function ProfilePage() {
                 padding: "16px 8px",
                 background: "none",
                 border: "none",
-                borderRight: i < arr.length - 1 ? "1px solid rgba(255,255,255,.08)" : "none",
+                borderRight: i < arr.length - 1 ? "1px solid var(--border-2)" : "none",
                 cursor: "pointer",
-                color: "#fff",
+                color: "var(--text-1)",
                 fontFamily: "inherit",
                 display: "flex",
                 flexDirection: "column",
@@ -1480,8 +1480,8 @@ export default function ProfilePage() {
                 aspectRatio: previewType === "banner" ? "3 / 1" : "1 / 1",
                 borderRadius: previewType === "banner" ? 14 : "50%",
                 overflow: "hidden",
-                background: "#1e1e28",
-                border: "1px solid rgba(255,255,255,.16)",
+                background: "var(--surface-1)",
+                border: "1px solid var(--border-3)",
                 boxShadow: "0 20px 60px rgba(0,0,0,.5)",
               }}
             >
@@ -1521,9 +1521,9 @@ export default function ProfilePage() {
                   gap: 8,
                   padding: "10px 14px",
                   borderRadius: 999,
-                  border: "1px solid rgba(255,255,255,.12)",
-                  background: "rgba(255,255,255,.06)",
-                  color: "#94a3b8",
+                  border: "1px solid var(--border-3)",
+                  background: "var(--surface-3)",
+                  color: "var(--text-2)",
                   fontWeight: 900,
                   cursor: "pointer",
                   fontFamily: "inherit",
@@ -1534,7 +1534,7 @@ export default function ProfilePage() {
               </button>
             </div>
 
-            <div style={{ marginTop: 16, color: "#64748b", fontSize: 13, fontWeight: 800 }}>
+            <div style={{ marginTop: 16, color: "var(--text-3)", fontSize: 13, fontWeight: 800 }}>
               Drag the image and use the slider to crop it.
             </div>
           </div>
@@ -1547,7 +1547,7 @@ export default function ProfilePage() {
       {editSection !== null && createPortal(
         <>
           <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,.7)", backdropFilter: "blur(8px)" }} onClick={() => setEditSection(null)} />
-          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 201, width: "calc(100% - 32px)", maxWidth: 420, background: "#1e1e28", borderRadius: 24, border: "1px solid rgba(255,255,255,.1)", padding: "24px 20px", maxHeight: "80dvh", overflowY: "auto" }} onClick={(e) => e.stopPropagation()}>
+          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 201, width: "calc(100% - 32px)", maxWidth: 420, background: "var(--surface-1)", borderRadius: 24, border: "1px solid var(--border-2)", padding: "24px 20px", maxHeight: "80dvh", overflowY: "auto" }} onClick={(e) => e.stopPropagation()}>
 
             {editSection === "menu" && (
               <>
@@ -1598,7 +1598,7 @@ export default function ProfilePage() {
                 {locked ? (
                   <div style={lockedBoxStyle}>
                     <strong>🔒 Username locked</strong>
-                    <p style={{ margin: "8px 0 14px", color: "#64748b", fontSize: 14 }}>
+                    <p style={{ margin: "8px 0 14px", color: "var(--text-3)", fontSize: 14 }}>
                       Next change on {nextDate!.toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}.
                     </p>
                     <button onClick={() => setEditSection("menu")} style={cancelBtnSty}>Back</button>
@@ -1625,7 +1625,7 @@ export default function ProfilePage() {
                 </div>
                 <form onSubmit={saveBio} style={{ display: "grid", gap: 12 }}>
                   <textarea placeholder="Tell people a bit about yourself…" value={eBio} onChange={(e) => setEBio(e.target.value)} maxLength={160} rows={4} style={{ ...fieldSty, resize: "none", lineHeight: 1.5 }} autoFocus />
-                  <div style={{ textAlign: "right" as const, color: "#475569", fontSize: 11, marginTop: -6 }}>{eBio.length}/160</div>
+                  <div style={{ textAlign: "right" as const, color: "var(--text-3)", fontSize: 11, marginTop: -6 }}>{eBio.length}/160</div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                     <button type="submit" disabled={eBioBusy} style={{ ...primaryBtnSty, opacity: eBioBusy ? 0.65 : 1 }}>{eBioBusy ? "Saving…" : "Save"}</button>
                     <button type="button" onClick={() => setEditSection("menu")} style={cancelBtnSty}>Back</button>
@@ -1642,15 +1642,15 @@ export default function ProfilePage() {
       )}
 
       {showFriends && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 110, background: "#14141e", display: "flex", flexDirection: "column" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 110, background: "var(--bg)", display: "flex", flexDirection: "column" }}>
           <div
             style={{
               display: "flex",
               alignItems: "center",
               gap: 14,
               padding: "16px 20px",
-              borderBottom: "1px solid rgba(255,255,255,.08)",
-              background: "#050505",
+              borderBottom: "1px solid var(--border-2)",
+              background: "var(--bg)",
             }}
           >
             <button
@@ -1671,13 +1671,13 @@ export default function ProfilePage() {
             <span style={{ fontWeight: 950, fontSize: 18, flex: 1 }}>Friends</span>
 
             {requests.length > 0 && friendsTab !== "requests" && (
-              <span style={{ background: "#ef4444", color: "#fff", borderRadius: 999, fontSize: 11, fontWeight: 900, padding: "2px 8px" }}>
+              <span style={{ background: "#ef4444", color: "var(--text-1)", borderRadius: 999, fontSize: 11, fontWeight: 900, padding: "2px 8px" }}>
                 {requests.length}
               </span>
             )}
           </div>
 
-          <div style={{ display: "flex", borderBottom: "1px solid rgba(255,255,255,.08)", background: "#050505" }}>
+          <div style={{ display: "flex", borderBottom: "1px solid var(--border-2)", background: "var(--bg)" }}>
             {(["friends", "requests", "add"] as FriendsTab[]).map((tab) => (
               <button
                 key={tab}
@@ -1706,7 +1706,7 @@ export default function ProfilePage() {
           <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", paddingBottom: "calc(16px + env(safe-area-inset-bottom))" }}>
             {friendsTab === "friends" &&
               (friendsLoading ? (
-                <div style={{ textAlign: "center", padding: 32, color: "#475569" }}>Loading…</div>
+                <div style={{ textAlign: "center", padding: 32, color: "var(--text-3)" }}>Loading…</div>
               ) : friends.length === 0 ? (
                 <EmptyState icon="👥" text="No friends yet. Use the Add tab to find people." />
               ) : (
@@ -1733,7 +1733,7 @@ export default function ProfilePage() {
 
             {friendsTab === "requests" &&
               (friendsLoading ? (
-                <div style={{ textAlign: "center", padding: 32, color: "#475569" }}>Loading…</div>
+                <div style={{ textAlign: "center", padding: 32, color: "var(--text-3)" }}>Loading…</div>
               ) : requests.length === 0 ? (
                 <EmptyState icon="📬" text="No pending friend requests." />
               ) : (
@@ -1743,7 +1743,7 @@ export default function ProfilePage() {
                       <Avatar name={r.username || "?"} url={r.avatar_url} size={44} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontWeight: 800, fontSize: 15 }}>@{r.username}</div>
-                        <div style={{ fontSize: 12, color: "#475569", marginTop: 2 }}>wants to be your friend</div>
+                        <div style={{ fontSize: 12, color: "var(--text-3)", marginTop: 2 }}>wants to be your friend</div>
                       </div>
                       <div style={{ display: "flex", gap: 8 }}>
                         <button onClick={() => acceptRequest(r.friendship_id)} style={acceptBtnSty}>
@@ -1764,11 +1764,11 @@ export default function ProfilePage() {
                   placeholder="Search by username…"
                   value={friendSearch}
                   onChange={(e) => setFriendSearch(e.target.value)}
-                  style={{ ...fieldSty, background: "#1e1e28" }}
+                  style={{ ...fieldSty, background: "var(--surface-1)" }}
                   autoFocus
                 />
 
-                {searching && <div style={{ textAlign: "center", padding: 24, color: "#475569" }}>Searching…</div>}
+                {searching && <div style={{ textAlign: "center", padding: 24, color: "var(--text-3)" }}>Searching…</div>}
 
                 {!searching && friendSearch.trim() && searchRes.length === 0 && <EmptyState icon="🔍" text="No users found." />}
 
@@ -1819,15 +1819,15 @@ export default function ProfilePage() {
             style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,.75)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
             onClick={() => setStatsPopup(null)}
           />
-          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 301, background: "#1a1a24", borderRadius: 24, border: "1px solid rgba(255,255,255,.1)", width: "calc(100% - 32px)", maxWidth: 480, maxHeight: "80dvh", display: "flex", flexDirection: "column" }} onClick={(e) => e.stopPropagation()}>
+          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 301, background: "var(--bg)", borderRadius: 24, border: "1px solid var(--border-2)", width: "calc(100% - 32px)", maxWidth: 480, maxHeight: "80dvh", display: "flex", flexDirection: "column" }} onClick={(e) => e.stopPropagation()}>
             {/* Header */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 20px 16px", borderBottom: "1px solid rgba(255,255,255,.07)", flexShrink: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 20px 16px", borderBottom: "1px solid var(--border-1)", flexShrink: 0 }}>
               <div style={{ fontSize: 18, fontWeight: 950, letterSpacing: "-0.02em" }}>
                 {statsPopup === "games" && "Live Games Viewed"}
                 {statsPopup === "likes" && "Likes Leaderboard"}
                 {statsPopup === "polls" && "Polls Won by Team"}
               </div>
-              <button onClick={() => setStatsPopup(null)} style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: 4 }}>
+              <button onClick={() => setStatsPopup(null)} style={{ background: "none", border: "none", color: "var(--text-3)", cursor: "pointer", padding: 4 }}>
                 <X size={20} />
               </button>
             </div>
@@ -1838,16 +1838,16 @@ export default function ProfilePage() {
               {/* Games popup */}
               {statsPopup === "games" && (
                 gamesDataLoading ? (
-                  <div style={{ textAlign: "center", padding: 40, color: "#475569" }}>Loading…</div>
+                  <div style={{ textAlign: "center", padding: 40, color: "var(--text-3)" }}>Loading…</div>
                 ) : gamesData.length === 0 ? (
                   <EmptyState icon="📺" text="No live games viewed yet. Tune in to a live match!" />
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
                     {gamesData.map((t) => (
-                      <div key={t.name} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "14px 8px", borderRadius: 16, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.07)" }}>
+                      <div key={t.name} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "14px 8px", borderRadius: 16, background: "var(--surface-2)", border: "1px solid var(--border-1)" }}>
                         <img src={t.logo} alt={t.name} style={{ width: 44, height: 44, objectFit: "contain" }} />
-                        <div style={{ fontSize: 22, fontWeight: 950, color: "#f8fafc", letterSpacing: "-0.04em" }}>{t.count}</div>
-                        <div style={{ fontSize: 10, fontWeight: 800, color: "#475569", textAlign: "center", lineHeight: 1.3 }}>{t.name}</div>
+                        <div style={{ fontSize: 22, fontWeight: 950, color: "var(--text-1)", letterSpacing: "-0.04em" }}>{t.count}</div>
+                        <div style={{ fontSize: 10, fontWeight: 800, color: "var(--text-3)", textAlign: "center", lineHeight: 1.3 }}>{t.name}</div>
                       </div>
                     ))}
                   </div>
@@ -1858,15 +1858,15 @@ export default function ProfilePage() {
               {statsPopup === "likes" && (
                 <>
                   {myLikesRank && (
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "10px 14px", marginBottom: 12, borderRadius: 12, background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.08)" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "10px 14px", marginBottom: 12, borderRadius: 12, background: "var(--surface-2)", border: "1px solid var(--border-2)" }}>
                       <Avatar name={profile?.username || "?"} url={profile?.avatar_url} size={28} />
-                      <span style={{ fontSize: 13, fontWeight: 700, color: "#94a3b8" }}>
-                        You are <strong style={{ color: "#f8fafc" }}>#{myLikesRank.rank.toLocaleString()}</strong> with <strong style={{ color: "#f8fafc" }}>{myLikesRank.total.toLocaleString()}</strong> likes
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-2)" }}>
+                        You are <strong style={{ color: "var(--text-1)" }}>#{myLikesRank.rank.toLocaleString()}</strong> with <strong style={{ color: "var(--text-1)" }}>{myLikesRank.total.toLocaleString()}</strong> likes
                       </span>
                     </div>
                   )}
                   {likesDataLoading && likesData.length === 0 ? (
-                  <div style={{ textAlign: "center", padding: 40, color: "#475569" }}>Loading…</div>
+                  <div style={{ textAlign: "center", padding: 40, color: "var(--text-3)" }}>Loading…</div>
                 ) : likesData.length === 0 ? (
                   <EmptyState icon="❤️" text="No comment likes yet." />
                 ) : (
@@ -1874,7 +1874,7 @@ export default function ProfilePage() {
                     {likesData.map((entry, i) => {
                       const isMe = entry.id === user?.id;
                       return (
-                        <div key={entry.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 14, background: isMe ? "rgba(59,130,246,.08)" : "rgba(255,255,255,.03)", border: `1px solid ${isMe ? "rgba(59,130,246,.2)" : "rgba(255,255,255,.06)"}` }}>
+                        <div key={entry.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 14, background: isMe ? "rgba(59,130,246,.08)" : "rgba(255,255,255,.03)", border: `1px solid ${isMe ? "rgba(59,130,246,.2)" : "var(--border-1)"}` }}>
                           <div style={{ fontSize: 13, fontWeight: 900, color: i < 3 ? ["#ffd700","#c0c0c0","#cd7f32"][i] : "#334155", width: 22, textAlign: "center" }}>
                             {i + 1}
                           </div>
@@ -1884,7 +1884,7 @@ export default function ProfilePage() {
                               @{entry.username ?? "unknown"}{isMe ? " (you)" : ""}
                             </div>
                           </div>
-                          <div style={{ fontSize: 18, fontWeight: 950, color: "#f8fafc", letterSpacing: "-0.03em" }}>
+                          <div style={{ fontSize: 18, fontWeight: 950, color: "var(--text-1)", letterSpacing: "-0.03em" }}>
                             {entry.total.toLocaleString()}
                           </div>
                         </div>
@@ -1893,7 +1893,7 @@ export default function ProfilePage() {
                     <div ref={likesSentinelRef} style={{ height: 1 }} />
                     {likesDataLoading && (
                       <div style={{ display: "flex", justifyContent: "center", padding: "16px 0" }}>
-                        <div style={{ width: 22, height: 22, borderRadius: "50%", border: "2.5px solid rgba(255,255,255,.12)", borderTopColor: "#60a5fa", animation: "spin 0.7s linear infinite" }} />
+                        <div style={{ width: 22, height: 22, borderRadius: "50%", border: "2.5px solid var(--border-3)", borderTopColor: "#60a5fa", animation: "spin 0.7s linear infinite" }} />
                       </div>
                     )}
                   </div>
@@ -1904,18 +1904,18 @@ export default function ProfilePage() {
               {/* Polls popup */}
               {statsPopup === "polls" && (
                 pollsDataLoading ? (
-                  <div style={{ textAlign: "center", padding: 40, color: "#475569" }}>Loading…</div>
+                  <div style={{ textAlign: "center", padding: 40, color: "var(--text-3)" }}>Loading…</div>
                 ) : pollsData.length === 0 ? (
                   <EmptyState icon="📊" text="No completed picks yet. Head to a match and pick a winner!" />
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {pollsData.map((t) => (
-                      <div key={t.name} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 14px", borderRadius: 14, background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.07)" }}>
+                      <div key={t.name} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 14px", borderRadius: 14, background: "var(--surface-2)", border: "1px solid var(--border-1)" }}>
                         <img src={t.logo} alt={t.name} style={{ width: 40, height: 40, objectFit: "contain" }} />
-                        <div style={{ flex: 1, fontWeight: 800, fontSize: 14, color: "#f8fafc" }}>{t.name}</div>
+                        <div style={{ flex: 1, fontWeight: 800, fontSize: 14, color: "var(--text-1)" }}>{t.name}</div>
                         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                           <span style={{ fontSize: 14, fontWeight: 900, color: "#22c55e" }}>{t.wins}W</span>
-                          <span style={{ fontSize: 12, color: "#334155" }}>–</span>
+                          <span style={{ fontSize: 12, color: "var(--text-4)" }}>–</span>
                           <span style={{ fontSize: 14, fontWeight: 900, color: "#ef4444" }}>{t.losses}L</span>
                         </div>
                       </div>
@@ -1946,7 +1946,7 @@ function EmptyState({ icon, text }: { icon: string; text: string }) {
   return (
     <div style={{ textAlign: "center", padding: "48px 24px" }}>
       <div style={{ fontSize: 40, marginBottom: 12 }}>{icon}</div>
-      <div style={{ color: "#475569", fontSize: 14, fontWeight: 700 }}>{text}</div>
+      <div style={{ color: "var(--text-3)", fontSize: 14, fontWeight: 700 }}>{text}</div>
     </div>
   );
 }
@@ -1954,8 +1954,8 @@ function EmptyState({ icon, text }: { icon: string; text: string }) {
 /* ═══════════════════ Styles ═══════════════════ */
 const pageStyle: CSSProperties = {
   minHeight: "100dvh",
-  background: "#14141e",
-  color: "#fff",
+  background: "var(--bg)",
+  color: "var(--text-1)",
   paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
 };
 
@@ -1970,8 +1970,8 @@ const wrapStyle: CSSProperties = {
 
 const profileCardStyle: CSSProperties = {
   overflow: "hidden",
-  background: "#1a1a24",
-  border: "1px solid rgba(255,255,255,.1)",
+  background: "var(--bg)",
+  border: "1px solid var(--border-2)",
   borderRadius: 18,
 };
 
@@ -1994,8 +1994,8 @@ const bioBoxStyle: CSSProperties = {
   margin: "0 20px 20px",
   padding: "14px 16px",
   borderRadius: 14,
-  background: "rgba(255,255,255,.03)",
-  border: "1px solid rgba(255,255,255,.07)",
+  background: "var(--surface-2)",
+  border: "1px solid var(--border-1)",
 };
 
 const bioLabelStyle: CSSProperties = {
@@ -2009,7 +2009,7 @@ const bioLabelStyle: CSSProperties = {
 
 const bioTextStyle: CSSProperties = {
   margin: 0,
-  color: "#94a3b8",
+  color: "var(--text-2)",
   fontSize: 13,
   fontWeight: 600,
   lineHeight: 1.55,
@@ -2018,9 +2018,9 @@ const bioTextStyle: CSSProperties = {
 const editBtnStyle: CSSProperties = {
   padding: "9px 16px",
   borderRadius: 999,
-  border: "1px solid rgba(255,255,255,.16)",
-  background: "rgba(255,255,255,.08)",
-  color: "#fff",
+  border: "1px solid var(--border-3)",
+  background: "var(--surface-3)",
+  color: "var(--text-1)",
   fontSize: 13,
   fontWeight: 800,
   cursor: "pointer",
@@ -2031,7 +2031,7 @@ const editBtnStyle: CSSProperties = {
 
 const editPanelStyle: CSSProperties = {
   padding: "16px 20px 20px",
-  borderTop: "1px solid rgba(255,255,255,.07)",
+  borderTop: "1px solid var(--border-1)",
   background: "rgba(255,255,255,.015)",
 };
 
@@ -2043,9 +2043,9 @@ const menuBtnSty: CSSProperties = {
   width: "100%",
   padding: "14px 16px",
   borderRadius: 14,
-  border: "1px solid rgba(255,255,255,.08)",
-  background: "#1e1e28",
-  color: "#fff",
+  border: "1px solid var(--border-2)",
+  background: "var(--surface-1)",
+  color: "var(--text-1)",
   cursor: "pointer",
   textAlign: "left",
 };
@@ -2053,16 +2053,16 @@ const menuBtnSty: CSSProperties = {
 const lockedBoxStyle: CSSProperties = {
   padding: 18,
   borderRadius: 14,
-  background: "#1e1e28",
-  border: "1px solid rgba(255,255,255,.08)",
-  color: "#94a3b8",
+  background: "var(--surface-1)",
+  border: "1px solid var(--border-2)",
+  color: "var(--text-2)",
 };
 
 const labelSty: CSSProperties = {
   display: "block",
   fontSize: 11,
   fontWeight: 900,
-  color: "#64748b",
+  color: "var(--text-3)",
   letterSpacing: ".05em",
   textTransform: "uppercase",
 };
@@ -2070,11 +2070,11 @@ const labelSty: CSSProperties = {
 const fieldSty: CSSProperties = {
   width: "100%",
   boxSizing: "border-box",
-  background: "#1e1e28",
-  border: "1px solid rgba(255,255,255,.1)",
+  background: "var(--surface-1)",
+  border: "1px solid var(--border-2)",
   borderRadius: 14,
   padding: "13px 15px",
-  color: "#fff",
+  color: "var(--text-1)",
   fontSize: 15,
   outline: "none",
   fontFamily: "inherit",
@@ -2096,7 +2096,7 @@ const primaryBtnSty: CSSProperties = {
   border: "none",
   borderRadius: 14,
   background: "#2563eb",
-  color: "#fff",
+  color: "var(--text-1)",
   fontWeight: 950,
   fontSize: 15,
   cursor: "pointer",
@@ -2106,9 +2106,9 @@ const cancelBtnSty: CSSProperties = {
   width: "100%",
   padding: 13,
   borderRadius: 14,
-  border: "1px solid rgba(255,255,255,.1)",
+  border: "1px solid var(--border-2)",
   background: "transparent",
-  color: "#94a3b8",
+  color: "var(--text-2)",
   fontWeight: 900,
   fontSize: 15,
   cursor: "pointer",
@@ -2116,8 +2116,8 @@ const cancelBtnSty: CSSProperties = {
 };
 
 const sectionCardStyle: CSSProperties = {
-  background: "#1a1a24",
-  border: "1px solid rgba(255,255,255,.1)",
+  background: "var(--bg)",
+  border: "1px solid var(--border-2)",
   borderRadius: 18,
   padding: "18px 16px 20px",
   overflow: "hidden",
@@ -2138,7 +2138,7 @@ const sectionTitleStyle: CSSProperties = {
 
 const sectionSubStyle: CSSProperties = {
   fontSize: 12,
-  color: "#475569",
+  color: "var(--text-3)",
   fontWeight: 700,
   marginTop: 3,
 };
@@ -2153,7 +2153,7 @@ const emptySlotStyle: CSSProperties = {
   position: "absolute",
   inset: 0,
   borderRadius: "50%",
-  border: "2px dashed rgba(255,255,255,.14)",
+  border: "2px dashed var(--border-3)",
   background: "rgba(255,255,255,.025)",
   display: "flex",
   alignItems: "center",
@@ -2174,7 +2174,7 @@ const filledSlotStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  border: "2px solid rgba(255,255,255,.12)",
+  border: "2px solid var(--border-3)",
   cursor: "pointer",
 };
 
@@ -2187,7 +2187,7 @@ const removeSlotBtnStyle: CSSProperties = {
   borderRadius: "50%",
   background: "rgba(0,0,0,.75)",
   border: "none",
-  color: "#fff",
+  color: "var(--text-1)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -2198,7 +2198,7 @@ const removeSlotBtnStyle: CSSProperties = {
 const slotLabelStyle: CSSProperties = {
   fontSize: 10,
   fontWeight: 800,
-  color: "#64748b",
+  color: "var(--text-3)",
   textAlign: "center",
   width: "100%",
   overflow: "hidden",
@@ -2215,18 +2215,18 @@ const statsRowStyle: CSSProperties = {
 const statCardStyle: CSSProperties = {
   padding: "18px 16px",
   borderRadius: 18,
-  background: "#1a1a24",
-  border: "1px solid rgba(255,255,255,.1)",
+  background: "var(--bg)",
+  border: "1px solid var(--border-2)",
 };
 
 const statCardClickStyle: CSSProperties = {
   padding: "18px 16px",
   borderRadius: 18,
-  background: "#1a1a24",
-  border: "1px solid rgba(255,255,255,.1)",
+  background: "var(--bg)",
+  border: "1px solid var(--border-2)",
   cursor: "pointer",
   textAlign: "left",
-  color: "#fff",
+  color: "var(--text-1)",
   fontFamily: "inherit",
   transition: "border-color 0.15s, background 0.15s",
 };
@@ -2238,7 +2238,7 @@ const statValueStyle: CSSProperties = {
 
 const statLabelStyle: CSSProperties = {
   marginTop: 3,
-  color: "#94a3b8",
+  color: "var(--text-2)",
   fontSize: 12,
   fontWeight: 800,
 };
@@ -2262,8 +2262,8 @@ const friendRowStyle: CSSProperties = {
   gap: 14,
   padding: "14px 16px",
   borderRadius: 16,
-  background: "#1e1e28",
-  border: "1px solid rgba(255,255,255,.07)",
+  background: "var(--surface-1)",
+  border: "1px solid var(--border-1)",
   cursor: "pointer",
 };
 
@@ -2272,7 +2272,7 @@ const acceptBtnSty: CSSProperties = {
   borderRadius: 10,
   border: "none",
   background: "#22c55e",
-  color: "#fff",
+  color: "var(--text-1)",
   fontWeight: 800,
   fontSize: 13,
   cursor: "pointer",
@@ -2304,9 +2304,9 @@ const pickerOverlayStyle: CSSProperties = {
 const pickerSheetStyle: CSSProperties = {
   width: "min(420px, 92vw)",
   maxHeight: "82dvh",
-  background: "#131313",
+  background: "var(--surface-1)",
   borderRadius: 20,
-  border: "1px solid rgba(255,255,255,.1)",
+  border: "1px solid var(--border-2)",
   padding: "20px 20px 24px",
   overflowY: "auto",
   boxShadow: "0 32px 80px rgba(0,0,0,0.8)",
@@ -2316,8 +2316,8 @@ const pickerTabsStyle: CSSProperties = {
   display: "flex",
   padding: 3,
   borderRadius: 999,
-  background: "rgba(255,255,255,.05)",
-  border: "1px solid rgba(255,255,255,.08)",
+  background: "var(--surface-2)",
+  border: "1px solid var(--border-2)",
   marginBottom: 16,
 };
 
@@ -2338,8 +2338,8 @@ const teamPickItemStyle: CSSProperties = {
   gap: 6,
   padding: "12px 8px",
   borderRadius: 14,
-  border: "1px solid rgba(255,255,255,.07)",
-  background: "rgba(255,255,255,.03)",
+  border: "1px solid var(--border-1)",
+  background: "var(--surface-2)",
   cursor: "pointer",
 };
 
@@ -2350,8 +2350,8 @@ const playerPickItemStyle: CSSProperties = {
   padding: "10px 14px",
   borderRadius: 12,
   border: "none",
-  background: "rgba(255,255,255,.04)",
-  color: "#fff",
+  background: "var(--surface-2)",
+  color: "var(--text-1)",
   cursor: "pointer",
   textAlign: "left",
   width: "100%",
@@ -2373,8 +2373,8 @@ const previewHeaderStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "space-between",
   padding: "0 18px",
-  background: "#050505",
-  borderBottom: "1px solid rgba(255,255,255,.1)",
+  background: "var(--bg)",
+  borderBottom: "1px solid var(--border-2)",
 };
 
 const previewIconBtnStyle: CSSProperties = {

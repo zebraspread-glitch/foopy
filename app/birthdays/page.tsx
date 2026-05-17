@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -115,8 +115,8 @@ function PlayerCard({ entry, isToday }: { entry: BirthdayEntry; isToday?: boolea
         gap: 14,
         padding: "14px 16px",
         borderRadius: 16,
-        background: isToday ? `linear-gradient(135deg, ${color}44, rgba(255,255,255,.04))` : "rgba(255,255,255,.04)",
-        border: isToday ? `1px solid ${color}88` : "1px solid rgba(255,255,255,.08)",
+        background: isToday ? `linear-gradient(135deg, ${color}44, var(--border-1))` : "var(--border-1)",
+        border: isToday ? `1px solid ${color}88` : "1px solid var(--border-2)",
         position: "relative",
         overflow: "hidden",
         textDecoration: "none",
@@ -137,17 +137,17 @@ function PlayerCard({ entry, isToday }: { entry: BirthdayEntry; isToday?: boolea
           src={imgSrc}
           alt={entry.name}
           onError={() => setImgErr(true)}
-          style={{ width: 48, height: 48, borderRadius: "50%", objectFit: "cover", objectPosition: "center top", flexShrink: 0, background: `${color}44`, border: "1px solid rgba(255,255,255,.1)" }}
+          style={{ width: 48, height: 48, borderRadius: "50%", objectFit: "cover", objectPosition: "center top", flexShrink: 0, background: `${color}44`, border: "1px solid var(--border-2)" }}
         />
       ) : (
-        <div style={{ width: 48, height: 48, borderRadius: "50%", flexShrink: 0, background: `${color}44`, border: "1px solid rgba(255,255,255,.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ width: 48, height: 48, borderRadius: "50%", flexShrink: 0, background: `${color}44`, border: "1px solid var(--border-2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <span style={{ fontSize: 20 }}>🏉</span>
         </div>
       )}
 
       {/* Name + team */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 15, fontWeight: 900, color: "#f8fafc", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <div style={{ fontSize: 15, fontWeight: 900, color: "var(--text-1)", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {entry.name}
         </div>
         {team && (
@@ -255,8 +255,8 @@ export default function BirthdaysPage() {
                 <circle cx="12" cy="4.5" r="0.9" fill="#334155" stroke="none" />
                 <circle cx="16" cy="4.5" r="0.9" fill="#334155" stroke="none" />
               </svg>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#64748b" }}>No AFL birthdays today</div>
-              <div style={{ fontSize: 13, color: "#334155", marginTop: 4 }}>Check the upcoming section below</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-3)" }}>No AFL birthdays today</div>
+              <div style={{ fontSize: 13, color: "var(--text-4)", marginTop: 4 }}>Check the upcoming section below</div>
             </div>
           ) : (
             <div style={cardListStyle}>
@@ -310,8 +310,8 @@ export default function BirthdaysPage() {
 
 const pageStyle: React.CSSProperties = {
   minHeight: "100dvh",
-  background: "#14141e",
-  color: "white",
+  background: "var(--bg)",
+  color: "var(--text-1)",
   paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
 };
 
@@ -321,7 +321,7 @@ const sectionHeaderStyle: React.CSSProperties = {
   gap: 8,
   fontSize: 16,
   fontWeight: 900,
-  color: "#f8fafc",
+  color: "var(--text-1)",
   marginBottom: 12,
   letterSpacing: "-0.02em",
 };
@@ -329,11 +329,11 @@ const sectionHeaderStyle: React.CSSProperties = {
 const countBadgeStyle: React.CSSProperties = {
   fontSize: 11,
   fontWeight: 900,
-  background: "rgba(255,255,255,.1)",
-  border: "1px solid rgba(255,255,255,.12)",
+  background: "var(--border-2)",
+  border: "1px solid var(--border-3)",
   borderRadius: 999,
   padding: "2px 8px",
-  color: "#94a3b8",
+  color: "var(--text-2)",
 };
 
 const cardListStyle: React.CSSProperties = {
@@ -348,7 +348,7 @@ const dayLabelStyle: React.CSSProperties = {
   gap: 8,
   fontSize: 13,
   fontWeight: 800,
-  color: "#475569",
+  color: "var(--text-3)",
   marginBottom: 8,
   textTransform: "uppercase",
   letterSpacing: "0.06em",
@@ -357,8 +357,8 @@ const dayLabelStyle: React.CSSProperties = {
 const emptyStyle: React.CSSProperties = {
   padding: "32px 20px",
   textAlign: "center",
-  background: "rgba(255,255,255,.03)",
-  border: "1px solid rgba(255,255,255,.07)",
+  background: "var(--surface-2)",
+  border: "1px solid var(--border-1)",
   borderRadius: 18,
 };
 
@@ -367,7 +367,7 @@ const teamLogoWrapStyle: React.CSSProperties = {
   height: 34,
   borderRadius: "50%",
   background: "rgba(0,0,0,.24)",
-  border: "1px solid rgba(255,255,255,.1)",
+  border: "1px solid var(--border-2)",
   overflow: "hidden",
   display: "flex",
   alignItems: "center",

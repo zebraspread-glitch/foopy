@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { TrendingUp, Zap, Calendar } from "lucide-react";
@@ -390,8 +390,8 @@ function TeamCell({
 
 const pageStyle: React.CSSProperties = {
   minHeight: "100dvh",
-  background: "#14141e",
-  color: "white",
+  background: "var(--bg)",
+  color: "var(--text-1)",
   paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
 };
 
@@ -447,10 +447,10 @@ const sectionLabelStyle: React.CSSProperties = {
 const cardStyle: React.CSSProperties = {
   margin: "0 16px",
   borderRadius: 18,
-  background: "#0c0c0f",
-  border: "1px solid rgba(255,255,255,.09)",
+  background: "var(--surface-1)",
+  border: "1px solid var(--border-2)",
   overflow: "hidden",
-  color: "white",
+  color: "var(--text-1)",
   position: "relative",
 };
 
@@ -501,7 +501,7 @@ const middleStyle: React.CSSProperties = {
 const vsStyle: React.CSSProperties = {
   fontSize: 17,
   fontWeight: 950,
-  color: "#334155",
+  color: "var(--text-4)",
   letterSpacing: "-0.04em",
 };
 
@@ -521,7 +521,7 @@ const scoreNumStyle: React.CSSProperties = {
 
 const scoreDashStyle: React.CSSProperties = {
   fontSize: 20,
-  color: "#334155",
+  color: "var(--text-4)",
   fontWeight: 900,
 };
 
@@ -529,7 +529,7 @@ const livePillStyle: React.CSSProperties = {
   fontSize: 9,
   fontWeight: 900,
   background: "#22c55e",
-  color: "white",
+  color: "var(--text-1)",
   padding: "3px 8px",
   borderRadius: 999,
   letterSpacing: "0.06em",
@@ -538,8 +538,8 @@ const livePillStyle: React.CSSProperties = {
 const ftPillStyle: React.CSSProperties = {
   fontSize: 11,
   fontWeight: 800,
-  color: "#64748b",
-  background: "rgba(255,255,255,.06)",
+  color: "var(--text-3)",
+  background: "var(--surface-3)",
   padding: "3px 9px",
   borderRadius: 999,
 };
@@ -554,13 +554,13 @@ const footerStyle: React.CSSProperties = {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
-  borderTop: "1px solid rgba(255,255,255,.06)",
+  borderTop: "1px solid var(--border-1)",
   paddingTop: 10,
 };
 
 const footerTextStyle: React.CSSProperties = {
   fontSize: 11,
-  color: "#475569",
+  color: "var(--text-3)",
   fontWeight: 700,
 };
 
@@ -570,11 +570,11 @@ const commentHintStyle: React.CSSProperties = {
   gap: 4,
   fontSize: 11,
   fontWeight: 700,
-  color: "#475569",
+  color: "var(--text-3)",
 };
 
 const emptyStyle: React.CSSProperties = {
   padding: "60px 20px",
   textAlign: "center",
-  color: "#475569",
+  color: "var(--text-3)",
 };

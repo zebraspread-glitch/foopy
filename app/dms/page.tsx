@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -76,15 +76,15 @@ function Avatar({ name, url, size = 46 }: { name: string; url?: string | null; s
 function SignInGate() {
   const router = useRouter();
   return (
-    <main style={{ minHeight: "100dvh", background: "#14141e", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 24px calc(90px + env(safe-area-inset-bottom))" }}>
+    <main style={{ minHeight: "100dvh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 24px calc(90px + env(safe-area-inset-bottom))" }}>
       <div style={{ maxWidth: 340, width: "100%", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
-        <div style={{ width: 72, height: 72, borderRadius: "50%", background: "#1e1e28", border: "1px solid rgba(255,255,255,.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32 }}>💬</div>
+        <div style={{ width: 72, height: 72, borderRadius: "50%", background: "var(--surface-1)", border: "1px solid var(--border-2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32 }}>💬</div>
         <div>
-          <h2 style={{ fontSize: 22, fontWeight: 950, color: "#fff", margin: "0 0 6px" }}>Sign in to message</h2>
-          <p style={{ fontSize: 14, color: "#64748b", margin: 0, lineHeight: 1.6 }}>Create a Foopy account to DM other users.</p>
+          <h2 style={{ fontSize: 22, fontWeight: 950, color: "var(--text-1)", margin: "0 0 6px" }}>Sign in to message</h2>
+          <p style={{ fontSize: 14, color: "var(--text-3)", margin: 0, lineHeight: 1.6 }}>Create a Foopy account to DM other users.</p>
         </div>
-        <button onClick={() => router.push("/login")} style={{ display: "block", width: "100%", padding: "16px", borderRadius: 16, background: "linear-gradient(135deg,#3b82f6,#6366f1)", color: "#fff", fontWeight: 900, fontSize: 16, border: "none", cursor: "pointer", boxShadow: "0 4px 20px rgba(59,130,246,0.4)" }}>Sign In</button>
-        <button onClick={() => router.push("/login")} style={{ display: "block", width: "100%", padding: "15px", borderRadius: 16, border: "1px solid rgba(255,255,255,.1)", background: "rgba(255,255,255,.04)", color: "#94a3b8", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>Create Account</button>
+        <button onClick={() => router.push("/login")} style={{ display: "block", width: "100%", padding: "16px", borderRadius: 16, background: "linear-gradient(135deg,#3b82f6,#6366f1)", color: "var(--text-1)", fontWeight: 900, fontSize: 16, border: "none", cursor: "pointer", boxShadow: "0 4px 20px rgba(59,130,246,0.4)" }}>Sign In</button>
+        <button onClick={() => router.push("/login")} style={{ display: "block", width: "100%", padding: "15px", borderRadius: 16, border: "1px solid var(--border-2)", background: "var(--surface-2)", color: "var(--text-2)", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>Create Account</button>
       </div>
     </main>
   );
@@ -98,7 +98,7 @@ export default function DMsPage() {
         <div
           style={{
             minHeight: "100dvh",
-            background: "#14141e",
+            background: "var(--bg)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -463,14 +463,14 @@ function DMsPageInner() {
 
   /* ── Guards ── */
   if (!ready) return (
-    <div style={{ minHeight: "100dvh", background: "#14141e", display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div style={{ minHeight: "100dvh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div className="spinner" />
     </div>
   );
   if (!user)  return <SignInGate />;
   if (!myProfile?.username) return (
-    <main style={{ minHeight: "100dvh", background: "#14141e", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 24px calc(90px + env(safe-area-inset-bottom))" }}>
-      <div style={{ textAlign: "center", color: "#64748b" }}>
+    <main style={{ minHeight: "100dvh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 24px calc(90px + env(safe-area-inset-bottom))" }}>
+      <div style={{ textAlign: "center", color: "var(--text-3)" }}>
         <p style={{ fontWeight: 800, fontSize: 16, marginBottom: 12 }}>Set up your profile first</p>
         <a href="/profile" style={{ color: "#22c55e", fontWeight: 800 }}>Go to Profile →</a>
       </div>
@@ -479,10 +479,10 @@ function DMsPageInner() {
 
   /* ═══════════════════ THREAD VIEW ═══════════════════ */
   if (activeConv) return (
-    <main style={{ position: "fixed", inset: 0, background: "#14141e", display: "flex", flexDirection: "column", zIndex: 110 }}>
+    <main style={{ position: "fixed", inset: 0, background: "var(--bg)", display: "flex", flexDirection: "column", zIndex: 110 }}>
 
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, paddingTop: "calc(14px + env(safe-area-inset-top))", paddingBottom: "14px", paddingLeft: "16px", paddingRight: "16px", background: "rgba(24,24,31,0.96)", backdropFilter: "blur(28px) saturate(200%)", WebkitBackdropFilter: "blur(28px) saturate(200%)", borderBottom: "0.5px solid rgba(255,255,255,.08)", flexShrink: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, paddingTop: "calc(14px + env(safe-area-inset-top))", paddingBottom: "14px", paddingLeft: "16px", paddingRight: "16px", background: "var(--bottom-nav-bg)", backdropFilter: "blur(28px) saturate(200%)", WebkitBackdropFilter: "blur(28px) saturate(200%)", borderBottom: "0.5px solid var(--border-2)", flexShrink: 0 }}>
         <button onClick={() => setActiveConv(null)} style={{ background: "none", border: "none", padding: "4px 8px 4px 0", cursor: "pointer", display: "flex", alignItems: "center" }}>
           <svg width="11" height="19" viewBox="0 0 11 19" fill="none">
             <path d="M9.5 1.5L1.5 9.5L9.5 17.5" stroke="#22c55e" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -492,10 +492,10 @@ function DMsPageInner() {
           style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left", minWidth: 0 }}>
           <Avatar name={activeConv.other?.username ?? "?"} url={activeConv.other?.avatar_url} size={42} />
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontWeight: 900, fontSize: 16, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            <div style={{ fontWeight: 900, fontSize: 16, color: "var(--text-1)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               @{activeConv.other?.username}
             </div>
-            <div style={{ fontSize: 12, color: "#475569" }}>tap to view profile</div>
+            <div style={{ fontSize: 12, color: "var(--text-3)" }}>tap to view profile</div>
           </div>
         </button>
       </div>
@@ -506,9 +506,9 @@ function DMsPageInner() {
           <div style={{ padding: "80px 24px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
             <Avatar name={activeConv.other?.username ?? "?"} url={activeConv.other?.avatar_url} size={72} />
             <div>
-              <div style={{ fontWeight: 800, fontSize: 17, color: "#fff", marginBottom: 4 }}>@{activeConv.other?.username}</div>
+              <div style={{ fontWeight: 800, fontSize: 17, color: "var(--text-1)", marginBottom: 4 }}>@{activeConv.other?.username}</div>
             </div>
-            <div style={{ marginTop: 8, fontSize: 13, color: "#475569", fontWeight: 700, background: "#1e1e28", borderRadius: 12, padding: "8px 16px" }}>
+            <div style={{ marginTop: 8, fontSize: 13, color: "var(--text-3)", fontWeight: 700, background: "var(--surface-1)", borderRadius: 12, padding: "8px 16px" }}>
               Start the conversation 👋
             </div>
           </div>
@@ -517,9 +517,9 @@ function DMsPageInner() {
         {grouped.map(g => (
           <div key={g.day}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 20px" }}>
-              <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,.06)" }} />
-              <span style={{ fontSize: 11, color: "#475569", fontWeight: 800, textTransform: "uppercase", letterSpacing: ".06em" }}>{g.day}</span>
-              <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,.06)" }} />
+              <div style={{ flex: 1, height: 1, background: "var(--surface-3)" }} />
+              <span style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 800, textTransform: "uppercase", letterSpacing: ".06em" }}>{g.day}</span>
+              <div style={{ flex: 1, height: 1, background: "var(--surface-3)" }} />
             </div>
             {g.msgs.map((m, i) => {
               const mine = m.sender_id === myProfile.id;
@@ -548,13 +548,13 @@ function DMsPageInner() {
                             setSelectedMsgId(prev => prev === m.id ? null : m.id);
                           }
                         }}
-                        style={{ padding: "9px 13px", borderRadius: br, background: mine ? "#22c55e" : "#272731", border: mine ? "none" : "1px solid rgba(255,255,255,.07)", color: "#fff", fontSize: 15, lineHeight: 1.45, wordBreak: "break-word", opacity: m.id.startsWith("t") || deletingIds.has(m.id) ? 0.6 : 1, cursor: mine && !m.id.startsWith("t") ? "pointer" : "default", outline: selectedMsgId === m.id ? "2px solid rgba(255,255,255,.18)" : "none", outlineOffset: 2 }}
+                        style={{ padding: "9px 13px", borderRadius: br, background: mine ? "#22c55e" : "var(--surface-3)", border: mine ? "none" : "1px solid var(--border-1)", color: "var(--text-1)", fontSize: 15, lineHeight: 1.45, wordBreak: "break-word", opacity: m.id.startsWith("t") || deletingIds.has(m.id) ? 0.6 : 1, cursor: mine && !m.id.startsWith("t") ? "pointer" : "default", outline: selectedMsgId === m.id ? "2px solid var(--border-3)" : "none", outlineOffset: 2 }}
                       >
                         {m.content}
                       </div>
                     </div>
                     {mine && selectedMsgId === m.id && !m.id.startsWith("t") && (
-                      <div style={{ marginTop: 6, padding: 4, borderRadius: 12, background: "#1e1e28", border: "1px solid rgba(255,255,255,.09)", boxShadow: "0 8px 24px rgba(0,0,0,.35)" }}>
+                      <div style={{ marginTop: 6, padding: 4, borderRadius: 12, background: "var(--surface-1)", border: "1px solid var(--border-2)", boxShadow: "0 8px 24px rgba(0,0,0,.35)" }}>
                         <button
                           onClick={e => { e.stopPropagation(); deleteMessage(m); }}
                           disabled={deletingIds.has(m.id)}
@@ -564,7 +564,7 @@ function DMsPageInner() {
                         </button>
                       </div>
                     )}
-                    {!sameNext && <span style={{ fontSize: 11, color: "#475569", fontWeight: 700, marginTop: 4, paddingInline: 4 }}>{fmtTime(m.created_at)}</span>}
+                    {!sameNext && <span style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 700, marginTop: 4, paddingInline: 4 }}>{fmtTime(m.created_at)}</span>}
                   </div>
                 </div>
               );
@@ -582,18 +582,18 @@ function DMsPageInner() {
       )}
 
       {/* Composer */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", paddingBottom: "calc(10px + env(safe-area-inset-bottom))", borderTop: "1px solid rgba(255,255,255,.07)", background: "#14141e", flexShrink: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", paddingBottom: "calc(10px + env(safe-area-inset-bottom))", borderTop: "1px solid var(--border-1)", background: "var(--bg)", flexShrink: 0 }}>
         <input
           ref={inputRef} value={text}
           onChange={e => setText(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
           placeholder="Message…"
-          style={{ flex: 1, background: "#1e1e28", border: "1px solid rgba(255,255,255,.1)", borderRadius: 24, padding: "11px 18px", color: "#fff", fontSize: 15, outline: "none", fontFamily: "inherit" }}
+          style={{ flex: 1, background: "var(--surface-1)", border: "1px solid var(--border-2)", borderRadius: 24, padding: "11px 18px", color: "var(--text-1)", fontSize: 15, outline: "none", fontFamily: "inherit" }}
         />
-        <button onClick={send} disabled={!text.trim()} style={{ width: 42, height: 42, borderRadius: "50%", border: "none", flexShrink: 0, cursor: text.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", background: text.trim() ? "#22c55e" : "#272731" }}>
+        <button onClick={send} disabled={!text.trim()} style={{ width: 42, height: 42, borderRadius: "50%", border: "none", flexShrink: 0, cursor: text.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", background: text.trim() ? "#22c55e" : "var(--surface-3)" }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <path d="M22 2L11 13" stroke={text.trim() ? "#fff" : "#475569"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke={text.trim() ? "#fff" : "#475569"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M22 2L11 13" stroke={text.trim() ? "#fff" : "var(--text-3)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke={text.trim() ? "#fff" : "var(--text-3)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
       </div>
@@ -605,7 +605,7 @@ function DMsPageInner() {
   const noConvoFriends = filteredInbox.filter(e => !e.convId);
 
   return (
-  <main style={{ minHeight: "100dvh", background: "#14141e", color: "#fff", paddingBottom: "calc(90px + env(safe-area-inset-bottom))" }} className="page-enter">
+  <main style={{ minHeight: "100dvh", background: "var(--bg)", color: "var(--text-1)", paddingBottom: "calc(90px + env(safe-area-inset-bottom))" }} className="page-enter">
     <div style={{ maxWidth: 700, margin: "0 auto", width: "100%" }}>
 
       {/* Sticky header */}
@@ -613,10 +613,10 @@ function DMsPageInner() {
         position: "sticky",
         top: 0,
         zIndex: 50,
-        background: "rgba(24,24,31,0.96)",
+        background: "var(--bottom-nav-bg)",
         backdropFilter: "blur(28px) saturate(200%)",
         WebkitBackdropFilter: "blur(28px) saturate(200%)",
-        borderBottom: "0.5px solid rgba(255,255,255,0.08)",
+        borderBottom: "0.5px solid var(--border-2)",
         paddingTop: "env(safe-area-inset-top)",
       }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px 0 58px" }}>
@@ -624,11 +624,11 @@ function DMsPageInner() {
         </div>
 
         {/* Search */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(255,255,255,0.06)", borderRadius: 14, border: "1px solid rgba(255,255,255,.08)", padding: "10px 14px", margin: "12px 20px 12px" }}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="#475569" strokeWidth="2"/><path d="m21 21-4.35-4.35" stroke="#475569" strokeWidth="2" strokeLinecap="round"/></svg>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, background: "var(--surface-3)", borderRadius: 14, border: "1px solid var(--border-2)", padding: "10px 14px", margin: "12px 20px 12px" }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="var(--text-3)" strokeWidth="2"/><path d="m21 21-4.35-4.35" stroke="var(--text-3)" strokeWidth="2" strokeLinecap="round"/></svg>
           <input placeholder="Search…" value={search} onChange={e => setSearch(e.target.value)}
-            style={{ flex: 1, background: "none", border: "none", outline: "none", color: "#fff", fontSize: 15, fontFamily: "inherit" }} />
-          {search && <button onClick={() => setSearch("")} style={{ background: "none", border: "none", color: "#475569", cursor: "pointer", padding: 0, lineHeight: 1 }}>✕</button>}
+            style={{ flex: 1, background: "none", border: "none", outline: "none", color: "var(--text-1)", fontSize: 15, fontFamily: "inherit" }} />
+          {search && <button onClick={() => setSearch("")} style={{ background: "none", border: "none", color: "var(--text-3)", cursor: "pointer", padding: 0, lineHeight: 1 }}>✕</button>}
         </div>
       </div>
 
@@ -642,12 +642,12 @@ function DMsPageInner() {
             <p style={{ fontWeight: 900, fontSize: 18, margin: "0 0 6px" }}>
               {search ? "No results" : "No friends yet"}
             </p>
-            <p style={{ color: "#64748b", fontSize: 14, margin: "0 0 20px" }}>
+            <p style={{ color: "var(--text-3)", fontSize: 14, margin: "0 0 20px" }}>
               {search ? `Nothing matched "${search}"` : "Add friends on your profile to start chatting."}
             </p>
             {!search && (
               <button onClick={() => router.push("/profile")}
-                style={{ padding: "12px 28px", borderRadius: 14, background: "#22c55e", color: "#fff", border: "none", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
+                style={{ padding: "12px 28px", borderRadius: 14, background: "#22c55e", color: "var(--text-1)", border: "none", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
                 Find Friends
               </button>
             )}
@@ -675,7 +675,7 @@ function DMsPageInner() {
         <div>
           {hasConvos && (
             <div style={{ padding: "18px 20px 8px" }}>
-              <span style={{ fontSize: 11, fontWeight: 900, color: "#475569", letterSpacing: ".08em", textTransform: "uppercase" }}>Friends</span>
+              <span style={{ fontSize: 11, fontWeight: 900, color: "var(--text-3)", letterSpacing: ".08em", textTransform: "uppercase" }}>Friends</span>
             </div>
           )}
           {noConvoFriends.map((entry, i) => (
@@ -705,8 +705,8 @@ function InboxRow({ entry, myId, isLast, onClick }: {
     <button onClick={onClick} style={{
       width: "100%", display: "flex", alignItems: "center", gap: 14,
       padding: "13px 20px", background: "none", cursor: "pointer",
-      textAlign: "left", border: "none", color: "#fff",
-      borderBottom: isLast ? "none" : "1px solid rgba(255,255,255,.05)",
+      textAlign: "left", border: "none", color: "var(--text-1)",
+      borderBottom: isLast ? "none" : "1px solid var(--border-1)",
     }}>
       {/* Avatar with unread dot */}
       <div style={{ position: "relative", flexShrink: 0 }}>
@@ -719,11 +719,11 @@ function InboxRow({ entry, myId, isLast, onClick }: {
       {/* Text block */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
-          <span style={{ fontWeight: entry.unread > 0 ? 900 : 800, fontSize: 16, color: "#fff" }}>
+          <span style={{ fontWeight: entry.unread > 0 ? 900 : 800, fontSize: 16, color: "var(--text-1)" }}>
             @{name}
           </span>
           {entry.last_at && (
-            <span style={{ fontSize: 12, color: entry.unread > 0 ? "#22c55e" : "#475569", fontWeight: 700, flexShrink: 0, marginLeft: 8 }}>
+            <span style={{ fontSize: 12, color: entry.unread > 0 ? "#22c55e" : "var(--text-3)", fontWeight: 700, flexShrink: 0, marginLeft: 8 }}>
               {ago(entry.last_at)}
             </span>
           )}
@@ -738,11 +738,11 @@ function InboxRow({ entry, myId, isLast, onClick }: {
           }}>
             {hasConvo
               ? (entry.preview || "Tap to say hi 👋")
-              : <span style={{ color: "#334155", fontStyle: "italic" }}>Say hi 👋</span>
+              : <span style={{ color: "var(--text-4)", fontStyle: "italic" }}>Say hi 👋</span>
             }
           </span>
           {entry.unread > 0 && (
-            <span style={{ background: "#22c55e", color: "#14141e", borderRadius: 99, fontSize: 11, fontWeight: 900, padding: "2px 7px", flexShrink: 0, minWidth: 20, textAlign: "center" }}>
+            <span style={{ background: "#22c55e", color: "var(--bg)", borderRadius: 99, fontSize: 11, fontWeight: 900, padding: "2px 7px", flexShrink: 0, minWidth: 20, textAlign: "center" }}>
               {entry.unread > 99 ? "99+" : entry.unread}
             </span>
           )}

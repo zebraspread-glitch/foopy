@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -330,8 +330,8 @@ export default function CardsPage() {
         .pill-scroll { scrollbar-width: none; }
         .pill-scroll::-webkit-scrollbar { display: none; }
         .team-filter-select option {
-          background: #111318;
-          color: #f8fafc;
+          background: var(--surface-1);
+          color: var(--text-1);
           font-weight: 700;
         }
         @media (min-width: 720px) {
@@ -353,9 +353,9 @@ export default function CardsPage() {
 
       {/* Header bar */}
       <header style={headerStyle}>
-        <span style={{ fontSize: 18, fontWeight: 900, color: "#f8fafc", letterSpacing: "-0.01em" }}>Cards</span>
+        <span style={{ fontSize: 18, fontWeight: 900, color: "var(--text-1)", letterSpacing: "-0.01em" }}>Cards</span>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Link href="/album" style={{ fontSize: 12, fontWeight: 800, color: "rgba(255,255,255,.5)", textDecoration: "none", background: "rgba(255,255,255,.07)", borderRadius: 99, padding: "5px 11px" }}>
+          <Link href="/album" style={{ fontSize: 12, fontWeight: 800, color: "rgba(255,255,255,.5)", textDecoration: "none", background: "var(--surface-3)", borderRadius: 99, padding: "5px 11px" }}>
             Album
           </Link>
           {user && (
@@ -373,8 +373,8 @@ export default function CardsPage() {
           <>
             <div style={guestBannerStyle}>
               <div style={{ fontSize: 28, marginBottom: 10 }}>🔒</div>
-              <div style={{ fontSize: 17, fontWeight: 900, marginBottom: 6, color: "#f8fafc" }}>Sign in to open packs</div>
-              <div style={{ fontSize: 13, color: "#64748b", marginBottom: 18 }}>Collect players, build your squad, and open packs with Coins.</div>
+              <div style={{ fontSize: 17, fontWeight: 900, marginBottom: 6, color: "var(--text-1)" }}>Sign in to open packs</div>
+              <div style={{ fontSize: 13, color: "var(--text-3)", marginBottom: 18 }}>Collect players, build your squad, and open packs with Coins.</div>
               <Link href="/login" style={loginBtnStyle}>Log In</Link>
             </div>
             <PackShopPreview />
@@ -394,8 +394,8 @@ export default function CardsPage() {
 
             <div style={collectionHeaderStyle}>
               <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                <span style={{ fontWeight: 900, fontSize: 16, color: "#f8fafc" }}>My Collection</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#334155" }}>
+                <span style={{ fontWeight: 900, fontSize: 16, color: "var(--text-1)" }}>My Collection</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-4)" }}>
                   {cards.length} card{cards.length !== 1 ? "s" : ""}
                 </span>
               </div>
@@ -458,10 +458,10 @@ export default function CardsPage() {
             ) : displayCards.length === 0 ? (
               <div style={emptyCollectionStyle}>
                 <div style={{ fontSize: 40, marginBottom: 14 }}>🃏</div>
-                <div style={{ fontWeight: 900, fontSize: 15, color: "#f8fafc", marginBottom: 6 }}>
+                <div style={{ fontWeight: 900, fontSize: 15, color: "var(--text-1)", marginBottom: 6 }}>
                   {cards.length === 0 ? "No cards yet" : "No matches"}
                 </div>
-                <div style={{ fontSize: 13, color: "#475569", fontWeight: 600 }}>
+                <div style={{ fontSize: 13, color: "var(--text-3)", fontWeight: 600 }}>
                   {cards.length === 0 ? "Open a pack to start your collection" : "Try adjusting your filters"}
                 </div>
               </div>
@@ -514,7 +514,7 @@ function PackShop({
   return (
     <section style={{ marginBottom: 8 }}>
       <div style={shopHeaderStyle}>
-        <span style={{ fontWeight: 900, fontSize: 16, color: "#f8fafc" }}>Pack Shop</span>
+        <span style={{ fontWeight: 900, fontSize: 16, color: "var(--text-1)" }}>Pack Shop</span>
       </div>
       <div style={packRowStyle}>
         {PACKS.map((pack) => {
@@ -533,9 +533,9 @@ function PackShop({
               </div>
 
               {/* Pack info */}
-              <div style={{ fontWeight: 900, fontSize: 14, color: "#f8fafc", marginBottom: 2 }}>{pack.label}</div>
-              <div style={{ fontSize: 11, color: "#64748b", fontWeight: 700, marginBottom: 6 }}>{pack.description}</div>
-              <div style={{ fontSize: 11, color: "#475569", marginBottom: 10 }}>{pack.cards}</div>
+              <div style={{ fontWeight: 900, fontSize: 14, color: "var(--text-1)", marginBottom: 2 }}>{pack.label}</div>
+              <div style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 700, marginBottom: 6 }}>{pack.description}</div>
+              <div style={{ fontSize: 11, color: "var(--text-3)", marginBottom: 10 }}>{pack.cards}</div>
 
               {/* Cost */}
               <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 10 }}>
@@ -555,8 +555,8 @@ function PackShop({
                 className="open-btn"
                 style={{
                   ...openBtnBase,
-                  background: canAfford ? pack.accent : "rgba(255,255,255,.05)",
-                  color: canAfford ? "#14141e" : "#334155",
+                  background: canAfford ? pack.accent : "var(--border-1)",
+                  color: canAfford ? "#14141e" : "var(--text-4)",
                   opacity: canAfford && !opening ? 1 : 0.5,
                   cursor: canAfford && !opening ? "pointer" : "not-allowed",
                   boxShadow: canAfford ? `0 4px 18px ${pack.accent}44` : "none",
@@ -578,7 +578,7 @@ function PackShop({
                   {RARITY_ODDS[pack.type].map(({ rarity, pct }) => (
                     <div key={rarity} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "3px 0" }}>
                       <span style={{ fontSize: 11, fontWeight: 700, color: RARITY_META[rarity].color }}>{RARITY_META[rarity].label}</span>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8" }}>{pct}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-2)" }}>{pct}</span>
                     </div>
                   ))}
                 </div>
@@ -597,7 +597,7 @@ function PackShopPreview() {
   return (
     <section style={{ marginBottom: 8, opacity: 0.45, pointerEvents: "none" }}>
       <div style={shopHeaderStyle}>
-        <span style={{ fontWeight: 900, fontSize: 16, color: "#f8fafc" }}>Pack Shop</span>
+        <span style={{ fontWeight: 900, fontSize: 16, color: "var(--text-1)" }}>Pack Shop</span>
       </div>
       <div style={packRowStyle}>
         {PACKS.map((pack) => (
@@ -605,7 +605,7 @@ function PackShopPreview() {
             <div style={{ width: "100%", aspectRatio: "3/4", overflow: "hidden", borderRadius: 12, marginBottom: 10 }}>
               <img src={pack.image} alt={pack.label} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
-            <div style={{ fontWeight: 900, fontSize: 14, color: "#f8fafc", marginBottom: 2 }}>{pack.label}</div>
+            <div style={{ fontWeight: 900, fontSize: 14, color: "var(--text-1)", marginBottom: 2 }}>{pack.label}</div>
             <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 6 }}>
               <CoinIcon size={14} />
               <span style={{ fontWeight: 900, fontSize: 15, color: "#fbbf24" }}>{pack.cost.toLocaleString()}</span>
@@ -663,8 +663,8 @@ function PlayerCard({ card, onSell }: { card: UserCard; onSell?: () => void }) {
         <div style={{
           position: "absolute", top: 8, left: 8,
           background: "rgba(0,0,0,.72)", borderRadius: 8,
-          padding: "3px 7px", fontSize: 10, fontWeight: 900, color: "#94a3b8",
-          border: "1px solid rgba(255,255,255,.1)",
+          padding: "3px 7px", fontSize: 10, fontWeight: 900, color: "var(--text-2)",
+          border: "1px solid var(--border-2)",
         }}>
           ×{card.duplicate_count}
         </div>
@@ -682,7 +682,7 @@ function PlayerCard({ card, onSell }: { card: UserCard; onSell?: () => void }) {
         overflow: "hidden",
         border: `2.5px solid ${meta.color}`,
         boxShadow: `0 0 14px ${meta.glow}`,
-        background: TEAM_COLORS[card.team] ?? "#1e1e28",
+        background: TEAM_COLORS[card.team] ?? "var(--surface-3)",
       }}>
         <img
           src={`/players/${folder}/${card.player_id}.png`}
@@ -694,13 +694,13 @@ function PlayerCard({ card, onSell }: { card: UserCard; onSell?: () => void }) {
 
       {/* Player name — centered just below player circle */}
       <div style={{ position: "absolute", top: "71%", left: 0, right: 0, textAlign: "center", padding: "0 5px" }}>
-        <div style={{ fontSize: 10, fontWeight: 900, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: `0 0 10px ${meta.glow}` }}>
+        <div style={{ fontSize: 10, fontWeight: 900, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: `0 0 10px ${meta.glow}` }}>
           {card.player_name}
         </div>
       </div>
 
       {/* Team logo — bottom left */}
-      <div style={{ position: "absolute", width: 18, height: 18, bottom: 5, left: 5, borderRadius: "50%", overflow: "hidden", background: "rgba(0,0,0,.55)", border: "1.5px solid rgba(255,255,255,.18)" }}>
+      <div style={{ position: "absolute", width: 18, height: 18, bottom: 5, left: 5, borderRadius: "50%", overflow: "hidden", background: "rgba(0,0,0,.55)", border: "1.5px solid var(--border-3)" }}>
         <img src={card.team_logo} alt={card.team} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       </div>
     </div>
@@ -749,8 +749,8 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
     return (
       <div style={{ ...modalOverlayStyle, alignItems: "center", justifyContent: "center", padding: "20px 16px" }}>
         <div style={{
-          background: "#1a1a24",
-          border: "1px solid rgba(255,255,255,.1)",
+          background: "var(--bg)",
+          border: "1px solid var(--border-2)",
           borderRadius: 24,
           padding: "20px 16px 16px",
           width: "100%",
@@ -761,7 +761,7 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
             <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: ".18em", color: "rgba(255,255,255,.38)", marginBottom: 4 }}>
               PACK OPENED
             </div>
-            <div style={{ fontSize: 18, fontWeight: 1000, color: "#f8fafc" }}>
+            <div style={{ fontSize: 18, fontWeight: 1000, color: "var(--text-1)" }}>
               {cards.length} Card{cards.length !== 1 ? "s" : ""}
             </div>
           </div>
@@ -781,17 +781,17 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
                   {/* Rating */}
                   <div style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,.82)", borderRadius: 5, padding: "1px 5px", fontSize: 9, fontWeight: 1000, color: m.color, border: `1px solid ${m.color}44` }}>{card.rating}</div>
                   {/* NEW badge */}
-                  {card.is_new && <div style={{ position: "absolute", top: 6, left: "50%", transform: "translateX(-50%)", background: "linear-gradient(90deg,#16a34a,#22c55e)", borderRadius: 99, padding: "2px 7px", fontSize: 7, fontWeight: 900, color: "#fff", letterSpacing: ".1em", boxShadow: "0 2px 8px rgba(34,197,94,.5)", whiteSpace: "nowrap" }}>✦ NEW</div>}
+                  {card.is_new && <div style={{ position: "absolute", top: 6, left: "50%", transform: "translateX(-50%)", background: "linear-gradient(90deg,#16a34a,#22c55e)", borderRadius: 99, padding: "2px 7px", fontSize: 7, fontWeight: 900, color: "var(--text-1)", letterSpacing: ".1em", boxShadow: "0 2px 8px rgba(34,197,94,.5)", whiteSpace: "nowrap" }}>✦ NEW</div>}
                   {/* Player circle */}
-                  <div style={{ position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)", width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", border: `2px solid ${m.color}`, boxShadow: `0 0 10px ${m.glow}`, background: "#1a1a24" }}>
+                  <div style={{ position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)", width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", border: `2px solid ${m.color}`, boxShadow: `0 0 10px ${m.glow}`, background: "var(--bg)" }}>
                     <img src={card.player_image} alt={card.player_name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
                   </div>
                   {/* Player name */}
                   <div style={{ position: "absolute", top: "71%", left: 0, right: 0, textAlign: "center", padding: "0 4px" }}>
-                    <div style={{ fontSize: 7, fontWeight: 900, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: `0 0 8px ${m.glow}` }}>{card.player_name}</div>
+                    <div style={{ fontSize: 7, fontWeight: 900, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: `0 0 8px ${m.glow}` }}>{card.player_name}</div>
                   </div>
                   {/* Team logo */}
-                  <div style={{ position: "absolute", width: 14, height: 14, bottom: 4, left: 4, borderRadius: "50%", overflow: "hidden", background: "rgba(0,0,0,.55)", border: "1.5px solid rgba(255,255,255,.18)" }}>
+                  <div style={{ position: "absolute", width: 14, height: 14, bottom: 4, left: 4, borderRadius: "50%", overflow: "hidden", background: "rgba(0,0,0,.55)", border: "1.5px solid var(--border-3)" }}>
                     <img src={card.team_logo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   </div>
                 </div>
@@ -801,7 +801,7 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
 
           <button
             onClick={onClose}
-            style={{ display: "block", width: "100%", padding: "13px", borderRadius: 14, border: "none", background: "rgba(255,255,255,.12)", color: "#f8fafc", fontWeight: 900, fontSize: 15, cursor: "pointer" }}
+            style={{ display: "block", width: "100%", padding: "13px", borderRadius: 14, border: "none", background: "var(--border-3)", color: "var(--text-1)", fontWeight: 900, fontSize: 15, cursor: "pointer" }}
           >
             Add to Collection
           </button>
@@ -817,7 +817,7 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
         {/* Counter */}
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 24 }}>
           {cards.map((_, i) => (
-            <div key={i} style={{ width: i === index ? 20 : 6, height: 6, borderRadius: 99, background: i < index ? "rgba(255,255,255,.5)" : i === index ? "#fff" : "rgba(255,255,255,.18)", transition: "all 0.25s ease" }} />
+            <div key={i} style={{ width: i === index ? 20 : 6, height: 6, borderRadius: 99, background: i < index ? "rgba(255,255,255,.5)" : i === index ? "#fff" : "var(--border-3)", transition: "all 0.25s ease" }} />
           ))}
         </div>
 
@@ -866,15 +866,15 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
                       {current.rating}
                     </div>
                     {current.is_new && (
-                      <div style={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", background: "linear-gradient(90deg,#16a34a,#22c55e)", borderRadius: 99, padding: "4px 14px", fontSize: 11, fontWeight: 900, color: "#fff", letterSpacing: ".12em", boxShadow: "0 2px 12px rgba(34,197,94,.55)", whiteSpace: "nowrap" }}>
+                      <div style={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", background: "linear-gradient(90deg,#16a34a,#22c55e)", borderRadius: 99, padding: "4px 14px", fontSize: 11, fontWeight: 900, color: "var(--text-1)", letterSpacing: ".12em", boxShadow: "0 2px 12px rgba(34,197,94,.55)", whiteSpace: "nowrap" }}>
                         ✦ NEW
                       </div>
                     )}
-                    <div style={{ position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)", width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", border: `2.5px solid ${meta.color}`, boxShadow: `0 0 20px ${meta.glow}`, background: TEAM_COLORS[current.team] ?? "#1e1e28" }}>
+                    <div style={{ position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)", width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", border: `2.5px solid ${meta.color}`, boxShadow: `0 0 20px ${meta.glow}`, background: TEAM_COLORS[current.team] ?? "var(--surface-3)" }}>
                       <img src={current.player_image} alt={current.player_name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
                     </div>
                     <div style={{ position: "absolute", top: "71%", left: 0, right: 0, textAlign: "center", padding: "0 10px" }}>
-                      <div style={{ fontSize: 13, fontWeight: 900, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: `0 0 12px ${meta.glow}` }}>{current.player_name}</div>
+                      <div style={{ fontSize: 13, fontWeight: 900, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: `0 0 12px ${meta.glow}` }}>{current.player_name}</div>
                     </div>
                     <div style={{ position: "absolute", width: 26, height: 26, bottom: 8, left: 8, borderRadius: "50%", overflow: "hidden", background: "rgba(0,0,0,.55)", border: "1.5px solid rgba(255,255,255,.2)" }}>
                       <img src={current.team_logo} alt={current.team} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -888,7 +888,7 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
                 position: "absolute", inset: 0, borderRadius: 18, overflow: "hidden",
                 backfaceVisibility: "hidden", transform: "rotateY(180deg)",
                 background: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
-                boxShadow: "0 0 0 1.5px rgba(255,255,255,.08), 0 12px 40px rgba(0,0,0,.6)",
+                boxShadow: "0 0 0 1.5px var(--border-2), 0 12px 40px rgba(0,0,0,.6)",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
                 <div style={{ textAlign: "center" }}>
@@ -904,7 +904,7 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
         <button
           onClick={flip}
           disabled={revealing}
-          style={{ width: "100%", padding: "15px", borderRadius: 16, border: "none", background: flipped ? "rgba(255,255,255,.14)" : "rgba(255,255,255,.1)", color: "#f8fafc", fontWeight: 900, fontSize: 15, cursor: revealing ? "default" : "pointer", marginBottom: 10, backdropFilter: "blur(12px)", transition: "background 0.15s ease", opacity: revealing ? 0.4 : 1 }}
+          style={{ width: "100%", padding: "15px", borderRadius: 16, border: "none", background: flipped ? "var(--border-3)" : "var(--border-2)", color: "var(--text-1)", fontWeight: 900, fontSize: 15, cursor: revealing ? "default" : "pointer", marginBottom: 10, backdropFilter: "blur(12px)", transition: "background 0.15s ease", opacity: revealing ? 0.4 : 1 }}
         >
           {revealing ? "…" : !flipped ? "Reveal Card" : index < cards.length - 1 ? `Next Card  ·  ${cards.length - index - 1} left` : "View All"}
         </button>
@@ -944,7 +944,7 @@ function SellConfirmModal({ card, selling, isFeatured, featuredCount, onToggleFe
           <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: ".14em", color: "rgba(255,255,255,.38)", marginBottom: 8 }}>
             {step === "confirm" ? "ARE YOU SURE?" : "CARD OPTIONS"}
           </div>
-          <div style={{ fontSize: 18, fontWeight: 1000, color: "#f8fafc" }}>{card.player_name}</div>
+          <div style={{ fontSize: 18, fontWeight: 1000, color: "var(--text-1)" }}>{card.player_name}</div>
           <div style={{ fontSize: 13, fontWeight: 700, color: meta.color, marginTop: 3 }}>{meta.label}</div>
         </div>
 
@@ -956,8 +956,8 @@ function SellConfirmModal({ card, selling, isFeatured, featuredCount, onToggleFe
               style={{
                 display: "flex", alignItems: "center", gap: 12, width: "100%",
                 padding: "16px 18px", borderRadius: 16,
-                border: `1px solid ${isFeatured ? "rgba(255,215,0,.35)" : "rgba(255,255,255,.1)"}`,
-                background: isFeatured ? "rgba(255,215,0,.08)" : "rgba(255,255,255,.04)",
+                border: `1px solid ${isFeatured ? "rgba(255,215,0,.35)" : "var(--border-2)"}`,
+                background: isFeatured ? "rgba(255,215,0,.08)" : "var(--border-1)",
                 color: isFeatured ? "#ffd700" : "#f1f5f9",
                 cursor: "pointer", fontFamily: "inherit", textAlign: "left" as const,
               }}
@@ -967,7 +967,7 @@ function SellConfirmModal({ card, selling, isFeatured, featuredCount, onToggleFe
               </svg>
               <div>
                 <div style={{ fontSize: 15, fontWeight: 900 }}>{isFeatured ? "Remove from Featured" : "Add to Featured"}</div>
-                <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
+                <div style={{ fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>
                   {isFeatured ? "Currently in your featured cards" : featuredCount >= 5 ? "Featured slots full (5/5)" : `${featuredCount}/5 slots used`}
                 </div>
               </div>
@@ -980,7 +980,7 @@ function SellConfirmModal({ card, selling, isFeatured, featuredCount, onToggleFe
             >
               <div>
                 <div style={{ fontSize: 15, fontWeight: 900 }}>Sell Card</div>
-                <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
+                <div style={{ fontSize: 11, color: "var(--text-2)", marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
                   <CoinIcon size={12} />
                   {value} coins
                 </div>
@@ -990,14 +990,14 @@ function SellConfirmModal({ card, selling, isFeatured, featuredCount, onToggleFe
             {/* Cancel */}
             <button
               onClick={onCancel}
-              style={{ padding: "14px", borderRadius: 16, border: "1px solid rgba(255,255,255,.08)", background: "transparent", color: "#64748b", fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}
+              style={{ padding: "14px", borderRadius: 16, border: "1px solid var(--border-2)", background: "transparent", color: "var(--text-3)", fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}
             >
               Cancel
             </button>
           </div>
         ) : (
           <>
-            <div style={{ background: "rgba(255,255,255,.05)", borderRadius: 14, padding: "14px 16px", marginBottom: 16, textAlign: "center" }}>
+            <div style={{ background: "var(--surface-2)", borderRadius: 14, padding: "14px 16px", marginBottom: 16, textAlign: "center" }}>
               <div style={{ fontSize: 12, color: "rgba(255,255,255,.45)", marginBottom: 6 }}>You will receive</div>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                 <CoinIcon size={18} />
@@ -1011,14 +1011,14 @@ function SellConfirmModal({ card, selling, isFeatured, featuredCount, onToggleFe
             <div style={{ display: "flex", gap: 10 }}>
               <button
                 onClick={() => setStep("options")}
-                style={{ flex: 1, padding: "13px", borderRadius: 14, border: "1px solid rgba(255,255,255,.1)", background: "transparent", color: "rgba(255,255,255,.6)", fontWeight: 900, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}
+                style={{ flex: 1, padding: "13px", borderRadius: 14, border: "1px solid var(--border-2)", background: "transparent", color: "rgba(255,255,255,.6)", fontWeight: 900, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}
               >
                 Go Back
               </button>
               <button
                 onClick={onConfirm}
                 disabled={selling}
-                style={{ flex: 1, padding: "13px", borderRadius: 14, border: "none", background: selling ? "rgba(239,68,68,.4)" : "#ef4444", color: "#fff", fontWeight: 900, fontSize: 14, cursor: selling ? "default" : "pointer", fontFamily: "inherit" }}
+                style={{ flex: 1, padding: "13px", borderRadius: 14, border: "none", background: selling ? "rgba(239,68,68,.4)" : "#ef4444", color: "var(--text-1)", fontWeight: 900, fontSize: 14, cursor: selling ? "default" : "pointer", fontFamily: "inherit" }}
               >
                 {selling ? "Selling…" : "Yes, Sell"}
               </button>
@@ -1042,9 +1042,9 @@ function FilterPill({ active, color, onClick, children }: {
         appearance: "none", border: "none", cursor: "pointer",
         padding: "6px 12px", borderRadius: 999, fontSize: 12, fontWeight: 800,
         flexShrink: 0,
-        background: active ? (color ? `${color}22` : "rgba(255,255,255,.12)") : "transparent",
+        background: active ? (color ? `${color}22` : "var(--border-3)") : "transparent",
         color: active ? (color ?? "#f8fafc") : "rgba(255,255,255,.38)",
-        outline: active ? `1px solid ${color ? `${color}55` : "rgba(255,255,255,.18)"}` : "none",
+        outline: active ? `1px solid ${color ? `${color}55` : "var(--border-3)"}` : "none",
         transition: "all 0.14s ease",
       }}
     >
@@ -1065,8 +1065,8 @@ function CoinIcon({ size = 16 }: { size?: number }) {
 
 const pageStyle: React.CSSProperties = {
   minHeight: "100dvh",
-  background: "#1a1a24",
-  color: "#f8fafc",
+  background: "var(--bg)",
+  color: "var(--text-1)",
   paddingBottom: "calc(80px + env(safe-area-inset-bottom))",
 };
 
@@ -1078,10 +1078,10 @@ const headerStyle: React.CSSProperties = {
   justifyContent: "space-between",
   alignItems: "center",
   padding: "calc(env(safe-area-inset-top) + 12px) 18px 12px 58px",
-  background: "rgba(24,24,31,0.96)",
+  background: "var(--bottom-nav-bg)",
   backdropFilter: "blur(28px) saturate(200%)",
   WebkitBackdropFilter: "blur(28px) saturate(200%)",
-  borderBottom: "0.5px solid rgba(255,255,255,.08)",
+  borderBottom: "0.5px solid var(--border-2)",
 };
 
 const coinBadgeStyle: React.CSSProperties = {
@@ -1101,8 +1101,8 @@ const contentStyle: React.CSSProperties = {
 };
 
 const guestBannerStyle: React.CSSProperties = {
-  background: "rgba(255,255,255,.03)",
-  border: "1px solid rgba(255,255,255,.08)",
+  background: "var(--surface-2)",
+  border: "1px solid var(--border-2)",
   borderRadius: 18,
   padding: "28px 20px",
   textAlign: "center",
@@ -1114,7 +1114,7 @@ const loginBtnStyle: React.CSSProperties = {
   padding: "10px 28px",
   borderRadius: 12,
   background: "#3b82f6",
-  color: "#fff",
+  color: "var(--text-1)",
   fontWeight: 900,
   fontSize: 14,
   textDecoration: "none",
@@ -1133,8 +1133,8 @@ const packRowStyle: React.CSSProperties = {
 };
 
 const packCardStyle: React.CSSProperties = {
-  background: "rgba(255,255,255,.04)",
-  border: "1px solid rgba(255,255,255,.09)",
+  background: "var(--surface-2)",
+  border: "1px solid var(--border-2)",
   borderRadius: 18,
   padding: 12,
   display: "flex",
@@ -1159,7 +1159,7 @@ const oddsBtnStyle: React.CSSProperties = {
   appearance: "none",
   border: "none",
   background: "transparent",
-  color: "#475569",
+  color: "var(--text-3)",
   fontSize: 10,
   fontWeight: 700,
   cursor: "pointer",
@@ -1172,7 +1172,7 @@ const oddsBoxStyle: React.CSSProperties = {
   padding: "8px 10px",
   background: "rgba(0,0,0,.4)",
   borderRadius: 10,
-  border: "1px solid rgba(255,255,255,.06)",
+  border: "1px solid var(--border-1)",
 };
 
 const collectionHeaderStyle: React.CSSProperties = {
@@ -1187,7 +1187,7 @@ const filtersWrapStyle: React.CSSProperties = {
   gap: 8,
   marginBottom: 18,
   background: "rgba(255,255,255,.02)",
-  border: "1px solid rgba(255,255,255,.06)",
+  border: "1px solid var(--border-1)",
   borderRadius: 14,
   padding: "12px 12px 10px",
 };
@@ -1201,7 +1201,7 @@ const filterRowStyle: React.CSSProperties = {
 const filterLabelStyle: React.CSSProperties = {
   fontSize: 11,
   fontWeight: 800,
-  color: "#475569",
+  color: "var(--text-3)",
   minWidth: 36,
   flexShrink: 0,
 };
@@ -1218,9 +1218,9 @@ const filterSelectStyle: React.CSSProperties = {
   width: "min(230px, 100%)",
   appearance: "none",
   backgroundColor: "rgba(255,255,255,.075)",
-  border: "1px solid rgba(255,255,255,.14)",
+  border: "1px solid var(--border-3)",
   borderRadius: 10,
-  color: "#f8fafc",
+  color: "var(--text-1)",
   cursor: "pointer",
   fontFamily: "inherit",
   fontSize: 12,
@@ -1230,12 +1230,12 @@ const filterSelectStyle: React.CSSProperties = {
   backgroundImage: [
     "linear-gradient(45deg, transparent 50%, rgba(255,255,255,.72) 50%)",
     "linear-gradient(135deg, rgba(255,255,255,.72) 50%, transparent 50%)",
-    "linear-gradient(90deg, transparent, rgba(255,255,255,.08))",
+    "linear-gradient(90deg, transparent, var(--border-2))",
   ].join(", "),
   backgroundPosition: "calc(100% - 16px) 50%, calc(100% - 11px) 50%, 100% 0",
   backgroundSize: "5px 5px, 5px 5px",
   backgroundRepeat: "no-repeat",
-  boxShadow: "inset 0 1px 0 rgba(255,255,255,.06), 0 1px 8px rgba(0,0,0,.22)",
+  boxShadow: "inset 0 1px 0 var(--border-1), 0 1px 8px rgba(0,0,0,.22)",
 };
 
 const cardGridStyle: React.CSSProperties = {
@@ -1262,8 +1262,8 @@ const modalOverlayStyle: React.CSSProperties = {
 };
 
 const modalPanelStyle: React.CSSProperties = {
-  background: "#1a1a24",
-  border: "1px solid rgba(255,255,255,.1)",
+  background: "var(--bg)",
+  border: "1px solid var(--border-2)",
   borderRadius: "24px 24px 0 0",
   padding: "28px 20px 24px",
   width: "100%",

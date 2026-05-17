@@ -90,7 +90,7 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
         position: "absolute", top: 3,
         left: on ? 23 : 3,
         width: 20, height: 20, borderRadius: "50%",
-        background: "#fff",
+        background: "var(--text-1)",
         boxShadow: "0 1px 4px rgba(0,0,0,0.5)",
         transition: "left 0.18s cubic-bezier(0.4,0,0.2,1)",
       }} />

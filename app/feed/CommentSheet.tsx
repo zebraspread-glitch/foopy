@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import type { CSSProperties } from "react";
@@ -202,7 +202,7 @@ export default function CommentSheet({ gameId, gameLabel, eventKey, onClose }: P
             <div style={emptyStyle}>
               <div style={{ fontSize: 32, marginBottom: 10 }}>💬</div>
               <div style={{ fontWeight: 800, marginBottom: 4 }}>No comments yet</div>
-              <div style={{ fontSize: 13, color: "#64748b" }}>Be the first to comment!</div>
+              <div style={{ fontSize: 13, color: "var(--text-3)" }}>Be the first to comment!</div>
             </div>
           ) : (
             comments.map(c => (
@@ -246,7 +246,7 @@ export default function CommentSheet({ gameId, gameLabel, eventKey, onClose }: P
             <>
               {replyTo && (
                 <div style={replyBannerStyle}>
-                  <span style={{ color: "#94a3b8", fontSize: 12, fontWeight: 700 }}>
+                  <span style={{ color: "var(--text-2)", fontSize: 12, fontWeight: 700 }}>
                     Replying to <span style={{ color: "#60a5fa" }}>
                       {replyTo.profile?.display_name || replyTo.profile?.username || "user"}
                     </span>
@@ -354,7 +354,7 @@ function CommentRow({
           </button>
 
           {userId && (
-            <button onClick={() => onReply(comment)} style={{ ...actionBtnStyle, color: "#64748b" }}>
+            <button onClick={() => onReply(comment)} style={{ ...actionBtnStyle, color: "var(--text-3)" }}>
               Reply
             </button>
           )}
@@ -454,9 +454,9 @@ const sheetStyle: CSSProperties = {
   position: "relative",
   width: "100%",
   maxHeight: "85dvh",
-  background: "#1a1a24",
+  background: "var(--bg)",
   borderRadius: "20px 20px 0 0",
-  border: "1px solid rgba(255,255,255,0.1)",
+  border: "1px solid var(--border-2)",
   borderBottom: "none",
   display: "flex",
   flexDirection: "column",
@@ -477,28 +477,28 @@ const headerStyle: CSSProperties = {
   alignItems: "center",
   gap: 8,
   padding: "14px 16px 12px",
-  borderBottom: "1px solid rgba(255,255,255,0.07)",
+  borderBottom: "1px solid var(--border-1)",
   flexShrink: 0,
 };
 
 const headerTitleStyle: CSSProperties = {
   fontSize: 16,
   fontWeight: 900,
-  color: "#f8fafc",
+  color: "var(--text-1)",
   letterSpacing: "-0.02em",
 };
 
 const headerSubStyle: CSSProperties = {
   fontSize: 12,
   fontWeight: 700,
-  color: "#475569",
+  color: "var(--text-3)",
   flex: 1,
 };
 
 const closeBtnStyle: CSSProperties = {
   background: "none",
   border: "none",
-  color: "#64748b",
+  color: "var(--text-3)",
   fontSize: 16,
   cursor: "pointer",
   padding: "2px 4px",
@@ -524,7 +524,7 @@ const emptyStyle: CSSProperties = {
   flexDirection: "column",
   alignItems: "center",
   padding: "40px 20px",
-  color: "#94a3b8",
+  color: "var(--text-2)",
   textAlign: "center",
 };
 
@@ -532,7 +532,7 @@ const commentRowStyle: CSSProperties = {
   display: "flex",
   gap: 10,
   padding: "12px 16px 8px",
-  borderBottom: "1px solid rgba(255,255,255,0.04)",
+  borderBottom: "1px solid var(--border-1)",
 };
 
 const avatarStyle: CSSProperties = {
@@ -563,19 +563,19 @@ const commentMetaStyle: CSSProperties = {
 const commentNameStyle: CSSProperties = {
   fontSize: 13,
   fontWeight: 800,
-  color: "#f1f5f9",
+  color: "var(--text-1)",
 };
 
 const commentTimeStyle: CSSProperties = {
   fontSize: 11,
-  color: "#475569",
+  color: "var(--text-3)",
   fontWeight: 600,
 };
 
 const commentBodyStyle: CSSProperties = {
   margin: 0,
   fontSize: 14,
-  color: "#e2e8f0",
+  color: "var(--text-1)",
   lineHeight: 1.5,
   wordBreak: "break-word",
 };
@@ -624,8 +624,8 @@ const replyModalStyle: CSSProperties = {
   width: "100%",
   maxWidth: 640,
   maxHeight: "72%",
-  background: "#050505",
-  border: "1px solid rgba(255,255,255,0.12)",
+  background: "var(--bg)",
+  border: "1px solid var(--border-3)",
   borderRadius: 22,
   overflow: "hidden",
   boxShadow: "0 24px 80px rgba(0,0,0,0.72)",
@@ -638,19 +638,19 @@ const replyModalHeaderStyle: CSSProperties = {
   justifyContent: "space-between",
   alignItems: "center",
   padding: "14px 16px",
-  borderBottom: "1px solid rgba(255,255,255,0.08)",
+  borderBottom: "1px solid var(--border-2)",
 };
 
-const replyModalTitleStyle: CSSProperties = { color: "#f8fafc", fontSize: 16, fontWeight: 1000 };
-const replyModalSubStyle: CSSProperties = { marginTop: 2, color: "#64748b", fontSize: 12, fontWeight: 800 };
+const replyModalTitleStyle: CSSProperties = { color: "var(--text-1)", fontSize: 16, fontWeight: 1000 };
+const replyModalSubStyle: CSSProperties = { marginTop: 2, color: "var(--text-3)", fontSize: 12, fontWeight: 800 };
 
 const replyModalCloseStyle: CSSProperties = {
   width: 34,
   height: 34,
   borderRadius: "50%",
-  border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.07)",
-  color: "#e2e8f0",
+  border: "1px solid var(--border-2)",
+  background: "var(--surface-3)",
+  color: "var(--text-1)",
   fontSize: 24,
   lineHeight: 1,
   cursor: "pointer",
@@ -658,7 +658,7 @@ const replyModalCloseStyle: CSSProperties = {
 
 const replyModalParentStyle: CSSProperties = {
   padding: "4px 0 10px",
-  borderBottom: "1px solid rgba(255,255,255,0.08)",
+  borderBottom: "1px solid var(--border-2)",
 };
 
 const replyModalRepliesStyle: CSSProperties = {
@@ -668,18 +668,18 @@ const replyModalRepliesStyle: CSSProperties = {
 
 const replyModalEmptyStyle: CSSProperties = {
   padding: "22px 16px",
-  color: "#64748b",
+  color: "var(--text-3)",
   fontSize: 13,
   fontWeight: 800,
   textAlign: "center",
 };
 
 const inputAreaStyle: CSSProperties = {
-  borderTop: "1px solid rgba(255,255,255,0.08)",
+  borderTop: "1px solid var(--border-2)",
   padding: "12px 16px",
   paddingBottom: "calc(12px + env(safe-area-inset-bottom))",
   flexShrink: 0,
-  background: "#1a1a24",
+  background: "var(--bg)",
 };
 
 const signInBtnStyle: CSSProperties = {
@@ -687,7 +687,7 @@ const signInBtnStyle: CSSProperties = {
   padding: "14px",
   borderRadius: 14,
   background: "#3b82f6",
-  color: "#fff",
+  color: "var(--text-1)",
   fontWeight: 800,
   fontSize: 15,
   border: "none",
@@ -708,7 +708,7 @@ const replyBannerStyle: CSSProperties = {
 const cancelReplyBtnStyle: CSSProperties = {
   background: "none",
   border: "none",
-  color: "#64748b",
+  color: "var(--text-3)",
   fontSize: 13,
   cursor: "pointer",
   padding: "0 2px",
@@ -722,10 +722,10 @@ const inputRowStyle: CSSProperties = {
 
 const textareaStyle: CSSProperties = {
   flex: 1,
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.1)",
+  background: "var(--surface-3)",
+  border: "1px solid var(--border-2)",
   borderRadius: 12,
-  color: "#f8fafc",
+  color: "var(--text-1)",
   fontSize: 14,
   padding: "10px 14px",
   resize: "none",
@@ -740,7 +740,7 @@ const sendBtnStyle: CSSProperties = {
   borderRadius: "50%",
   background: "#3b82f6",
   border: "none",
-  color: "#fff",
+  color: "var(--text-1)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",

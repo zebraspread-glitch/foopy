@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
@@ -216,7 +216,7 @@ function sideColour(index: number) {
 
 function SkeletonRow({ i }: { i: number }) {
   return (
-    <tr style={{ borderBottom: "1px solid rgba(255,255,255,.05)" }}>
+    <tr style={{ borderBottom: "1px solid var(--border-1)" }}>
       <td style={{ padding: "14px 12px", textAlign: "center", width: 32 }}>
         <div className="skeleton skeleton-line" style={{ width: 14, margin: "0 auto" }} />
       </td>
@@ -306,8 +306,8 @@ export default function LadderPage() {
 
           .ladder-card {
             border-radius: 22px !important;
-            background: #1b1b1b !important;
-            border: 1px solid rgba(255, 255, 255, 0.11) !important;
+            background: var(--surface-1) !important;
+            border: 1px solid var(--border-2) !important;
             overflow-x: hidden !important;
             box-shadow: 0 18px 45px rgba(0, 0, 0, 0.32) !important;
           }
@@ -325,16 +325,16 @@ export default function LadderPage() {
           .ladder-th {
             height: 48px !important;
             padding: 10px 4px !important;
-            background: #1b1b1b !important;
+            background: var(--surface-1) !important;
             font-size: 11px !important;
-            color: rgba(255, 255, 255, 0.76) !important;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.13) !important;
+            color: var(--text-2) !important;
+            border-bottom: 1px solid var(--border-2) !important;
           }
 
           .ladder-row {
             height: 56px !important;
-            background: #1b1b1b !important;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.09) !important;
+            background: var(--surface-1) !important;
+            border-bottom: 1px solid var(--border-1) !important;
             position: relative;
           }
 
@@ -347,7 +347,7 @@ export default function LadderPage() {
             width: auto !important;
             height: auto !important;
             background: transparent !important;
-            color: #fff !important;
+            color: var(--text-1) !important;
             font-size: 16px !important;
             font-weight: 950 !important;
           }
@@ -405,18 +405,18 @@ export default function LadderPage() {
             padding: 0 3px !important;
             font-size: 13px !important;
             font-weight: 950 !important;
-            color: #ffffff !important;
+            color: var(--text-1) !important;
           }
 
           .ladder-points-cell {
             padding: 0 9px 0 3px !important;
             font-size: 14px !important;
-            color: #fff !important;
+            color: var(--text-1) !important;
             font-weight: 950 !important;
           }
 
           .ladder-percent-cell {
-            color: #ffffff !important;
+            color: var(--text-1) !important;
           }
 
 
@@ -500,7 +500,7 @@ export default function LadderPage() {
                           onClick={() => router.push(`/team/${toTeamSlug(team.team)}`)}
                           style={{
                             background: stripe,
-                            borderBottom: "1px solid rgba(255,255,255,.05)",
+                            borderBottom: "1px solid var(--border-1)",
                             borderLeft: colour !== "transparent" ? `5px solid ${colour}` : "5px solid transparent",
                             cursor: "pointer",
                           }}
@@ -549,10 +549,10 @@ export default function LadderPage() {
                               {team.wins}-{team.losses}{team.draws > 0 ? `-${team.draws}` : ""}
                             </span>
                           </td>
-                          <td style={{ ...tdCentreStyle, color: "#ffffff", fontWeight: 900, fontSize: 15 }} className="ladder-points-cell">
+                          <td style={{ ...tdCentreStyle, color: "var(--text-1)", fontWeight: 900, fontSize: 15 }} className="ladder-points-cell">
                             {team.points}
                           </td>
-                          <td style={{ ...tdCentreStyle, color: "#ffffff" }} className="ladder-percent-cell">
+                          <td style={{ ...tdCentreStyle, color: "var(--text-1)" }} className="ladder-percent-cell">
                             {team.percentage.toFixed(1)}
                           </td>
                         </tr>
@@ -589,8 +589,8 @@ export default function LadderPage() {
 
 const pageStyle: CSSProperties = {
   minHeight: "100dvh",
-  background: "#14141e",
-  color: "#fff",
+  background: "var(--bg)",
+  color: "var(--text-1)",
   paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
 };
 
@@ -604,10 +604,10 @@ const headerStyle: CSSProperties = {
   gap: 12,
   height: "calc(56px + env(safe-area-inset-top))",
   padding: "env(safe-area-inset-top) 16px 0 58px",
-  background: "rgba(24,24,31,0.96)",
+  background: "var(--bottom-nav-bg)",
   backdropFilter: "blur(28px) saturate(200%)",
   WebkitBackdropFilter: "blur(28px) saturate(200%)",
-  borderBottom: "0.5px solid rgba(255,255,255,.08)",
+  borderBottom: "0.5px solid var(--border-2)",
 };
 
 const titleStyle: CSSProperties = {
@@ -620,8 +620,8 @@ const tabsStyle: CSSProperties = {
   display: "flex",
   padding: 3,
   borderRadius: 999,
-  background: "rgba(255,255,255,.06)",
-  border: "1px solid rgba(255,255,255,.1)",
+  background: "var(--surface-3)",
+  border: "1px solid var(--border-2)",
   gap: 2,
 };
 
@@ -630,7 +630,7 @@ const tabBtnStyle: CSSProperties = {
   borderRadius: 999,
   padding: "7px 14px",
   background: "transparent",
-  color: "#64748b",
+  color: "var(--text-3)",
   fontSize: 12,
   fontWeight: 900,
   cursor: "pointer",
@@ -638,8 +638,8 @@ const tabBtnStyle: CSSProperties = {
 };
 
 const activeTabStyle: CSSProperties = {
-  background: "white",
-  color: "#14141e",
+  background: "var(--text-1)",
+  color: "var(--bg)",
 };
 
 const activeTabLiveStyle: CSSProperties = {
@@ -656,8 +656,8 @@ const wrapStyle: CSSProperties = {
 
 const cardStyle: CSSProperties = {
   borderRadius: 16,
-  border: "1px solid rgba(255,255,255,.09)",
-  background: "#070707",
+  border: "1px solid var(--border-2)",
+  background: "var(--surface-1)",
   overflow: "hidden",
   overflowX: "auto",
 };
@@ -665,13 +665,13 @@ const cardStyle: CSSProperties = {
 const thStyle: CSSProperties = {
   padding: "12px",
   fontSize: 11,
-  color: "#475569",
+  color: "var(--text-3)",
   fontWeight: 900,
   textTransform: "uppercase",
   letterSpacing: "0.06em",
   textAlign: "center",
-  borderBottom: "1px solid rgba(255,255,255,.08)",
-  background: "#050505",
+  borderBottom: "1px solid var(--border-2)",
+  background: "var(--bg)",
 };
 
 const tdCentreStyle: CSSProperties = {
@@ -722,7 +722,7 @@ const logoFallbackStyle: CSSProperties = {
   width: 28,
   height: 28,
   borderRadius: "50%",
-  background: "#272731",
+  background: "var(--surface-3)",
   display: "block",
 };
 
@@ -740,8 +740,8 @@ const legendStyle: CSSProperties = {
   justifyContent: "center",
   flexWrap: "wrap",
   padding: "14px 16px",
-  borderTop: "1px solid rgba(255,255,255,.06)",
-  background: "#050505",
+  borderTop: "1px solid var(--border-1)",
+  background: "var(--bg)",
 };
 
 const legendItemStyle: CSSProperties = {
@@ -750,7 +750,7 @@ const legendItemStyle: CSSProperties = {
   gap: 7,
   fontSize: 12,
   fontWeight: 800,
-  color: "#94a3b8",
+  color: "var(--text-2)",
 };
 
 const legendDotStyle: CSSProperties = {
@@ -767,7 +767,7 @@ const errorStyle: CSSProperties = {
   justifyContent: "center",
   padding: "60px 24px",
   textAlign: "center",
-  color: "#94a3b8",
+  color: "var(--text-2)",
 };
 
 const retryBtnStyle: CSSProperties = {
@@ -776,7 +776,7 @@ const retryBtnStyle: CSSProperties = {
   borderRadius: 999,
   border: "1px solid rgba(255,255,255,.15)",
   background: "transparent",
-  color: "#fff",
+  color: "var(--text-1)",
   fontWeight: 800,
   fontSize: 14,
   cursor: "pointer",

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -158,7 +158,7 @@ function FavSlotView({ slot }: { slot: NonNullable<FavSlot> }) {
 
   return (
     <div style={{ minWidth: 0, textAlign: "center" as const }}>
-      <div style={{ width: "100%", aspectRatio: "1", borderRadius: "50%", overflow: "hidden", border: "2px solid rgba(255,255,255,.12)", display: "flex", alignItems: "center", justifyContent: "center", background: slot.color || "#1e2438" }}>
+      <div style={{ width: "100%", aspectRatio: "1", borderRadius: "50%", overflow: "hidden", border: "2px solid var(--border-3)", display: "flex", alignItems: "center", justifyContent: "center", background: slot.color || "#1e2438" }}>
         {showImg ? (
           <img
             src={slot.image}
@@ -167,10 +167,10 @@ function FavSlotView({ slot }: { slot: NonNullable<FavSlot> }) {
             style={{ width: "100%", height: "100%", objectFit: "cover" }}
           />
         ) : (
-          <span style={{ color: "#fff", fontSize: 16, fontWeight: 950 }}>{initials(slot.label)}</span>
+          <span style={{ color: "var(--text-1)", fontSize: 16, fontWeight: 950 }}>{initials(slot.label)}</span>
         )}
       </div>
-      <div style={{ marginTop: 7, color: "#64748b", fontSize: 10, fontWeight: 900, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
+      <div style={{ marginTop: 7, color: "var(--text-3)", fontSize: 10, fontWeight: 900, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
         {slot.type === "team"
           ? slot.label.replace(" Lions","").replace(" Cats","").replace(" Giants","").replace(" Bulldogs","")
           : slot.label.split(" ").pop()}
@@ -183,11 +183,11 @@ function TeamLogoImg({ name }: { name: string }) {
   const team = TEAMS.find(t => t.name === name || t.name.startsWith(name));
   const [err, setErr] = useState(false);
   if (!team || err) return (
-    <div style={{ width: 28, height: 28, borderRadius: "50%", background: team?.color ?? "#1e293b", border: "1.5px solid rgba(255,255,255,.12)" }} />
+    <div style={{ width: 28, height: 28, borderRadius: "50%", background: team?.color ?? "#1e293b", border: "1.5px solid var(--border-3)" }} />
   );
   return (
     <img src={team.logo} alt={name} onError={() => setErr(true)}
-      style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", border: "1.5px solid rgba(255,255,255,.12)", background: team.color }} />
+      style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", border: "1.5px solid var(--border-3)", background: team.color }} />
   );
 }
 
@@ -202,23 +202,23 @@ function CommentRow({ comment, imgSrc, teams, href }: {
   return (
     <div
       onClick={() => href && router.push(href)}
-      style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 14px", borderRadius: 14, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.07)", cursor: href ? "pointer" : "default" }}
+      style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 14px", borderRadius: 14, background: "var(--surface-2)", border: "1px solid var(--border-1)", cursor: href ? "pointer" : "default" }}
     >
       <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "#e2e8f0", lineHeight: 1.5, wordBreak: "break-word" as const }}>
+        <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "var(--text-1)", lineHeight: 1.5, wordBreak: "break-word" as const }}>
           {comment.body}
         </p>
-        <div style={{ marginTop: 6, fontSize: 11, fontWeight: 700, color: "#475569" }}>
+        <div style={{ marginTop: 6, fontSize: 11, fontWeight: 700, color: "var(--text-3)" }}>
           {timeAgo(comment.created_at)}
         </div>
       </div>
       {imgSrc && !imgErr ? (
         <img src={imgSrc} alt="" onError={() => setImgErr(true)}
-          style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: "2px solid rgba(255,255,255,.1)", background: "#1e1e28" }} />
+          style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: "2px solid var(--border-2)", background: "var(--surface-1)" }} />
       ) : teams ? (
         <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
           <TeamLogoImg name={teams.hteam} />
-          <span style={{ fontSize: 10, fontWeight: 800, color: "#334155" }}>vs</span>
+          <span style={{ fontSize: 10, fontWeight: 800, color: "var(--text-4)" }}>vs</span>
           <TeamLogoImg name={teams.ateam} />
         </div>
       ) : null}
@@ -423,8 +423,8 @@ export default function PublicProfilePage() {
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "55vh", gap: 16, padding: "0 24px", textAlign: "center" }}>
           <div style={{ fontSize: 52 }}>👤</div>
           <h2 style={{ margin: 0, fontSize: 22, fontWeight: 950 }}>User not found</h2>
-          <p style={{ margin: 0, color: "#64748b", fontSize: 14 }}>This profile doesn't exist or may have been removed.</p>
-          <button onClick={() => router.back()} style={{ padding: "12px 22px", borderRadius: 14, border: "1px solid rgba(255,255,255,.1)", background: "#1e1e28", color: "#fff", fontWeight: 900, cursor: "pointer" }}>Go back</button>
+          <p style={{ margin: 0, color: "var(--text-3)", fontSize: 14 }}>This profile doesn't exist or may have been removed.</p>
+          <button onClick={() => router.back()} style={{ padding: "12px 22px", borderRadius: 14, border: "1px solid var(--border-2)", background: "var(--surface-1)", color: "var(--text-1)", fontWeight: 900, cursor: "pointer" }}>Go back</button>
         </div>
       </main>
     );
@@ -475,7 +475,7 @@ export default function PublicProfilePage() {
       <div style={wrapStyle}>
 
         {/* ── Profile header ── */}
-        <section style={{ background: "#1a1a24", border: "1px solid rgba(255,255,255,.1)", borderRadius: 18, overflow: "hidden" }}>
+        <section style={{ background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18, overflow: "hidden" }}>
           {/* Banner — clean, nothing on top */}
           <div style={{
             height: 110,
@@ -492,9 +492,9 @@ export default function PublicProfilePage() {
             {/* Avatar */}
             <div style={{ flexShrink: 0 }}>
               {profile.avatar_url ? (
-                <img src={profile.avatar_url} alt={label} style={{ width: 90, height: 90, borderRadius: "50%", objectFit: "cover", border: "3px solid #111", boxShadow: "0 0 0 2px rgba(255,255,255,.12)", flexShrink: 0 }} />
+                <img src={profile.avatar_url} alt={label} style={{ width: 90, height: 90, borderRadius: "50%", objectFit: "cover", border: "3px solid var(--bg)", boxShadow: "0 0 0 2px var(--border-3)", flexShrink: 0 }} />
               ) : (
-                <div style={{ width: 90, height: 90, borderRadius: "50%", background: `linear-gradient(135deg,${avBg},#050505)`, color: avFg, display: "grid", placeItems: "center", fontSize: 32, fontWeight: 950, border: "3px solid #111", boxShadow: `0 0 0 2px rgba(255,255,255,.12),0 0 30px ${avFg}44`, flexShrink: 0 }}>
+                <div style={{ width: 90, height: 90, borderRadius: "50%", background: `linear-gradient(135deg,${avBg},var(--surface-1))`, color: avFg, display: "grid", placeItems: "center", fontSize: 32, fontWeight: 950, border: "3px solid var(--bg)", boxShadow: `0 0 0 2px var(--border-3),0 0 30px ${avFg}44`, flexShrink: 0 }}>
                   {label[0].toUpperCase()}
                 </div>
               )}
@@ -502,18 +502,18 @@ export default function PublicProfilePage() {
 
             {/* Username + pills */}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <h1 style={{ margin: "0 0 10px", fontSize: 18, fontWeight: 950, letterSpacing: "-0.04em", lineHeight: 1, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
+              <h1 style={{ margin: "0 0 10px", fontSize: 18, fontWeight: 950, letterSpacing: "-0.04em", lineHeight: 1, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
                 @{profile.username}
               </h1>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as const, alignItems: "center" }}>
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 999, background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.2)" }}>
                   <span style={{ fontSize: 13, fontWeight: 800, color: "#4ade80" }}>{xp.toLocaleString()} XP</span>
                 </div>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 999, background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.1)" }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 999, background: "var(--surface-3)", border: "1px solid var(--border-2)" }}>
                   <Layers size={14} color="#94a3b8" strokeWidth={2} />
-                  <span style={{ fontSize: 13, fontWeight: 800, color: "#e2e8f0" }}>{cardCount.toLocaleString()} cards</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: "var(--text-1)" }}>{cardCount.toLocaleString()} cards</span>
                 </div>
-                <button onClick={() => setShowFriends(true)} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 999, background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.1)", color: "#e2e8f0", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
+                <button onClick={() => setShowFriends(true)} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 999, background: "var(--surface-3)", border: "1px solid var(--border-2)", color: "var(--text-1)", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
                   <Users size={14} color="#94a3b8" strokeWidth={2} />
                   <span>{friends.length} friends</span>
                 </button>
@@ -522,7 +522,7 @@ export default function PublicProfilePage() {
           </div>
 
           {/* Bio */}
-          <div style={{ margin: "0 14px", padding: "14px 16px", borderRadius: 16, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)" }}>
+          <div style={{ margin: "0 14px", padding: "14px 16px", borderRadius: 16, background: "var(--surface-2)", border: "1px solid var(--border-2)" }}>
             <p style={{ margin: 0, color: profile.bio ? "#cbd5e1" : "#475569", fontSize: 14, fontWeight: 600, lineHeight: 1.6, fontStyle: profile.bio ? "normal" : "italic" }}>
               {profile.bio || "No bio yet."}
             </p>
@@ -538,7 +538,7 @@ export default function PublicProfilePage() {
                   flex: 1, padding: "11px 14px", borderRadius: 14, border: "none", cursor: "pointer",
                   fontFamily: "inherit", fontWeight: 900, fontSize: 14,
                   background: friendStatus === "accepted" ? "rgba(239,68,68,.15)"
-                    : friendStatus === "pending_sent" ? "rgba(255,255,255,.08)"
+                    : friendStatus === "pending_sent" ? "var(--border-2)"
                     : friendStatus === "pending_received" ? "rgba(59,130,246,.2)"
                     : "rgba(59,130,246,.2)",
                   color: friendStatus === "accepted" ? "#f87171"
@@ -556,9 +556,9 @@ export default function PublicProfilePage() {
                 onClick={() => router.push(`/dms?open=${profile.id}`)}
                 style={{
                   flex: 1, padding: "11px 14px", borderRadius: 14,
-                  border: "1px solid rgba(255,255,255,.12)", cursor: "pointer",
+                  border: "1px solid var(--border-3)", cursor: "pointer",
                   fontFamily: "inherit", fontWeight: 900, fontSize: 14,
-                  background: "rgba(255,255,255,.06)", color: "#e2e8f0",
+                  background: "var(--surface-3)", color: "var(--text-1)",
                 }}
               >
                 Message
@@ -568,14 +568,14 @@ export default function PublicProfilePage() {
         </section>
 
         {/* ── Favourites ── */}
-        <section style={{ background: "#1a1a24", border: "1px solid rgba(255,255,255,.1)", borderRadius: 18, padding: "18px 16px 22px" }}>
-          <div style={{ marginBottom: 16, fontSize: 12, fontWeight: 800, color: "#64748b", textTransform: "uppercase" as const, letterSpacing: "0.08em" }}>
+        <section style={{ background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18, padding: "18px 16px 22px" }}>
+          <div style={{ marginBottom: 16, fontSize: 12, fontWeight: 800, color: "var(--text-3)", textTransform: "uppercase" as const, letterSpacing: "0.08em" }}>
             favorites
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12 }}>
             {favourites.map((slot, i) => {
               if (!slot) return (
-                <div key={i} style={{ width: "100%", aspectRatio: "1", borderRadius: "50%", border: "2px dashed rgba(255,255,255,.1)", background: "rgba(255,255,255,.025)" }} />
+                <div key={i} style={{ width: "100%", aspectRatio: "1", borderRadius: "50%", border: "2px dashed var(--border-2)", background: "rgba(255,255,255,.025)" }} />
               );
               if (slot.type === "player") {
                 const playerSlug = slot.label.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
@@ -599,11 +599,11 @@ export default function PublicProfilePage() {
           const hasFeatured = featuredWithData.length > 0;
 
           return (
-            <Link href={`/album/${profile.username}`} style={{ textDecoration: "none", color: "#fff" }}>
-              <section style={{ background: "#1a1a24", border: "1px solid rgba(255,255,255,.1)", borderRadius: 18, padding: "18px 16px 20px", overflow: "hidden" }}>
+            <Link href={`/album/${profile.username}`} style={{ textDecoration: "none", color: "var(--text-1)" }}>
+              <section style={{ background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18, padding: "18px 16px 20px", overflow: "hidden" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: "#64748b", textTransform: "uppercase" as const, letterSpacing: "0.08em" }}>featured cards</div>
-                  {hasFeatured && <div style={{ fontSize: 11, fontWeight: 700, color: "#334155" }}>{featuredWithData.length}/5</div>}
+                  <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text-3)", textTransform: "uppercase" as const, letterSpacing: "0.08em" }}>featured cards</div>
+                  {hasFeatured && <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-4)" }}>{featuredWithData.length}/5</div>}
                 </div>
                 {hasFeatured ? (
                   <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 2, scrollbarWidth: "none" as const }}>
@@ -613,14 +613,14 @@ export default function PublicProfilePage() {
                         <div key={idx} style={{ flexShrink: 0, position: "relative", width: 110, height: 154, borderRadius: 14, overflow: "hidden", border: `1.5px solid ${meta.color}99`, boxShadow: `0 2px 16px ${meta.glow}` }}>
                           <img src={`/cards/${fc.rarity}.png`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.04) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,.5) 65%, rgba(0,0,0,.88) 100%)" }} />
-                          <div style={{ position: "absolute", top: "11%", left: "50%", transform: "translateX(-50%)", width: "66%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", border: `2px solid ${meta.color}`, boxShadow: `0 0 12px ${meta.glow}`, background: "#1a1a24" }}>
+                          <div style={{ position: "absolute", top: "11%", left: "50%", transform: "translateX(-50%)", width: "66%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", border: `2px solid ${meta.color}`, boxShadow: `0 0 12px ${meta.glow}`, background: "var(--bg)" }}>
                             <img src={`/players/${player.folder}/${player.id}.png`} alt={player.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
                           </div>
                           <div style={{ position: "absolute", top: 5, right: 5, background: "rgba(0,0,0,.85)", color: meta.color, fontSize: 7, fontWeight: 1000, padding: "2px 5px", borderRadius: 5, border: `1px solid ${meta.color}44`, letterSpacing: ".04em" }}>
                             {fc.rarity.toUpperCase()}
                           </div>
                           <div style={{ position: "absolute", bottom: 10, left: 0, right: 0, textAlign: "center", padding: "0 5px" }}>
-                            <div style={{ fontSize: 9, fontWeight: 900, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: `0 0 10px ${meta.glow}` }}>
+                            <div style={{ fontSize: 9, fontWeight: 900, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: `0 0 10px ${meta.glow}` }}>
                               {player.name}
                             </div>
                           </div>
@@ -633,7 +633,7 @@ export default function PublicProfilePage() {
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="1.5">
                       <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
                     </svg>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: "#334155" }}>No featured cards yet</div>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text-4)" }}>No featured cards yet</div>
                   </div>
                 )}
               </section>
@@ -644,19 +644,19 @@ export default function PublicProfilePage() {
         {/* ── Album ── */}
         <Link href={`/album/${profile.username}`} style={{
           display: "flex", alignItems: "center", justifyContent: "center",
-          background: "#1a1a24", border: "1px solid rgba(255,255,255,.1)", borderRadius: 18,
-          padding: "22px 20px", textDecoration: "none", color: "#fff",
+          background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18,
+          padding: "22px 20px", textDecoration: "none", color: "var(--text-1)",
         }}>
           <span style={{ fontSize: 26, fontWeight: 950, letterSpacing: "-0.04em" }}>Album</span>
         </Link>
 
         {/* ── Stats row ── */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <div style={{ background: "#1a1a24", border: "1px solid rgba(255,255,255,.1)", borderRadius: 18, padding: "18px 16px" }}>
+          <div style={{ background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18, padding: "18px 16px" }}>
             <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.35)", letterSpacing: "0.08em", textTransform: "uppercase" as const, marginBottom: 6 }}>
               member since
             </div>
-            <div style={{ fontSize: 15, fontWeight: 950, letterSpacing: "-0.02em", color: "#f8fafc" }}>
+            <div style={{ fontSize: 15, fontWeight: 950, letterSpacing: "-0.02em", color: "var(--text-1)" }}>
               {profile.created_at
                 ? new Date(profile.created_at).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })
                 : "—"}
@@ -668,11 +668,11 @@ export default function PublicProfilePage() {
             )}
           </div>
 
-          <div style={{ background: "#1a1a24", border: "1px solid rgba(255,255,255,.1)", borderRadius: 18, padding: "18px 16px" }}>
+          <div style={{ background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18, padding: "18px 16px" }}>
             <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.35)", letterSpacing: "0.08em", textTransform: "uppercase" as const, marginBottom: 6 }}>
               Polls win rate
             </div>
-            <div style={{ fontSize: 15, fontWeight: 950, letterSpacing: "-0.02em", color: "#f8fafc" }}>
+            <div style={{ fontSize: 15, fontWeight: 950, letterSpacing: "-0.02em", color: "var(--text-1)" }}>
               —
             </div>
           </div>
@@ -680,8 +680,8 @@ export default function PublicProfilePage() {
 
         {/* ── Comment history ── */}
         {comments.length > 0 && (
-          <section style={{ background: "#1a1a24", border: "1px solid rgba(255,255,255,.1)", borderRadius: 18, padding: "18px 16px 20px" }}>
-            <div style={{ marginBottom: 14, fontSize: 12, fontWeight: 800, color: "#64748b", textTransform: "uppercase" as const, letterSpacing: "0.08em" }}>
+          <section style={{ background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18, padding: "18px 16px 20px" }}>
+            <div style={{ marginBottom: 14, fontSize: 12, fontWeight: 800, color: "var(--text-3)", textTransform: "uppercase" as const, letterSpacing: "0.08em" }}>
               comments
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -735,20 +735,20 @@ export default function PublicProfilePage() {
 
       {/* ── Friends overlay ── */}
       {showFriends && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "#14141e", color: "#fff", overflowY: "auto" }}>
-          <div style={{ height: 58, display: "flex", alignItems: "center", gap: 18, padding: "0 20px", background: "#050505", borderBottom: "1px solid rgba(255,255,255,.09)", position: "sticky", top: 0 }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "var(--bg)", color: "var(--text-1)", overflowY: "auto" }}>
+          <div style={{ height: 58, display: "flex", alignItems: "center", gap: 18, padding: "0 20px", background: "var(--bg)", borderBottom: "1px solid var(--border-2)", position: "sticky", top: 0 }}>
             <button onClick={() => setShowFriends(false)} style={backBtnStyle}>← Back</button>
             <strong style={{ fontSize: 18 }}>Friends</strong>
           </div>
           <div style={{ maxWidth: 680, margin: "0 auto", padding: 20, display: "flex", flexDirection: "column", gap: 10 }}>
             {friends.length === 0 ? (
-              <div style={{ color: "#64748b", fontSize: 14, fontWeight: 800, padding: "30px 0", textAlign: "center" }}>No friends yet.</div>
+              <div style={{ color: "var(--text-3)", fontSize: 14, fontWeight: 800, padding: "30px 0", textAlign: "center" }}>No friends yet.</div>
             ) : (
               friends.map(f => (
-                <button key={f.id} onClick={() => router.push(`/profile/${f.username}`)} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "12px 14px", borderRadius: 16, border: "1px solid rgba(255,255,255,.08)", background: "#1e1e28", color: "#fff", cursor: "pointer", textAlign: "left" as const, fontFamily: "inherit" }}>
+                <button key={f.id} onClick={() => router.push(`/profile/${f.username}`)} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "12px 14px", borderRadius: 16, border: "1px solid var(--border-2)", background: "var(--surface-1)", color: "var(--text-1)", cursor: "pointer", textAlign: "left" as const, fontFamily: "inherit" }}>
                   {f.avatar_url
                     ? <img src={f.avatar_url} alt={f.username || ""} style={{ width: 42, height: 42, borderRadius: "50%", objectFit: "cover" }} />
-                    : <div style={{ width: 42, height: 42, borderRadius: "50%", background: "#1e1e28", color: "#94a3b8", display: "grid", placeItems: "center", fontWeight: 950, flexShrink: 0 }}>{(f.username || "?")[0].toUpperCase()}</div>
+                    : <div style={{ width: 42, height: 42, borderRadius: "50%", background: "var(--surface-1)", color: "var(--text-2)", display: "grid", placeItems: "center", fontWeight: 950, flexShrink: 0 }}>{(f.username || "?")[0].toUpperCase()}</div>
                   }
                   <span style={{ fontSize: 15, fontWeight: 900 }}>@{f.username}</span>
                 </button>
@@ -765,8 +765,8 @@ export default function PublicProfilePage() {
 
 const pageStyle: React.CSSProperties = {
   minHeight: "100dvh",
-  background: "#14141e",
-  color: "#fff",
+  background: "var(--bg)",
+  color: "var(--text-1)",
   paddingBottom: "calc(95px + env(safe-area-inset-bottom))",
 };
 
@@ -796,8 +796,8 @@ const wrapStyle: React.CSSProperties = {
 };
 
 const cardStyle: React.CSSProperties = {
-  background: "#1a1a24",
-  border: "1px solid rgba(255,255,255,.1)",
+  background: "var(--bg)",
+  border: "1px solid var(--border-2)",
   borderRadius: 18,
   overflow: "hidden",
 };
@@ -808,6 +808,6 @@ const avatarStyle: React.CSSProperties = {
   borderRadius: "50%",
   objectFit: "cover",
   border: "3px solid #000",
-  boxShadow: "0 0 0 2px rgba(255,255,255,.12)",
+  boxShadow: "0 0 0 2px var(--border-3)",
   flexShrink: 0,
 };
