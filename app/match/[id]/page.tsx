@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Check, ChevronLeft } from "lucide-react";
 import matchStatsJson from "@/app/data/game-stats.json";
@@ -907,7 +908,15 @@ function PlayerAvatar({ name, team }: { name: any; team?: any }) {
       }}
     >
       {!failed && src ? (
-        <img key={src} src={src} alt={safeName} style={playerAvatarImageStyle} onError={() => setFailed(true)} />
+        <Image
+          key={src}
+          src={src}
+          alt={safeName}
+          fill
+          sizes="48px"
+          style={playerAvatarImageStyle}
+          onError={() => setFailed(true)}
+        />
       ) : (
         <span style={playerInitialsStyle}>{getInitials(safeName)}</span>
       )}
@@ -4695,6 +4704,7 @@ const playerBubbleStyle: CSSProperties = { display: "inline-flex", alignItems: "
 const playerAvatarWrapStyle: CSSProperties = {
   width: 48,
   height: 48,
+  position: "relative",
   borderRadius: "50%",
   overflow: "hidden",
   display: "inline-flex",
@@ -4702,7 +4712,7 @@ const playerAvatarWrapStyle: CSSProperties = {
   justifyContent: "center",
   flexShrink: 0
 };
-const playerAvatarImageStyle: CSSProperties = { width: "100%", height: "100%", objectFit: "cover", display: "block" };
+const playerAvatarImageStyle: CSSProperties = { objectFit: "cover", objectPosition: "center top" };
 const playerInitialsStyle: CSSProperties = { color: "#fff", fontSize: 15, fontWeight: 900 };
 const emptyFeedStyle: CSSProperties = { marginTop: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 14, padding: "20px 16px", color: "#475569", fontSize: 14, fontWeight: 600, textAlign: "center" };
 const countdownBoxStyle: CSSProperties = {
