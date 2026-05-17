@@ -4283,16 +4283,6 @@
     "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--finnegan-davis"
   },
   {
-    "id": "harrison_himmelberg",
-    "name": "Harrison Himmelberg",
-    "team": "GWS",
-    "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
-    "statsIds": [],
-    "footyWireUrl": "https://www.footywire.compp-greater-western-sydney-giants--harrison-himmelberg"
-  },
-  {
     "id": "harrison_oliver",
     "name": "Harrison Oliver",
     "team": "GWS",
@@ -6628,16 +6618,6 @@
     "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--mitch-zadow"
   },
   {
-    "id": "oliver_wines",
-    "name": "Oliver Wines",
-    "team": "Port Adelaide",
-    "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
-    "statsIds": [],
-    "footyWireUrl": "https://www.footywire.compp-port-adelaide-power--oliver-wines"
-  },
-  {
     "id": "ollie_lord",
     "name": "Ollie Lord",
     "team": "Port Adelaide",
@@ -6891,17 +6871,6 @@
     ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.compp-richmond-tigers--jonty-faull"
-  },
-  {
-    "id": "jonty_faull",
-    "name": "Jonty Faull",
-    "team": "Richmond",
-    "aliases": [],
-    "apiSportsId": 1944,
-    "eventIds": [
-      1944
-    ],
-    "statsIds": []
   },
   {
     "id": "josh_smillie",
@@ -8805,17 +8774,6 @@
     ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.compp-west-coast-eagles--tom-gross"
-  },
-  {
-    "id": "tom_hanily",
-    "name": "Tom Hanily",
-    "team": "West Coast",
-    "aliases": [],
-    "apiSportsId": 1909,
-    "eventIds": [
-      1909
-    ],
-    "statsIds": []
   },
   {
     "id": "tom_mccarthy",

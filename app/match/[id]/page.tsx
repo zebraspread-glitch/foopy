@@ -773,17 +773,15 @@ function TeamScore({ team, score, align = "left" }: { team: any; score: any; ali
       {/* Logo */}
       <Link href={`/team/${toTeamSlug(safeTeam)}`} style={{ textDecoration: "none", flexShrink: 0 }}>
         <div style={{
-          width: "clamp(82px, 17vw, 116px)", height: "clamp(82px, 17vw, 116px)", borderRadius: "50%", flexShrink: 0,
-          background: `radial-gradient(circle at 45% 35%, var(--border-3), ${accent}24 48%, var(--border-1) 100%)`,
-          border: "1px solid var(--border-3)",
-          boxShadow: `0 22px 48px ${accent}30, 0 4px 22px rgba(0,0,0,.45), inset 0 1px 0 var(--border-3)`,
-          overflow: "hidden",
+          width: "clamp(82px, 17vw, 116px)", height: "clamp(82px, 17vw, 116px)",
+          borderRadius: "50%", flexShrink: 0, overflow: "hidden",
+          boxShadow: `0 22px 48px ${accent}30, 0 4px 22px rgba(0,0,0,.45)`,
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
           <img
             src={getLogo(safeTeam)}
             alt={safeTeam}
-            style={{ width: "92%", height: "92%", objectFit: "contain", borderRadius: "50%", display: "block" }}
+            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
           />
         </div>
       </Link>
@@ -1525,6 +1523,185 @@ function generateInsights(
     ...pick4(homeTeam, "home"),
     ...pick4(awayTeam, "away"),
   ];
+}
+
+function formResult(game: MatchGame, focusTeam: string): "W" | "L" | "D" {
+  const isHome = flexMatchTeam(game.hteam, focusTeam);
+  const ts = isHome ? Number(game.hscore ?? 0) : Number(game.ascore ?? 0);
+  const os = isHome ? Number(game.ascore ?? 0) : Number(game.hscore ?? 0);
+  if (ts > os) return "W";
+  if (ts < os) return "L";
+  return "D";
+}
+
+function FormColumn({ team, games }: { team: string; games: MatchGame[] }) {
+  return (
+    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+      {games.length === 0
+        ? <span style={{ fontSize: 12, color: "rgba(255,255,255,0.25)", textAlign: "center", padding: "16px 0" }}>No data</span>
+        : games.map((g, i) => {
+            const hLogo = getLogo(safeText(g.hteam, ""));
+            const aLogo = getLogo(safeText(g.ateam, ""));
+            const result = formResult(g, team);
+            const pillBg = result === "W" ? "#16a34a" : result === "L" ? "#dc2626" : "#475569";
+            return (
+              <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                {/* home logo */}
+                <div style={{ width: 48, height: 48, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)" }}>
+                  <img src={hLogo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                </div>
+                {/* score pill */}
+                <div style={{
+                  background: pillBg,
+                  borderRadius: 10,
+                  minWidth: 72,
+                  padding: "6px 10px",
+                  textAlign: "center",
+                  flexShrink: 0,
+                }}>
+                  <span style={{ fontSize: 14, fontWeight: 900, color: "#fff", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em", lineHeight: 1 }}>
+                    {g.hscore ?? 0} – {g.ascore ?? 0}
+                  </span>
+                </div>
+                {/* away logo */}
+                <div style={{ width: 48, height: 48, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)" }}>
+                  <img src={aLogo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                </div>
+              </div>
+            );
+          })
+      }
+    </div>
+  );
+}
+
+function TeamFormBox({ homeTeam, awayTeam, allGames, currentGame }: {
+  homeTeam: string; awayTeam: string; allGames: MatchGame[]; currentGame: MatchGame;
+}) {
+  const currentTime = currentGame.date ? new Date(currentGame.date).getTime() : Infinity;
+
+  function getLast5(team: string) {
+    return allGames
+      .filter((g) => {
+        if (String(g.id) === String(currentGame.id)) return false;
+        if (Number(g.complete) !== 100 && !(g as any).is_final) return false;
+        const isInvolved = flexMatchTeam(g.hteam, team) || flexMatchTeam(g.ateam, team);
+        if (!isInvolved) return false;
+        const gameTime = g.date ? new Date(g.date).getTime() : 0;
+        return Number.isFinite(currentTime) ? gameTime < currentTime : true;
+      })
+      .sort((a, b) => new Date(b.date ?? "").getTime() - new Date(a.date ?? "").getTime())
+      .slice(0, 5);
+  }
+
+  const homeForm = getLast5(homeTeam);
+  const awayForm = getLast5(awayTeam);
+  if (!homeForm.length && !awayForm.length) return null;
+
+  return (
+    <div style={{
+      margin: "0 0 14px",
+      borderRadius: 18,
+      background: "linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
+      border: "1px solid rgba(255,255,255,0.10)",
+      overflow: "hidden",
+    }}>
+      <div style={{ padding: "18px 18px 0" }}>
+        <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em", color: "var(--text-1)" }}>
+          Team form
+        </span>
+      </div>
+      <div style={{ display: "flex", gap: 0, padding: "16px 12px 18px" }}>
+        <FormColumn team={homeTeam} games={homeForm} />
+        <div style={{ width: 1, background: "rgba(255,255,255,0.08)", flexShrink: 0, margin: "0 8px" }} />
+        <FormColumn team={awayTeam} games={awayForm} />
+      </div>
+    </div>
+  );
+}
+
+type LadderTeam = {
+  team: string; played: number; wins: number; losses: number; draws: number;
+  points: number; for: number; against: number;
+};
+
+function buildLadder(games: MatchGame[]): (LadderTeam & { rank: number })[] {
+  const map: Record<string, LadderTeam> = {};
+  const ensure = (name: string) => {
+    if (!map[name]) map[name] = { team: name, played: 0, wins: 0, losses: 0, draws: 0, points: 0, for: 0, against: 0 };
+    return map[name];
+  };
+  for (const g of games) {
+    if ((Number(g.complete) < 100 && !(g as any).is_final) || !g.hteam || !g.ateam) continue;
+    const hs = Number(g.hscore ?? 0), as_ = Number(g.ascore ?? 0);
+    const h = ensure(g.hteam), a = ensure(g.ateam);
+    h.played++; a.played++;
+    h.for += hs; h.against += as_; a.for += as_; a.against += hs;
+    if (hs > as_) { h.wins++; h.points += 4; a.losses++; }
+    else if (as_ > hs) { a.wins++; a.points += 4; h.losses++; }
+    else { h.draws++; a.draws++; h.points += 2; a.points += 2; }
+  }
+  const sorted = Object.values(map).sort((a, b) =>
+    b.points !== a.points ? b.points - a.points : (b.for / Math.max(b.against, 1)) - (a.for / Math.max(a.against, 1))
+  );
+  return sorted.map((t, i) => ({ ...t, rank: i + 1 }));
+}
+
+function LadderPositionsBox({ homeTeam, awayTeam, allGames }: { homeTeam: string; awayTeam: string; allGames: MatchGame[] }) {
+  const ladder = useMemo(() => buildLadder(allGames), [allGames]);
+  const rows = ladder.filter(t => flexMatchTeam(t.team, homeTeam) || flexMatchTeam(t.team, awayTeam));
+  if (rows.length === 0) return null;
+
+  const statCell: React.CSSProperties = {
+    width: 68, textAlign: "right", fontSize: 15, fontWeight: 700,
+    fontVariantNumeric: "tabular-nums", color: "var(--text-1)", flexShrink: 0,
+  };
+
+  return (
+    <Link href="/ladder" prefetch={false} style={{ textDecoration: "none", display: "block", margin: "0 0 14px", borderRadius: 18,
+      background: "linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
+      border: "1px solid rgba(255,255,255,0.10)",
+      overflow: "hidden",
+    }}>
+      {/* title + header */}
+      <div style={{ padding: "18px 16px 0" }}>
+        <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em", color: "var(--text-1)" }}>Ladder</span>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", padding: "10px 16px 4px" }}>
+        <div style={{ width: 26, flexShrink: 0 }} />
+        <div style={{ width: 36, flexShrink: 0 }} />
+        <div style={{ flex: 1 }} />
+        {(["P", "W-L-D", "PTS", "%"] as const).map(h => (
+          <div key={h} style={{ width: 68, textAlign: "right", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: "0.05em", flexShrink: 0 }}>{h}</div>
+        ))}
+      </div>
+
+      {rows.map((t, i) => {
+        const logo = getLogo(t.team);
+        const pct = t.against > 0 ? (t.for / t.against * 100).toFixed(1) : "–";
+        const wdl = t.draws > 0 ? `${t.wins}-${t.losses}-${t.draws}` : `${t.wins}-${t.losses}`;
+        return (
+          <div key={t.team} style={{
+            display: "flex", alignItems: "center",
+            padding: "14px 16px",
+            borderTop: i > 0 ? "0.5px solid rgba(255,255,255,0.07)" : undefined,
+          }}>
+            <div style={{ width: 26, flexShrink: 0, fontSize: 15, fontWeight: 900, color: "var(--text-1)" }}>{t.rank}</div>
+            <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)" }}>
+              <img src={logo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+            </div>
+            <div style={{ flex: 1, fontSize: 15, fontWeight: 800, color: "var(--text-1)", paddingLeft: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {t.team}
+            </div>
+            <div style={statCell}>{t.played}</div>
+            <div style={statCell}>{wdl}</div>
+            <div style={{ ...statCell, fontWeight: 900 }}>{t.points}</div>
+            <div style={statCell}>{pct}</div>
+          </div>
+        );
+      })}
+    </Link>
+  );
 }
 
 function InsightsBox({ game, allGames }: { game: MatchGame; allGames: MatchGame[] }) {
@@ -2703,6 +2880,11 @@ export default function MatchPage() {
                     </>
                   )}
                 </div>
+              ) : status === "UPCOMING" ? (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                  <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)" }}>Starts in</span>
+                  <span style={{ fontSize: 18, fontWeight: 900, letterSpacing: "-0.02em", color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>{getCountdownText(game.date, now)}</span>
+                </div>
               ) : (
                 <div style={{
                   fontSize: 17, fontWeight: 800, letterSpacing: 0,
@@ -2716,13 +2898,15 @@ export default function MatchPage() {
                 </div>
               )}
 
-              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-                <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-2)" }}>{Math.max(1, liveViewerCount)}</span>
-              </div>
+              {status !== "UPCOMING" && (
+                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-2)" }}>{Math.max(1, liveViewerCount)}</span>
+                </div>
+              )}
 
             </div>
 
@@ -2846,7 +3030,7 @@ export default function MatchPage() {
                 transition: "color 0.12s",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
               }}>
-                {t.charAt(0).toUpperCase() + t.slice(1)}
+                {t === "feed" && status === "UPCOMING" ? "Preview" : t.charAt(0).toUpperCase() + t.slice(1)}
                 {t === "polls" && unansweredPollCount > 0 && activeTab !== "polls" && (
                   <span style={{
                     fontSize: 10, fontWeight: 900, lineHeight: 1,
@@ -2910,10 +3094,17 @@ export default function MatchPage() {
 
             {!feedLoading && !feedError && displayLiveEvents.length === 0 && status === "UPCOMING" && (
               <>
-                <div style={countdownBoxStyle}>
-                  <div style={countdownLabelStyle}>GAME STARTS IN</div>
-                  <div style={countdownTimeStyle}>{getCountdownText(game.date, now)}</div>
-                </div>
+                <TeamFormBox
+                  homeTeam={safeText(game.hteam, "")}
+                  awayTeam={safeText(game.ateam, "")}
+                  allGames={allGames}
+                  currentGame={game}
+                />
+                <LadderPositionsBox
+                  homeTeam={safeText(game.hteam, "")}
+                  awayTeam={safeText(game.ateam, "")}
+                  allGames={allGames}
+                />
                 {new Date(game.date ?? "").getTime() - now < 5 * 24 * 60 * 60 * 1000 && (
                   <InsightsBox game={game} allGames={allGames} />
                 )}
@@ -3652,27 +3843,36 @@ const matchReplyModalCloseStyle: CSSProperties = {
 
 const ADMIN_USER_ID = process.env.NEXT_PUBLIC_ADMIN_USER_ID ?? "";
 
-const POLL_CATEGORIES: Record<string, { label: string; stat: string; type: "team" | "player" }> = {
-  team_goals:        { label: "Which team kicks more goals?",         stat: "goals",      type: "team" },
-  team_disposals:    { label: "Which team gets more disposals?",      stat: "disposals",  type: "team" },
-  team_marks:        { label: "Which team takes more marks?",         stat: "marks",      type: "team" },
-  team_free_kicks:   { label: "Which team gets more free kicks?",     stat: "freesFor",   type: "team" },
-  team_hitouts:      { label: "Which team wins the hitout count?",    stat: "hitouts",    type: "team" },
-  team_clearances:   { label: "Which team gets more clearances?",     stat: "clearances", type: "team" },
-  team_inside50s:    { label: "Which team gets more inside 50s?",     stat: "inside50s",  type: "team" },
-  player_disposals:  { label: "Player to record the most disposals",  stat: "disposals",  type: "player" },
-  player_goals:      { label: "Player to kick the most goals",        stat: "goals",      type: "player" },
-  player_marks:      { label: "Player to take the most marks",        stat: "marks",      type: "player" },
-  player_tackles:    { label: "Player to make the most tackles",      stat: "tackles",    type: "player" },
-  player_hitouts:    { label: "Player to record the most hitouts",    stat: "hitouts",    type: "player" },
-  player_clearances: { label: "Player to record the most clearances", stat: "clearances", type: "player" },
-  player_foopy:      { label: "Player with the highest Foopy rating", stat: "foopy",      type: "player" },
+const POLL_CATEGORIES: Record<string, { label: string; shortLabel: string; stat: string; type: "team" | "player" | "player_all" }> = {
+  team_winner:       { label: "Pick the winner",                      shortLabel: "Winner",       stat: "winner",     type: "team" },
+  team_goals:        { label: "Which team kicks more goals?",         shortLabel: "Team Goals",   stat: "goals",      type: "team" },
+  team_disposals:    { label: "Which team gets more disposals?",      shortLabel: "Disposals",    stat: "disposals",  type: "team" },
+  team_marks:        { label: "Which team takes more marks?",         shortLabel: "Marks",        stat: "marks",      type: "team" },
+  team_free_kicks:   { label: "Which team gets more free kicks?",     shortLabel: "Free Kicks",   stat: "freesFor",   type: "team" },
+  team_hitouts:      { label: "Which team wins the hitout count?",    shortLabel: "Hitouts",      stat: "hitouts",    type: "team" },
+  team_clearances:   { label: "Which team gets more clearances?",     shortLabel: "Clearances",   stat: "clearances", type: "team" },
+  team_inside50s:    { label: "Which team gets more inside 50s?",     shortLabel: "Inside 50s",   stat: "inside50s",  type: "team" },
+  player_disposals:  { label: "Player to record the most disposals",  shortLabel: "Disposals",    stat: "disposals",  type: "player" },
+  player_goals:      { label: "Player to kick the most goals",        shortLabel: "Top Goalkicker", stat: "goals",    type: "player" },
+  player_marks:      { label: "Player to take the most marks",        shortLabel: "Most Marks",   stat: "marks",      type: "player" },
+  player_tackles:    { label: "Player to make the most tackles",      shortLabel: "Most Tackles", stat: "tackles",    type: "player" },
+  player_hitouts:    { label: "Player to record the most hitouts",    shortLabel: "Most Hitouts", stat: "hitouts",    type: "player" },
+  player_clearances: { label: "Player to record the most clearances", shortLabel: "Clearances",   stat: "clearances", type: "player" },
+  player_foopy:      { label: "Player with the highest Foopy rating", shortLabel: "Foopy Rating", stat: "foopy",      type: "player" },
+  anytime_goal:      { label: "Player to kick a goal",                shortLabel: "Anytime Goal", stat: "goals",      type: "player_all" },
+  goals_2plus:       { label: "Player to kick 2+ goals",              shortLabel: "2+ Goals",     stat: "goals",      type: "player_all" },
+  goals_3plus:       { label: "Player to kick 3+ goals",              shortLabel: "3+ Goals",     stat: "goals",      type: "player_all" },
+  goals_4plus:       { label: "Player to kick 4+ goals",              shortLabel: "4+ Goals",     stat: "goals",      type: "player_all" },
+  disp_20plus:       { label: "Player to get 20+ disposals",          shortLabel: "20+ Disposals",stat: "disposals",  type: "player_all" },
+  disp_25plus:       { label: "Player to get 25+ disposals",          shortLabel: "25+ Disposals",stat: "disposals",  type: "player_all" },
+  disp_30plus:       { label: "Player to get 30+ disposals",          shortLabel: "30+ Disposals",stat: "disposals",  type: "player_all" },
+  disp_35plus:       { label: "Player to get 35+ disposals",          shortLabel: "35+ Disposals",stat: "disposals",  type: "player_all" },
 };
 
 type Poll = {
   id: string;
   question: string;
-  poll_type: "team" | "player";
+  poll_type: "team" | "player" | "player_all";
   category_key: string | null;
   created_at: string;
   quarter: number | null; // which quarter this poll was created in (null = pre-game)
@@ -4201,161 +4401,199 @@ function PollCard({
   const hasVoted = !!userVote;
   const totalVotes = poll.options.reduce((sum, o) => sum + (voteCounts[o.id] ?? 0), 0);
   const sorted = [...poll.options].sort((a, b) => a.position - b.position);
+  const isPlayerAll = poll.poll_type === "player_all";
+  const [playerPickerOpen, setPlayerPickerOpen] = useState(false);
+  const [playerPickerSearch, setPlayerPickerSearch] = useState("");
 
   const optionColor = (label: string) => {
     const c = pollOptionColors(label, poll.poll_type);
     return String((c as any).background ?? "#6d28d9");
   };
 
+  const cat = poll.category_key ? POLL_CATEGORIES[poll.category_key] : null;
+  const showBar = showResults || hasVoted || votingLocked;
+  const canAct = (canVote || canChangeVote) && !votingLocked;
+
+  // Over/under player image
+  const ouPlayerName = poll.poll_type === "over_under" ? (poll.question.split(" — ")[0] ?? "") : "";
+  const ouInfo = ouPlayerName ? findPlayerInfo(ouPlayerName) : null;
+  const ouTeam = ouInfo?.club ?? ouInfo?.team ?? "";
+  const ouImg = ouPlayerName ? playerImagePath(ouPlayerName, ouTeam) : "";
+  const ouColors = liveFeedTeamColors(ouTeam);
+
+  function getImage(label: string): string {
+    if (poll.poll_type === "team") return getLogo(label);
+    const info = findPlayerInfo(label);
+    const team = info?.club ?? info?.team ?? "";
+    return playerImagePath(label, team);
+  }
+
+  function renderOption(opt: PollOption) {
+    const count = voteCounts[opt.id] ?? 0;
+    const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
+    const isMyVote = userVote === opt.id;
+    const isWinner = showResults && pollOptionMatchesWinner(opt.label, winner);
+    const wrong = showResults && isMyVote && winner !== null && !isWinner;
+    const img = getImage(opt.label);
+    const isTeam = poll.poll_type === "team";
+    const isOu = poll.poll_type === "over_under";
+    const ouIsOver = isOu && opt.label.toLowerCase().startsWith("over");
+
+    const inner = (
+      <div style={{ display: "flex", alignItems: "center", gap: 12, position: "relative", zIndex: 1, width: "100%" }}>
+        {/* % pill (shown after voting) */}
+        {showBar && (
+          <div style={{ minWidth: 46, height: 32, borderRadius: 99, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <span style={{ fontSize: 14, fontWeight: 900, color: isWinner ? "#22c55e" : wrong ? "#f87171" : "#fff", fontVariantNumeric: "tabular-nums" }}>{pct}%</span>
+          </div>
+        )}
+        {/* Image */}
+        {isOu ? (
+          <div style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0, background: ouIsOver ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ fontSize: 18 }}>{ouIsOver ? "↑" : "↓"}</span>
+          </div>
+        ) : isTeam ? (
+          <img src={img} alt={opt.label} style={{ width: 32, height: 32, objectFit: "contain", flexShrink: 0 }} />
+        ) : (
+          <div style={{ width: 32, height: 32, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.08)" }}>
+            <img src={img} alt={opt.label} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+          </div>
+        )}
+        {/* Label */}
+        <span style={{ fontSize: 15, fontWeight: 800, color: wrong ? "#f87171" : "#fff", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {isTeam ? getAbbr(opt.label) : opt.label}
+          {isWinner && <span style={{ marginLeft: 8, fontSize: 13 }}>✓</span>}
+        </span>
+        {/* Check if selected and not showing bar */}
+        {!showBar && isMyVote && (
+          <div style={{ width: 20, height: 20, borderRadius: "50%", background: "#3b82f6", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </div>
+        )}
+      </div>
+    );
+
+    const style: React.CSSProperties = {
+      position: "relative", overflow: "hidden",
+      borderRadius: 14,
+      background: "rgba(255,255,255,0.06)",
+      border: `1px solid ${wrong ? "rgba(239,68,68,0.3)" : isMyVote && !showBar ? "rgba(59,130,246,0.5)" : "transparent"}`,
+      padding: "12px 14px",
+      width: "100%", textAlign: "left", display: "block",
+      cursor: canAct ? "pointer" : "default",
+    };
+
+    const fill = showBar ? (
+      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${pct}%`, background: wrong ? "rgba(239,68,68,0.15)" : isMyVote ? "rgba(59,130,246,0.18)" : "rgba(255,255,255,0.07)", transition: "width 0.6s ease", zIndex: 0 }} />
+    ) : null;
+
+    return canAct
+      ? <button key={opt.id} type="button" onClick={() => onVote(opt.id)} style={style}>{fill}{inner}</button>
+      : <div key={opt.id} style={style}>{fill}{inner}</div>;
+  }
+
   return (
     <div style={pollCardStyle}>
-      {/* ── Poll header ── */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#6d28d9", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
-              <rect x="18" y="4" width="4" height="16" rx="1" />
-              <rect x="10" y="9" width="4" height="11" rx="1" />
-              <rect x="2" y="13" width="4" height="7" rx="1" />
-            </svg>
-          </div>
-          {isLivePoll && canVote
-            ? <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(34,197,94,0.13)", border: "1px solid rgba(34,197,94,0.32)", borderRadius: 999, padding: "3px 9px" }}>
-                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e" }} />
-                <span style={{ fontSize: 10, fontWeight: 900, color: "#22c55e", letterSpacing: "0.08em" }}>LIVE · Q{poll.quarter}</span>
-              </div>
-            : isLivePoll
-            ? <span style={{ fontSize: 10, fontWeight: 900, color: "var(--text-3)", letterSpacing: "0.06em" }}>Q{poll.quarter} · CLOSED</span>
-            : <span style={{ fontSize: 13, fontWeight: 900, color: "#a78bfa", letterSpacing: "0.08em" }}>POLL</span>
-          }
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
-          </svg>
-          <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-3)" }}>{totalVotes} votes</span>
-          {onDelete && (
-            <button onClick={onDelete} style={{ background: "var(--surface-3)", border: "none", color: "var(--text-3)", fontSize: 12, cursor: "pointer", padding: "4px 7px", borderRadius: 6, lineHeight: 1, marginLeft: 4 }}>✕</button>
+      {/* Question */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
+          {poll.poll_type === "over_under" && ouPlayerName && (
+            <div style={{ width: 40, height: 40, borderRadius: "50%", overflow: "hidden", flexShrink: 0, border: `2px solid ${ouColors.primary}`, background: "rgba(255,255,255,0.06)" }}>
+              <img src={ouImg} alt={ouPlayerName} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+            </div>
           )}
+          <span style={{ fontSize: 18, fontWeight: 900, color: "#fff", lineHeight: 1.3, letterSpacing: "-0.02em" }}>{poll.question}</span>
         </div>
+        {onDelete && <button onClick={onDelete} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.25)", fontSize: 16, cursor: "pointer", flexShrink: 0, padding: 0, lineHeight: 1 }}>✕</button>}
       </div>
 
-      {/* ── Question ── */}
-      <div style={{ marginBottom: 16 }}>
-        <span style={pollQuestionStyle}>{poll.question}</span>
-        <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 600, marginTop: 4 }}>
-          {votingLocked
-            ? isLivePoll ? "Voting closed — quarter ended" : "Voting closed — game has started"
-            : canChangeVote ? "Tap to change your vote"
-            : hasVoted ? "" : "Tap to vote"}
-        </div>
-      </div>
-
-      {/* ── Options ── */}
+      {/* Options */}
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {sorted.map(opt => {
-          const count = voteCounts[opt.id] ?? 0;
-          const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
-          const isMyVote = userVote === opt.id;
-          const isWinner = showResults && pollOptionMatchesWinner(opt.label, winner);
-          const color = optionColor(opt.label);
-          const selected = isMyVote;
-          const showBar = showResults || hasVoted || votingLocked;
-          const wrong = showResults && selected && winner !== null && !isWinner;
-          const dimmed = showResults && winner !== null && !isWinner && !selected;
-
-          const inner = (
-            <>
-              {/* Radio */}
-              <div style={{ width: 20, height: 20, borderRadius: "50%", flexShrink: 0, border: `2px solid ${wrong ? "#ef4444" : selected ? color : "rgba(255,255,255,0.25)"}`, display: "flex", alignItems: "center", justifyContent: "center", transition: "border-color 0.2s" }}>
-                {selected && <div style={{ width: 10, height: 10, borderRadius: "50%", background: wrong ? "#ef4444" : color }} />}
-              </div>
-              {/* Logo / avatar */}
-              <PollOptionInner label={opt.label} pollType={poll.poll_type} winner={isWinner} myVote={isMyVote && !isWinner} />
-              {/* Bar + % */}
-              {showBar && (
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ height: 6, borderRadius: 999, background: "var(--surface-3)", overflow: "hidden" }}>
-                    <div style={{ height: "100%", width: `${pct}%`, borderRadius: 999, background: color, transition: "width 0.5s cubic-bezier(.4,0,.2,1)" }} />
+        {isPlayerAll && !hasVoted && !votingLocked && canVote ? (
+          <>
+            <button onClick={() => { setPlayerPickerOpen(true); setPlayerPickerSearch(""); }}
+              style={{ padding: "14px 16px", borderRadius: 14, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)", fontSize: 15, fontWeight: 700, cursor: "pointer", textAlign: "left", width: "100%" }}>
+              Pick a player
+            </button>
+            {playerPickerOpen && (
+              <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
+                onClick={() => setPlayerPickerOpen(false)}>
+                <div style={{ width: "min(90vw, 420px)", height: "min(90vw, 420px)", background: "var(--surface-1)", borderRadius: 20, border: "1px solid var(--border-1)", display: "flex", flexDirection: "column", overflow: "hidden" }}
+                  onClick={e => e.stopPropagation()}>
+                  <div style={{ padding: "14px 16px 10px", borderBottom: "0.5px solid var(--border-1)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: "var(--text-1)" }}>{poll.question}</span>
+                    <button onClick={() => setPlayerPickerOpen(false)} style={{ background: "none", border: "none", color: "var(--text-3)", fontSize: 18, cursor: "pointer" }}>✕</button>
+                  </div>
+                  <div style={{ padding: "10px 12px 6px", flexShrink: 0 }}>
+                    <input value={playerPickerSearch} onChange={e => setPlayerPickerSearch(e.target.value)} placeholder="Search players…" autoFocus
+                      style={{ width: "100%", background: "var(--surface-3)", border: "1px solid var(--border-2)", borderRadius: 10, color: "var(--text-1)", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+                  </div>
+                  <div style={{ overflowY: "auto", flex: 1, padding: "4px 8px" }}>
+                    {sorted.filter(o => !playerPickerSearch.trim() || o.label.toLowerCase().includes(playerPickerSearch.toLowerCase())).map(o => {
+                      const info = findPlayerInfo(o.label);
+                      const team = info?.club ?? info?.team ?? "";
+                      const img = playerImagePath(o.label, team);
+                      const colors = liveFeedTeamColors(team);
+                      return (
+                        <button key={o.id} onClick={() => { onVote(o.id); setPlayerPickerOpen(false); }}
+                          style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 10px", borderRadius: 10, border: "none", background: "transparent", cursor: "pointer", textAlign: "left" }}>
+                          <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flexShrink: 0, border: `2px solid ${colors.primary}` }}>
+                            <img src={img} alt={o.label} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-1)" }}>{o.label}</div>
+                            <div style={{ fontSize: 11, color: "var(--text-3)" }}>{team}</div>
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
-              )}
-              {showBar && (
-                <div style={{ flexShrink: 0, textAlign: "right" }}>
-                  <div style={{ fontSize: 16, fontWeight: 900, color: isWinner ? "#22c55e" : wrong ? "#ef4444" : selected ? color : "#64748b", lineHeight: 1 }}>{pct}%</div>
-                  <div style={{ fontSize: 10, color: "var(--text-3)", fontWeight: 700, marginTop: 2 }}>{count} votes</div>
-                </div>
-              )}
-            </>
-          );
-
-          if (showBar) {
-            if (canChangeVote) {
-              return (
-                <button key={opt.id} type="button" onClick={() => onVote(opt.id)}
-                  style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 14, border: `1.5px solid ${wrong ? "#ef4444" : selected ? color : "var(--border-2)"}`, background: wrong ? "rgba(239,68,68,.12)" : selected ? `${color}18` : "rgba(255,255,255,0.03)", cursor: "pointer", width: "100%", textAlign: "left", opacity: dimmed ? 0.35 : 1, transition: "border-color 0.2s, background 0.2s" }}>
-                  {inner}
-                </button>
-              );
-            }
-            return (
-              <div key={opt.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 14, border: `1.5px solid ${wrong ? "#ef4444" : selected ? color : "var(--border-2)"}`, background: wrong ? "rgba(239,68,68,.12)" : selected ? `${color}18` : "rgba(255,255,255,0.03)", opacity: dimmed ? 0.35 : 1 }}>
-                {inner}
               </div>
-            );
-          }
-
-          return (
-            <button key={opt.id} type="button" onClick={() => onVote(opt.id)} disabled={!canVote && !canChangeVote}
-              style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 14, border: `1.5px solid ${wrong ? "#ef4444" : selected ? color : "var(--border-2)"}`, background: wrong ? "rgba(239,68,68,.12)" : selected ? `${color}18` : "rgba(255,255,255,0.03)", cursor: (canVote || canChangeVote) ? "pointer" : "default", opacity: dimmed ? 0.35 : (canVote || canChangeVote) ? 1 : 0.5, width: "100%", textAlign: "left", transition: "border-color 0.2s, background 0.2s" }}>
-              {inner}
-            </button>
-          );
-        })}
+            )}
+          </>
+        ) : isPlayerAll && (hasVoted || votingLocked) ? (
+          sorted.filter(o => o.id === userVote || (voteCounts[o.id] ?? 0) > 0)
+            .sort((a, b) => (voteCounts[b.id] ?? 0) - (voteCounts[a.id] ?? 0))
+            .slice(0, 5).map(opt => renderOption(opt))
+        ) : (
+          sorted.map(opt => renderOption(opt))
+        )}
       </div>
 
-      {/* Comments button — opens full-screen comment page */}
-      <button
-        onClick={() => {
-          const cat = poll.category_key ? POLL_CATEGORIES[poll.category_key] : null;
-          const statsStr = cat ? sorted.map(opt => {
-            let val: number | string = "–";
-            if (cat.type === "player") {
-              const ps = [...homeStats, ...awayStats].find(p =>
-                ((p as any).name || (p as any).player || "").toLowerCase() === opt.label.toLowerCase()
-              );
-              if (ps) val = cat.stat === "foopy" ? foopyRating(ps) : num(ps[cat.stat as keyof PlayerStat]);
-            } else {
-              const isHome = normaliseTeamKey(opt.label) === normaliseTeamKey(homeTeam);
-              const isAway = normaliseTeamKey(opt.label) === normaliseTeamKey(awayTeam);
-              if (isHome) val = homeStats.reduce((s, p) => s + num(p[cat.stat as keyof PlayerStat]), 0);
-              else if (isAway) val = awayStats.reduce((s, p) => s + num(p[cat.stat as keyof PlayerStat]), 0);
-            }
-            return `${opt.label}:${val}`;
-          }).join(",") : "";
-          const params = new URLSearchParams({
-            label: poll.question,
-            ...(cat ? { stat: cat.stat, pollType: poll.poll_type } : {}),
-            ...(statsStr ? { stats: statsStr } : {}),
-          });
-          router.push(`/match/${gameId}/poll_${poll.id}?${params}`);
-        }}
-        style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: "12px 2px 0", fontSize: 12, fontWeight: 800, color: "var(--text-3)", cursor: "pointer", width: "100%" }}
-      >
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-        </svg>
-        Comments
-        {(commentCount ?? 0) > 0 && (
-          <span style={{ fontSize: 11, fontWeight: 800, color: "#a78bfa", background: "rgba(167,139,250,0.15)", borderRadius: 999, padding: "1px 7px" }}>
-            {commentCount}
-          </span>
-        )}
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: "auto" }}>
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
-      </button>
+      {/* Footer */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14 }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.3)" }}>
+          {totalVotes.toLocaleString()} votes
+          {(votingLocked || !canVote) && <span style={{ color: "rgba(255,255,255,0.2)" }}> · {isLivePoll ? `Q${poll.quarter} closed` : "Poll closed"}</span>}
+          {isLivePoll && canVote && <span style={{ color: "#22c55e" }}> · Live Q{poll.quarter}</span>}
+        </span>
+        <button
+          onClick={() => {
+            const statsStr = cat ? sorted.map(opt => {
+              let val: number | string = "–";
+              if (cat.type === "player") {
+                const ps = [...homeStats, ...awayStats].find(p => ((p as any).name || (p as any).player || "").toLowerCase() === opt.label.toLowerCase());
+                if (ps) val = cat.stat === "foopy" ? foopyRating(ps) : num(ps[cat.stat as keyof PlayerStat]);
+              } else {
+                const isHome = normaliseTeamKey(opt.label) === normaliseTeamKey(homeTeam);
+                const isAway = normaliseTeamKey(opt.label) === normaliseTeamKey(awayTeam);
+                if (isHome) val = homeStats.reduce((s, p) => s + num(p[cat.stat as keyof PlayerStat]), 0);
+                else if (isAway) val = awayStats.reduce((s, p) => s + num(p[cat.stat as keyof PlayerStat]), 0);
+              }
+              return `${opt.label}:${val}`;
+            }).join(",") : "";
+            const params = new URLSearchParams({ label: poll.question, ...(cat ? { stat: cat.stat, pollType: poll.poll_type } : {}), ...(statsStr ? { stats: statsStr } : {}) });
+            router.push(`/match/${gameId}/poll_${poll.id}?${params}`);
+          }}
+          style={{ display: "flex", alignItems: "center", gap: 5, background: "none", border: "none", fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.3)", cursor: "pointer", padding: 0 }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+          {(commentCount ?? 0) > 0 ? commentCount : "Comments"}
+        </button>
+      </div>
     </div>
   );
 }
@@ -4381,6 +4619,25 @@ function CreatePollForm({
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [playerSearch, setPlayerSearch] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // Over/Under state
+  const [ouMode, setOuMode] = useState(false);
+  const [ouPlayer, setOuPlayer] = useState("");
+  const [ouPlayerSearch, setOuPlayerSearch] = useState("");
+  const [ouStat, setOuStat] = useState("disposals");
+  const [ouValue, setOuValue] = useState("");
+  const [ouPlayerPickerOpen, setOuPlayerPickerOpen] = useState(false);
+
+  const OU_STATS = [
+    { key: "disposals", label: "Disposals" },
+    { key: "goals",     label: "Goals" },
+    { key: "marks",     label: "Marks" },
+    { key: "tackles",   label: "Tackles" },
+    { key: "hitouts",   label: "Hitouts" },
+    { key: "clearances",label: "Clearances" },
+    { key: "kicks",     label: "Kicks" },
+    { key: "handballs", label: "Handballs" },
+  ];
 
   const selectedCat = selectedKey ? POLL_CATEGORIES[selectedKey] : null;
 
@@ -4409,15 +4666,41 @@ function CreatePollForm({
     setSelectedPlayers(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]);
   }
 
-  const canSubmit = selectedKey && selectedCat && (selectedCat.type === "team" || selectedPlayers.length >= 2);
+  const ouQuestion = ouPlayer && ouValue ? `${ouPlayer} — Over/Under ${ouValue} ${OU_STATS.find(s => s.key === ouStat)?.label ?? ouStat}` : "";
+  const canSubmitOu = ouMode && !!ouPlayer && !!ouValue && Number(ouValue) > 0;
+
+  const canSubmit = ouMode ? canSubmitOu : selectedKey && selectedCat && (
+    selectedCat.type === "team" || selectedCat.type === "player_all" || selectedPlayers.length >= 2
+  );
 
   const [submitError, setSubmitError] = useState("");
 
   async function submit() {
-    if (!canSubmit || !selectedCat) return;
+    if (!canSubmit) return;
     setSubmitting(true);
     setSubmitError("");
-    const options = selectedCat.type === "team" ? [homeTeam, awayTeam] : selectedPlayers;
+
+    if (ouMode) {
+      const { data: poll, error } = await supabase
+        .from("match_polls")
+        .insert({ game_id: gameId, user_id: userId, question: ouQuestion, poll_type: "over_under", category_key: null, quarter: currentQuarter })
+        .select("id").single();
+      if (error || !poll) { setSubmitError(error?.message ?? "Failed"); setSubmitting(false); return; }
+      await supabase.from("match_poll_options").insert([
+        { poll_id: (poll as any).id, label: `Over ${ouValue}`, position: 0 },
+        { poll_id: (poll as any).id, label: `Under ${ouValue}`, position: 1 },
+      ]);
+      setSubmitting(false);
+      onDone();
+      return;
+    }
+
+    if (!selectedCat) return;
+    const options = selectedCat.type === "team"
+      ? [homeTeam, awayTeam]
+      : selectedCat.type === "player_all"
+        ? allPlayers.map(p => p.name)
+        : selectedPlayers;
 
     const { data: poll, error } = await supabase
       .from("match_polls")
@@ -4447,6 +4730,9 @@ function CreatePollForm({
 
   const teamCats = Object.entries(POLL_CATEGORIES).filter(([, v]) => v.type === "team");
   const playerCats = Object.entries(POLL_CATEGORIES).filter(([, v]) => v.type === "player");
+  const predictionCats = Object.entries(POLL_CATEGORIES).filter(([, v]) => v.type === "player_all");
+
+  function selectCategory(key: string) { setSelectedKey(key); setSelectedPlayers([]); setOuMode(false); }
 
   return (
     <div style={createFormStyle}>
@@ -4468,7 +4754,7 @@ function CreatePollForm({
         </div>
 
         <div style={{ fontSize: 11, fontWeight: 800, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Players</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 14 }}>
           {playerCats.map(([key, cat]) => (
             <button key={key} onClick={() => { setSelectedKey(key); setSelectedPlayers([]); }}
               style={{ padding: "10px 12px", borderRadius: 10, background: selectedKey === key ? "rgba(59,130,246,.18)" : "var(--border-1)", border: selectedKey === key ? "1px solid rgba(59,130,246,.5)" : "1px solid var(--border-2)", color: selectedKey === key ? "#60a5fa" : "#e2e8f0", fontSize: 13, fontWeight: selectedKey === key ? 800 : 600, cursor: "pointer", textAlign: "left" }}>
@@ -4476,9 +4762,102 @@ function CreatePollForm({
             </button>
           ))}
         </div>
+
+        <div style={{ fontSize: 11, fontWeight: 800, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Predictions</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 14 }}>
+          {predictionCats.map(([key, cat]) => (
+            <button key={key} onClick={() => { setSelectedKey(key); setSelectedPlayers([]); setOuMode(false); }}
+              style={{ padding: "10px 12px", borderRadius: 10, background: selectedKey === key ? "rgba(59,130,246,.18)" : "var(--border-1)", border: selectedKey === key ? "1px solid rgba(59,130,246,.5)" : "1px solid var(--border-2)", color: selectedKey === key ? "#60a5fa" : "#e2e8f0", fontSize: 13, fontWeight: selectedKey === key ? 800 : 600, cursor: "pointer", textAlign: "left" }}>
+              {cat.label}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ fontSize: 11, fontWeight: 800, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Over / Under</div>
+        <button onClick={() => { setOuMode(true); setSelectedKey(null); }}
+          style={{ padding: "10px 12px", borderRadius: 10, background: ouMode ? "rgba(59,130,246,.18)" : "var(--border-1)", border: ouMode ? "1px solid rgba(59,130,246,.5)" : "1px solid var(--border-2)", color: ouMode ? "#60a5fa" : "#e2e8f0", fontSize: 13, fontWeight: ouMode ? 800 : 600, cursor: "pointer", textAlign: "left", width: "100%" }}>
+          Custom Over/Under line
+        </button>
       </div>
 
+      {/* Over/Under builder */}
+      {ouMode && (
+        <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+          {/* Player picker */}
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.06em" }}>Player</div>
+            <button onClick={() => { setOuPlayerPickerOpen(true); setOuPlayerSearch(""); }}
+              style={{ width: "100%", padding: "10px 14px", borderRadius: 10, background: ouPlayer ? "rgba(59,130,246,.12)" : "var(--surface-3)", border: ouPlayer ? "1px solid rgba(59,130,246,.4)" : "1px solid var(--border-2)", color: ouPlayer ? "#93c5fd" : "rgba(255,255,255,0.35)", fontSize: 13, fontWeight: 700, cursor: "pointer", textAlign: "left" }}>
+              {ouPlayer || "Select a player…"}
+            </button>
+            {/* Player picker popup */}
+            {ouPlayerPickerOpen && (
+              <div style={{ position: "fixed", inset: 0, zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
+                onClick={() => setOuPlayerPickerOpen(false)}>
+                <div style={{ width: "min(90vw, 420px)", height: "min(90vw, 420px)", background: "var(--surface-1)", borderRadius: 20, border: "1px solid var(--border-1)", display: "flex", flexDirection: "column", overflow: "hidden" }}
+                  onClick={e => e.stopPropagation()}>
+                  <div style={{ padding: "14px 16px 10px", borderBottom: "0.5px solid var(--border-1)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: "var(--text-1)" }}>Select Player</span>
+                    <button onClick={() => setOuPlayerPickerOpen(false)} style={{ background: "none", border: "none", color: "var(--text-3)", fontSize: 18, cursor: "pointer" }}>✕</button>
+                  </div>
+                  <div style={{ padding: "10px 12px 6px", flexShrink: 0 }}>
+                    <input value={ouPlayerSearch} onChange={e => setOuPlayerSearch(e.target.value)} placeholder="Search…" autoFocus
+                      style={{ width: "100%", background: "var(--surface-3)", border: "1px solid var(--border-2)", borderRadius: 10, color: "var(--text-1)", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+                  </div>
+                  <div style={{ overflowY: "auto", flex: 1, padding: "4px 8px" }}>
+                    {allPlayers.filter(p => !ouPlayerSearch.trim() || p.name.toLowerCase().includes(ouPlayerSearch.toLowerCase())).map(p => (
+                      <button key={p.name} onClick={() => { setOuPlayer(p.name); setOuPlayerPickerOpen(false); }}
+                        style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 10px", borderRadius: 10, border: "none", background: ouPlayer === p.name ? "rgba(59,130,246,.18)" : "transparent", cursor: "pointer", textAlign: "left" }}>
+                        <div style={{ width: 34, height: 34, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)" }}>
+                          <img src={playerImagePath(p.name, p.team)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-1)" }}>{p.name}</div>
+                          <div style={{ fontSize: 11, color: "var(--text-3)" }}>{p.team}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Stat + value row */}
+          <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.06em" }}>Stat</div>
+              <select value={ouStat} onChange={e => setOuStat(e.target.value)}
+                style={{ width: "100%", background: "var(--surface-3)", border: "1px solid var(--border-2)", borderRadius: 10, color: "var(--text-1)", fontSize: 13, padding: "10px 12px", outline: "none", fontFamily: "inherit", cursor: "pointer" }}>
+                {OU_STATS.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+              </select>
+            </div>
+            <div style={{ width: 100 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.06em" }}>Line</div>
+              <input type="number" value={ouValue} onChange={e => setOuValue(e.target.value)} placeholder="e.g. 23.5" step="0.5" min="0"
+                style={{ width: "100%", background: "var(--surface-3)", border: "1px solid var(--border-2)", borderRadius: 10, color: "var(--text-1)", fontSize: 13, padding: "10px 12px", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+            </div>
+          </div>
+
+          {/* Preview */}
+          {ouQuestion && (
+            <div style={{ padding: "10px 12px", borderRadius: 10, background: "rgba(59,130,246,.08)", border: "1px solid rgba(59,130,246,.2)", fontSize: 13, fontWeight: 700, color: "#93c5fd" }}>
+              {ouQuestion}
+              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                <div style={{ flex: 1, textAlign: "center", padding: "6px 0", borderRadius: 8, background: "rgba(34,197,94,.15)", border: "1px solid rgba(34,197,94,.3)", color: "#4ade80", fontSize: 12, fontWeight: 800 }}>Over {ouValue}</div>
+                <div style={{ flex: 1, textAlign: "center", padding: "6px 0", borderRadius: 8, background: "rgba(239,68,68,.15)", border: "1px solid rgba(239,68,68,.3)", color: "#f87171", fontSize: 12, fontWeight: 800 }}>Under {ouValue}</div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Player picker (shown when a player category is selected) */}
+      {selectedCat?.type === "player_all" && (
+        <div style={{ marginBottom: 16, padding: "10px 12px", borderRadius: 10, background: "rgba(59,130,246,.08)", border: "1px solid rgba(59,130,246,.2)", fontSize: 13, color: "rgba(255,255,255,0.6)" }}>
+          All {allPlayers.length} match players will be shown as options — voters pick who they think will do it.
+        </div>
+      )}
       {selectedCat?.type === "player" && (
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 11, fontWeight: 800, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Pick players to include</div>
@@ -4531,6 +4910,10 @@ function CreatePollForm({
 }
 
 function pollOptionColors(label: string, pollType: string): React.CSSProperties {
+  if (pollType === "over_under") {
+    const isOver = label.toLowerCase().startsWith("over");
+    return { background: isOver ? "#16a34a" : "#dc2626", borderColor: isOver ? "#16a34a" : "#dc2626" };
+  }
   if (pollType === "team") {
     const c = liveFeedTeamColors(label);
     return { background: c.primary, borderColor: c.primary };
@@ -4543,6 +4926,18 @@ function pollOptionColors(label: string, pollType: string): React.CSSProperties 
 }
 
 function PollOptionInner({ label, pollType, winner = false }: { label: string; pollType: string; winner?: boolean; myVote?: boolean }) {
+  if (pollType === "over_under") {
+    const isOver = label.toLowerCase().startsWith("over");
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
+        <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, background: isOver ? "rgba(34,197,94,.18)" : "rgba(239,68,68,.18)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <span style={{ fontSize: 16 }}>{isOver ? "↑" : "↓"}</span>
+        </div>
+        <span style={{ fontSize: 14, fontWeight: 800, color: isOver ? "#4ade80" : "#f87171", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</span>
+        {winner && <CorrectPollTick />}
+      </div>
+    );
+  }
   if (pollType === "team") {
     const logo = getLogo(label);
     return (
@@ -4595,7 +4990,7 @@ function CorrectPollTick() {
 /* ================= STYLES ================= */
 
 const createPollBtnStyle: CSSProperties = { display: "block", margin: "0 16px 16px", padding: "10px 16px", borderRadius: 12, background: "rgba(59,130,246,.15)", border: "1px solid rgba(59,130,246,.3)", color: "#60a5fa", fontWeight: 800, fontSize: 14, cursor: "pointer" };
-const pollCardStyle: CSSProperties = { background: "var(--surface-1)", border: "1px solid var(--border-3)", borderRadius: 20, padding: "18px 16px", boxShadow: "0 6px 28px rgba(0,0,0,.45)" };
+const pollCardStyle: CSSProperties = { background: "var(--surface-1)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "14px 14px 12px" };
 const pollQuestionStyle: CSSProperties = { fontSize: 18, fontWeight: 900, color: "var(--text-1)", lineHeight: 1.3, display: "block", letterSpacing: "-0.02em" };
 const pollResultRowStyle: CSSProperties = { padding: "0" };
 const pollOptionBtnStyle: CSSProperties = { width: "100%", padding: "12px 14px", borderRadius: 14, background: "var(--surface-2)", border: "1.5px solid var(--border-2)", color: "var(--text-1)", fontSize: 14, fontWeight: 700, cursor: "pointer", textAlign: "left", transition: "background 0.15s, border-color 0.15s" };

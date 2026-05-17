@@ -38,6 +38,15 @@ type TopPlayer = {
   teamColor: string;
 };
 
+type StatLeader = {
+  name: string;
+  team: string;
+  image: string;
+  teamColor: string;
+  value: number;
+  statLine: string;
+};
+
 type PlayerStatsPlayer = {
   name?: string;
   player?: string;
@@ -795,6 +804,84 @@ free_kicks?: {
       .slice(0, 10);
   }, [shownGames]);
 
+  const statLeaders = useMemo(() => {
+    type RawEntry = {
+      teams?: Array<{
+        players?: Array<{
+          player?: { id?: number };
+          goals?: { total?: number };
+          behinds?: number;
+          disposals?: number;
+          kicks?: number;
+          handballs?: number;
+          hitouts?: number;
+        }>;
+      }>;
+    };
+
+    const disposalsMap = new Map<string, StatLeader>();
+    const goalsMap = new Map<string, StatLeader>();
+    const hitoutsMap = new Map<string, StatLeader>();
+
+    const matchData = matchStatsRaw as Record<string, RawEntry>;
+    const playerData = playerStatsRaw as PlayerStatsPlayer[];
+
+    const apiSportsIds = new Set(
+      shownGames.map((g) => {
+        const mapped = (API_SPORTS_MATCH_IDS as Record<string, string>)[String(g.id)];
+        return mapped ?? String(g.id);
+      })
+    );
+
+    for (const [gameKey, gameEntry] of Object.entries(matchData)) {
+      if (!apiSportsIds.has(String(gameKey))) continue;
+      for (const teamEntry of gameEntry.teams ?? []) {
+        for (const rawPlayer of teamEntry.players ?? []) {
+          const apiPlayerId = rawPlayer.player?.id;
+          if (!apiPlayerId) continue;
+
+          const found = playerData.find(
+            (p) =>
+              p.apiSportsId === apiPlayerId ||
+              idListIncludes(p.eventIds, apiPlayerId) ||
+              idListIncludes(p.statsIds, apiPlayerId)
+          );
+          if (!found) continue;
+
+          const name = String(found.name || "").trim();
+          if (!name) continue;
+
+          const playerTeam = found.team ?? found.club ?? "";
+          const image = playerImagePath(name, playerTeam);
+          const teamColor = getTeamColorFromName(playerTeam);
+
+          const disposals = rawPlayer.disposals ?? 0;
+          const goals = rawPlayer.goals?.total ?? 0;
+          const hitouts = rawPlayer.hitouts ?? 0;
+          const kicks = rawPlayer.kicks ?? 0;
+          const handballs = rawPlayer.handballs ?? 0;
+          const behinds = rawPlayer.behinds ?? 0;
+
+          const trySet = (map: Map<string, StatLeader>, value: number, statLine: string) => {
+            if (value <= 0) return;
+            const existing = map.get(name);
+            if (!existing || value > existing.value)
+              map.set(name, { name, team: playerTeam, image, teamColor, value, statLine });
+          };
+
+          trySet(disposalsMap, disposals, `${kicks}k ${handballs}h`);
+          trySet(goalsMap, goals, `${behinds} beh`);
+          trySet(hitoutsMap, hitouts, `${disposals} disp`);
+        }
+      }
+    }
+
+    const top5 = (m: Map<string, StatLeader>) =>
+      Array.from(m.values()).sort((a, b) => b.value - a.value).slice(0, 5);
+
+    return { disposals: top5(disposalsMap), goals: top5(goalsMap), hitouts: top5(hitoutsMap) };
+  }, [shownGames]);
+
   function chooseRound(round: number) {
     setSelectedRound(round);
   }
@@ -1116,6 +1203,64 @@ free_kicks?: {
             ) : (
               <div style={noTopPlayersStyle}>No Foopy ratings found for Round {selectedRound}.</div>
             )}
+          </div>
+        )}
+
+        {roundStarted && (statLeaders.disposals.length > 0 || statLeaders.goals.length > 0 || statLeaders.hitouts.length > 0) && (
+          <div style={statLeaderGridStyle}>
+            {(
+              [
+                { label: "Top Disposals", statKey: "disposals", leaders: statLeaders.disposals, unit: "d" },
+                { label: "Top Goals",     statKey: "goals",     leaders: statLeaders.goals,     unit: "g" },
+                { label: "Top Hitouts",   statKey: "hitouts",   leaders: statLeaders.hitouts,   unit: "ho" },
+              ] as { label: string; statKey: string; leaders: StatLeader[]; unit: string }[]
+            ).map(({ label, statKey, leaders, unit }) => {
+              const top = leaders[0];
+              if (!top) return null;
+              return (
+                <Link key={label} href={`/round-stats?stat=${statKey}&round=${selectedRound}`} prefetch={false} style={{ ...statLeaderBoxStyle, textDecoration: "none", cursor: "pointer" }}>
+                  {/* Photo + overlays */}
+                  <div style={{ position: "relative", height: 140, background: top.teamColor, overflow: "hidden", borderRadius: "12px 12px 0 0", flexShrink: 0 }}>
+                    <img
+                      src={top.image}
+                      alt={top.name}
+                      style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center" }}
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                    />
+                    {/* gradient overlay */}
+                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.72) 100%)" }} />
+                    {/* rank badge */}
+                    <div style={statLeaderRankBadgeStyle}>#1</div>
+                    {/* stat category label */}
+                    <div style={statLeaderCategoryStyle}>{label.replace("Top ", "")}</div>
+                    {/* big stat value */}
+                    <div style={statLeaderBigValueStyle}>
+                      {top.value}
+                      <span style={{ fontSize: "13px", fontWeight: 700, opacity: 0.75, marginLeft: 2 }}>{unit}</span>
+                    </div>
+                  </div>
+
+                  {/* Primary player info */}
+                  <div style={{ padding: "10px 12px 4px" }}>
+                    <div style={statLeaderNameStyle}>{top.name.split(" ").pop()}</div>
+                  </div>
+
+                  {/* 2nd and 3rd */}
+                  {leaders.slice(1).map((p, i) => (
+                    <div key={p.name} style={statLeaderRowStyle}>
+                      <span style={{ fontSize: "9px", fontWeight: 900, color: "rgba(255,255,255,0.25)", width: 14, textAlign: "right", flexShrink: 0 }}>#{i + 2}</span>
+                      <div style={{ width: 24, height: 24, borderRadius: "50%", background: p.teamColor, overflow: "hidden", flexShrink: 0, border: "1px solid rgba(255,255,255,0.1)" }}>
+                        <img src={p.image} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                      </div>
+                      <span style={{ flex: 1, minWidth: 0, fontSize: "11px", fontWeight: 700, color: "rgba(255,255,255,0.6)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name.split(" ").pop()}</span>
+                      <span style={{ fontSize: "13px", fontWeight: 800, color: "var(--text-2)", flexShrink: 0 }}>{p.value}<span style={{ fontSize: "9px", opacity: 0.55, marginLeft: 1 }}>{unit}</span></span>
+                    </div>
+                  ))}
+
+                  <div style={{ height: 2 }} />
+                </Link>
+              );
+            })}
           </div>
         )}
       </section>
@@ -1866,4 +2011,87 @@ const topPlayerNameStyle: React.CSSProperties = {
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
   lineHeight: 1.2,
+};
+
+const statLeaderGridStyle: React.CSSProperties = {
+  marginTop: "12px",
+  display: "grid",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gap: "10px",
+};
+
+const statLeaderBoxStyle: React.CSSProperties = {
+  borderRadius: "14px",
+  border: "1px solid var(--border-1)",
+  background: "var(--surface-1)",
+  display: "flex",
+  flexDirection: "column",
+  overflow: "hidden",
+  gap: "0px",
+};
+
+const statLeaderRankBadgeStyle: React.CSSProperties = {
+  position: "absolute",
+  top: 8,
+  left: 8,
+  background: "#eab308",
+  color: "#000",
+  fontSize: "10px",
+  fontWeight: 900,
+  padding: "3px 7px",
+  borderRadius: "999px",
+  letterSpacing: "0.02em",
+};
+
+const statLeaderCategoryStyle: React.CSSProperties = {
+  position: "absolute",
+  top: 8,
+  right: 8,
+  background: "rgba(0,0,0,0.45)",
+  color: "rgba(255,255,255,0.7)",
+  fontSize: "8px",
+  fontWeight: 800,
+  letterSpacing: "0.07em",
+  textTransform: "uppercase",
+  padding: "3px 6px",
+  borderRadius: "6px",
+};
+
+const statLeaderBigValueStyle: React.CSSProperties = {
+  position: "absolute",
+  bottom: 8,
+  left: 10,
+  fontSize: "28px",
+  fontWeight: 900,
+  color: "#ffffff",
+  lineHeight: 1,
+  letterSpacing: "-0.03em",
+  fontVariantNumeric: "tabular-nums",
+  textShadow: "0 1px 6px rgba(0,0,0,0.5)",
+};
+
+const statLeaderRowStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "7px",
+  padding: "6px 12px",
+  borderTop: "1px solid var(--border-1)",
+};
+
+const statLeaderNameStyle: React.CSSProperties = {
+  fontSize: "13px",
+  fontWeight: 800,
+  color: "var(--text-1)",
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  lineHeight: 1.2,
+};
+
+const statLeaderSubStyle: React.CSSProperties = {
+  fontSize: "10px",
+  fontWeight: 600,
+  color: "rgba(255,255,255,0.38)",
+  whiteSpace: "nowrap",
+  marginTop: "2px",
 };
