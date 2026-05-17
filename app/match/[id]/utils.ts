@@ -1,4 +1,4 @@
-import playerStatsJson from "@/app/data/players.json";
+﻿import playerStatsJson from "@/app/data/players.json";
 import type { MatchGame, PlayerStat, SavedMatchStats, LiveEvent } from "./types";
 
 export function num(value: any) {
@@ -116,9 +116,9 @@ export function teamColors(team: string): TeamColourSet {
 
     carlton: { primary: "#031a35", secondary: "#ffffff", home: "#031a35", away: "#ffffff", text: "#ffffff" },
 
-    collingwood: { primary: "#ffffff", secondary: "#000000", home: "#000000", away: "#ffffff", text: "#000000" },
+    collingwood: { primary: "#ffffff", secondary: "#14141e", home: "#14141e", away: "#ffffff", text: "#14141e" },
 
-    essendon: { primary: "#ef4444", secondary: "#000000", home: "#ef4444", away: "#000000", text: "#ffffff" },
+    essendon: { primary: "#ef4444", secondary: "#14141e", home: "#ef4444", away: "#14141e", text: "#ffffff" },
 
     fremantle: { primary: "#7c3aed", secondary: "#ffffff", home: "#7c3aed", away: "#ffffff", text: "#ffffff" },
 
@@ -128,13 +128,13 @@ export function teamColors(team: string): TeamColourSet {
     "gold coast": { primary: "#ef4444", secondary: "#facc15", home: "#ef4444", away: "#facc15", text: "#ffffff" },
     "gold coast suns": { primary: "#ef4444", secondary: "#facc15", home: "#ef4444", away: "#facc15", text: "#ffffff" },
 
-    gws: { primary: "#f97316", secondary: "#000000", home: "#f97316", away: "#000000", text: "#000000" },
-    "gws giants": { primary: "#f97316", secondary: "#000000", home: "#f97316", away: "#000000", text: "#000000" },
-    "greater western sydney": { primary: "#f97316", secondary: "#000000", home: "#f97316", away: "#000000", text: "#000000" },
-    "greater western sydney giants": { primary: "#f97316", secondary: "#000000", home: "#f97316", away: "#000000", text: "#000000" },
+    gws: { primary: "#f97316", secondary: "#14141e", home: "#f97316", away: "#14141e", text: "#14141e" },
+    "gws giants": { primary: "#f97316", secondary: "#14141e", home: "#f97316", away: "#14141e", text: "#14141e" },
+    "greater western sydney": { primary: "#f97316", secondary: "#14141e", home: "#f97316", away: "#14141e", text: "#14141e" },
+    "greater western sydney giants": { primary: "#f97316", secondary: "#14141e", home: "#f97316", away: "#14141e", text: "#14141e" },
 
-    hawthorn: { primary: "#f59e0b", secondary: "#5b2a00", home: "#f59e0b", away: "#5b2a00", text: "#000000" },
-    "hawthorn hawks": { primary: "#f59e0b", secondary: "#5b2a00", home: "#f59e0b", away: "#5b2a00", text: "#000000" },
+    hawthorn: { primary: "#f59e0b", secondary: "#5b2a00", home: "#f59e0b", away: "#5b2a00", text: "#14141e" },
+    "hawthorn hawks": { primary: "#f59e0b", secondary: "#5b2a00", home: "#f59e0b", away: "#5b2a00", text: "#14141e" },
 
     melbourne: { primary: "#ef4444", secondary: "#1e3a8a", home: "#ef4444", away: "#1e3a8a", text: "#ffffff" },
     "melbourne demons": { primary: "#ef4444", secondary: "#1e3a8a", home: "#ef4444", away: "#1e3a8a", text: "#ffffff" },
@@ -142,14 +142,14 @@ export function teamColors(team: string): TeamColourSet {
     "north melbourne": { primary: "#3b82f6", secondary: "#ffffff", home: "#3b82f6", away: "#ffffff", text: "#ffffff" },
     "north melbourne kangaroos": { primary: "#3b82f6", secondary: "#ffffff", home: "#3b82f6", away: "#ffffff", text: "#ffffff" },
 
-    "port adelaide": { primary: "#06b6d4", secondary: "#000000", home: "#06b6d4", away: "#000000", text: "#000000" },
-    "port adelaide power": { primary: "#06b6d4", secondary: "#000000", home: "#06b6d4", away: "#000000", text: "#000000" },
+    "port adelaide": { primary: "#06b6d4", secondary: "#14141e", home: "#06b6d4", away: "#14141e", text: "#14141e" },
+    "port adelaide power": { primary: "#06b6d4", secondary: "#14141e", home: "#06b6d4", away: "#14141e", text: "#14141e" },
 
-    richmond: { primary: "#facc15", secondary: "#000000", home: "#facc15", away: "#000000", text: "#000000" },
-    "richmond tigers": { primary: "#facc15", secondary: "#000000", home: "#facc15", away: "#000000", text: "#000000" },
+    richmond: { primary: "#facc15", secondary: "#14141e", home: "#facc15", away: "#14141e", text: "#14141e" },
+    "richmond tigers": { primary: "#facc15", secondary: "#14141e", home: "#facc15", away: "#14141e", text: "#14141e" },
 
-    "st kilda": { primary: "#ef4444", secondary: "#000000", home: "#ef4444", away: "#000000", text: "#ffffff" },
-    "st kilda saints": { primary: "#ef4444", secondary: "#000000", home: "#ef4444", away: "#000000", text: "#ffffff" },
+    "st kilda": { primary: "#ef4444", secondary: "#14141e", home: "#ef4444", away: "#14141e", text: "#ffffff" },
+    "st kilda saints": { primary: "#ef4444", secondary: "#14141e", home: "#ef4444", away: "#14141e", text: "#ffffff" },
 
     sydney: { primary: "#ef4444", secondary: "#ffffff", home: "#ef4444", away: "#ffffff", text: "#ffffff" },
     "sydney swans": { primary: "#ef4444", secondary: "#ffffff", home: "#ef4444", away: "#ffffff", text: "#ffffff" },
@@ -208,7 +208,7 @@ export function findPlayerByEventId(id?: number | string, preferTeam?: string) {
     const norm = preferTeam.toLowerCase().replace(/[^a-z]/g, "");
     const match = candidates.find((p) => {
       const club = String(p.club ?? p.team ?? "").toLowerCase().replace(/[^a-z]/g, "");
-      return club && club.includes(norm);
+      return club && (club === norm || club.includes(norm) || norm.includes(club));
     });
     if (match) return match;
   }

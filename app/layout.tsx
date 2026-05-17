@@ -3,7 +3,9 @@ import type { Metadata, Viewport } from "next";
 import BottomNav from "./components/BottomNav";
 import GlobalSideDrawer from "./components/GlobalSideDrawer";
 import NavigationEvents from "./components/NavigationEvents";
+import ThemeModeBootstrap from "./components/ThemeModeBootstrap";
 import { XPProvider } from "./context/XPContext";
+import { FOOPY_THEME_KEY } from "./lib/theme";
 
 export const metadata: Metadata = {
   title: "Foopy | AFL Live Scores & Picks",
@@ -19,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#000000",
+  themeColor: "#14141e",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -31,6 +33,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var m=localStorage.getItem(${JSON.stringify(FOOPY_THEME_KEY)});if(m!=="light"&&m!=="dark")m="default";document.documentElement.dataset.foopyTheme=m;document.documentElement.style.colorScheme=m==="light"?"light":"dark";}catch(e){}})();`,
+          }}
+        />
         <meta name="color-scheme" content="dark" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <link rel="preconnect" href="https://api.squiggle.com.au" />
@@ -39,6 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <XPProvider>
+          <ThemeModeBootstrap />
           <NavigationEvents />
           <GlobalSideDrawer />
           <div className="page-shell">

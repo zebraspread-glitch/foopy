@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -51,6 +51,54 @@ type PlayerStatsPlayer = {
   statsIds?: unknown;
 };
 
+const TEAM_BAR_COLORS: Record<number, string> = {
+  1:  "#0f1432",
+  2:  "#8c0841",
+  3:  "#081d30",
+  4:  "#ffffff",
+  5:  "#cb2031",
+  6:  "#2a0c56",
+  7:  "#012b5c",
+  8:  "#c40704",
+  9:  "#fb7907",
+  10: "#331101",
+  11: "#df0518",
+  12: "#0434a7",
+  13: "#078bac",
+  14: "#f7d11c",
+  15: "#eb1d2f",
+  16: "#de241b",
+  17: "#f2bc2e",
+  18: "#0358a7",
+};
+
+const TEAM_ABBR: Record<number, string> = {
+  1: "ADE", 2: "BRI", 3: "CAR", 4: "COL", 5: "ESS", 6: "FRE",
+  7: "GEE", 8: "GC", 9: "GWS", 10: "HAW", 11: "MEL", 12: "NM",
+  13: "PA", 14: "RIC", 15: "STK", 16: "SYD", 17: "WCE", 18: "WB",
+};
+
+const TEAM_NICKNAMES: Record<number, string> = {
+  1: "Crows",
+  2: "Lions",
+  3: "Blues",
+  4: "Magpies",
+  5: "Bombers",
+  6: "Dockers",
+  7: "Cats",
+  8: "Suns",
+  9: "Giants",
+  10: "Hawks",
+  11: "Demons",
+  12: "Kangaroos",
+  13: "Power",
+  14: "Tigers",
+  15: "Saints",
+  16: "Swans",
+  17: "Eagles",
+  18: "Bulldogs",
+};
+
 const TEAM_NAMES: Record<number, string> = {
   1: "Adelaide",
   2: "Brisbane Lions",
@@ -76,8 +124,8 @@ const TEAM_STYLES: Record<number, { colors: string[]; logo: string }> = {
   1: { colors: ["#002b5c", "#c8102e", "#ffd200"], logo: "/team-logos/crows.png" },
   2: { colors: ["#7a003c", "#fbbf24", "#1e3a8a"], logo: "/team-logos/lions.png" },
   3: { colors: ["#031a35", "#0b3b75"], logo: "/team-logos/blues.png" },
-  4: { colors: ["#ffffff", "#111111"], logo: "/team-logos/magpies.png" },
-  5: { colors: ["#111111", "#ed1b2f"], logo: "/team-logos/bombers.png" },
+  4: { colors: ["#ffffff", "#1e1e28"], logo: "/team-logos/magpies.png" },
+  5: { colors: ["#1e1e28", "#ed1b2f"], logo: "/team-logos/bombers.png" },
   6: { colors: ["#4b1979", "#ffffff"], logo: "/team-logos/dockers.png" },
   7: { colors: ["#ffffff", "#003b73"], logo: "/team-logos/cats.png" },
   8: { colors: ["#ff1f2d", "#ffd200"], logo: "/team-logos/suns.png" },
@@ -85,9 +133,9 @@ const TEAM_STYLES: Record<number, { colors: string[]; logo: string }> = {
   10: { colors: ["#8b4a24", "#fbbf24"], logo: "/team-logos/hawks.png" },
   11: { colors: ["#c8102e", "#001f54"], logo: "/team-logos/demons.png" },
   12: { colors: ["#0055a4", "#ffffff"], logo: "/team-logos/kangaroos.png" },
-  13: { colors: ["#00a9b7", "#111111", "#ffffff"], logo: "/team-logos/power.png" },
-  14: { colors: ["#111111", "#ffd200"], logo: "/team-logos/tigers.png" },
-  15: { colors: ["#ed1b2f", "#ffffff", "#111111"], logo: "/team-logos/saints.png" },
+  13: { colors: ["#00a9b7", "#1e1e28", "#ffffff"], logo: "/team-logos/power.png" },
+  14: { colors: ["#1e1e28", "#ffd200"], logo: "/team-logos/tigers.png" },
+  15: { colors: ["#ed1b2f", "#ffffff", "#1e1e28"], logo: "/team-logos/saints.png" },
   16: { colors: ["#ed171f", "#ffffff"], logo: "/team-logos/swans.png" },
   17: { colors: ["#003087", "#f2a900"], logo: "/team-logos/eagles.png" },
   18: { colors: ["#2b6edc", "#ffffff", "#ed1b2f"], logo: "/team-logos/bulldogs.png" },
@@ -189,6 +237,24 @@ function getTime(game: Game, showDate = false) {
 }
 
 
+function getTimeOnly(game: Game) {
+  const status = getStatus(game);
+  if (status === "COMPLETED") return "Full Time";
+  if (status === "LIVE") return game.timestr || "Live";
+
+  if (game.timestr) {
+    const spaceIdx = game.timestr.indexOf(" ");
+    return compactMeridiem(spaceIdx >= 0 ? game.timestr.slice(spaceIdx + 1) : game.timestr);
+  }
+
+  if (!game.date) return "TBA";
+  return compactMeridiem(new Date(game.date).toLocaleString("en-AU", { hour: "numeric", minute: "2-digit" }));
+}
+
+function compactMeridiem(value: string) {
+  return value.replace(/\s+([ap])\.?m\.?$/i, (_, meridiem: string) => `${meridiem.toLowerCase()}m`);
+}
+
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
 
@@ -221,10 +287,10 @@ function formatMobileDateLabel(date?: string) {
   if (sameDay(gameDate, yesterday)) return "Yesterday";
   if (sameDay(gameDate, tomorrow)) return "Tomorrow";
 
-  return gameDate.toLocaleDateString("en-AU", {
-    weekday: "short",
+  return gameDate.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
     day: "numeric",
-    month: "short",
   });
 }
 
@@ -443,9 +509,9 @@ function hexLuminance(hex: string) {
 
 function getTeamColorFromName(team?: string) {
   const id = getTeamIdFromName(team);
-  if (!id) return "#111827";
+  if (!id) return "#1e2438";
   const colors = TEAM_STYLES[id]?.colors ?? [];
-  return colors.find((c) => hexLuminance(c) < 180) ?? colors[0] ?? "#111827";
+  return colors.find((c) => hexLuminance(c) < 180) ?? colors[0] ?? "#1e2438";
 }
 
 export default function HomePage() {
@@ -461,14 +527,9 @@ export default function HomePage() {
   const isMobile = useIsMobile();
 
   const listStyle: React.CSSProperties = {
-    display: "grid",
-    gridTemplateColumns: isMobile
-      ? "1fr"
-      : columns === "1"
-      ? "1fr"
-      : "repeat(auto-fill, minmax(300px, 1fr))",
-    gap: "16px",
-    alignItems: "stretch",
+    display: "flex",
+    flexDirection: "column",
+    gap: "0px",
   };
 
   useEffect(() => {
@@ -604,13 +665,12 @@ export default function HomePage() {
     return games
       .filter((g) => Number(g.round) === Number(selectedRound) && g.round <= 24)
       .sort((a, b) => {
-        const statusA = getStatus(a);
-        const statusB = getStatus(b);
+        const timeA = new Date(a.date ?? "").getTime();
+        const timeB = new Date(b.date ?? "").getTime();
+        const safeTimeA = Number.isFinite(timeA) ? timeA : Number.MAX_SAFE_INTEGER;
+        const safeTimeB = Number.isFinite(timeB) ? timeB : Number.MAX_SAFE_INTEGER;
 
-        if (statusA === "LIVE" && statusB !== "LIVE") return -1;
-        if (statusA !== "LIVE" && statusB === "LIVE") return 1;
-
-        return new Date(a.date ?? "").getTime() - new Date(b.date ?? "").getTime();
+        return safeTimeA - safeTimeB;
       });
   }, [games, selectedRound]);
 
@@ -756,10 +816,19 @@ free_kicks?: {
       <header style={headerStyle}>
         <div style={headerTopStyle}>
           <div style={logoWrapStyle}>
-            <span style={logoTextStyle}>foopy</span>
+            <div style={logoIconStyle}>
+              <span style={{ fontSize: 15, fontWeight: 950, color: "white", letterSpacing: "-0.03em" }}>F</span>
+            </div>
           </div>
 
-          <span style={roundBadgeStyle}>Rd {selectedRound}</span>
+          <span style={headerTitleStyle}>Scores</span>
+
+          <Link href="/profile" style={headerProfileBtnStyle} prefetch={false}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-1)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 20c0-3.87 3.58-7 8-7s8 3.13 8 7" />
+            </svg>
+          </Link>
         </div>
 
         <div ref={roundRef} className="no-scrollbar" style={isMobile ? headerRoundsScroll : headerRoundsDesktop}>
@@ -777,18 +846,18 @@ free_kicks?: {
                 <span
                   style={{
                     ...headerRoundText,
-                    color: isSelected ? "#ffffff" : isCurrent ? "#60a5fa" : "#6b7280",
-                    fontWeight: isSelected ? 950 : isCurrent ? 850 : 750,
+                    color: isSelected ? "var(--text-1)" : isCurrent ? "#60a5fa" : "var(--text-3)",
+                    fontWeight: isSelected ? 800 : isCurrent ? 700 : 600,
                   }}
                 >
-                  {round === 0 ? "Opening Round" : `Round ${round}`}
+                  {round === 0 ? "Opening" : `Rd ${round}`}
                 </span>
 
                 {(isSelected || isCurrent) && (
                   <div
                     style={{
                       ...headerRoundUnderline,
-                      background: isSelected ? "#ef4444" : "#3b82f6",
+                      background: isSelected ? "var(--text-1)" : "#3b82f6",
                     }}
                   />
                 )}
@@ -818,82 +887,101 @@ free_kicks?: {
 
           {!loading &&
             !isMobile &&
-            desktopGames.map((game) => {
-              const homeId = game.hteamid;
-              const awayId = game.ateamid;
+            mobileGroups.map((group) => (
+              <div key={group.label} style={desktopGroupStyle}>
+                <div style={{ ...mobileGroupLabelStyle, gridColumn: "1 / -1" }}>{group.label}</div>
 
-              if (!homeId || !awayId) return null;
+                {group.games.map((game) => {
+                  const homeId = game.hteamid;
+                  const awayId = game.ateamid;
 
-              const homeStyle = TEAM_STYLES[homeId];
-              const awayStyle = TEAM_STYLES[awayId];
+                  if (!homeId || !awayId) return null;
 
-              if (!homeStyle || !awayStyle) return null;
+                  const homeStyle = TEAM_STYLES[homeId];
+                  const awayStyle = TEAM_STYLES[awayId];
 
-              const homeScore = game.hscore ?? 0;
-              const awayScore = game.ascore ?? 0;
-              const status = getStatus(game);
-              const isUpcoming = status === "UPCOMING";
+                  if (!homeStyle || !awayStyle) return null;
 
-              const homeWinning = homeScore > awayScore;
-              const awayWinning = awayScore > homeScore;
-              const homeLost = status === "COMPLETED" && homeScore < awayScore;
-              const awayLost = status === "COMPLETED" && awayScore < homeScore;
+                  const homeScore = game.hscore ?? 0;
+                  const awayScore = game.ascore ?? 0;
+                  const status = getStatus(game);
+                  const isUpcoming = status === "UPCOMING";
+                  const isLongCard = group.games.length === 1;
+                  const homeName = isLongCard
+                    ? TEAM_NICKNAMES[homeId] ?? displayTeamName(game.hteam || TEAM_NAMES[homeId])
+                    : TEAM_ABBR[homeId] ?? displayTeamName(game.hteam || TEAM_NAMES[homeId]);
+                  const awayName = isLongCard
+                    ? TEAM_NICKNAMES[awayId] ?? displayTeamName(game.ateam || TEAM_NAMES[awayId])
+                    : TEAM_ABBR[awayId] ?? displayTeamName(game.ateam || TEAM_NAMES[awayId]);
 
-              return (
-                <Link
-                  key={game.id}
-                  href={`/match/${game.id}?from=home`}
-                  prefetch={false}
-                  className="card"
-                  style={{
-                    ...cardStyle,
-                    border: status === "LIVE" ? "2px solid #22c55e" : cardStyle.border,
-                    boxShadow:
-                      status === "LIVE"
-                        ? "0 0 0 1px rgba(34,197,94,.35), 0 18px 45px rgba(0,0,0,.22)"
-                        : cardStyle.boxShadow,
-                  }}
-                >
-                  <aside style={infoStyle}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <div style={venueStyle}>{game.venue || "Venue TBA"}</div>
-                      {status === "LIVE" && <LiveViewerCount gameId={game.id} />}
-                    </div>
-                    <div style={{ ...timeStyle, color: status === "LIVE" ? "#4ade80" : undefined }}>{getTime(game, selectedRound !== currentRound)}</div>
-                  </aside>
+                  const homeLost = status === "COMPLETED" && homeScore < awayScore;
+                  const awayLost = status === "COMPLETED" && awayScore < homeScore;
 
-                  <section style={teamsStyle}>
-                    <TeamRow
-                      logo={homeStyle.logo}
-                      name={displayTeamName(game.hteam || TEAM_NAMES[homeId])}
-                      scoreText={isUpcoming ? getTeamRecord(homeId, games, game) : String(homeScore)}
-                      goalsText={isUpcoming ? "W-L" : `${game.hgoals ?? 0}.${game.hbehinds ?? 0}`}
-                      colourLine={makeTeamGradient(homeStyle.colors)}
-                      faded={homeLost}
-                      scoreColor={homeWinning ? "#3b82f6" : "white"}
-                      isRecord={isUpcoming}
-                    />
+                  return (
+                    <Link
+                      key={game.id}
+                      href={`/match/${game.id}?from=home`}
+                      prefetch={false}
+                      className={`card${status === "LIVE" ? " card-live" : ""}`}
+                      style={{
+                        ...cardStyle,
+                        gridColumn: group.games.length === 1 ? "1 / -1" : undefined,
+                      }}
+                    >
+                      <section style={teamsStyle}>
+                        <TeamRow
+                          logo={homeStyle.logo}
+                          name={homeName}
+                          scoreText={isUpcoming ? getTeamRecord(homeId, games, game) : String(homeScore)}
+                          goalsText={isUpcoming ? "" : `${game.hgoals ?? 0}.${game.hbehinds ?? 0}`}
+                          primaryColor={TEAM_BAR_COLORS[homeId] ?? homeStyle.colors[0]}
+                          faded={homeLost}
+                          scoreColor="white"
+                          isRecord={isUpcoming}
+                          showBorder
+                        />
 
-                    <TeamRow
-                      logo={awayStyle.logo}
-                      name={displayTeamName(game.ateam || TEAM_NAMES[awayId])}
-                      scoreText={isUpcoming ? getTeamRecord(awayId, games, game) : String(awayScore)}
-                      goalsText={isUpcoming ? "W-L" : `${game.agoals ?? 0}.${game.abehinds ?? 0}`}
-                      colourLine={makeTeamGradient(awayStyle.colors)}
-                      faded={awayLost}
-                      scoreColor={awayWinning ? "#3b82f6" : "white"}
-                      isRecord={isUpcoming}
-                    />
-                  </section>
-                </Link>
-              );
-            })}
+                        <TeamRow
+                          logo={awayStyle.logo}
+                          name={awayName}
+                          scoreText={isUpcoming ? getTeamRecord(awayId, games, game) : String(awayScore)}
+                          goalsText={isUpcoming ? "" : `${game.agoals ?? 0}.${game.abehinds ?? 0}`}
+                          primaryColor={TEAM_BAR_COLORS[awayId] ?? awayStyle.colors[0]}
+                          faded={awayLost}
+                          scoreColor="white"
+                          isRecord={isUpcoming}
+                        />
+                      </section>
+
+                      <div style={cardFooterStyle}>
+                        {status === "LIVE" && <LiveViewerCount gameId={game.id} />}
+                        <span
+                          style={{
+                            ...cardFooterTimeStyle,
+                            ...(status === "COMPLETED" ? fullTimeFooterTextStyle : null),
+                            color: status === "LIVE" ? "#4ade80" : "#d6d7e3",
+                          }}
+                        >
+                          {getTimeOnly(game)}
+                        </span>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
 
           {!loading &&
             isMobile &&
             mobileGroups.map((group) => (
-              <div key={group.label} style={mobileGroupStyle}>
-                <div style={mobileGroupLabelStyle}>{group.label}</div>
+              <div
+                key={group.label}
+                style={{
+                  ...mobileGroupStyle,
+                  gridTemplateColumns: group.games.length >= 2 ? "repeat(2, minmax(0, 1fr))" : "1fr",
+                }}
+              >
+                <div style={{ ...mobileGroupLabelStyle, gridColumn: "1 / -1" }}>{group.label}</div>
 
                 {group.games.map((game) => {
                   const homeId = game.hteamid;
@@ -908,31 +996,37 @@ free_kicks?: {
 
                   const status = getStatus(game);
                   const isUpcoming = status === "UPCOMING";
+                  const isLongCard = group.games.length === 1;
+                  const homeName = isLongCard
+                    ? TEAM_NICKNAMES[homeId] ?? displayTeamName(game.hteam || TEAM_NAMES[homeId])
+                    : TEAM_ABBR[homeId] ?? displayTeamName(game.hteam || TEAM_NAMES[homeId]);
+                  const awayName = isLongCard
+                    ? TEAM_NICKNAMES[awayId] ?? displayTeamName(game.ateam || TEAM_NAMES[awayId])
+                    : TEAM_ABBR[awayId] ?? displayTeamName(game.ateam || TEAM_NAMES[awayId]);
 
                   return (
                     <Link
                       key={game.id}
                       href={`/match/${game.id}?from=home`}
                       prefetch={false}
-                      className="card"
+                      className={`card${status === "LIVE" ? " card-live" : ""}`}
                       style={{
                         ...mobileMatchStyle,
-                        borderColor: status === "LIVE" ? "rgba(34,197,94,.95)" : "rgba(255,255,255,.08)",
+                        gridColumn: group.games.length === 1 ? "1 / -1" : undefined,
                       }}
                     >
                       <MobileMatchRow
                         homeLogo={homeStyle.logo}
                         awayLogo={awayStyle.logo}
-                        homeName={displayTeamName(game.hteam || TEAM_NAMES[homeId])}
-                        awayName={displayTeamName(game.ateam || TEAM_NAMES[awayId])}
+                        homeName={homeName}
+                        awayName={awayName}
                         homeScoreText={isUpcoming ? getTeamRecord(homeId, games, game) : String(game.hscore ?? 0)}
                         awayScoreText={isUpcoming ? getTeamRecord(awayId, games, game) : String(game.ascore ?? 0)}
-                        homeGoalsText={isUpcoming ? "W-L" : `${game.hgoals ?? 0}.${game.hbehinds ?? 0}`}
-                        awayGoalsText={isUpcoming ? "W-L" : `${game.agoals ?? 0}.${game.abehinds ?? 0}`}
-                        homeColourLine={makeTeamGradient(homeStyle.colors)}
-                        awayColourLine={makeTeamGradient(awayStyle.colors)}
-                        timeText={getTime(game, selectedRound !== currentRound)}
-                        venue={game.venue || "Venue TBA"}
+                        homeGoalsText={isUpcoming ? "" : `${game.hgoals ?? 0}.${game.hbehinds ?? 0}`}
+                        awayGoalsText={isUpcoming ? "" : `${game.agoals ?? 0}.${game.abehinds ?? 0}`}
+                        homePrimaryColor={TEAM_BAR_COLORS[homeId] ?? homeStyle.colors[0]}
+                        awayPrimaryColor={TEAM_BAR_COLORS[awayId] ?? awayStyle.colors[0]}
+                        timeText={getTimeOnly(game)}
                         homeLost={status === "COMPLETED" && (game.hscore ?? 0) < (game.ascore ?? 0)}
                         awayLost={status === "COMPLETED" && (game.ascore ?? 0) < (game.hscore ?? 0)}
                         isUpcoming={isUpcoming}
@@ -999,6 +1093,22 @@ free_kicks?: {
                       <div style={{ ...topRatingRowStyle, background: foopyColor(player.rating) }}>
                         <strong>{player.rating.toFixed(1)}</strong>
                       </div>
+
+                      <span style={{
+                        fontSize: "9px",
+                        fontWeight: 700,
+                        color: "rgba(255,255,255,0.5)",
+                        letterSpacing: "0.01em",
+                        textAlign: "center",
+                        lineHeight: 1.2,
+                        maxWidth: "100%",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        display: "block",
+                      }}>
+                        {player.name.split(" ").pop()}
+                      </span>
                     </div>
                   );
                 })}
@@ -1046,10 +1156,9 @@ function MobileMatchRow({
   awayScoreText,
   homeGoalsText,
   awayGoalsText,
-  homeColourLine,
-  awayColourLine,
+  homePrimaryColor,
+  awayPrimaryColor,
   timeText,
-  venue,
   homeLost,
   awayLost,
   isUpcoming,
@@ -1064,10 +1173,9 @@ function MobileMatchRow({
   awayScoreText: string;
   homeGoalsText: string;
   awayGoalsText: string;
-  homeColourLine: string;
-  awayColourLine: string;
+  homePrimaryColor: string;
+  awayPrimaryColor: string;
   timeText: string;
-  venue: string;
   homeLost: boolean;
   awayLost: boolean;
   isUpcoming: boolean;
@@ -1076,38 +1184,40 @@ function MobileMatchRow({
 }) {
   return (
     <div style={mobileMatchInnerStyle}>
-      <div style={mobileMatchHeaderStyle}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <div style={mobileVenueStyle}>{venue}</div>
-          {isLive && <LiveViewerCount gameId={gameId} />}
-        </div>
-        <strong style={{ ...mobileHeaderTimeStyle, color: isLive ? "#4ade80" : "#ffffff" }}>
-          {isUpcoming ? timeText : isLive ? timeText : "Full Time"}
-        </strong>
-      </div>
+      <MobileStackedTeamRow
+        logo={homeLogo}
+        name={homeName}
+        goalsText={homeGoalsText}
+        scoreText={homeScoreText}
+        primaryColor={homePrimaryColor}
+        faded={homeLost}
+        winning={!isUpcoming && Number(homeScoreText) > Number(awayScoreText)}
+        isRecord={isUpcoming}
+        showBorder
+      />
 
-      <div style={mobileTeamsStackStyle}>
-        <MobileStackedTeamRow
-          logo={homeLogo}
-          name={homeName}
-          goalsText={homeGoalsText}
-          scoreText={homeScoreText}
-          colourLine={homeColourLine}
-          faded={homeLost}
-          winning={!isUpcoming && Number(homeScoreText) > Number(awayScoreText)}
-          isRecord={isUpcoming}
-        />
+      <MobileStackedTeamRow
+        logo={awayLogo}
+        name={awayName}
+        goalsText={awayGoalsText}
+        scoreText={awayScoreText}
+        primaryColor={awayPrimaryColor}
+        faded={awayLost}
+        winning={!isUpcoming && Number(awayScoreText) > Number(homeScoreText)}
+        isRecord={isUpcoming}
+      />
 
-        <MobileStackedTeamRow
-          logo={awayLogo}
-          name={awayName}
-          goalsText={awayGoalsText}
-          scoreText={awayScoreText}
-          colourLine={awayColourLine}
-          faded={awayLost}
-          winning={!isUpcoming && Number(awayScoreText) > Number(homeScoreText)}
-          isRecord={isUpcoming}
-        />
+      <div style={mobileMatchFooterStyle}>
+        {isLive && <LiveViewerCount gameId={gameId} />}
+        <span
+          style={{
+            ...mobileFooterTimeStyle,
+            ...(timeText === "Full Time" ? fullTimeFooterTextStyle : null),
+            color: isLive ? "#4ade80" : "#d6d7e3",
+          }}
+        >
+          {timeText}
+        </span>
       </div>
     </div>
   );
@@ -1118,50 +1228,46 @@ function MobileStackedTeamRow({
   name,
   goalsText,
   scoreText,
-  colourLine,
+  primaryColor,
   faded,
   winning,
   isRecord,
+  showBorder,
 }: {
   logo: string;
   name: string;
   goalsText: string;
   scoreText: string;
-  colourLine: string;
+  primaryColor: string;
   faded: boolean;
   winning: boolean;
   isRecord: boolean;
+  showBorder?: boolean;
 }) {
   return (
-    <div style={mobileStackedTeamWrapStyle}>
+    <div style={{ ...mobileStackedTeamWrapStyle, opacity: faded ? 0.45 : 1 }}>
+      <div style={{ width: 8, flexShrink: 0, background: primaryColor, borderRadius: "0 8px 8px 0" }} />
       <div style={mobileStackedTeamRowStyle}>
         <div style={mobileStackedTeamLeftStyle}>
           <img src={logo} alt={name} style={mobileLogoStyle} loading="lazy" />
-          <strong style={{ ...mobileTeamNameStyle, opacity: faded ? 0.45 : 1 }}>{name}</strong>
+          <strong style={mobileTeamNameStyle}>{name}</strong>
         </div>
 
         <div style={mobileStackedScoreWrapStyle}>
-          <span style={{ ...mobileGoalsStyle, opacity: faded ? 0.34 : 0.6 }}>{goalsText}</span>
           <strong
             style={{
               ...mobileStackedScoreStyle,
-              color: winning ? "#60a5fa" : "#ffffff",
-              fontSize: isRecord ? "17px" : "24px",
-              opacity: faded ? 0.55 : 1,
+              color: isRecord ? "#d6d7e3" : "#ffffff",
+              fontSize: "23px",
+              fontWeight: 900,
+              fontStyle: "normal",
             }}
           >
             {scoreText}
           </strong>
+          {goalsText ? <span style={mobileGoalsStyle}>{goalsText}</span> : null}
         </div>
       </div>
-
-      <div
-        style={{
-          ...mobileTeamGradientLineStyle,
-          background: colourLine,
-          opacity: faded ? 0.35 : 1,
-        }}
-      />
     </div>
   );
 }
@@ -1171,195 +1277,203 @@ function TeamRow({
   name,
   scoreText,
   goalsText,
-  colourLine,
+  primaryColor,
   faded,
   scoreColor,
   isRecord,
+  showBorder,
 }: {
   logo: string;
   name: string;
   scoreText: string;
   goalsText: string;
-  colourLine: string;
+  primaryColor: string;
   faded: boolean;
   scoreColor: string;
   isRecord: boolean;
+  showBorder?: boolean;
 }) {
   return (
-    <div style={teamRowWrap}>
+    <div style={{ ...teamRowWrap, opacity: faded ? 0.45 : 1 }}>
+      <div style={{ width: 8, flexShrink: 0, background: primaryColor, borderRadius: "0 8px 8px 0" }} />
       <div style={teamRow}>
         <div style={teamLeft}>
-          <img src={logo} alt={name} style={{ ...logoStyle, opacity: faded ? 0.38 : 1 }} loading="lazy" />
-          <strong style={{ ...teamNameStyle, opacity: faded ? 0.45 : 1 }}>{name}</strong>
+          <img src={logo} alt={name} style={logoStyle} loading="lazy" />
+          <strong style={teamNameStyle}>{name}</strong>
         </div>
 
         <div style={scoreWrap}>
-          <span style={{ ...goalsStyle, opacity: faded ? 0.34 : 0.58 }}>{goalsText}</span>
-
           <strong
             style={{
               ...scoreStyle,
-              fontSize: isRecord ? "18px" : "24px",
-              color: scoreColor,
-              opacity: faded ? 0.45 : 1,
+              fontSize: "28px",
+              fontWeight: 900,
+              fontStyle: "normal",
+              color: isRecord ? "#d6d7e3" : scoreColor,
             }}
           >
             {scoreText}
           </strong>
+          {goalsText ? <span style={goalsStyle}>{goalsText}</span> : null}
         </div>
       </div>
-
-      <div style={{ ...teamColourLine, background: colourLine }} />
     </div>
   );
 }
 
+const cardFooterStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 6,
+  padding: "8px 10px 14px",
+};
+
+const cardFooterTimeStyle: React.CSSProperties = {
+  fontSize: "12px",
+  lineHeight: 1,
+  fontWeight: 700,
+  letterSpacing: "0.01em",
+  fontVariantNumeric: "tabular-nums",
+};
+
+const fullTimeFooterTextStyle: React.CSSProperties = {
+  fontSize: "12px",
+  fontWeight: 700,
+};
+
+const desktopGroupStyle: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: "12px",
+  padding: "0 0 12px",
+};
+
 const mobileGroupStyle: React.CSSProperties = {
   display: "grid",
   gap: "10px",
-  padding: "4px 0 8px",
+  padding: "0 0 8px",
 };
 
 const mobileGroupLabelStyle: React.CSSProperties = {
-  padding: "4px 2px 0",
-  color: "rgba(255,255,255,0.52)",
-  fontSize: "16px",
-  fontWeight: 950,
-  letterSpacing: "-0.02em",
+  padding: "18px 2px 10px",
+  color: "var(--text-3)",
+  fontSize: "11px",
+  fontWeight: 800,
+  letterSpacing: "0.09em",
+  textTransform: "uppercase",
 };
 
 const mobileMatchStyle: React.CSSProperties = {
-  minHeight: "124px",
-  borderRadius: "18px",
-  border: "1px solid rgba(255,255,255,.08)",
-  background: "#0c0c0c",
-  color: "white",
+  borderRadius: "16px",
+  border: "1px solid var(--border-1)",
+  background: "var(--surface-3)",
+  boxShadow: "0 2px 12px rgba(0,0,0,0.35)",
+  color: "var(--text-1)",
   textDecoration: "none",
-  boxShadow: "0 12px 34px rgba(0,0,0,.25)",
   overflow: "hidden",
   transition: "transform 0.1s ease, opacity 0.1s ease",
 };
 
 const mobileMatchInnerStyle: React.CSSProperties = {
-  minHeight: "124px",
-  display: "grid",
-  gridTemplateRows: "auto 1fr",
+  display: "flex",
+  flexDirection: "column",
+  gap: "2px",
+  padding: "10px 0 12px",
 };
 
-const mobileMatchHeaderStyle: React.CSSProperties = {
+const mobileMatchFooterStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
-  justifyContent: "space-between",
-  gap: "10px",
-  padding: "9px 14px",
-  borderBottom: "1px solid rgba(255,255,255,.08)",
+  justifyContent: "center",
+  gap: 6,
+  padding: "6px 8px 0",
 };
 
-const mobileHeaderTimeStyle: React.CSSProperties = {
-  minWidth: 0,
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-  color: "#ffffff",
+const mobileFooterTimeStyle: React.CSSProperties = {
   fontSize: "12px",
-  fontWeight: 950,
-  letterSpacing: "-0.02em",
-};
-
-const mobileVenueStyle: React.CSSProperties = {
-  minWidth: 0,
-  color: "#9ca3af",
-  fontSize: "11px",
-  fontWeight: 750,
-  whiteSpace: "nowrap",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-};
-
-const mobileTeamsStackStyle: React.CSSProperties = {
-  display: "grid",
-  gridTemplateRows: "1fr 1fr",
+  lineHeight: 1,
+  fontWeight: 700,
+  letterSpacing: "0.01em",
+  fontVariantNumeric: "tabular-nums",
 };
 
 const mobileStackedTeamWrapStyle: React.CSSProperties = {
-  minHeight: "45px",
-  display: "grid",
-  gridTemplateRows: "1fr 3px",
-  borderBottom: "1px solid rgba(255,255,255,.06)",
-};
-
-const mobileTeamGradientLineStyle: React.CSSProperties = {
-  height: "3px",
-  width: "100%",
+  display: "flex",
+  minHeight: "44px",
 };
 
 const mobileStackedTeamRowStyle: React.CSSProperties = {
-  minHeight: "42px",
+  flex: 1,
+  minWidth: 0,
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  gap: "10px",
-  padding: "8px 12px",
+  gap: "6px",
+  padding: "0 14px 0 10px",
 };
 
 const mobileStackedTeamLeftStyle: React.CSSProperties = {
   minWidth: 0,
   display: "flex",
   alignItems: "center",
-  gap: "9px",
+  gap: "10px",
+  overflow: "visible",
 };
 
 const mobileTeamNameStyle: React.CSSProperties = {
   minWidth: 0,
+  display: "inline-block",
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
-  fontSize: "14px",
-  lineHeight: 1.05,
-  fontWeight: 950,
-  letterSpacing: "-0.03em",
+  fontFamily: '"Druk Wide", "Arial Black", Impact, sans-serif',
+  fontSize: "15px",
+  lineHeight: 1.1,
+  fontWeight: 700,
+  fontStyle: "italic",
+  letterSpacing: "0em",
 };
 
 const mobileLogoStyle: React.CSSProperties = {
-  width: "28px",
-  height: "28px",
+  width: "30px",
+  height: "30px",
   borderRadius: "50%",
   objectFit: "cover",
+  background: "var(--surface-2)",
   flexShrink: 0,
 };
 
 const mobileStackedScoreWrapStyle: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "36px 44px",
-  alignItems: "center",
-  justifyContent: "end",
-  columnGap: "8px",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "flex-end",
+  justifyContent: "center",
+  gap: "2px",
   flexShrink: 0,
 };
 
 const mobileGoalsStyle: React.CSSProperties = {
-  width: "36px",
-  textAlign: "right",
-  color: "#c7ced8",
-  fontSize: "11px",
-  fontWeight: 950,
+  color: "var(--text-3)",
+  fontSize: "10px",
+  lineHeight: 1,
+  fontWeight: 600,
   fontVariantNumeric: "tabular-nums",
 };
 
 const mobileStackedScoreStyle: React.CSSProperties = {
-  width: "44px",
   textAlign: "right",
-  fontWeight: 950,
+  fontWeight: 800,
   lineHeight: 1,
-  letterSpacing: "-0.05em",
+  letterSpacing: "0em",
   fontVariantNumeric: "tabular-nums",
   whiteSpace: "nowrap",
 };
 
 const pageStyle: React.CSSProperties = {
   minHeight: "100dvh",
-  background: "#000000",
-  color: "white",
+  background: "var(--bg)",
+  color: "var(--text-1)",
 };
 
 const headerStyle: React.CSSProperties = {
@@ -1371,29 +1485,29 @@ const headerStyle: React.CSSProperties = {
   zIndex: 50,
   display: "flex",
   flexDirection: "column",
-  background: "rgba(0,0,0,0.92)",
-  backdropFilter: "blur(28px) saturate(200%)",
-  WebkitBackdropFilter: "blur(28px) saturate(200%)",
-  borderBottom: "0.5px solid rgba(255,255,255,0.08)",
+  background: "var(--bottom-nav-bg)",
+  backdropFilter: "blur(28px) saturate(180%)",
+  WebkitBackdropFilter: "blur(28px) saturate(180%)",
+  borderBottom: "0.5px solid var(--border-1)",
   willChange: "transform",
 };
 
 const headerTopStyle: React.CSSProperties = {
   height: "calc(52px + env(safe-area-inset-top))",
-  display: "flex",
+  display: "grid",
+  gridTemplateColumns: "1fr auto 1fr",
   alignItems: "center",
-  justifyContent: "space-between",
   paddingTop: "env(safe-area-inset-top)",
-  paddingLeft: "58px",
-  paddingRight: "18px",
+  paddingLeft: "16px",
+  paddingRight: "16px",
 };
 
 const headerRoundsScroll: React.CSSProperties = {
   display: "flex",
-  gap: "20px",
+  gap: "4px",
   overflowX: "auto",
   overflowY: "hidden",
-  padding: "7px 18px 8px",
+  padding: "5px 14px 7px",
   scrollBehavior: "smooth",
   scrollbarWidth: "none",
 };
@@ -1401,10 +1515,7 @@ const headerRoundsScroll: React.CSSProperties = {
 const headerRoundsDesktop: React.CSSProperties = {
   ...headerRoundsScroll,
   width: "100%",
-  gap: "22px",
-  overflowX: "auto",
   justifyContent: "flex-start",
-  padding: "7px 18px 8px",
 };
 
 const headerRoundItem: React.CSSProperties = {
@@ -1413,80 +1524,81 @@ const headerRoundItem: React.CSSProperties = {
   background: "none",
   border: "none",
   cursor: "pointer",
-  padding: "5px 0 8px",
+  padding: "4px 10px 8px",
 };
 
 const headerRoundItemDesktop: React.CSSProperties = {
   ...headerRoundItem,
-  padding: "5px 2px 8px",
 };
 
 const headerRoundText: React.CSSProperties = {
-  fontSize: "14px",
+  fontSize: "13px",
   whiteSpace: "nowrap",
 };
 
 const headerRoundUnderline: React.CSSProperties = {
   position: "absolute",
   bottom: 0,
-  left: 0,
-  right: 0,
-  height: "3px",
+  left: 10,
+  right: 10,
+  height: "2px",
   borderRadius: "999px",
 };
 
 const logoWrapStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: 9,
 };
 
 const logoIconStyle: React.CSSProperties = {
-  width: 32,
-  height: 32,
-  borderRadius: 9,
+  width: 34,
+  height: 34,
+  borderRadius: "50%",
   background: "linear-gradient(135deg,#3b82f6 0%,#6366f1 100%)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  boxShadow: "0 2px 10px rgba(99,102,241,0.45)",
+  boxShadow: "0 2px 10px rgba(99,102,241,0.4)",
   flexShrink: 0,
 };
 
-const logoTextStyle: React.CSSProperties = {
-  fontSize: 20,
-  fontWeight: 950,
-  letterSpacing: "-0.04em",
-  color: "white",
+const headerTitleStyle: React.CSSProperties = {
+  fontSize: 17,
+  fontWeight: 800,
+  letterSpacing: "-0.02em",
+  color: "var(--text-1)",
+  textAlign: "center",
 };
 
-const roundBadgeStyle: React.CSSProperties = {
-  fontSize: 12,
-  fontWeight: 900,
-  color: "#60a5fa",
-  background: "rgba(59,130,246,0.12)",
-  border: "1px solid rgba(59,130,246,0.22)",
-  borderRadius: 999,
-  padding: "5px 12px",
+const headerProfileBtnStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  width: 34,
+  height: 34,
+  marginLeft: "auto",
+  background: "none",
+  border: "none",
+  cursor: "pointer",
+  textDecoration: "none",
 };
 
 const wrapStyle: React.CSSProperties = {
   maxWidth: "1320px",
   margin: "0 auto",
-  padding: "18px 16px calc(90px + env(safe-area-inset-bottom))",
+  padding: "8px 10px calc(90px + env(safe-area-inset-bottom))",
 };
 
 const cardStyle: React.CSSProperties = {
-  display: "grid",
-  gridTemplateRows: "auto 1fr",
-  minHeight: "190px",
+  display: "flex",
+  flexDirection: "column",
   overflow: "hidden",
-  borderRadius: "18px",
-  border: "1px solid rgba(255,255,255,.09)",
-  background: "#0d0d0d",
-  color: "white",
+  borderRadius: "16px",
+  border: "1px solid var(--border-1)",
+  background: "var(--surface-3)",
+  boxShadow: "0 2px 12px rgba(0,0,0,0.35)",
+  color: "var(--text-1)",
   textDecoration: "none",
-  boxShadow: "0 18px 45px rgba(0,0,0,.22)",
 };
 
 const infoStyle: React.CSSProperties = {
@@ -1494,25 +1606,25 @@ const infoStyle: React.CSSProperties = {
   alignItems: "center",
   justifyContent: "space-between",
   gap: "10px",
-  padding: "11px 16px",
-  background: "rgba(255,255,255,.02)",
-  borderBottom: "1px solid rgba(255,255,255,.08)",
+  padding: "8px 12px",
+  borderBottom: "1px solid var(--border-1)",
 };
 
 const timeStyle: React.CSSProperties = {
-  fontSize: "14px",
-  fontWeight: 950,
+  fontSize: "12px",
+  fontWeight: 750,
   textAlign: "right",
   lineHeight: 1.1,
   whiteSpace: "nowrap",
   flexShrink: 0,
+  color: "var(--text-2)",
 };
 
 const venueStyle: React.CSSProperties = {
   minWidth: 0,
-  color: "#9aa7b8",
+  color: "var(--text-3)",
   fontSize: "11px",
-  fontWeight: 650,
+  fontWeight: 600,
   lineHeight: 1.15,
   whiteSpace: "nowrap",
   overflow: "hidden",
@@ -1520,78 +1632,79 @@ const venueStyle: React.CSSProperties = {
 };
 
 const teamsStyle: React.CSSProperties = {
-  position: "relative",
-  display: "grid",
-  gridTemplateRows: "1fr 1fr",
+  display: "flex",
+  flexDirection: "column",
+  gap: "2px",
+  padding: "12px 0 0",
 };
 
 const teamRowWrap: React.CSSProperties = {
-  position: "relative",
-  minHeight: "62px",
-  borderBottom: "1px solid rgba(255,255,255,.12)",
+  display: "flex",
+  minHeight: "58px",
 };
 
 const teamRow: React.CSSProperties = {
-  height: "100%",
+  flex: 1,
+  minWidth: 0,
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
   gap: "8px",
-  padding: "10px 10px",
+  padding: "0 26px 0 16px",
 };
 
 const teamLeft: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: "10px",
+  gap: "16px",
   minWidth: 0,
-  overflow: "hidden",
+  overflow: "visible",
 };
 
 const logoStyle: React.CSSProperties = {
-  width: "34px",
-  height: "34px",
-  objectFit: "contain",
+  width: "40px",
+  height: "40px",
   borderRadius: "50%",
-  padding: "3px",
+  objectFit: "cover",
+  background: "var(--surface-2)",
   flexShrink: 0,
 };
 
 const teamNameStyle: React.CSSProperties = {
-  fontSize: "15px",
-  fontWeight: 950,
+  display: "inline-block",
+  fontFamily: '"Druk Wide", "Arial Black", Impact, sans-serif',
+  fontSize: "20px",
+  lineHeight: 1.1,
+  fontWeight: 700,
+  fontStyle: "italic",
   whiteSpace: "nowrap",
   overflow: "hidden",
   textOverflow: "ellipsis",
+  letterSpacing: "0em",
 };
 
 const scoreWrap: React.CSSProperties = {
-  width: "98px",
-  display: "grid",
-  gridTemplateColumns: "38px 50px",
-  alignItems: "center",
-  justifyContent: "end",
-  columnGap: "8px",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "flex-end",
+  justifyContent: "center",
+  gap: "3px",
   flexShrink: 0,
 };
 
 const scoreStyle: React.CSSProperties = {
-  display: "block",
-  width: "50px",
-  textAlign: "left",
-  fontSize: "28px",
+  fontSize: "26px",
   lineHeight: 1,
-  fontWeight: 950,
+  fontWeight: 800,
+  letterSpacing: "0em",
   fontVariantNumeric: "tabular-nums",
 };
 
 const goalsStyle: React.CSSProperties = {
-  display: "block",
-  width: "38px",
-  textAlign: "right",
-  fontSize: "13px",
-  fontWeight: 950,
-  color: "#c7ced8",
+  fontSize: "11px",
+  lineHeight: 1,
+  fontWeight: 600,
+  color: "var(--text-3)",
   fontVariantNumeric: "tabular-nums",
 };
 
@@ -1604,22 +1717,25 @@ const teamColourLine: React.CSSProperties = {
 };
 
 const emptyBoxStyle: React.CSSProperties = {
-  minHeight: "110px",
+  minHeight: "120px",
   display: "grid",
   placeItems: "center",
-  padding: "24px",
-  border: "1px solid rgba(255,255,255,.1)",
-  borderRadius: "18px",
-  color: "#94a3b8",
-  background: "rgba(255,255,255,.035)",
+  padding: "32px 24px",
+  border: "1px solid var(--border-1)",
+  borderRadius: "16px",
+  color: "var(--text-3)",
+  fontSize: "14px",
+  fontWeight: 600,
+  background: "var(--surface-1)",
+  letterSpacing: "0.01em",
 };
 
 const topPlayersSectionStyle: React.CSSProperties = {
-  marginTop: "28px",
-  padding: "18px",
-  borderRadius: "22px",
-  border: "1px solid rgba(255,255,255,.1)",
-  background: "#030303",
+  marginTop: "24px",
+  padding: "16px 16px 20px",
+  borderRadius: "16px",
+  border: "1px solid var(--border-1)",
+  background: "var(--surface-1)",
 };
 
 const topPlayersHeaderStyle: React.CSSProperties = {
@@ -1631,8 +1747,9 @@ const topPlayersHeaderStyle: React.CSSProperties = {
 
 const topPlayersTitleStyle: React.CSSProperties = {
   margin: 0,
-  fontSize: "20px",
-  fontWeight: 950,
+  fontSize: "15px",
+  fontWeight: 800,
+  letterSpacing: "-0.01em",
 };
 
 const topPlayersBadgeStyle: React.CSSProperties = {
@@ -1646,8 +1763,8 @@ const topPlayersBadgeStyle: React.CSSProperties = {
 
 const topPlayersGridStyle: React.CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(58px, 1fr))",
-  gap: "14px 8px",
+  gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+  gap: "12px 6px",
   paddingBottom: "4px",
   overflow: "visible",
 };
@@ -1658,7 +1775,7 @@ const topPlayerTileStyle: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
-  gap: "4px",
+  gap: "5px",
   overflow: "hidden",
 };
 
@@ -1671,20 +1788,20 @@ const topRankStyle: React.CSSProperties = {
 
 const topPlayerCircleWrapStyle: React.CSSProperties = {
   position: "relative",
-  width: "54px",
-  height: "54px",
+  width: "48px",
+  height: "48px",
   flexShrink: 0,
 };
 
 const topPlayerCircleStyle: React.CSSProperties = {
-  width: "54px",
-  height: "54px",
+  width: "48px",
+  height: "48px",
   borderRadius: "999px",
   overflow: "hidden",
   display: "grid",
   placeItems: "center",
-  border: "1px solid rgba(255,255,255,.12)",
-  boxShadow: "inset 0 -10px 16px rgba(0,0,0,.3)",
+  border: "1.5px solid rgba(255,255,255,.14)",
+  boxShadow: "0 2px 10px rgba(0,0,0,.4), inset 0 -8px 14px rgba(0,0,0,.3)",
 };
 
 const topPlayerImageStyle: React.CSSProperties = {
@@ -1705,29 +1822,29 @@ const topPlayerInitialsStyle: React.CSSProperties = {
 
 const topPlayerLogoStyle: React.CSSProperties = {
   position: "absolute",
-  right: "-3px",
-  bottom: "-3px",
-  width: "20px",
-  height: "20px",
+  right: "-4px",
+  bottom: "-4px",
+  width: "19px",
+  height: "19px",
   objectFit: "contain",
   borderRadius: "50%",
-  border: "2px solid #000",
-  background: "#111",
+  border: "2px solid #1e1e28",
+  background: "#1e1e28",
 };
 
 const topRatingRowStyle: React.CSSProperties = {
-  minWidth: "48px",
-  height: "30px",
-  padding: "0 9px",
-  borderRadius: "10px",
+  minWidth: "40px",
+  height: "24px",
+  padding: "0 7px",
+  borderRadius: "8px",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  fontSize: "15px",
-  fontWeight: 950,
+  fontSize: "12px",
+  fontWeight: 900,
   color: "white",
   textShadow: "0 1px 2px rgba(0,0,0,.45)",
-  boxShadow: "inset 0 -2px 0 rgba(0,0,0,.14)",
+  boxShadow: "inset 0 -1px 0 rgba(0,0,0,.18)",
 };
 
 const noTopPlayersStyle: React.CSSProperties = {

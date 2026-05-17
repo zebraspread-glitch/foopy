@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -28,11 +28,11 @@ const RARITY_ORDER: Record<Rarity, number> = { bronze: 0, silver: 1, gold: 2, di
 
 const TEAM_COLORS: Record<string, string> = {
   Adelaide: "#002b5c", "Brisbane Lions": "#a50034", Carlton: "#031a35",
-  Collingwood: "#111111", Essendon: "#cc0000", Fremantle: "#4b1979",
+  Collingwood: "#1e1e28", Essendon: "#cc0000", Fremantle: "#4b1979",
   "Geelong Cats": "#003b73", Geelong: "#003b73", "Gold Coast": "#c0392b",
   GWS: "#e05a1a", "GWS Giants": "#e05a1a", "Greater Western Sydney": "#e05a1a",
   Hawthorn: "#6b3a1f", Melbourne: "#c8102e", "North Melbourne": "#0055a4",
-  "Port Adelaide": "#008999", Richmond: "#1a1a1a", "St Kilda": "#c8102e",
+  "Port Adelaide": "#008999", Richmond: "#272731", "St Kilda": "#c8102e",
   Sydney: "#c0392b", "West Coast": "#003087", "Western Bulldogs": "#1a4abf",
 };
 
@@ -185,7 +185,7 @@ export default function AlbumPage() {
   if (authLoading) return null;
 
   return (
-    <main style={{ minHeight: "100dvh", background: "#080808", color: "#f8fafc", paddingBottom: "calc(80px + env(safe-area-inset-bottom))" }}>
+    <main style={{ minHeight: "100dvh", background: "#1a1a24", color: "#f8fafc", paddingBottom: "calc(80px + env(safe-area-inset-bottom))" }}>
       <style>{`
         .album-grid {
           display: grid;
@@ -350,7 +350,7 @@ function AlbumCardModal({ player, card, isFeatured, featuredCount, selling, onTo
       onClick={onClose}
     >
       <div
-        style={{ background: "#0d0d0d", border: "1px solid rgba(255,255,255,.1)", borderRadius: 24, padding: "24px 20px", width: "100%", maxWidth: 360 }}
+        style={{ background: "#1e1e28", border: "1px solid rgba(255,255,255,.1)", borderRadius: 24, padding: "24px 20px", width: "100%", maxWidth: 360 }}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -512,7 +512,7 @@ function AlbumSlot({ player, ownedCards, isFeatured, onCardClick }: {
               width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden",
               border: `2px solid ${meta.color}`,
               boxShadow: `0 0 12px ${meta.glow}`,
-              background: TEAM_COLORS[player.team] ?? "#0a0a0a",
+              background: TEAM_COLORS[player.team] ?? "#1a1a24",
             }}>
               <img
                 src={`/players/${player.folder}/${player.id}.png`}
@@ -557,7 +557,7 @@ function AlbumSlot({ player, ownedCards, isFeatured, onCardClick }: {
           background: "#ffd700", display: "flex", alignItems: "center", justifyContent: "center",
           boxShadow: "0 0 6px rgba(255,215,0,0.8)", pointerEvents: "none",
         }}>
-          <svg width="8" height="8" viewBox="0 0 24 24" fill="#000">
+          <svg width="8" height="8" viewBox="0 0 24 24" fill="#14141e">
             <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
           </svg>
         </div>

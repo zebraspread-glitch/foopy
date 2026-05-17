@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { TrendingUp, Zap, Calendar } from "lucide-react";
@@ -390,7 +390,7 @@ function TeamCell({
 
 const pageStyle: React.CSSProperties = {
   minHeight: "100dvh",
-  background: "#000",
+  background: "#14141e",
   color: "white",
   paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
 };

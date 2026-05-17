@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -76,9 +76,9 @@ function Avatar({ name, url, size = 46 }: { name: string; url?: string | null; s
 function SignInGate() {
   const router = useRouter();
   return (
-    <main style={{ minHeight: "100dvh", background: "#000", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 24px calc(90px + env(safe-area-inset-bottom))" }}>
+    <main style={{ minHeight: "100dvh", background: "#14141e", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 24px calc(90px + env(safe-area-inset-bottom))" }}>
       <div style={{ maxWidth: 340, width: "100%", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
-        <div style={{ width: 72, height: 72, borderRadius: "50%", background: "#111", border: "1px solid rgba(255,255,255,.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32 }}>💬</div>
+        <div style={{ width: 72, height: 72, borderRadius: "50%", background: "#1e1e28", border: "1px solid rgba(255,255,255,.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32 }}>💬</div>
         <div>
           <h2 style={{ fontSize: 22, fontWeight: 950, color: "#fff", margin: "0 0 6px" }}>Sign in to message</h2>
           <p style={{ fontSize: 14, color: "#64748b", margin: 0, lineHeight: 1.6 }}>Create a Foopy account to DM other users.</p>
@@ -98,7 +98,7 @@ export default function DMsPage() {
         <div
           style={{
             minHeight: "100dvh",
-            background: "#000",
+            background: "#14141e",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -463,13 +463,13 @@ function DMsPageInner() {
 
   /* ── Guards ── */
   if (!ready) return (
-    <div style={{ minHeight: "100dvh", background: "#000", display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div style={{ minHeight: "100dvh", background: "#14141e", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div className="spinner" />
     </div>
   );
   if (!user)  return <SignInGate />;
   if (!myProfile?.username) return (
-    <main style={{ minHeight: "100dvh", background: "#000", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 24px calc(90px + env(safe-area-inset-bottom))" }}>
+    <main style={{ minHeight: "100dvh", background: "#14141e", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 24px calc(90px + env(safe-area-inset-bottom))" }}>
       <div style={{ textAlign: "center", color: "#64748b" }}>
         <p style={{ fontWeight: 800, fontSize: 16, marginBottom: 12 }}>Set up your profile first</p>
         <a href="/profile" style={{ color: "#22c55e", fontWeight: 800 }}>Go to Profile →</a>
@@ -479,10 +479,10 @@ function DMsPageInner() {
 
   /* ═══════════════════ THREAD VIEW ═══════════════════ */
   if (activeConv) return (
-    <main style={{ position: "fixed", inset: 0, background: "#000", display: "flex", flexDirection: "column", zIndex: 110 }}>
+    <main style={{ position: "fixed", inset: 0, background: "#14141e", display: "flex", flexDirection: "column", zIndex: 110 }}>
 
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, paddingTop: "calc(14px + env(safe-area-inset-top))", paddingBottom: "14px", paddingLeft: "16px", paddingRight: "16px", background: "rgba(0,0,0,0.92)", backdropFilter: "blur(28px) saturate(200%)", WebkitBackdropFilter: "blur(28px) saturate(200%)", borderBottom: "0.5px solid rgba(255,255,255,.08)", flexShrink: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, paddingTop: "calc(14px + env(safe-area-inset-top))", paddingBottom: "14px", paddingLeft: "16px", paddingRight: "16px", background: "rgba(24,24,31,0.96)", backdropFilter: "blur(28px) saturate(200%)", WebkitBackdropFilter: "blur(28px) saturate(200%)", borderBottom: "0.5px solid rgba(255,255,255,.08)", flexShrink: 0 }}>
         <button onClick={() => setActiveConv(null)} style={{ background: "none", border: "none", padding: "4px 8px 4px 0", cursor: "pointer", display: "flex", alignItems: "center" }}>
           <svg width="11" height="19" viewBox="0 0 11 19" fill="none">
             <path d="M9.5 1.5L1.5 9.5L9.5 17.5" stroke="#22c55e" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -508,7 +508,7 @@ function DMsPageInner() {
             <div>
               <div style={{ fontWeight: 800, fontSize: 17, color: "#fff", marginBottom: 4 }}>@{activeConv.other?.username}</div>
             </div>
-            <div style={{ marginTop: 8, fontSize: 13, color: "#475569", fontWeight: 700, background: "#111", borderRadius: 12, padding: "8px 16px" }}>
+            <div style={{ marginTop: 8, fontSize: 13, color: "#475569", fontWeight: 700, background: "#1e1e28", borderRadius: 12, padding: "8px 16px" }}>
               Start the conversation 👋
             </div>
           </div>
@@ -548,13 +548,13 @@ function DMsPageInner() {
                             setSelectedMsgId(prev => prev === m.id ? null : m.id);
                           }
                         }}
-                        style={{ padding: "9px 13px", borderRadius: br, background: mine ? "#22c55e" : "#1c1c1e", border: mine ? "none" : "1px solid rgba(255,255,255,.07)", color: "#fff", fontSize: 15, lineHeight: 1.45, wordBreak: "break-word", opacity: m.id.startsWith("t") || deletingIds.has(m.id) ? 0.6 : 1, cursor: mine && !m.id.startsWith("t") ? "pointer" : "default", outline: selectedMsgId === m.id ? "2px solid rgba(255,255,255,.18)" : "none", outlineOffset: 2 }}
+                        style={{ padding: "9px 13px", borderRadius: br, background: mine ? "#22c55e" : "#272731", border: mine ? "none" : "1px solid rgba(255,255,255,.07)", color: "#fff", fontSize: 15, lineHeight: 1.45, wordBreak: "break-word", opacity: m.id.startsWith("t") || deletingIds.has(m.id) ? 0.6 : 1, cursor: mine && !m.id.startsWith("t") ? "pointer" : "default", outline: selectedMsgId === m.id ? "2px solid rgba(255,255,255,.18)" : "none", outlineOffset: 2 }}
                       >
                         {m.content}
                       </div>
                     </div>
                     {mine && selectedMsgId === m.id && !m.id.startsWith("t") && (
-                      <div style={{ marginTop: 6, padding: 4, borderRadius: 12, background: "#111", border: "1px solid rgba(255,255,255,.09)", boxShadow: "0 8px 24px rgba(0,0,0,.35)" }}>
+                      <div style={{ marginTop: 6, padding: 4, borderRadius: 12, background: "#1e1e28", border: "1px solid rgba(255,255,255,.09)", boxShadow: "0 8px 24px rgba(0,0,0,.35)" }}>
                         <button
                           onClick={e => { e.stopPropagation(); deleteMessage(m); }}
                           disabled={deletingIds.has(m.id)}
@@ -582,15 +582,15 @@ function DMsPageInner() {
       )}
 
       {/* Composer */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", paddingBottom: "calc(10px + env(safe-area-inset-bottom))", borderTop: "1px solid rgba(255,255,255,.07)", background: "#000", flexShrink: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", paddingBottom: "calc(10px + env(safe-area-inset-bottom))", borderTop: "1px solid rgba(255,255,255,.07)", background: "#14141e", flexShrink: 0 }}>
         <input
           ref={inputRef} value={text}
           onChange={e => setText(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
           placeholder="Message…"
-          style={{ flex: 1, background: "#111", border: "1px solid rgba(255,255,255,.1)", borderRadius: 24, padding: "11px 18px", color: "#fff", fontSize: 15, outline: "none", fontFamily: "inherit" }}
+          style={{ flex: 1, background: "#1e1e28", border: "1px solid rgba(255,255,255,.1)", borderRadius: 24, padding: "11px 18px", color: "#fff", fontSize: 15, outline: "none", fontFamily: "inherit" }}
         />
-        <button onClick={send} disabled={!text.trim()} style={{ width: 42, height: 42, borderRadius: "50%", border: "none", flexShrink: 0, cursor: text.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", background: text.trim() ? "#22c55e" : "#1a1a1a" }}>
+        <button onClick={send} disabled={!text.trim()} style={{ width: 42, height: 42, borderRadius: "50%", border: "none", flexShrink: 0, cursor: text.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", background: text.trim() ? "#22c55e" : "#272731" }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
             <path d="M22 2L11 13" stroke={text.trim() ? "#fff" : "#475569"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke={text.trim() ? "#fff" : "#475569"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -605,7 +605,7 @@ function DMsPageInner() {
   const noConvoFriends = filteredInbox.filter(e => !e.convId);
 
   return (
-  <main style={{ minHeight: "100dvh", background: "#000", color: "#fff", paddingBottom: "calc(90px + env(safe-area-inset-bottom))" }} className="page-enter">
+  <main style={{ minHeight: "100dvh", background: "#14141e", color: "#fff", paddingBottom: "calc(90px + env(safe-area-inset-bottom))" }} className="page-enter">
     <div style={{ maxWidth: 700, margin: "0 auto", width: "100%" }}>
 
       {/* Sticky header */}
@@ -613,7 +613,7 @@ function DMsPageInner() {
         position: "sticky",
         top: 0,
         zIndex: 50,
-        background: "rgba(0,0,0,0.92)",
+        background: "rgba(24,24,31,0.96)",
         backdropFilter: "blur(28px) saturate(200%)",
         WebkitBackdropFilter: "blur(28px) saturate(200%)",
         borderBottom: "0.5px solid rgba(255,255,255,0.08)",
@@ -742,7 +742,7 @@ function InboxRow({ entry, myId, isLast, onClick }: {
             }
           </span>
           {entry.unread > 0 && (
-            <span style={{ background: "#22c55e", color: "#000", borderRadius: 99, fontSize: 11, fontWeight: 900, padding: "2px 7px", flexShrink: 0, minWidth: 20, textAlign: "center" }}>
+            <span style={{ background: "#22c55e", color: "#14141e", borderRadius: 99, fontSize: 11, fontWeight: 900, padding: "2px 7px", flexShrink: 0, minWidth: 20, textAlign: "center" }}>
               {entry.unread > 99 ? "99+" : entry.unread}
             </span>
           )}

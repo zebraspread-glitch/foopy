@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { createPortal } from "react-dom";
@@ -70,7 +70,7 @@ const TEAMS = [
   { name: "Adelaide", logo: "/team-logos/crows.png", color: "#002b5c" },
   { name: "Brisbane Lions", logo: "/team-logos/lions.png", color: "#7a003c" },
   { name: "Carlton", logo: "/team-logos/blues.png", color: "#031a35" },
-  { name: "Collingwood", logo: "/team-logos/magpies.png", color: "#111111" },
+  { name: "Collingwood", logo: "/team-logos/magpies.png", color: "#1e1e28" },
   { name: "Essendon", logo: "/team-logos/bombers.png", color: "#cc0000" },
   { name: "Fremantle", logo: "/team-logos/dockers.png", color: "#4b1979" },
   { name: "Geelong Cats", logo: "/team-logos/cats.png", color: "#003b73" },
@@ -81,7 +81,7 @@ const TEAMS = [
   { name: "Melbourne", logo: "/team-logos/demons.png", color: "#c8102e" },
   { name: "North Melbourne", logo: "/team-logos/kangaroos.png", color: "#0055a4" },
   { name: "Port Adelaide", logo: "/team-logos/power.png", color: "#008999" },
-  { name: "Richmond", logo: "/team-logos/tigers.png", color: "#1a1a1a" },
+  { name: "Richmond", logo: "/team-logos/tigers.png", color: "#272731" },
   { name: "St Kilda", logo: "/team-logos/saints.png", color: "#c8102e" },
   { name: "Sydney", logo: "/team-logos/swans.png", color: "#c0392b" },
   { name: "West Coast", logo: "/team-logos/eagles.png", color: "#003087" },
@@ -403,7 +403,7 @@ function FavouritesPicker({
               style={{
                 ...pickerTabBtnStyle,
                 background: tab === t ? "white" : "transparent",
-                color: tab === t ? "#000" : "#64748b",
+                color: tab === t ? "#14141e" : "#64748b",
                 fontWeight: tab === t ? 900 : 700,
               }}
             >
@@ -459,7 +459,7 @@ function FavouritesPicker({
                   padding: "12px 14px 12px 40px",
                   borderRadius: 12,
                   border: "1px solid rgba(255,255,255,.1)",
-                  background: "#111",
+                  background: "#1e1e28",
                   color: "#fff",
                   fontSize: 14,
                   outline: "none",
@@ -1347,7 +1347,7 @@ export default function ProfilePage() {
         </div>
 
         {/* ── XP ── */}
-        <div style={{ background: "#080808", border: "1px solid rgba(255,255,255,.1)", borderRadius: 18, padding: "20px 24px", display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ background: "#1a1a24", border: "1px solid rgba(255,255,255,.1)", borderRadius: 18, padding: "20px 24px", display: "flex", alignItems: "center", gap: 12 }}>
           <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.45)" }}>Total XP</span>
           <XPBar xp={xp} />
         </div>
@@ -1387,7 +1387,7 @@ export default function ProfilePage() {
                         <div key={idx} style={{ flexShrink: 0, position: "relative", width: 110, height: 154, borderRadius: 14, overflow: "hidden", border: `1.5px solid ${meta.color}99`, boxShadow: `0 2px 16px ${meta.glow}, 0 0 0 0px ${meta.color}` }}>
                           <img src={`/cards/${fc.rarity}.png`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.04) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,.5) 65%, rgba(0,0,0,.88) 100%)" }} />
-                          <div style={{ position: "absolute", top: "11%", left: "50%", transform: "translateX(-50%)", width: "66%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", border: `2px solid ${meta.color}`, boxShadow: `0 0 12px ${meta.glow}`, background: "#0a0a0a" }}>
+                          <div style={{ position: "absolute", top: "11%", left: "50%", transform: "translateX(-50%)", width: "66%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", border: `2px solid ${meta.color}`, boxShadow: `0 0 12px ${meta.glow}`, background: "#1a1a24" }}>
                             <img src={`/players/${player.folder}/${player.id}.png`} alt={player.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
                           </div>
                           <div style={{ position: "absolute", top: 5, right: 5, background: "rgba(0,0,0,.85)", color: meta.color, fontSize: 7, fontWeight: 1000, padding: "2px 5px", borderRadius: 5, border: `1px solid ${meta.color}44`, letterSpacing: ".04em" }}>
@@ -1419,7 +1419,7 @@ export default function ProfilePage() {
         })()}
 
         {/* ── Stats row ── */}
-        <div style={{ background: "#080808", border: "1px solid rgba(255,255,255,.1)", borderRadius: 18, display: "flex" }}>
+        <div style={{ background: "#1a1a24", border: "1px solid rgba(255,255,255,.1)", borderRadius: 18, display: "flex" }}>
           {(
             [
               { label: "Games",     value: profile?.matches_viewed ?? 0,           color: "#f8fafc",  onClick: openGamesPopup },
@@ -1480,7 +1480,7 @@ export default function ProfilePage() {
                 aspectRatio: previewType === "banner" ? "3 / 1" : "1 / 1",
                 borderRadius: previewType === "banner" ? 14 : "50%",
                 overflow: "hidden",
-                background: "#111",
+                background: "#1e1e28",
                 border: "1px solid rgba(255,255,255,.16)",
                 boxShadow: "0 20px 60px rgba(0,0,0,.5)",
               }}
@@ -1547,7 +1547,7 @@ export default function ProfilePage() {
       {editSection !== null && createPortal(
         <>
           <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,.7)", backdropFilter: "blur(8px)" }} onClick={() => setEditSection(null)} />
-          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 201, width: "calc(100% - 32px)", maxWidth: 420, background: "#0d0d0d", borderRadius: 24, border: "1px solid rgba(255,255,255,.1)", padding: "24px 20px", maxHeight: "80dvh", overflowY: "auto" }} onClick={(e) => e.stopPropagation()}>
+          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 201, width: "calc(100% - 32px)", maxWidth: 420, background: "#1e1e28", borderRadius: 24, border: "1px solid rgba(255,255,255,.1)", padding: "24px 20px", maxHeight: "80dvh", overflowY: "auto" }} onClick={(e) => e.stopPropagation()}>
 
             {editSection === "menu" && (
               <>
@@ -1642,7 +1642,7 @@ export default function ProfilePage() {
       )}
 
       {showFriends && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 110, background: "#000", display: "flex", flexDirection: "column" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 110, background: "#14141e", display: "flex", flexDirection: "column" }}>
           <div
             style={{
               display: "flex",
@@ -1764,7 +1764,7 @@ export default function ProfilePage() {
                   placeholder="Search by username…"
                   value={friendSearch}
                   onChange={(e) => setFriendSearch(e.target.value)}
-                  style={{ ...fieldSty, background: "#111" }}
+                  style={{ ...fieldSty, background: "#1e1e28" }}
                   autoFocus
                 />
 
@@ -1819,7 +1819,7 @@ export default function ProfilePage() {
             style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,.75)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
             onClick={() => setStatsPopup(null)}
           />
-          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 301, background: "#0a0a0a", borderRadius: 24, border: "1px solid rgba(255,255,255,.1)", width: "calc(100% - 32px)", maxWidth: 480, maxHeight: "80dvh", display: "flex", flexDirection: "column" }} onClick={(e) => e.stopPropagation()}>
+          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 301, background: "#1a1a24", borderRadius: 24, border: "1px solid rgba(255,255,255,.1)", width: "calc(100% - 32px)", maxWidth: 480, maxHeight: "80dvh", display: "flex", flexDirection: "column" }} onClick={(e) => e.stopPropagation()}>
             {/* Header */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 20px 16px", borderBottom: "1px solid rgba(255,255,255,.07)", flexShrink: 0 }}>
               <div style={{ fontSize: 18, fontWeight: 950, letterSpacing: "-0.02em" }}>
@@ -1954,7 +1954,7 @@ function EmptyState({ icon, text }: { icon: string; text: string }) {
 /* ═══════════════════ Styles ═══════════════════ */
 const pageStyle: CSSProperties = {
   minHeight: "100dvh",
-  background: "#000",
+  background: "#14141e",
   color: "#fff",
   paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
 };
@@ -1970,7 +1970,7 @@ const wrapStyle: CSSProperties = {
 
 const profileCardStyle: CSSProperties = {
   overflow: "hidden",
-  background: "#080808",
+  background: "#1a1a24",
   border: "1px solid rgba(255,255,255,.1)",
   borderRadius: 18,
 };
@@ -2044,7 +2044,7 @@ const menuBtnSty: CSSProperties = {
   padding: "14px 16px",
   borderRadius: 14,
   border: "1px solid rgba(255,255,255,.08)",
-  background: "#0d0d0d",
+  background: "#1e1e28",
   color: "#fff",
   cursor: "pointer",
   textAlign: "left",
@@ -2053,7 +2053,7 @@ const menuBtnSty: CSSProperties = {
 const lockedBoxStyle: CSSProperties = {
   padding: 18,
   borderRadius: 14,
-  background: "#0d0d0d",
+  background: "#1e1e28",
   border: "1px solid rgba(255,255,255,.08)",
   color: "#94a3b8",
 };
@@ -2070,7 +2070,7 @@ const labelSty: CSSProperties = {
 const fieldSty: CSSProperties = {
   width: "100%",
   boxSizing: "border-box",
-  background: "#111",
+  background: "#1e1e28",
   border: "1px solid rgba(255,255,255,.1)",
   borderRadius: 14,
   padding: "13px 15px",
@@ -2116,7 +2116,7 @@ const cancelBtnSty: CSSProperties = {
 };
 
 const sectionCardStyle: CSSProperties = {
-  background: "#080808",
+  background: "#1a1a24",
   border: "1px solid rgba(255,255,255,.1)",
   borderRadius: 18,
   padding: "18px 16px 20px",
@@ -2215,14 +2215,14 @@ const statsRowStyle: CSSProperties = {
 const statCardStyle: CSSProperties = {
   padding: "18px 16px",
   borderRadius: 18,
-  background: "#080808",
+  background: "#1a1a24",
   border: "1px solid rgba(255,255,255,.1)",
 };
 
 const statCardClickStyle: CSSProperties = {
   padding: "18px 16px",
   borderRadius: 18,
-  background: "#080808",
+  background: "#1a1a24",
   border: "1px solid rgba(255,255,255,.1)",
   cursor: "pointer",
   textAlign: "left",
@@ -2262,7 +2262,7 @@ const friendRowStyle: CSSProperties = {
   gap: 14,
   padding: "14px 16px",
   borderRadius: 16,
-  background: "#0d0d0d",
+  background: "#1e1e28",
   border: "1px solid rgba(255,255,255,.07)",
   cursor: "pointer",
 };

@@ -44,7 +44,7 @@ const headerStyle: CSSProperties = {
   gap: 12,
   height: "calc(56px + env(safe-area-inset-top))",
   padding: "env(safe-area-inset-top) 16px 0",
-  background: "rgba(0,0,0,0.92)",
+  background: "rgba(24,24,31,0.96)",
   backdropFilter: "blur(28px) saturate(200%)",
   WebkitBackdropFilter: "blur(28px) saturate(200%)",
   borderBottom: "0.5px solid rgba(255,255,255,0.08)",

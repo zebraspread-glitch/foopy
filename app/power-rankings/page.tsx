@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
@@ -103,7 +103,7 @@ const TEAM_LOGOS: Record<string, string> = {
 
 const TEAM_COLORS: Record<string, string> = {
   Adelaide: "#002b5c", Brisbane: "#a50034", "Brisbane Lions": "#a50034", Carlton: "#031a35",
-  Collingwood: "#111", Essendon: "#ef4444", Fremantle: "#7c3aed",
+  Collingwood: "#1e1e28", Essendon: "#ef4444", Fremantle: "#7c3aed",
   Geelong: "#1e3a8a", "Geelong Cats": "#1e3a8a", "Gold Coast": "#ef4444",
   GWS: "#f97316", "GWS Giants": "#f97316", "Greater Western Sydney": "#f97316",
   Hawthorn: "#f59e0b", Melbourne: "#ef4444", "North Melbourne": "#3b82f6",
@@ -458,7 +458,7 @@ function SkeletonTeamItem() {
 
 const pageStyle: CSSProperties = {
   minHeight: "100dvh",
-  background: "#000",
+  background: "#14141e",
   color: "#fff",
   paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
 };
@@ -473,7 +473,7 @@ const headerStyle: CSSProperties = {
   gap: 12,
   height: "calc(56px + env(safe-area-inset-top))",
   padding: "env(safe-area-inset-top) 16px 0 58px",
-  background: "rgba(0,0,0,0.92)",
+  background: "rgba(24,24,31,0.96)",
   backdropFilter: "blur(28px) saturate(200%)",
   WebkitBackdropFilter: "blur(28px) saturate(200%)",
   borderBottom: "0.5px solid rgba(255,255,255,.08)",
@@ -495,7 +495,7 @@ const toggleBtnStyle: CSSProperties = {
   letterSpacing: "0.01em", transition: "background 0.15s, color 0.15s",
 };
 
-const toggleActiveStyle: CSSProperties = { background: "white", color: "#000" };
+const toggleActiveStyle: CSSProperties = { background: "white", color: "#14141e" };
 
 const periodBarStyle: CSSProperties = {
   position: "sticky",
@@ -528,7 +528,7 @@ const wrapStyle: CSSProperties = {
 
 const cardStyle: CSSProperties = {
   borderRadius: 18, border: "1px solid rgba(255,255,255,.08)",
-  background: "#0a0a0a", overflow: "hidden",
+  background: "#1a1a24", overflow: "hidden",
 };
 
 const itemStyle: CSSProperties = {

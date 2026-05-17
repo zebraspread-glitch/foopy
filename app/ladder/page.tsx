@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
@@ -589,7 +589,7 @@ export default function LadderPage() {
 
 const pageStyle: CSSProperties = {
   minHeight: "100dvh",
-  background: "#000",
+  background: "#14141e",
   color: "#fff",
   paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
 };
@@ -604,7 +604,7 @@ const headerStyle: CSSProperties = {
   gap: 12,
   height: "calc(56px + env(safe-area-inset-top))",
   padding: "env(safe-area-inset-top) 16px 0 58px",
-  background: "rgba(0,0,0,0.92)",
+  background: "rgba(24,24,31,0.96)",
   backdropFilter: "blur(28px) saturate(200%)",
   WebkitBackdropFilter: "blur(28px) saturate(200%)",
   borderBottom: "0.5px solid rgba(255,255,255,.08)",
@@ -639,7 +639,7 @@ const tabBtnStyle: CSSProperties = {
 
 const activeTabStyle: CSSProperties = {
   background: "white",
-  color: "#000",
+  color: "#14141e",
 };
 
 const activeTabLiveStyle: CSSProperties = {
@@ -722,7 +722,7 @@ const logoFallbackStyle: CSSProperties = {
   width: 28,
   height: 28,
   borderRadius: "50%",
-  background: "#1a1a1a",
+  background: "#272731",
   display: "block",
 };
 

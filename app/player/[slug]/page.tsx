@@ -1,4 +1,4 @@
-import path from "path";
+﻿import path from "path";
 import fs from "fs";
 import Link from "next/link";
 import { BackButton, PlayerHeroImage } from "./PlayerClient";
@@ -94,11 +94,11 @@ const CLUB_FOLDER: Record<string, string> = {
 
 const TEAM_COLORS: Record<string, string> = {
   Adelaide: "#002b5c", "Brisbane Lions": "#a50034", Brisbane: "#a50034",
-  Carlton: "#031a35", Collingwood: "#111111", Essendon: "#cc0000",
+  Carlton: "#031a35", Collingwood: "#1e1e28", Essendon: "#cc0000",
   Fremantle: "#4b1979", "Geelong Cats": "#003b73", Geelong: "#003b73",
   "Gold Coast": "#c0392b", "GWS Giants": "#e05a1a", GWS: "#e05a1a",
   Hawthorn: "#6b3a1f", Melbourne: "#c8102e", "North Melbourne": "#0055a4",
-  "Port Adelaide": "#008999", Richmond: "#1a1a1a", "St Kilda": "#c8102e",
+  "Port Adelaide": "#008999", Richmond: "#272731", "St Kilda": "#c8102e",
   Sydney: "#c0392b", "West Coast": "#003087", "Western Bulldogs": "#1a4abf",
 };
 
@@ -335,7 +335,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
       <div style={wrapStyle}>
 
         {/* ── Hero ── */}
-        <section style={{ borderRadius: 20, overflow: "hidden", border: "1px solid rgba(255,255,255,.1)", background: "#080808" }}>
+        <section style={{ borderRadius: 20, overflow: "hidden", border: "1px solid rgba(255,255,255,.1)", background: "#1a1a24" }}>
           <div style={{ height: 90, background: `linear-gradient(135deg,${color}cc,${color}44)`, position: "relative" }}>
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom,transparent 40%,#080808)" }} />
           </div>
@@ -503,7 +503,7 @@ function StatChip({ label, value }: { label: string; value: number }) {
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const pageStyle: React.CSSProperties = {
-  minHeight: "100dvh", background: "#000", color: "#fff",
+  minHeight: "100dvh", background: "#14141e", color: "#fff",
   paddingBottom: "calc(95px + env(safe-area-inset-bottom))",
 };
 const topBarStyle: React.CSSProperties = {
@@ -515,7 +515,7 @@ const wrapStyle: React.CSSProperties = {
   display: "flex", flexDirection: "column", gap: 12,
 };
 const cardStyle: React.CSSProperties = {
-  background: "#080808", border: "1px solid rgba(255,255,255,.1)",
+  background: "#1a1a24", border: "1px solid rgba(255,255,255,.1)",
   borderRadius: 18, padding: "18px 16px 20px",
 };
 const sectionLabel: React.CSSProperties = {

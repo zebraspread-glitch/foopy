@@ -4,6 +4,12 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/app/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import {
+  FOOPY_THEME_KEY,
+  normalizeThemeMode,
+  themeColorForMode,
+  type FoopyThemeMode,
+} from "@/app/lib/theme";
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
@@ -47,6 +53,25 @@ const STAT_OPTIONS = [
   { value: "goalAssists", label: "Assists" },
 ];
 
+const THEME_OPTIONS: { value: FoopyThemeMode; label: string }[] = [
+  { value: "default", label: "Default" },
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+];
+
+function applyThemeMode(mode: FoopyThemeMode) {
+  document.documentElement.dataset.foopyTheme = mode;
+  document.documentElement.style.colorScheme = mode === "light" ? "light" : "dark";
+
+  document
+    .querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+    ?.setAttribute("content", themeColorForMode(mode));
+
+  document
+    .querySelector<HTMLMetaElement>('meta[name="color-scheme"]')
+    ?.setAttribute("content", mode === "light" ? "light" : "dark");
+}
+
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
@@ -55,7 +80,7 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
       onClick={onToggle}
       style={{
         width: 46, height: 26, borderRadius: 13, border: "none",
-        background: on ? "#3b82f6" : "#272727",
+        background: on ? "#3b82f6" : "var(--surface-3)",
         cursor: "pointer", position: "relative", flexShrink: 0,
         transition: "background 0.2s ease",
         boxShadow: on ? "0 0 0 1px #3b82f666" : "none",
@@ -77,14 +102,14 @@ function Section({ label, children }: { label: string; children: React.ReactNode
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
       <div style={{
-        fontSize: 10.5, fontWeight: 700, color: "#333",
+        fontSize: 10.5, fontWeight: 700, color: "var(--text-3)",
         letterSpacing: "0.09em", textTransform: "uppercase", paddingLeft: 6,
       }}>
         {label}
       </div>
       <div style={{
-        background: "#111", borderRadius: 16,
-        border: "1px solid rgba(255,255,255,0.07)",
+        background: "var(--surface-1)", borderRadius: 16,
+        border: "1px solid var(--border-1)",
         overflow: "hidden",
       }}>
         {children}
@@ -118,9 +143,9 @@ function Row({
         {/* Icon */}
         <div style={{
           width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-          background: destructive ? "#3a0a0a" : "#1a1a1a",
+          background: destructive ? "rgba(239,68,68,0.12)" : "var(--surface-3)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          color: destructive ? "#ef4444" : "#555",
+          color: destructive ? "#ef4444" : "var(--text-3)",
         }}>
           {icon}
         </div>
@@ -129,13 +154,13 @@ function Row({
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
             fontSize: 14.5, fontWeight: 600,
-            color: destructive ? "#ef4444" : "#eee",
+            color: destructive ? "#ef4444" : "var(--text-1)",
             letterSpacing: "-0.01em",
           }}>
             {label}
           </div>
           {sub && (
-            <div style={{ fontSize: 11.5, color: "#3a3a3a", fontWeight: 500, marginTop: 1 }}>
+            <div style={{ fontSize: 11.5, color: "var(--text-2)", fontWeight: 500, marginTop: 1 }}>
               {sub}
             </div>
           )}
@@ -146,12 +171,12 @@ function Row({
 
         {/* Chevron for pressable rows with no child control */}
         {onPress && !children && (
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2a2a2a" strokeWidth="2.5" strokeLinecap="round">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2.5" strokeLinecap="round">
             <path d="M9 18l6-6-6-6"/>
           </svg>
         )}
       </div>
-      {!last && <div style={{ height: 1, background: "rgba(255,255,255,0.05)", marginLeft: 62 }} />}
+      {!last && <div style={{ height: 1, background: "var(--border-1)", marginLeft: 62 }} />}
     </div>
   );
 }
@@ -175,6 +200,7 @@ export default function SettingsPage() {
   const [notifTrades, setNotifTrades]   = useState(false);
   const [notifNews, setNotifNews]       = useState(true);
   const [showJerseyNum, setShowJerseyNum] = useState(true);
+  const [themeMode, setThemeMode]       = useState<FoopyThemeMode>("default");
 
   // UI
   const [showTeamPicker, setShowTeamPicker] = useState(false);
@@ -205,6 +231,10 @@ export default function SettingsPage() {
     setNotifTrades(localStorage.getItem("foopy_notif_trades") === "true");
     setNotifNews(localStorage.getItem("foopy_notif_news") !== "false");
     setShowJerseyNum(localStorage.getItem("foopy_show_jersey") !== "false");
+
+    const storedThemeMode = normalizeThemeMode(localStorage.getItem(FOOPY_THEME_KEY));
+    setThemeMode(storedThemeMode);
+    applyThemeMode(storedThemeMode);
   }, []);
 
   function savePref(key: string, value: string) {
@@ -216,6 +246,13 @@ export default function SettingsPage() {
     const next = !current;
     setter(next);
     savePref(key, String(next));
+  }
+
+  function chooseThemeMode(mode: FoopyThemeMode) {
+    setThemeMode(mode);
+    localStorage.setItem(FOOPY_THEME_KEY, mode);
+    applyThemeMode(mode);
+    window.dispatchEvent(new Event("foopy-settings-changed"));
   }
 
   async function handleSignOut() {
@@ -230,29 +267,29 @@ export default function SettingsPage() {
   return (
     <>
       <style>{`
-        .srow:active { background: rgba(255,255,255,0.04) !important; }
+        .srow:active { background: var(--surface-2) !important; }
         .steambtn:active { opacity: 0.7; }
         ::-webkit-scrollbar { display: none; }
       `}</style>
 
       <main style={{
         minHeight: "100dvh",
-        background: "#080808",
-        color: "#f0f0f0",
+        background: "var(--bg)",
+        color: "var(--text-1)",
         paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
       }}>
 
         {/* ── Header ── */}
         <header style={{
           position: "sticky", top: 0, zIndex: 50,
-          background: "rgba(8,8,8,0.94)",
+          background: "var(--bottom-nav-bg)",
           backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
-          borderBottom: "1px solid rgba(255,255,255,0.07)",
+          borderBottom: "1px solid var(--border-1)",
           padding: "env(safe-area-inset-top) 16px 0 58px",
           height: "calc(52px + env(safe-area-inset-top))",
           display: "flex", alignItems: "center", justifyContent: "space-between",
         }}>
-          <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.03em", color: "#fff" }}>
+          <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--text-1)" }}>
             Settings
           </span>
         </header>
@@ -263,8 +300,8 @@ export default function SettingsPage() {
           {/* ── Profile card ── */}
           <Link href="/profile" style={{ textDecoration: "none" }}>
             <div style={{
-              background: "#111",
-              border: "1px solid rgba(255,255,255,0.07)",
+              background: "var(--surface-1)",
+              border: "1px solid var(--border-1)",
               borderRadius: 18,
               padding: "16px",
               display: "flex", alignItems: "center", gap: 14,
@@ -275,14 +312,14 @@ export default function SettingsPage() {
                 width: 56, height: 56, borderRadius: "50%", flexShrink: 0,
                 overflow: "hidden",
                 background: "linear-gradient(135deg, #1e3a5f, #0f172a)",
-                border: "2px solid rgba(255,255,255,0.1)",
+                border: "2px solid var(--border-2)",
               }}>
                 {avatarUrl
                   ? <img src={avatarUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   : <div style={{
                       width: "100%", height: "100%", display: "flex",
                       alignItems: "center", justifyContent: "center",
-                      color: "#94a3b8", fontSize: 22, fontWeight: 800,
+                      color: "var(--text-2)", fontSize: 22, fontWeight: 800,
                     }}>
                       {initials}
                     </div>
@@ -292,13 +329,13 @@ export default function SettingsPage() {
               {/* Text */}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
-                  fontSize: 16, fontWeight: 700, color: "#fff",
+                  fontSize: 16, fontWeight: 700, color: "var(--text-1)",
                   letterSpacing: "-0.02em", marginBottom: 3,
                   overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                 }}>
                   {username ? `@${username}` : "Set up your profile"}
                 </div>
-                <div style={{ fontSize: 12, color: "#3a3a3a", fontWeight: 500 }}>
+                <div style={{ fontSize: 12, color: "var(--text-2)", fontWeight: 500 }}>
                   {email ?? "Not signed in"}
                 </div>
               </div>
@@ -352,8 +389,8 @@ export default function SettingsPage() {
                 value={defaultStat}
                 onChange={e => { setDefaultStat(e.target.value); savePref("foopy_default_stat", e.target.value); }}
                 style={{
-                  background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)",
-                  borderRadius: 8, color: "#ccc", fontSize: 12, fontWeight: 600,
+                  background: "var(--surface-3)", border: "1px solid var(--border-2)",
+                  borderRadius: 8, color: "var(--text-1)", fontSize: 12, fontWeight: 600,
                   padding: "6px 8px", cursor: "pointer", outline: "none",
                 }}
               >
@@ -398,6 +435,53 @@ export default function SettingsPage() {
           {/* ── Display ── */}
           <Section label="Display">
             <Row
+              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 3a9 9 0 1 0 9 9"/><path d="M12 3v18"/><path d="M12 8h7"/><path d="M12 16h7"/></svg>}
+              label="Theme Mode"
+              sub="Default grey, white, or black"
+            >
+              <div
+                role="radiogroup"
+                aria-label="Theme mode"
+                style={{
+                  width: "min(208px, 48vw)",
+                  display: "grid",
+                  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                  gap: 3,
+                  padding: 3,
+                  borderRadius: 12,
+                  background: "var(--surface-3)",
+                  border: "1px solid var(--border-2)",
+                }}
+              >
+                {THEME_OPTIONS.map(option => {
+                  const active = themeMode === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      onClick={() => chooseThemeMode(option.value)}
+                      style={{
+                        border: "none",
+                        borderRadius: 9,
+                        background: active ? "var(--bg)" : "transparent",
+                        color: active ? "var(--text-1)" : "var(--text-2)",
+                        boxShadow: active ? "0 1px 8px rgba(0,0,0,0.18)" : "none",
+                        fontSize: 11,
+                        fontWeight: 800,
+                        lineHeight: 1,
+                        padding: "8px 4px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </Row>
+            <Row
               icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>}
               label="Show Jersey Numbers"
               sub="Display #number on player cards"
@@ -415,7 +499,7 @@ export default function SettingsPage() {
               sub="Run fetch:stats to update"
               last
             >
-              <span style={{ fontSize: 11, color: "#3a3a3a", fontWeight: 600 }}>2026 Season</span>
+              <span style={{ fontSize: 11, color: "var(--text-2)", fontWeight: 600 }}>2026 Season</span>
             </Row>
           </Section>
 
@@ -438,13 +522,13 @@ export default function SettingsPage() {
               label="Version"
               sub="Foopy"
             >
-              <span style={{ fontSize: 12, color: "#3a3a3a", fontWeight: 600 }}>1.0.0</span>
+              <span style={{ fontSize: 12, color: "var(--text-2)", fontWeight: 600 }}>1.0.0</span>
             </Row>
             <Row
               icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>}
               label="Season"
             >
-              <span style={{ fontSize: 12, color: "#3a3a3a", fontWeight: 600 }}>AFL 2026</span>
+              <span style={{ fontSize: 12, color: "var(--text-2)", fontWeight: 600 }}>AFL 2026</span>
             </Row>
             <Row
               icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>}
@@ -477,8 +561,8 @@ export default function SettingsPage() {
               transform: "translate(-50%,-50%)",
               zIndex: 101,
               width: "min(340px, 88vw)", maxHeight: "78dvh",
-              background: "#131313",
-              border: "1px solid rgba(255,255,255,0.09)",
+              background: "var(--surface-1)",
+              border: "1px solid var(--border-2)",
               borderRadius: 20, overflow: "hidden",
               display: "flex", flexDirection: "column",
               boxShadow: "0 32px 80px rgba(0,0,0,0.8)",
@@ -487,16 +571,16 @@ export default function SettingsPage() {
               <div style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 padding: "15px 18px 13px",
-                borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0,
+                borderBottom: "1px solid var(--border-1)", flexShrink: 0,
               }}>
-                <span style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Choose Your Team</span>
+                <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>Choose Your Team</span>
                 <button
                   onClick={() => setShowTeamPicker(false)}
                   style={{
-                    background: "rgba(255,255,255,0.08)", border: "none",
+                    background: "var(--surface-3)", border: "none",
                     borderRadius: "50%", width: 28, height: 28,
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    cursor: "pointer", color: "#888",
+                    cursor: "pointer", color: "var(--text-2)",
                   }}
                 >
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
@@ -511,15 +595,15 @@ export default function SettingsPage() {
                   onClick={() => { setFavTeam(""); savePref("foopy_fav_team", ""); setShowTeamPicker(false); }}
                   style={{
                     display: "flex", alignItems: "center", gap: 12, width: "100%",
-                    padding: "12px 18px", background: favTeam === "" ? "rgba(255,255,255,0.06)" : "none",
-                    border: "none", borderBottom: "1px solid rgba(255,255,255,0.04)",
-                    color: favTeam === "" ? "#fff" : "#777",
+                    padding: "12px 18px", background: favTeam === "" ? "var(--surface-2)" : "none",
+                    border: "none", borderBottom: "1px solid var(--border-1)",
+                    color: favTeam === "" ? "var(--text-1)" : "var(--text-2)",
                     fontSize: 14, fontWeight: favTeam === "" ? 700 : 400, cursor: "pointer", textAlign: "left",
                   }}
                 >
                   None
                   {favTeam === "" && (
-                    <svg style={{ marginLeft: "auto" }} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    <svg style={{ marginLeft: "auto" }} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                   )}
                 </button>
 
@@ -535,8 +619,8 @@ export default function SettingsPage() {
                         display: "flex", alignItems: "center", gap: 12, width: "100%",
                         padding: "12px 18px",
                         background: active ? `${tc}15` : "none",
-                        border: "none", borderBottom: "1px solid rgba(255,255,255,0.04)",
-                        color: active ? "#fff" : "#aaa",
+                        border: "none", borderBottom: "1px solid var(--border-1)",
+                        color: active ? "var(--text-1)" : "var(--text-2)",
                         fontSize: 14, fontWeight: active ? 700 : 400, cursor: "pointer", textAlign: "left",
                       }}
                     >

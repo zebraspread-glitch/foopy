@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { CheckCircle, Lock } from "lucide-react";
@@ -179,7 +179,7 @@ export default function WinnerPicksPage() {
               style={{
                 ...roundBtnStyle,
                 background: active ? "white" : "rgba(255,255,255,.06)",
-                color: active ? "#000" : "#94a3b8",
+                color: active ? "#14141e" : "#94a3b8",
                 border: `1px solid ${active ? "white" : "rgba(255,255,255,.12)"}`,
               }}
             >
@@ -382,7 +382,7 @@ function PickButton({
 
 const pageStyle: React.CSSProperties = {
   minHeight: "100dvh",
-  background: "#000",
+  background: "#14141e",
   color: "white",
   paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
 };

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import type { CSSProperties } from "react";
@@ -91,7 +91,7 @@ export default function ForgotPasswordPage() {
 
 const pageStyle: CSSProperties = {
   minHeight: "100dvh",
-  background: "#000",
+  background: "#14141e",
   color: "white",
   display: "flex",
   alignItems: "center",
@@ -164,7 +164,7 @@ const inputStyle: CSSProperties = {
   padding: "16px 14px 16px 44px",
   borderRadius: 999,
   border: "1px solid rgba(255,255,255,.08)",
-  background: "#111827",
+  background: "#1e2438",
   color: "white",
   fontSize: 15,
   fontWeight: 500,

@@ -2495,7 +2495,7 @@
     "aliases": [],
     "apiSportsId": 2080,
     "eventIds": [
-      2080
+      1844
     ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.compp-essendon-bombers--sullivan-robey"
@@ -6942,8 +6942,8 @@
     "name": "Kaleb Smith",
     "team": "Richmond",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1810,
+    "eventIds": 1810,
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.compp-richmond-tigers--kaleb-smith"
   },
@@ -7050,7 +7050,7 @@
     "aliases": [],
     "apiSportsId": 2100,
     "eventIds": [
-      2100
+      2104
     ],
     "statsIds": []
   },
@@ -7081,8 +7081,8 @@
     "name": "Patrick Retschko",
     "team": "Richmond",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 2073,
+    "eventIds": 2073,
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.compp-richmond-tigers--patrick-retschko"
   },
@@ -7131,7 +7131,7 @@
     ],
     "apiSportsId": 2047,
     "eventIds": [
-      2047
+      1910
     ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.compp-richmond-tigers--samuel-grlj"
@@ -7768,8 +7768,8 @@
     "name": "Ryan Byrnes",
     "team": "St Kilda",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 907,
+    "eventIds": 907,
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--ryan-byrnes"
   },

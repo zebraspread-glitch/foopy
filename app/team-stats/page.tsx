@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -338,7 +338,7 @@ export default function TeamStatsPage() {
 
 const pageStyle: React.CSSProperties = {
   minHeight: "100dvh",
-  background: "#080808",
+  background: "#1a1a24",
   color: "#f0f0f0",
   paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
 };

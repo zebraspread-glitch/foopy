@@ -139,8 +139,8 @@ export default function GlobalSideDrawer() {
           border: "none",
           cursor: "pointer",
           overflow: "hidden",
-          background: "#1e293b",
-          boxShadow: "0 2px 10px rgba(0,0,0,0.6), 0 0 0 1.5px rgba(255,255,255,0.1)",
+          background: "var(--surface-3)",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.35), 0 0 0 1.5px var(--border-2)",
           flexShrink: 0,
         }}
       >
@@ -158,8 +158,8 @@ export default function GlobalSideDrawer() {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              background: "linear-gradient(135deg, #1e3a5f, #0f172a)",
-              color: "#94a3b8",
+              background: "linear-gradient(135deg, var(--surface-3), var(--surface-1))",
+              color: "var(--text-2)",
               fontSize: 14,
               fontWeight: 800,
             }}
@@ -195,8 +195,8 @@ export default function GlobalSideDrawer() {
           bottom: 0,
           zIndex: 80,
           width: 272,
-          background: "#090909",
-          borderRight: "1px solid rgba(255,255,255,0.07)",
+          background: "var(--surface-1)",
+          borderRight: "1px solid var(--border-1)",
           transform: open ? "translateX(0)" : "translateX(-100%)",
           transition: "transform 0.28s cubic-bezier(0.4, 0, 0.2, 1)",
           paddingTop: "env(safe-area-inset-top, 0px)",
@@ -209,7 +209,7 @@ export default function GlobalSideDrawer() {
         <div
           style={{
             padding: "22px 20px 18px",
-            borderBottom: "1px solid rgba(255,255,255,0.06)",
+            borderBottom: "1px solid var(--border-1)",
             display: "flex",
             alignItems: "center",
             gap: 13,
@@ -222,8 +222,8 @@ export default function GlobalSideDrawer() {
               borderRadius: "50%",
               overflow: "hidden",
               flexShrink: 0,
-              background: "linear-gradient(135deg,#1e3a5f,#0f172a)",
-              border: "2px solid rgba(255,255,255,0.1)",
+              background: "linear-gradient(135deg, var(--surface-3), var(--surface-1))",
+              border: "2px solid var(--border-2)",
             }}
           >
             {avatarUrl ? (
@@ -240,7 +240,7 @@ export default function GlobalSideDrawer() {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  color: "#94a3b8",
+                  color: "var(--text-2)",
                   fontSize: 20,
                   fontWeight: 800,
                 }}
@@ -251,13 +251,13 @@ export default function GlobalSideDrawer() {
           </div>
           <div style={{ minWidth: 0 }}>
             {username ? (
-              <div style={{ fontSize: 16, fontWeight: 800, color: "#f8fafc", letterSpacing: "-0.02em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "var(--text-1)", letterSpacing: "-0.02em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 @{username}
               </div>
             ) : (
-              <div style={{ fontSize: 14, color: "#475569", fontWeight: 600 }}>Not signed in</div>
+              <div style={{ fontSize: 14, color: "var(--text-2)", fontWeight: 600 }}>Not signed in</div>
             )}
-            <div style={{ fontSize: 11, color: "#334155", fontWeight: 600, marginTop: 2, letterSpacing: "0.04em" }}>MENU</div>
+            <div style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 600, marginTop: 2, letterSpacing: "0.04em" }}>MENU</div>
           </div>
         </div>
 
@@ -273,8 +273,8 @@ export default function GlobalSideDrawer() {
                 alignItems: "center",
                 gap: 14,
                 padding: "16px 20px",
-                borderBottom: "1px solid rgba(255,255,255,0.04)",
-                color: "#d1d5db",
+                borderBottom: "1px solid var(--border-1)",
+                color: "var(--text-1)",
                 fontSize: 15,
                 fontWeight: 650,
                 textDecoration: "none",
@@ -282,7 +282,7 @@ export default function GlobalSideDrawer() {
                 transition: "background 0.12s ease",
               }}
             >
-              <span style={{ color: "#6b7280", flexShrink: 0 }}>{icon}</span>
+              <span style={{ color: "var(--text-3)", flexShrink: 0 }}>{icon}</span>
               {label}
             </Link>
           ))}
@@ -293,17 +293,17 @@ export default function GlobalSideDrawer() {
           style={{
             padding: "14px 20px",
             paddingBottom: "calc(14px + env(safe-area-inset-bottom, 0px))",
-            borderTop: "1px solid rgba(255,255,255,0.05)",
+            borderTop: "1px solid var(--border-1)",
             display: "flex",
             alignItems: "center",
             gap: 8,
           }}
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-            <ellipse cx="12" cy="12" rx="10" ry="7" stroke="#2a2a2a" strokeWidth="2.5" />
-            <path d="M5 12 Q12 5 19 12 Q12 19 5 12Z" fill="#2a2a2a" opacity="0.6" />
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ color: "var(--text-3)" }}>
+            <ellipse cx="12" cy="12" rx="10" ry="7" stroke="currentColor" strokeWidth="2.5" />
+            <path d="M5 12 Q12 5 19 12 Q12 19 5 12Z" fill="currentColor" opacity="0.6" />
           </svg>
-          <span style={{ color: "#2a2a2a", fontSize: 11, fontWeight: 800, letterSpacing: "0.08em" }}>FOOPY</span>
+          <span style={{ color: "var(--text-3)", fontSize: 11, fontWeight: 800, letterSpacing: "0.08em" }}>FOOPY</span>
         </div>
       </div>
     </>

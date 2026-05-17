@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -105,11 +105,11 @@ const RARITY_ODDS: Record<PackType, { rarity: Rarity; pct: string }[]> = {
 
 const TEAM_COLORS: Record<string, string> = {
   Adelaide: "#002b5c", "Brisbane Lions": "#a50034", Carlton: "#031a35",
-  Collingwood: "#111111", Essendon: "#cc0000", Fremantle: "#4b1979",
+  Collingwood: "#1e1e28", Essendon: "#cc0000", Fremantle: "#4b1979",
   "Geelong Cats": "#003b73", Geelong: "#003b73", "Gold Coast": "#c0392b",
   GWS: "#e05a1a", "GWS Giants": "#e05a1a", "Greater Western Sydney": "#e05a1a",
   Hawthorn: "#6b3a1f", Melbourne: "#c8102e", "North Melbourne": "#0055a4",
-  "Port Adelaide": "#008999", Richmond: "#1a1a1a", "St Kilda": "#c8102e",
+  "Port Adelaide": "#008999", Richmond: "#272731", "St Kilda": "#c8102e",
   Sydney: "#c0392b", "West Coast": "#003087", "Western Bulldogs": "#1a4abf",
 };
 
@@ -556,7 +556,7 @@ function PackShop({
                 style={{
                   ...openBtnBase,
                   background: canAfford ? pack.accent : "rgba(255,255,255,.05)",
-                  color: canAfford ? "#000" : "#334155",
+                  color: canAfford ? "#14141e" : "#334155",
                   opacity: canAfford && !opening ? 1 : 0.5,
                   cursor: canAfford && !opening ? "pointer" : "not-allowed",
                   boxShadow: canAfford ? `0 4px 18px ${pack.accent}44` : "none",
@@ -682,7 +682,7 @@ function PlayerCard({ card, onSell }: { card: UserCard; onSell?: () => void }) {
         overflow: "hidden",
         border: `2.5px solid ${meta.color}`,
         boxShadow: `0 0 14px ${meta.glow}`,
-        background: TEAM_COLORS[card.team] ?? "#111",
+        background: TEAM_COLORS[card.team] ?? "#1e1e28",
       }}>
         <img
           src={`/players/${folder}/${card.player_id}.png`}
@@ -749,7 +749,7 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
     return (
       <div style={{ ...modalOverlayStyle, alignItems: "center", justifyContent: "center", padding: "20px 16px" }}>
         <div style={{
-          background: "#0a0a0a",
+          background: "#1a1a24",
           border: "1px solid rgba(255,255,255,.1)",
           borderRadius: 24,
           padding: "20px 16px 16px",
@@ -783,7 +783,7 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
                   {/* NEW badge */}
                   {card.is_new && <div style={{ position: "absolute", top: 6, left: "50%", transform: "translateX(-50%)", background: "linear-gradient(90deg,#16a34a,#22c55e)", borderRadius: 99, padding: "2px 7px", fontSize: 7, fontWeight: 900, color: "#fff", letterSpacing: ".1em", boxShadow: "0 2px 8px rgba(34,197,94,.5)", whiteSpace: "nowrap" }}>✦ NEW</div>}
                   {/* Player circle */}
-                  <div style={{ position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)", width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", border: `2px solid ${m.color}`, boxShadow: `0 0 10px ${m.glow}`, background: "#0a0a0a" }}>
+                  <div style={{ position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)", width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", border: `2px solid ${m.color}`, boxShadow: `0 0 10px ${m.glow}`, background: "#1a1a24" }}>
                     <img src={card.player_image} alt={card.player_name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
                   </div>
                   {/* Player name */}
@@ -870,7 +870,7 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
                         ✦ NEW
                       </div>
                     )}
-                    <div style={{ position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)", width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", border: `2.5px solid ${meta.color}`, boxShadow: `0 0 20px ${meta.glow}`, background: TEAM_COLORS[current.team] ?? "#111" }}>
+                    <div style={{ position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)", width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", border: `2.5px solid ${meta.color}`, boxShadow: `0 0 20px ${meta.glow}`, background: TEAM_COLORS[current.team] ?? "#1e1e28" }}>
                       <img src={current.player_image} alt={current.player_name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
                     </div>
                     <div style={{ position: "absolute", top: "71%", left: 0, right: 0, textAlign: "center", padding: "0 10px" }}>
@@ -1065,7 +1065,7 @@ function CoinIcon({ size = 16 }: { size?: number }) {
 
 const pageStyle: React.CSSProperties = {
   minHeight: "100dvh",
-  background: "#080808",
+  background: "#1a1a24",
   color: "#f8fafc",
   paddingBottom: "calc(80px + env(safe-area-inset-bottom))",
 };
@@ -1078,9 +1078,10 @@ const headerStyle: React.CSSProperties = {
   justifyContent: "space-between",
   alignItems: "center",
   padding: "calc(env(safe-area-inset-top) + 12px) 18px 12px 58px",
-  background: "rgba(0,0,0,.92)",
-  backdropFilter: "blur(24px)",
-  borderBottom: "0.5px solid rgba(255,255,255,.07)",
+  background: "rgba(24,24,31,0.96)",
+  backdropFilter: "blur(28px) saturate(200%)",
+  WebkitBackdropFilter: "blur(28px) saturate(200%)",
+  borderBottom: "0.5px solid rgba(255,255,255,.08)",
 };
 
 const coinBadgeStyle: React.CSSProperties = {
@@ -1261,7 +1262,7 @@ const modalOverlayStyle: React.CSSProperties = {
 };
 
 const modalPanelStyle: React.CSSProperties = {
-  background: "#0a0a0a",
+  background: "#1a1a24",
   border: "1px solid rgba(255,255,255,.1)",
   borderRadius: "24px 24px 0 0",
   padding: "28px 20px 24px",

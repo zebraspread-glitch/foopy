@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -249,7 +249,7 @@ export default function StatsPage() {
       `}</style>
 
       <main style={{
-        minHeight: "100dvh", background: "#080808", color: "#f0f0f0",
+        minHeight: "100dvh", background: "#1a1a24", color: "#f0f0f0",
         paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
       }}>
 
@@ -342,7 +342,7 @@ export default function StatsPage() {
                 <div style={{ padding: "80px 24px", textAlign: "center" }}>
                   <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 6 }}>No data yet</div>
                   <div style={{ fontSize: 13, color: "#444", lineHeight: 1.7, marginBottom: 20 }}>Run the fetch script to pull 2026 stats</div>
-                  <code style={{ display: "inline-block", background: "#111", border: "1px solid #1e1e1e", borderRadius: 8, padding: "8px 14px", fontSize: 12, color: "#22c55e" }}>
+                  <code style={{ display: "inline-block", background: "#1e1e28", border: "1px solid #1e1e1e", borderRadius: 8, padding: "8px 14px", fontSize: 12, color: "#22c55e" }}>
                     npm run fetch:stats
                   </code>
                 </div>
@@ -384,7 +384,7 @@ export default function StatsPage() {
                         return (
                           <div key={p.apiSportsId} onClick={() => router.push(`/player/${p.id}`)} style={{
                             flex: isFirst ? 1.1 : 1, borderRadius: 16, overflow: "hidden",
-                            background: "#111", cursor: "pointer",
+                            background: "#1e1e28", cursor: "pointer",
                             border: isFirst ? `1px solid ${rc}40` : "1px solid rgba(255,255,255,0.06)",
                             display: "flex", flexDirection: "column",
                             boxShadow: isFirst ? `0 8px 32px ${color}22` : "none",
@@ -392,7 +392,7 @@ export default function StatsPage() {
                             <div style={{ height: photoH, overflow: "hidden", position: "relative", background: `linear-gradient(180deg, ${color}28 0%, ${color}10 100%)`, flexShrink: 0 }}>
                               <PlayerAvatar statsId={p.id} photoUrl={p.photoUrl} name={p.name} team={p.team} size={220} radius="0" />
                               <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, transparent 55%, #111 100%)" }} />
-                              <div style={{ position: "absolute", top: 8, left: 8, fontSize: 9, fontWeight: 800, color: isFirst ? "#000" : "#fff", background: isFirst ? rc : "rgba(0,0,0,0.55)", borderRadius: 5, padding: "2px 7px", letterSpacing: "0.05em" }}>
+                              <div style={{ position: "absolute", top: 8, left: 8, fontSize: 9, fontWeight: 800, color: isFirst ? "#14141e" : "#fff", background: isFirst ? rc : "rgba(0,0,0,0.55)", borderRadius: 5, padding: "2px 7px", letterSpacing: "0.05em" }}>
                                 #{rank}
                               </div>
                               {logo && <img src={logo} alt="" style={{ position: "absolute", top: 8, right: 8, width: 16, height: 16, objectFit: "contain", opacity: 0.4 }} />}
@@ -458,7 +458,7 @@ export default function StatsPage() {
                             pg === "…" ? (
                               <span key={`e${i}`} style={{ color: "#333", fontSize: 13, padding: "0 2px" }}>…</span>
                             ) : (
-                              <button key={pg} className="s-pg" onClick={() => goPage(pg as number)} style={{ width: 34, height: 34, borderRadius: 10, background: pg === page ? "#fff" : "rgba(255,255,255,0.05)", border: pg === page ? "none" : "1px solid rgba(255,255,255,0.08)", color: pg === page ? "#000" : "#666", fontWeight: pg === page ? 800 : 500, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                              <button key={pg} className="s-pg" onClick={() => goPage(pg as number)} style={{ width: 34, height: 34, borderRadius: 10, background: pg === page ? "#fff" : "rgba(255,255,255,0.05)", border: pg === page ? "none" : "1px solid rgba(255,255,255,0.08)", color: pg === page ? "#14141e" : "#666", fontWeight: pg === page ? 800 : 500, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                                 {(pg as number) + 1}
                               </button>
                             )
@@ -499,7 +499,7 @@ export default function StatsPage() {
                   return (
                     <button key={t} className="s-btn" onClick={() => { setTeam(t); setShowPicker(false); }} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "12px 18px", background: active ? "rgba(255,255,255,0.06)" : "none", border: "none", borderBottom: "1px solid rgba(255,255,255,0.04)", color: active ? "#fff" : "#999", fontSize: 14, fontWeight: active ? 700 : 400, cursor: "pointer", textAlign: "left" }}>
                       {t !== "All" && (
-                        <div style={{ width: 30, height: 30, borderRadius: "50%", flexShrink: 0, overflow: "hidden", background: tc ? `${tc}18` : "#1a1a1a", border: `1px solid ${tc}33` }}>
+                        <div style={{ width: 30, height: 30, borderRadius: "50%", flexShrink: 0, overflow: "hidden", background: tc ? `${tc}18` : "#272731", border: `1px solid ${tc}33` }}>
                           {TEAM_LOGO[t] && <img src={TEAM_LOGO[t]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
                         </div>
                       )}

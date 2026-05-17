@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -70,7 +70,7 @@ export default function ResetPasswordPage() {
 
 const page: CSSProperties = {
   minHeight: "100vh",
-  background: "#000000",
+  background: "#14141e",
   color: "white",
   paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
 };

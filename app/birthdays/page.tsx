@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -43,7 +43,7 @@ const TEAM_COLORS: Record<string, string> = {
   "Brisbane Lions": "#7a003c",
   Brisbane: "#7a003c",
   Carlton: "#031a35",
-  Collingwood: "#1a1a1a",
+  Collingwood: "#272731",
   Essendon: "#cc0000",
   Fremantle: "#4b1979",
   "Geelong Cats": "#003b73",
@@ -55,7 +55,7 @@ const TEAM_COLORS: Record<string, string> = {
   Melbourne: "#c8102e",
   "North Melbourne": "#0055a4",
   "Port Adelaide": "#008999",
-  Richmond: "#1a1a1a",
+  Richmond: "#272731",
   "St Kilda": "#c8102e",
   Sydney: "#c0392b",
   "West Coast": "#003087",
@@ -310,7 +310,7 @@ export default function BirthdaysPage() {
 
 const pageStyle: React.CSSProperties = {
   minHeight: "100dvh",
-  background: "#000",
+  background: "#14141e",
   color: "white",
   paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
 };

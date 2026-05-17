@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -447,7 +447,7 @@ export default function ComparePage() {
       `}</style>
 
       <main style={{
-        minHeight: "100dvh", background: "#080808", color: "#f0f0f0",
+        minHeight: "100dvh", background: "#1a1a24", color: "#f0f0f0",
         paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
       }}>
 
@@ -508,7 +508,7 @@ export default function ComparePage() {
 
           {/* Stat rows */}
           {compareA && compareB && (
-            <div style={{ borderRadius: 16, overflow: "hidden", border: "1px solid rgba(255,255,255,.07)", background: "#0d0d0d", padding: "0 16px" }}>
+            <div style={{ borderRadius: 16, overflow: "hidden", border: "1px solid rgba(255,255,255,.07)", background: "#1e1e28", padding: "0 16px" }}>
               {/* Column headers */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", padding: "12px 0 6px", borderBottom: "1px solid rgba(255,255,255,.06)" }}>
                 <div style={{ textAlign: "right", fontSize: 11, fontWeight: 800, color: colorA, paddingRight: 10 }}>{shortName(compareA.name)}</div>
@@ -576,7 +576,7 @@ export default function ComparePage() {
         {compareSlot && (
           <>
             <div onClick={() => setCompareSlot(null)} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }} />
-            <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 101, width: "min(380px, 92vw)", maxHeight: "82dvh", background: "#111", border: "1px solid rgba(255,255,255,.1)", borderRadius: 22, display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 32px 80px rgba(0,0,0,.85)" }}>
+            <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 101, width: "min(380px, 92vw)", maxHeight: "82dvh", background: "#1e1e28", border: "1px solid rgba(255,255,255,.1)", borderRadius: 22, display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 32px 80px rgba(0,0,0,.85)" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px 12px", borderBottom: "1px solid rgba(255,255,255,.07)", flexShrink: 0 }}>
                 <span style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>Pick Player {compareSlot}</span>
                 <button onClick={() => setCompareSlot(null)} style={{ background: "rgba(255,255,255,.08)", border: "none", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#888" }}>

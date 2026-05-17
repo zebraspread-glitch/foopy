@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -24,11 +24,11 @@ const RARITY_ORDER: Record<Rarity, number> = { bronze: 0, silver: 1, gold: 2, di
 
 const TEAM_COLORS: Record<string, string> = {
   Adelaide: "#002b5c", "Brisbane Lions": "#a50034", Carlton: "#031a35",
-  Collingwood: "#111111", Essendon: "#cc0000", Fremantle: "#4b1979",
+  Collingwood: "#1e1e28", Essendon: "#cc0000", Fremantle: "#4b1979",
   "Geelong Cats": "#003b73", Geelong: "#003b73", "Gold Coast": "#c0392b",
   GWS: "#e05a1a", "GWS Giants": "#e05a1a", "Greater Western Sydney": "#e05a1a",
   Hawthorn: "#6b3a1f", Melbourne: "#c8102e", "North Melbourne": "#0055a4",
-  "Port Adelaide": "#008999", Richmond: "#1a1a1a", "St Kilda": "#c8102e",
+  "Port Adelaide": "#008999", Richmond: "#272731", "St Kilda": "#c8102e",
   Sydney: "#c0392b", "West Coast": "#003087", "Western Bulldogs": "#1a4abf",
 };
 
@@ -111,7 +111,7 @@ export default function UserAlbumPage() {
 
   if (notFound) {
     return (
-      <main style={{ minHeight: "100dvh", background: "#080808", color: "#f8fafc", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
+      <main style={{ minHeight: "100dvh", background: "#1a1a24", color: "#f8fafc", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
         <div style={{ fontSize: 40 }}>🔍</div>
         <div style={{ fontSize: 18, fontWeight: 900 }}>User not found</div>
         <button onClick={() => router.back()} style={{ marginTop: 8, fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,.5)", background: "none", border: "none", cursor: "pointer" }}>← Go back</button>
@@ -120,7 +120,7 @@ export default function UserAlbumPage() {
   }
 
   return (
-    <main style={{ minHeight: "100dvh", background: "#080808", color: "#f8fafc", paddingBottom: "calc(80px + env(safe-area-inset-bottom))" }}>
+    <main style={{ minHeight: "100dvh", background: "#1a1a24", color: "#f8fafc", paddingBottom: "calc(80px + env(safe-area-inset-bottom))" }}>
       <style>{`
         .album-grid {
           display: grid;
@@ -313,7 +313,7 @@ function AlbumSlot({ player, ownedCards }: {
               width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden",
               border: `2px solid ${meta.color}`,
               boxShadow: `0 0 12px ${meta.glow}`,
-              background: TEAM_COLORS[player.team] ?? "#0a0a0a",
+              background: TEAM_COLORS[player.team] ?? "#1a1a24",
             }}>
               <img
                 src={`/players/${player.folder}/${player.id}.png`}

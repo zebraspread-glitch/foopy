@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import type { CSSProperties } from "react";
@@ -454,7 +454,7 @@ const sheetStyle: CSSProperties = {
   position: "relative",
   width: "100%",
   maxHeight: "85dvh",
-  background: "#0a0a0a",
+  background: "#1a1a24",
   borderRadius: "20px 20px 0 0",
   border: "1px solid rgba(255,255,255,0.1)",
   borderBottom: "none",
@@ -679,7 +679,7 @@ const inputAreaStyle: CSSProperties = {
   padding: "12px 16px",
   paddingBottom: "calc(12px + env(safe-area-inset-bottom))",
   flexShrink: 0,
-  background: "#080808",
+  background: "#1a1a24",
 };
 
 const signInBtnStyle: CSSProperties = {

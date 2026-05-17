@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -200,7 +200,7 @@ export default function LoginPage() {
 /* ── Styles ── */
 
 const pageStyle: React.CSSProperties = {
-  minHeight: "100dvh", background: "#000", color: "white",
+  minHeight: "100dvh", background: "#14141e", color: "white",
   display: "flex", alignItems: "center", justifyContent: "center",
   padding: "calc(32px + env(safe-area-inset-top)) 20px calc(90px + env(safe-area-inset-bottom))",
 };
@@ -227,7 +227,7 @@ const modeBtnStyle: React.CSSProperties = {
   background: "transparent", color: "#64748b", fontSize: 14, fontWeight: 800, cursor: "pointer",
 };
 const modeActiveBtnStyle: React.CSSProperties = {
-  background: "white", color: "#000", boxShadow: "0 2px 8px rgba(0,0,0,.2)",
+  background: "white", color: "#14141e", boxShadow: "0 2px 8px rgba(0,0,0,.2)",
 };
 const formStyle: React.CSSProperties = { display: "flex", flexDirection: "column", gap: 12 };
 const fieldWrapStyle: React.CSSProperties = { position: "relative", display: "flex", alignItems: "center" };
@@ -236,7 +236,7 @@ const fieldIconStyle: React.CSSProperties = {
 };
 const inputStyle: React.CSSProperties = {
   width: "100%", padding: "16px 14px 16px 44px", borderRadius: 999,
-  border: "1px solid rgba(255,255,255,.08)", background: "#111827",
+  border: "1px solid rgba(255,255,255,.08)", background: "#1e2438",
   color: "white", fontSize: 16, fontWeight: 500, outline: "none",
   transition: "border-color 0.15s ease, box-shadow 0.2s ease",
 };

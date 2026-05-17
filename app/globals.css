@@ -4,11 +4,11 @@
 
 :root {
   /* Surfaces */
-  --bg:           #000000;
-  --surface-1:    #080808;
-  --surface-2:    #0d0d0d;
-  --surface-3:    #111111;
-  --surface-4:    #1a1a1a;
+  --bg:           #14141e;
+  --surface-1:    #1e1e28;
+  --surface-2:    #222230;
+  --surface-3:    #272731;
+  --surface-4:    #2e2e3a;
 
   /* Borders */
   --border-1:     rgba(255,255,255,0.06);
@@ -20,6 +20,14 @@
   --text-2:       #94a3b8;
   --text-3:       #475569;
   --text-4:       #334155;
+
+  /* Theme-aware chrome */
+  --shell-border:  rgba(255,255,255,0.07);
+  --bottom-nav-bg: rgba(18,18,26,0.97);
+  --bottom-nav-border: rgba(255,255,255,0.10);
+  --tab-muted:    rgba(148,163,184,0.45);
+  --tab-active:   #ffffff;
+  --active-pill:  rgba(59,130,246,0.18);
 
   /* Brand */
   --blue:         #3b82f6;
@@ -64,11 +72,71 @@
   --space-8: 32px;
 }
 
+:root[data-foopy-theme="light"] {
+  color-scheme: light;
+
+  --bg:           #ffffff;
+  --surface-1:    #ffffff;
+  --surface-2:    #f8fafc;
+  --surface-3:    #eef2f7;
+  --surface-4:    #e2e8f0;
+
+  --border-1:     rgba(15,23,42,0.08);
+  --border-2:     rgba(15,23,42,0.12);
+  --border-3:     rgba(15,23,42,0.18);
+
+  --text-1:       #0f172a;
+  --text-2:       #475569;
+  --text-3:       #64748b;
+  --text-4:       #94a3b8;
+
+  --shell-border:  rgba(15,23,42,0.08);
+  --bottom-nav-bg: rgba(255,255,255,0.97);
+  --bottom-nav-border: rgba(15,23,42,0.10);
+  --tab-muted:    rgba(71,85,105,0.55);
+  --tab-active:   #0f172a;
+  --active-pill:  rgba(59,130,246,0.12);
+}
+
+:root[data-foopy-theme="dark"] {
+  color-scheme: dark;
+
+  --bg:           #000000;
+  --surface-1:    #050505;
+  --surface-2:    #080808;
+  --surface-3:    #111111;
+  --surface-4:    #1a1a1a;
+
+  --border-1:     rgba(255,255,255,0.06);
+  --border-2:     rgba(255,255,255,0.10);
+  --border-3:     rgba(255,255,255,0.14);
+
+  --text-1:       #f8fafc;
+  --text-2:       #94a3b8;
+  --text-3:       #64748b;
+  --text-4:       #475569;
+
+  --shell-border:  rgba(255,255,255,0.07);
+  --bottom-nav-bg: rgba(0,0,0,0.97);
+  --bottom-nav-border: rgba(255,255,255,0.10);
+  --tab-muted:    rgba(148,163,184,0.45);
+  --tab-active:   #ffffff;
+  --active-pill:  rgba(59,130,246,0.18);
+}
+
 @font-face {
   font-family: "Borsok";
   src: url("/fonts/borsok-regular.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Druk Wide";
+  src: url("/fonts/druk-wide-bold-italic.woff2") format("woff2");
+  font-weight: 700;
+  font-style: italic;
   font-display: swap;
 }
 
@@ -98,8 +166,7 @@ html {
 html, body {
   margin: 0;
   min-height: 100%;
-  /* True black for OLED screens */
-  background: #000;
+  background: var(--bg);
   color: var(--text-1);
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
     "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -240,7 +307,7 @@ a.pressable:active {
   display: flex;
   align-items: center;
   padding: 0 18px;
-  background: rgba(0, 0, 0, 0.92);
+  background: rgba(24,24,31,0.96);
   backdrop-filter: blur(28px) saturate(200%);
   -webkit-backdrop-filter: blur(28px) saturate(200%);
   border-bottom: 0.5px solid rgba(255,255,255,0.08);
@@ -297,8 +364,9 @@ a.pressable:active {
   margin: 0 auto;
   min-height: 100dvh;
   position: relative;
-  border-left: 1px solid rgba(255,255,255,.07);
-  border-right: 1px solid rgba(255,255,255,.07);
+  background: var(--bg);
+  border-left: 1px solid var(--shell-border);
+  border-right: 1px solid var(--shell-border);
 }
 
 body.full-width-page .page-shell {
@@ -319,10 +387,10 @@ body.full-width-page .page-shell {
   z-index: 100;
   display: flex;
   align-items: stretch;
-  background: rgba(6, 6, 6, 0.96);
+  background: var(--bottom-nav-bg);
   backdrop-filter: blur(36px) saturate(220%);
   -webkit-backdrop-filter: blur(36px) saturate(220%);
-  border-top: 0.5px solid rgba(255,255,255,0.10);
+  border-top: 0.5px solid var(--bottom-nav-border);
   padding-bottom: env(safe-area-inset-bottom);
   height: var(--nav-h);
   will-change: transform;
@@ -339,7 +407,7 @@ body.full-width-page .page-shell {
   justify-content: center;
   gap: 0;
   padding: 8px 4px 6px;
-  color: rgba(148, 163, 184, 0.45);
+  color: var(--tab-muted);
   text-decoration: none;
   -webkit-user-select: none;
   user-select: none;
@@ -358,7 +426,7 @@ body.full-width-page .page-shell {
 }
 
 .tab-active {
-  color: #fff;
+  color: var(--tab-active);
 }
 
 .tab-icon-wrap {
@@ -373,7 +441,7 @@ body.full-width-page .page-shell {
 }
 
 .tab-active .tab-icon-wrap {
-  background: rgba(59, 130, 246, 0.18);
+  background: var(--active-pill);
   transform: scale(1.06);
 }
 
@@ -911,7 +979,7 @@ textarea::placeholder { color: var(--text-3); }
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(18,18,22,0.96);
+  background: rgba(30,30,40,0.96);
   border: 1px solid var(--border-2);
   box-shadow: 0 4px 20px rgba(0,0,0,0.4);
   display: flex;
@@ -1039,6 +1107,138 @@ textarea::placeholder { color: var(--text-3); }
 }
 
 /* ============================================================
+   MATCH CARD — live glow ring
+   ============================================================ */
+
+.card-live {
+  outline: 2.5px solid rgba(34,197,94,0.7) !important;
+  box-shadow: 0 0 0 4px rgba(34,197,94,0.08), 0 4px 20px rgba(0,0,0,0.4) !important;
+}
+
+/* ============================================================
+   FEED EVENT — entry animation (new event slides in from top)
+   ============================================================ */
+
+.feed-event-new {
+  animation: feed-event-in 0.32s var(--spring-soft) both,
+             feed-event-glow 1.2s ease 0.1s both;
+}
+
+/* ============================================================
+   SCORE FLASH — applied to score spans when score updates
+   ============================================================ */
+
+.score-flash {
+  animation: score-pop 0.55s var(--spring-bounce) both;
+}
+
+/* ============================================================
+   STAT TABLE — tighter, more readable
+   ============================================================ */
+
+.stat-table th {
+  text-align: left;
+  padding: 9px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+}
+
+.stat-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* ============================================================
+   SECTION HEADING — consistent across match tabs
+   ============================================================ */
+
+.section-heading {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-2);
+  letter-spacing: 0.01em;
+  margin: 0 0 12px;
+}
+
+/* ============================================================
+   TAB BAR — match page tabs
+   ============================================================ */
+
+.match-tab {
+  flex: 1;
+  padding: 10px 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-3);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.match-tab-active {
+  color: var(--text-1);
+  border-bottom-color: var(--blue);
+}
+
+/* ============================================================
+   STATUS BADGE — pill variants
+   ============================================================ */
+
+.badge-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  background: #16a34a;
+  color: #fff;
+  letter-spacing: 0;
+}
+
+.badge-final {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  background: rgba(148,163,184,0.1);
+  border: 1px solid rgba(148,163,184,0.2);
+  color: #94a3b8;
+}
+
+.badge-upcoming {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-2);
+}
+
+/* ============================================================
    NOTIFICATION BADGE
    ============================================================ */
 
@@ -1057,7 +1257,7 @@ textarea::placeholder { color: var(--text-3); }
   align-items: center;
   justify-content: center;
   padding: 0 4px;
-  border: 1.5px solid #000;
+  border: 1.5px solid var(--bg);
   line-height: 1;
 }
 
@@ -1100,7 +1300,7 @@ textarea::placeholder { color: var(--text-3); }
   padding-top: env(safe-area-inset-top);
   display: flex;
   align-items: center;
-  background: rgba(0, 0, 0, 0.92);
+  background: rgba(24,24,31,0.96);
   backdrop-filter: blur(28px) saturate(200%);
   -webkit-backdrop-filter: blur(28px) saturate(200%);
   border-bottom: 0.5px solid rgba(255,255,255,0.08);
@@ -1455,7 +1655,7 @@ textarea:focus-visible {
   left: 50%;
   z-index: 201;
   width: min(400px, 90vw);
-  background: #141414;
+  background: #1e1e28;
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 20px;
   padding: 22px 20px 24px;

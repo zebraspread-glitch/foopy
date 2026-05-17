@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
@@ -910,7 +910,7 @@ const TEAM_COLOR_MAP: Record<string, { primary: string; bg: string }> = {
   brisbane:           { primary: "#a0132f", bg: "#a0132f" },
   "brisbane lions":   { primary: "#a0132f", bg: "#a0132f" },
   carlton:            { primary: "#0e3e6e", bg: "#0e3e6e" },
-  collingwood:        { primary: "#d0d0d0", bg: "#1a1a1a" },
+  collingwood:        { primary: "#d0d0d0", bg: "#272731" },
   essendon:           { primary: "#e2001a", bg: "#1a0000" },
   fremantle:          { primary: "#2c1654", bg: "#2c1654" },
   geelong:            { primary: "#1a3c6d", bg: "#1a3c6d" },
@@ -1623,7 +1623,7 @@ const avatarStyle: CSSProperties = {
   width: 36,
   height: 36,
   borderRadius: "50%",
-  background: "#111827",
+  background: "#1e2438",
   border: "1px solid rgba(255,255,255,0.1)",
   flexShrink: 0,
   display: "flex",

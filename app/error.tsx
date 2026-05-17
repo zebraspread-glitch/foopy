@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect } from "react";
 
@@ -16,7 +16,7 @@ export default function GlobalError({
   return (
     <main style={{
       minHeight: "100dvh",
-      background: "#000",
+      background: "#14141e",
       color: "#fff",
       display: "flex",
       flexDirection: "column",

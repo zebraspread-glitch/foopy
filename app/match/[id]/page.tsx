@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
@@ -131,25 +131,25 @@ function liveFeedTeamColors(team: any) {
     // Carlton: Navy (solid)
     carlton:         { primary: "#002b5c", secondary: "#002b5c", text: "#ffffff" },
     // Collingwood: Black → White
-    collingwood:     { primary: "#1a1a1a", secondary: "#ffffff", text: "#000000" },
+    collingwood:     { primary: "#272731", secondary: "#ffffff", text: "#14141e" },
     // Essendon: Red → Black
-    essendon:        { primary: "#ef4444", secondary: "#1a1a1a", text: "#000000" },
+    essendon:        { primary: "#ef4444", secondary: "#272731", text: "#14141e" },
     // Fremantle: Purple → White
     fremantle:       { primary: "#7c3aed", secondary: "#ffffff", text: "#ffffff" },
     // Geelong: Navy → White
-    geelong:         { primary: "#1e40af", secondary: "#ffffff", text: "#000000" },
-    "geelong cats":  { primary: "#1e40af", secondary: "#ffffff", text: "#000000" },
+    geelong:         { primary: "#1e40af", secondary: "#ffffff", text: "#14141e" },
+    "geelong cats":  { primary: "#1e40af", secondary: "#ffffff", text: "#14141e" },
     // Gold Coast: Red (solid)
     "gold coast":    { primary: "#ef4444", secondary: "#ef4444", text: "#ffffff" },
     "gold coast suns": { primary: "#ef4444", secondary: "#ef4444", text: "#ffffff" },
     // GWS: Orange → White
-    gws:                          { primary: "#f97316", secondary: "#ffffff", text: "#000000" },
-    "gws giants":                 { primary: "#f97316", secondary: "#ffffff", text: "#000000" },
-    "greater western sydney":     { primary: "#f97316", secondary: "#ffffff", text: "#000000" },
-    "greater western sydney giants": { primary: "#f97316", secondary: "#ffffff", text: "#000000" },
+    gws:                          { primary: "#f97316", secondary: "#ffffff", text: "#14141e" },
+    "gws giants":                 { primary: "#f97316", secondary: "#ffffff", text: "#14141e" },
+    "greater western sydney":     { primary: "#f97316", secondary: "#ffffff", text: "#14141e" },
+    "greater western sydney giants": { primary: "#f97316", secondary: "#ffffff", text: "#14141e" },
     // Hawthorn: Yellow → Brown
-    hawthorn:        { primary: "#f59e0b", secondary: "#78350f", text: "#000000" },
-    "hawthorn hawks": { primary: "#f59e0b", secondary: "#78350f", text: "#000000" },
+    hawthorn:        { primary: "#f59e0b", secondary: "#78350f", text: "#14141e" },
+    "hawthorn hawks": { primary: "#f59e0b", secondary: "#78350f", text: "#14141e" },
     // Melbourne: Red → Navy
     melbourne:           { primary: "#ef4444", secondary: "#1e40af", text: "#ffffff" },
     "melbourne demons":  { primary: "#ef4444", secondary: "#1e40af", text: "#ffffff" },
@@ -157,20 +157,20 @@ function liveFeedTeamColors(team: any) {
     "north melbourne":             { primary: "#1d4ed8", secondary: "#ffffff", text: "#ffffff" },
     "north melbourne kangaroos":   { primary: "#1d4ed8", secondary: "#ffffff", text: "#ffffff" },
     // Port Adelaide: Black → Teal
-    "port adelaide":       { primary: "#1a1a1a", secondary: "#06b6d4", text: "#000000" },
-    "port adelaide power": { primary: "#1a1a1a", secondary: "#06b6d4", text: "#000000" },
+    "port adelaide":       { primary: "#272731", secondary: "#06b6d4", text: "#14141e" },
+    "port adelaide power": { primary: "#272731", secondary: "#06b6d4", text: "#14141e" },
     // Richmond: Black → Yellow
-    richmond:        { primary: "#1a1a1a", secondary: "#facc15", text: "#000000" },
-    "richmond tigers": { primary: "#1a1a1a", secondary: "#facc15", text: "#000000" },
+    richmond:        { primary: "#272731", secondary: "#facc15", text: "#14141e" },
+    "richmond tigers": { primary: "#272731", secondary: "#facc15", text: "#14141e" },
     // St Kilda: Red → White → Black
-    "st kilda":      { primary: "#ef4444", secondary: "#ffffff", tertiary: "#1a1a1a", text: "#ffffff" },
-    "st kilda saints": { primary: "#ef4444", secondary: "#ffffff", tertiary: "#1a1a1a", text: "#ffffff" },
+    "st kilda":      { primary: "#ef4444", secondary: "#ffffff", tertiary: "#272731", text: "#ffffff" },
+    "st kilda saints": { primary: "#ef4444", secondary: "#ffffff", tertiary: "#272731", text: "#ffffff" },
     // Sydney: White → Red
     sydney:          { primary: "#ffffff", secondary: "#ef4444", text: "#ffffff" },
     "sydney swans":  { primary: "#ffffff", secondary: "#ef4444", text: "#ffffff" },
     // West Coast: Blue → Yellow
-    "west coast":        { primary: "#1d4ed8", secondary: "#facc15", text: "#000000" },
-    "west coast eagles": { primary: "#1d4ed8", secondary: "#facc15", text: "#000000" },
+    "west coast":        { primary: "#1d4ed8", secondary: "#facc15", text: "#14141e" },
+    "west coast eagles": { primary: "#1d4ed8", secondary: "#facc15", text: "#14141e" },
     // Western Bulldogs: Blue → White → Red
     "western bulldogs": { primary: "#2563eb", secondary: "#ffffff", tertiary: "#ef4444", text: "#ffffff" },
   };
@@ -367,6 +367,18 @@ function playerMatchesLiveId(player: any, id: unknown) {
   );
 }
 
+function findPlayerBySharedEventIdOnTeam(sourcePlayer: any, team: string) {
+  const sourceEventIds = idList(sourcePlayer?.eventIds);
+  if (!sourceEventIds.length || !team) return null;
+
+  return (playerStatsJson as any[]).find((player) => {
+    if (player === sourcePlayer) return false;
+    if (!teamsMatch(playerTeamName(player), team)) return false;
+    const eventIds = idList(player?.eventIds);
+    return eventIds.some((id) => sourceEventIds.includes(id));
+  }) ?? null;
+}
+
 function playerTeamName(player: any) {
   return safeText(player?.club || player?.team, "");
 }
@@ -375,29 +387,90 @@ function eventPrimaryTeam(event: LiveEvent) {
   return safeText((event as any).teamName || teamNameFromEvent(event), "");
 }
 
-function findPlayerForLiveEvent(event: LiveEvent) {
+function findPlayerByNameOnTeam(name: string, team: string) {
+  const rawName = name.toLowerCase().replace(/[^a-z]/g, "");
+  if (!rawName || !team) return null;
+  return (playerStatsJson as any[]).find((player) => {
+    if (!teamsMatch(playerTeamName(player), team)) return false;
+    const pName = safeText(player?.name ?? player?.player, "").toLowerCase().replace(/[^a-z]/g, "");
+    return pName && (pName === rawName || pName.includes(rawName) || rawName.includes(pName));
+  }) ?? null;
+}
+
+function findPlayerForLiveEvent(event: LiveEvent, homeTeam?: string, awayTeam?: string) {
   const target = Number(event.playerId);
-  if (!Number.isFinite(target)) return null;
+  const eventTeam = eventPrimaryTeam(event);
+  const rawName = safeText(event.playerName, "").toLowerCase().replace(/[^a-z]/g, "");
 
-  const candidates = (playerStatsJson as any[]).filter((player) => playerMatchesLiveId(player, target));
-  if (candidates.length === 0) return null;
-  if (candidates.length === 1) return candidates[0];
+  // Helper: is this player on a team currently playing in the match?
+  const isMatchPlayer = (player: any) =>
+    (homeTeam && teamsMatch(playerTeamName(player), homeTeam)) ||
+    (awayTeam && teamsMatch(playerTeamName(player), awayTeam)) ||
+    (eventTeam && teamsMatch(playerTeamName(player), eventTeam));
 
-  // Prefer the candidate whose team matches the scoring team
-  const team = eventPrimaryTeam(event);
-  if (team) {
-    const teamPlayer = candidates.find((player) => teamsMatch(playerTeamName(player), team));
-    if (teamPlayer) return teamPlayer;
+  if (!Number.isFinite(target)) {
+    // No player ID — fall back to name+team lookup only
+    if (rawName && eventTeam) return findPlayerByNameOnTeam(rawName, eventTeam);
+    return null;
   }
 
-  // Tiebreak by player name when team is unknown (real API-Sports events carry player_name)
-  const rawName = safeText(event.playerName, "").toLowerCase().replace(/[^a-z]/g, "");
-  if (rawName) {
-    const namePlayer = candidates.find((player) => {
-      const pName = safeText(player?.name ?? player?.player, "").toLowerCase().replace(/[^a-z]/g, "");
-      return pName && (pName === rawName || pName.includes(rawName) || rawName.includes(pName));
-    });
-    if (namePlayer) return namePlayer;
+  const candidates = (playerStatsJson as any[]).filter((player) => playerMatchesLiveId(player, target));
+
+  if (candidates.length === 1) {
+    const onlyCandidate = candidates[0];
+    if (isMatchPlayer(onlyCandidate)) return onlyCandidate;
+
+    // The API can reuse IDs across clubs. If the direct ID hits the wrong team,
+    // rescue by name or by a shared event ID on the actual scoring team.
+    if (rawName && eventTeam) {
+      const byName = findPlayerByNameOnTeam(rawName, eventTeam);
+      if (byName) return byName;
+    }
+
+    if (eventTeam) {
+      const bySharedEventId = findPlayerBySharedEventIdOnTeam(onlyCandidate, eventTeam);
+      if (bySharedEventId) return bySharedEventId;
+    }
+
+    if (homeTeam || awayTeam || eventTeam) return null;
+    return onlyCandidate;
+  }
+
+  if (candidates.length > 1) {
+    // 1. Prefer candidate on the event's scoring team
+    if (eventTeam) {
+      const teamPlayer = candidates.find((p) => teamsMatch(playerTeamName(p), eventTeam));
+      if (teamPlayer) return teamPlayer;
+    }
+
+    // 2. Prefer candidate by player name
+    if (rawName) {
+      const namePlayer = candidates.find((p) => {
+        const pName = safeText(p?.name ?? p?.player, "").toLowerCase().replace(/[^a-z]/g, "");
+        return pName && (pName === rawName || pName.includes(rawName) || rawName.includes(pName));
+      });
+      if (namePlayer) return namePlayer;
+    }
+
+    // 3. Keep only candidates from the match — eliminates unrelated teams sharing an ID
+    const matchCandidates = candidates.filter(isMatchPlayer);
+    if (matchCandidates.length === 1) return matchCandidates[0];
+    if (matchCandidates.length > 1) return matchCandidates[0];
+  }
+
+  // candidates.length === 0 OR all candidates are wrong-team:
+  // Try name+team lookup as a rescue — catches cases where API sends wrong player ID
+  if (rawName && eventTeam) {
+    const byName = findPlayerByNameOnTeam(rawName, eventTeam);
+    if (byName) return byName;
+  }
+
+  // Last resort: if the lone/first candidate is from the wrong team and we have match teams,
+  // return null so the event renders as a team event instead of the wrong player
+  if (candidates.length > 0 && (homeTeam || awayTeam)) {
+    const first = candidates[0];
+    if (!isMatchPlayer(first)) return null;
+    return first;
   }
 
   return candidates[0] ?? null;
@@ -793,7 +866,7 @@ function RoundGameStrip({ games, activeId, now }: { games: MatchGame[]; activeId
             style={{
               ...roundMiniBoxStyle,
               borderColor: active ? "#3b82f6" : live ? "rgba(34,197,94,.55)" : "rgba(255,255,255,.1)",
-              background: active ? "rgba(59,130,246,.12)" : "#070707",
+              background: active ? "#272731" : "#1e1e28",
             }}
           >
             <div style={{ ...roundMiniStatusStyle, color: live ? "#22c55e" : "#d1d5db" }}>{roundStripStatus(game, now)}</div>
@@ -876,9 +949,9 @@ function LiveFeedPlayer({
   const inferredTeam = safeText((event as any).teamName, "");
   const apiEventTeam = teamNameFromEvent(event);
   const eventTeam = safeText(inferredTeam || apiEventTeam, "");
-  const player = findPlayerForLiveEvent(event);
+  const player = findPlayerForLiveEvent(event, safeText(homeTeam, ""), safeText(awayTeam, ""));
   const team = safeText(eventTeam || player?.club || player?.team, "");
-  const playerName = isInferred ? team : safePlayerName(player?.name || event.playerName, team || event.playerId);
+  const playerName = isInferred ? team : safePlayerName(player?.name || event.playerName, event.playerId || team);
   const colours = liveFeedTeamColors(team);
 
   const type = safeText(event.type, "event").toUpperCase();
@@ -905,11 +978,11 @@ function LiveFeedPlayer({
     >
       <div style={{
         ...liveFeedBoxStyle,
-        background: "#000000",
+        background: "#0d0d14",
         border: "none",
         borderRadius: 18,
-        minHeight: type === "BEHIND" ? 50 : liveFeedBoxStyle.minHeight,
-        padding: type === "BEHIND" ? "6px 16px 6px 12px" : liveFeedBoxStyle.padding,
+        minHeight: type === "BEHIND" ? 56 : liveFeedBoxStyle.minHeight,
+        padding: type === "BEHIND" ? "8px 14px 8px 12px" : liveFeedBoxStyle.padding,
       }}>
         {isInferred ? <TeamEventAvatar team={team} /> : <PlayerAvatar name={playerName} team={team} />}
 
@@ -1454,7 +1527,7 @@ function InsightsBox({ game, allGames }: { game: MatchGame; allGames: MatchGame[
   return (
     <div style={{
       margin: "20px 0 8px",
-      background: "#0d0d0d",
+      background: "#1e1e28",
       border: "1px solid rgba(255,255,255,0.08)",
       borderRadius: 16,
       overflow: "hidden",
@@ -1471,7 +1544,7 @@ function InsightsBox({ game, allGames }: { game: MatchGame; allGames: MatchGame[
               alignItems: "center",
               gap: 10,
               padding: "11px 14px",
-              background: "#111111",
+              background: "#1e1e28",
               borderRadius: 10,
               margin: `0 8px ${i === insights.length - 1 ? 8 : 3}px`,
             }}>
@@ -1736,7 +1809,7 @@ function ScoreWorm({
   const ticks = Array.from({ length: Math.floor(maxAbs / tickStep) }, (_, i) => (i + 1) * tickStep);
 
   return (
-    <div style={{ margin: "0 0 20px", background: "#111", borderRadius: 12, padding: "10px 4px 6px", overflow: "hidden" }}>
+    <div style={{ margin: "0 0 20px", background: "#1e1e28", borderRadius: 12, padding: "10px 4px 6px", overflow: "hidden" }}>
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", display: "block" }}>
         {/* Grid lines */}
         {ticks.flatMap((v) => [v, -v].map((s) => (
@@ -2007,51 +2080,13 @@ export default function MatchPage() {
   const currentPeriod = Math.max(periodFromEvents, periodFromTimestr);
 
   // Detect score changes client-side and send the specific event to the server
+  // score-check (inferred events) disabled — real API Sports events only
   useEffect(() => {
-    if (!game || !apiSportsGameId || getStatus(game) === "FINAL") return;
+    if (!game) return;
     const hscore = Number(game.hscore ?? 0);
     const ascore = Number(game.ascore ?? 0);
-
-    // First load: set baseline without firing any events
-    if (lastScoreRef.current === null) {
-      lastScoreRef.current = { home: hscore, away: ascore };
-      return;
-    }
-
-    const last = lastScoreRef.current;
-    const homeDelta = hscore - last.home;
-    const awayDelta = ascore - last.away;
-
-    // Always advance the ref, even for non-standard deltas
     lastScoreRef.current = { home: hscore, away: ascore };
-
-    if (homeDelta === 0 && awayDelta === 0) return;
-
-    let teamId: number | null = null;
-    let type: "GOAL" | "BEHIND" | null = null;
-
-    if (homeDelta === 6 && awayDelta === 0) { teamId = getApiTeamId(game.hteam); type = "GOAL"; }
-    else if (homeDelta === 1 && awayDelta === 0) { teamId = getApiTeamId(game.hteam); type = "BEHIND"; }
-    else if (awayDelta === 6 && homeDelta === 0) { teamId = getApiTeamId(game.ateam); type = "GOAL"; }
-    else if (awayDelta === 1 && homeDelta === 0) { teamId = getApiTeamId(game.ateam); type = "BEHIND"; }
-
-    if (!teamId || !type) return;
-
-    const { period, minute } = clockFromTimestr(game.timestr);
-    fetch("/api/afl/score-check", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        gameId: apiSportsGameId,
-        teamId,
-        type,
-        hscore,
-        ascore,
-        period: period ?? currentPeriod ?? null,
-        minute: minute ?? null,
-      }),
-    }).catch(() => {});
-  }, [game?.hscore, game?.ascore, apiSportsGameId]);
+  }, [game?.hscore, game?.ascore]);
 
   const displayLiveEvents = useMemo(() => liveEvents, [liveEvents]);
 
@@ -2207,20 +2242,40 @@ export default function MatchPage() {
     });
 
     const seen = new Set<string>();
-    const scoreKey = new Set<string>(); // tracks (game, team, type, score) — prevents inferred shadowing real
+    const scoreKey = new Set<string>(); // (team_id|type|home_score|away_score) exact-score dedup
+    const realCountByPeriod = new Map<string, number>(); // real event count per (team_id|type|period)
+    const inferredSeenByPeriod = new Map<string, number>(); // inferred events processed per key
+
     const normalised = sortedRows
       .filter((e: any) => {
         const k = `${e.period}|${e.minute}|${e.type}|${e.team_id}|${e.player_id}|${e.home_score}|${e.away_score}`;
         if (seen.has(k)) return false;
         seen.add(k);
 
-        // If a scoring event shares (team, type, score) with an already-accepted real event, drop it
         const isScoring = e.type === "GOAL" || e.type === "BEHIND";
-        if (isScoring && e.home_score != null && e.away_score != null) {
-          const sk = `${e.team_id}|${e.type}|${e.home_score}|${e.away_score}`;
-          if (scoreKey.has(sk)) return false;
-          scoreKey.add(sk);
+        if (!isScoring) return true;
+
+        if (!e.inferred) {
+          // Real event: register for score-based and count-based dedup
+          if (e.home_score != null && e.away_score != null) {
+            scoreKey.add(`${e.team_id}|${e.type}|${e.home_score}|${e.away_score}`);
+          }
+          const pk = `${e.team_id}|${e.type}|${e.period}`;
+          realCountByPeriod.set(pk, (realCountByPeriod.get(pk) ?? 0) + 1);
+          return true;
         }
+
+        // Inferred event: drop if a real event covers it
+        if (e.home_score != null && e.away_score != null) {
+          if (scoreKey.has(`${e.team_id}|${e.type}|${e.home_score}|${e.away_score}`)) return false;
+        }
+
+        // Count-based fallback: if real events >= inferred events seen so far for same (team|type|period), drop
+        const pk = `${e.team_id}|${e.type}|${e.period}`;
+        const realCount = realCountByPeriod.get(pk) ?? 0;
+        const inferredSoFar = (inferredSeenByPeriod.get(pk) ?? 0) + 1;
+        inferredSeenByPeriod.set(pk, inferredSoFar);
+        if (inferredSoFar <= realCount) return false;
 
         return true;
       })
@@ -2383,7 +2438,7 @@ export default function MatchPage() {
   useEffect(() => {
     if (!id) return;
     const presenceChannel = supabase.channel(`match-viewers-${id}`, {
-      config: { presence: { key: typeof crypto !== "undefined" ? crypto.randomUUID() : `${Date.now()}-${Math.random()}` } },
+      config: { presence: { key: typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `${Date.now()}-${Math.random()}` } },
     });
     presenceChannel
       .on("presence", { event: "sync" }, () => {
@@ -2504,7 +2559,7 @@ export default function MatchPage() {
   const liveFeedIsStale = status === "LIVE" && currentPeriod > 0 && liveEvents.length > 0 && latestFeedPeriod < currentPeriod;
   const statusBadgeTone =
     status === "FINAL"
-      ? { bg: "#7f1d1d", border: "#ef4444", color: "#fecaca", label: "Full time" }
+      ? { bg: "#272731", border: "rgba(255,255,255,0.16)", color: "#f8fafc", label: "Full time" }
       : { bg: "#1d4ed8", border: "#60a5fa", color: "#eff6ff", label: status };
   const homeScoreDisplay =
     status === "UPCOMING" ? getTeamRecordBeforeGame(game.hteam, allGames, game) : game.hscore;
@@ -2522,20 +2577,20 @@ export default function MatchPage() {
           padding: roundGames.length > 1 ? "24px 24px 26px" : "calc(env(safe-area-inset-top) + 24px) 24px 26px",
           minHeight: 292,
           borderBottom: "1px solid rgba(255,255,255,0.07)",
-          background: "linear-gradient(180deg, #151515 0%, #090909 58%, #040404 100%)",
+          background: "linear-gradient(180deg, #1e1e28 0%, #181824 58%, #14141e 100%)",
         }}>
           {/* Team colour glow blobs */}
           <div style={{
             position: "absolute", inset: 0, pointerEvents: "none",
-            background: `radial-gradient(ellipse 48% 72% at 18% 56%, ${teamColor(game.hteam ?? "")}42 0%, transparent 68%),
-                         radial-gradient(ellipse 48% 72% at 82% 56%, ${teamColor(game.ateam ?? "")}42 0%, transparent 68%),
-                         radial-gradient(ellipse 70% 36% at 50% -4%, rgba(255,255,255,.09), transparent 70%)`,
+            background: `radial-gradient(ellipse 48% 72% at 18% 56%, ${teamColor(game.hteam ?? "")}26 0%, transparent 70%),
+                         radial-gradient(ellipse 48% 72% at 82% 56%, ${teamColor(game.ateam ?? "")}26 0%, transparent 70%),
+                         radial-gradient(ellipse 70% 36% at 50% -4%, rgba(255,255,255,.05), transparent 70%)`,
           }} />
           <div style={{
             position: "absolute",
             inset: "auto 18% 0",
             height: 1,
-            background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.14), transparent)",
+            background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.09), transparent)",
             pointerEvents: "none",
           }} />
 
@@ -2674,8 +2729,8 @@ export default function MatchPage() {
             }}>
               <div style={{
                 display: "flex", alignItems: "center", gap: 6,
-                background: "#18181b",
-                border: "1px solid #3f3f46",
+                background: "#272731",
+                border: "1px solid rgba(255,255,255,0.12)",
                 borderRadius: 9, padding: "7px 13px",
                 maxWidth: "100%",
               }}>
@@ -2699,7 +2754,7 @@ export default function MatchPage() {
           transform: scoreboardPassed ? "translateX(-50%) translateY(0)" : "translateX(-50%) translateY(-110%)",
           width: "min(760px, 100%)",
           zIndex: 50,
-          background: "rgba(8,8,8,0.97)",
+          background: "rgba(30,30,40,0.97)",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
           borderBottom: "1px solid rgba(255,255,255,.08)",
@@ -2765,9 +2820,9 @@ export default function MatchPage() {
         {/* ── Tabs ── */}
         <div style={{
           position: "sticky", top: scoreboardPassed ? 52 : 0, zIndex: 10,
-          background: "rgba(10,10,10,0.97)",
+          background: "rgba(30,30,40,0.97)",
           backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
         }}>
           <nav style={{ display: "flex", width: "100%" }}>
             {(["feed","chat","polls"] as const).map(t => (
@@ -2775,7 +2830,7 @@ export default function MatchPage() {
                 flex: 1, padding: "13px 4px 11px",
                 background: "none", border: "none",
                 borderBottom: activeTab === t ? "2px solid #fff" : "2px solid transparent",
-                color: activeTab === t ? "#fff" : "#3a3a3a",
+                color: activeTab === t ? "#fff" : "#64748b",
                 fontSize: 13, fontWeight: activeTab === t ? 700 : 500,
                 cursor: "pointer", whiteSpace: "nowrap",
                 textTransform: "capitalize",
@@ -2896,11 +2951,11 @@ export default function MatchPage() {
                             const inferredTeam = safeText((event as any).teamName, "");
                             const apiTeam = teamNameFromEvent(event);
                             const eventTeam = safeText(inferredTeam || apiTeam, "");
-                            const player = findPlayerForLiveEvent(event);
+                            const player = findPlayerForLiveEvent(event, safeText(game.hteam, ""), safeText(game.ateam, ""));
                             const team = safeText(eventTeam || player?.club || player?.team, "");
                             const name = ((event as any).optimistic || (event as any).inferred)
                               ? team || "Team"
-                              : safePlayerName(player?.name || event.playerName, team || event.playerId || index + 1);
+                              : safePlayerName(player?.name || event.playerName, event.playerId || index + 1);
                             const label = `${name} · ${safeText(event.type, "").toUpperCase()}`;
                             const type = safeText(event.type, "").toUpperCase();
                             const quarter = eventQuarter(event);
@@ -3442,7 +3497,7 @@ function MCRow({ comment, userId, onLike, onDelete, onReply, onViewReplies, liki
       {/* Avatar */}
       <div
         onClick={() => username && router.push(`/profile/${username}`)}
-        style={{ width: 34, height: 34, borderRadius: "50%", background: "#111827", border: "1px solid rgba(255,255,255,0.1)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", cursor: username ? "pointer" : "default" }}
+        style={{ width: 34, height: 34, borderRadius: "50%", background: "#1e2438", border: "1px solid rgba(255,255,255,0.1)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", cursor: username ? "pointer" : "default" }}
       >
         {avatar
           ? <img src={avatar} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -4544,7 +4599,7 @@ const roundStripShellStyle: CSSProperties = {
   overflowX: "auto",
   padding: "10px 12px",
   paddingTop: "calc(env(safe-area-inset-top) + 10px)",
-  background: "#050505",
+  background: "#14141e",
   borderBottom: "1px solid rgba(255,255,255,.08)",
   scrollSnapType: "x mandatory",
 };
@@ -4610,8 +4665,8 @@ const roundMiniActiveLineStyle: CSSProperties = {
   background: "#3b82f6",
 };
 
-const pageStyle: CSSProperties = { minHeight: "100dvh", background: "#000", color: "#f8fafc", paddingBottom: "calc(90px + env(safe-area-inset-bottom))" };
-const matchCentreStyle: CSSProperties = { width: "100%", maxWidth: 760, margin: "0 auto", background: "#020202", minHeight: "100vh", borderLeft: "1px solid rgba(255,255,255,.1)", borderRight: "1px solid rgba(255,255,255,.1)" };
+const pageStyle: CSSProperties = { minHeight: "100dvh", background: "#14141e", color: "#f8fafc", paddingBottom: "calc(90px + env(safe-area-inset-bottom))" };
+const matchCentreStyle: CSSProperties = { width: "100%", maxWidth: 760, margin: "0 auto", background: "#1e1e28", minHeight: "100vh", borderLeft: "1px solid rgba(255,255,255,.1)", borderRight: "1px solid rgba(255,255,255,.1)" };
 // (scoreboard + tab styles now inline in JSX)
 const sectionStyle: CSSProperties = { padding: "18px", borderBottom: "1px solid rgba(255,255,255,.1)" };
 const sectionHeadingStyle: CSSProperties = { margin: "0 0 14px", textAlign: "center", fontSize: 18, fontWeight: 950 };
@@ -4622,24 +4677,24 @@ const tinyLogoStyle: CSSProperties = { width: 16, height: 16, objectFit: "contai
 const miniLogoStyle: CSSProperties = { width: 14, height: 14, objectFit: "contain" };
 const statsLoadingStyle: CSSProperties = { margin: "12px 0 0", color: "#facc15", fontSize: 13, fontWeight: 800 };
 const liveStatsBadgeStyle: CSSProperties = { width: "fit-content", margin: "0 auto 14px", padding: "7px 12px", borderRadius: 999, background: "rgba(34,197,94,.12)", border: "1px solid rgba(34,197,94,.35)", color: "#4ade80", fontSize: 12, fontWeight: 1000, letterSpacing: ".08em" };
-const liveFeedListStyle: CSSProperties = { marginTop: 12, display: "flex", flexDirection: "column", gap: 20 };
-const liveFeedBoxStyle: CSSProperties = { minHeight: 86, display: "grid", gridTemplateColumns: "68px 1fr auto", alignItems: "center", gap: 14, background: "#020202", borderRadius: 18, padding: "11px 16px 11px 12px", overflow: "hidden" };
+const liveFeedListStyle: CSSProperties = { marginTop: 12, display: "flex", flexDirection: "column", gap: 10 };
+const liveFeedBoxStyle: CSSProperties = { minHeight: 72, display: "grid", gridTemplateColumns: "60px 1fr auto", alignItems: "center", gap: 12, background: "#020202", borderRadius: 18, padding: "10px 14px 10px 12px", overflow: "hidden" };
 const liveFeedInfoStyle: CSSProperties = { minWidth: 0 };
-const liveFeedNameStyle: CSSProperties = { color: "#f8fafc", fontSize: 18, fontWeight: 1000, lineHeight: 1.1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
-const liveFeedActionStyle: CSSProperties = { marginTop: 8, fontSize: 28, lineHeight: 1, fontWeight: 1000, letterSpacing: ".08em" };
-const liveFeedRightStyle: CSSProperties = { display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "center", gap: 6 };
+const liveFeedNameStyle: CSSProperties = { color: "#e2e8f0", fontSize: 14, fontWeight: 700, lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
+const liveFeedActionStyle: CSSProperties = { marginTop: 4, fontSize: 20, lineHeight: 1, fontWeight: 900, letterSpacing: ".04em" };
+const liveFeedRightStyle: CSSProperties = { display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "center", gap: 8 };
 const liveFeedScoreRowStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 5 };
 const liveFeedScoreTextStyle: CSSProperties = { fontSize: 13, fontWeight: 900, color: "#f1f5f9", fontVariantNumeric: "tabular-nums" };
-const liveFeedTimeBadgeStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 999, padding: "3px 8px" };
-const liveFeedQuarterStyle: CSSProperties = { fontSize: 11, fontWeight: 900, color: "#94a3b8", letterSpacing: "0.02em" };
-const liveFeedTimeDotStyle: CSSProperties = { fontSize: 11, color: "#334155", fontWeight: 700 };
-const liveFeedMinuteStyle: CSSProperties = { fontSize: 11, fontWeight: 900, color: "#94a3b8" };
-const commentBubbleBtnStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 5, background: "none", border: "none", color: "#9ca3af", padding: "2px 0", fontSize: 12, fontWeight: 700 };
-const commentCountStyle: CSSProperties = { fontSize: 12, fontWeight: 800, color: "#9ca3af" };
+const liveFeedTimeBadgeStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 3, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 999, padding: "3px 7px" };
+const liveFeedQuarterStyle: CSSProperties = { fontSize: 10, fontWeight: 800, color: "#64748b", letterSpacing: "0.04em" };
+const liveFeedTimeDotStyle: CSSProperties = { fontSize: 10, color: "#334155", fontWeight: 700 };
+const liveFeedMinuteStyle: CSSProperties = { fontSize: 10, fontWeight: 800, color: "#64748b" };
+const commentBubbleBtnStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", color: "#475569", padding: "2px 0", fontSize: 12, fontWeight: 700 };
+const commentCountStyle: CSSProperties = { fontSize: 11, fontWeight: 700, color: "#64748b" };
 const playerBubbleStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 4, color: "#475569", fontSize: 11, fontWeight: 700 };
 const playerAvatarWrapStyle: CSSProperties = {
-  width: 56,
-  height: 56,
+  width: 48,
+  height: 48,
   borderRadius: "50%",
   overflow: "hidden",
   display: "inline-flex",
@@ -4648,8 +4703,8 @@ const playerAvatarWrapStyle: CSSProperties = {
   flexShrink: 0
 };
 const playerAvatarImageStyle: CSSProperties = { width: "100%", height: "100%", objectFit: "cover", display: "block" };
-const playerInitialsStyle: CSSProperties = { color: "#fff", fontSize: 18, fontWeight: 1000 };
-const emptyFeedStyle: CSSProperties = { marginTop: 12, background: "#070707", border: "1px solid rgba(255,255,255,.1)", borderRadius: 14, padding: 16, color: "#9ca3af" };
+const playerInitialsStyle: CSSProperties = { color: "#fff", fontSize: 15, fontWeight: 900 };
+const emptyFeedStyle: CSSProperties = { marginTop: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 14, padding: "20px 16px", color: "#475569", fontSize: 14, fontWeight: 600, textAlign: "center" };
 const countdownBoxStyle: CSSProperties = {
   margin: "18px 0 8px",
   display: "flex",
@@ -4662,16 +4717,16 @@ const countdownLabelStyle: CSSProperties = { color: "#facc15", fontSize: 11, fon
 const countdownTimeStyle: CSSProperties = { marginTop: 8, color: "#fff", fontSize: 36, lineHeight: 1, fontWeight: 1000, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" };
 const tableWrapStyle: CSSProperties = { overflowX: "auto" };
 const tableStyle: CSSProperties = { width: "100%", borderCollapse: "collapse" };
-const thStyle: CSSProperties = { textAlign: "left", padding: "12px 10px", borderBottom: "1px solid rgba(255,255,255,.15)", whiteSpace: "nowrap", fontSize: 13 };
-const thPlayerStyle: CSSProperties = { ...thStyle, minWidth: 230 };
-const tdStyle: CSSProperties = { padding: "20px 10px", borderBottom: "1px solid rgba(255,255,255,.08)", whiteSpace: "nowrap", fontSize: 16, fontWeight: 800 };
-const tdPlayerStyle: CSSProperties = { ...tdStyle, fontWeight: 900, fontSize: 17, color: "#f8fafc", minWidth: 230 };
+const thStyle: CSSProperties = { textAlign: "left", padding: "9px 10px", borderBottom: "1px solid rgba(255,255,255,.08)", whiteSpace: "nowrap", fontSize: 10, fontWeight: 900, textTransform: "uppercase" as const, letterSpacing: "0.08em", color: "#475569" };
+const thPlayerStyle: CSSProperties = { ...thStyle, minWidth: 180 };
+const tdStyle: CSSProperties = { padding: "13px 10px", borderBottom: "1px solid rgba(255,255,255,.05)", whiteSpace: "nowrap", fontSize: 14, fontWeight: 700, fontVariantNumeric: "tabular-nums" };
+const tdPlayerStyle: CSSProperties = { ...tdStyle, fontWeight: 800, fontSize: 14, color: "#f1f5f9", minWidth: 180 };
 const playerNameCellStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 14 };
-const ratingPillStyle: CSSProperties = { display: "inline-block", minWidth: 64, padding: "8px 12px", borderRadius: 10, color: "#fff", fontWeight: 1000, fontSize: 16, border: "2px solid #000", textAlign: "center" };
-const statSwitchWrapStyle: CSSProperties = { display: "flex", justifyContent: "center", gap: 8, marginBottom: 14 };
-const statSwitchStyle: CSSProperties = { appearance: "none", border: "1px solid rgba(255,255,255,.16)", background: "#070707", color: "#9ca3af", borderRadius: 999, padding: "9px 18px", fontSize: 13, fontWeight: 950, cursor: "pointer" };
-const activeStatSwitchStyle: CSSProperties = { ...statSwitchStyle, background: "#0ea5e9", color: "#fff", border: "1px solid #38cfff" };
-const noStatsStyle: CSSProperties = { background: "#070707", border: "1px solid rgba(255,255,255,.1)", borderRadius: 14, padding: 16, color: "#9ca3af", display: "flex", flexDirection: "column", gap: 6 };
+const ratingPillStyle: CSSProperties = { display: "inline-block", minWidth: 48, padding: "5px 9px", borderRadius: 8, color: "#fff", fontWeight: 900, fontSize: 13, border: "1.5px solid rgba(0,0,0,0.3)", textAlign: "center" };
+const statSwitchWrapStyle: CSSProperties = { display: "flex", justifyContent: "center", gap: 6, marginBottom: 14 };
+const statSwitchStyle: CSSProperties = { appearance: "none", border: "1px solid rgba(255,255,255,.1)", background: "rgba(255,255,255,0.05)", color: "#94a3b8", borderRadius: 999, padding: "8px 16px", fontSize: 12, fontWeight: 800, cursor: "pointer", letterSpacing: "0.01em" };
+const activeStatSwitchStyle: CSSProperties = { ...statSwitchStyle, background: "#3b82f6", color: "#fff", border: "1px solid #3b82f6" };
+const noStatsStyle: CSSProperties = { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 14, padding: "20px 16px", color: "#475569", display: "flex", flexDirection: "column", gap: 6, fontSize: 14, fontWeight: 600, textAlign: "center" };
 const mutedStyle: CSSProperties = { color: "#9ca3af" };
 const emptyStyle: CSSProperties = { maxWidth: 760, margin: "0 auto", padding: 24 };
 const loadingTitleStyle: CSSProperties = { margin: "0 0 8px" };
@@ -4688,7 +4743,7 @@ const compareTopStyle: CSSProperties = { display: "grid", gridTemplateColumns: "
 const compareValueStyle: CSSProperties = { fontWeight: 1000 };
 const compareValueRightStyle: CSSProperties = { fontWeight: 1000, textAlign: "right" };
 const compareLabelStyle: CSSProperties = { color: "#9ca3af", textAlign: "center", fontSize: 13, fontWeight: 900 };
-const barShellStyle: CSSProperties = { display: "flex", height: 9, overflow: "hidden", borderRadius: 999, background: "#111827" };
+const barShellStyle: CSSProperties = { display: "flex", height: 9, overflow: "hidden", borderRadius: 999, background: "#1e2438" };
 const barLeftStyle: CSSProperties = { height: "100%" };
 const barRightStyle: CSSProperties = { height: "100%" };
 const freeKickBoxStyle: CSSProperties = { marginTop: 22, background: "#070707", border: "1px solid rgba(255,255,255,.12)", borderRadius: 16, padding: 16 };
@@ -4700,7 +4755,7 @@ const freeKickLogoStyle: CSSProperties = { width: 36, height: 36, objectFit: "co
 const freeKickAbbrStyle: CSSProperties = { color: "#9ca3af", fontWeight: 900 };
 const freeKickNumberStyle: CSSProperties = { fontSize: 22, fontWeight: 1000 };
 const freeKickMiddleStyle: CSSProperties = { color: "#64748b", fontWeight: 1000 };
-const freeKickBarShellStyle: CSSProperties = { display: "flex", height: 9, overflow: "hidden", borderRadius: 999, marginTop: 14, background: "#111827" };
+const freeKickBarShellStyle: CSSProperties = { display: "flex", height: 9, overflow: "hidden", borderRadius: 999, marginTop: 14, background: "#1e2438" };
 const freeKickBarLeftStyle: CSSProperties = { height: "100%" };
 const freeKickBarRightStyle: CSSProperties = { height: "100%" };
 const freeKickMessageStyle: CSSProperties = { marginTop: 12, textAlign: "center", color: "#facc15", fontWeight: 900 };

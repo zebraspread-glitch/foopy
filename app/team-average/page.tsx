@@ -1,4 +1,4 @@
-import path from "path";
+﻿import path from "path";
 import fs from "fs";
 import Link from "next/link";
 
@@ -32,7 +32,7 @@ const TEAMS = [
   { name: "Adelaide", slug: "adelaide", logo: "/team-logos/crows.png", color: "#002b5c" },
   { name: "Brisbane Lions", slug: "brisbanelions", logo: "/team-logos/lions.png", color: "#a50034" },
   { name: "Carlton", slug: "carlton", logo: "/team-logos/blues.png", color: "#031a35" },
-  { name: "Collingwood", slug: "collingwood", logo: "/team-logos/magpies.png", color: "#111111" },
+  { name: "Collingwood", slug: "collingwood", logo: "/team-logos/magpies.png", color: "#1e1e28" },
   { name: "Essendon", slug: "essendon", logo: "/team-logos/bombers.png", color: "#cc0000" },
   { name: "Fremantle", slug: "fremantle", logo: "/team-logos/dockers.png", color: "#4b1979" },
   { name: "Geelong", slug: "geelong", logo: "/team-logos/cats.png", color: "#003b73" },
@@ -42,7 +42,7 @@ const TEAMS = [
   { name: "Melbourne", slug: "melbourne", logo: "/team-logos/demons.png", color: "#c8102e" },
   { name: "North Melbourne", slug: "northmelbourne", logo: "/team-logos/kangaroos.png", color: "#0055a4" },
   { name: "Port Adelaide", slug: "portadelaide", logo: "/team-logos/power.png", color: "#008999" },
-  { name: "Richmond", slug: "richmond", logo: "/team-logos/tigers.png", color: "#1a1a1a" },
+  { name: "Richmond", slug: "richmond", logo: "/team-logos/tigers.png", color: "#272731" },
   { name: "St Kilda", slug: "stkilda", logo: "/team-logos/saints.png", color: "#c8102e" },
   { name: "Sydney", slug: "sydney", logo: "/team-logos/swans.png", color: "#c0392b" },
   { name: "West Coast", slug: "westcoast", logo: "/team-logos/eagles.png", color: "#003087" },
@@ -219,7 +219,7 @@ export default function TeamAveragePage() {
 
 const pageStyle: React.CSSProperties = {
   minHeight: "100dvh",
-  background: "#000",
+  background: "#14141e",
   color: "#fff",
   paddingBottom: "calc(95px + env(safe-area-inset-bottom))",
 };
@@ -274,7 +274,7 @@ const countStyle: React.CSSProperties = {
 };
 
 const cardStyle: React.CSSProperties = {
-  background: "#080808",
+  background: "#1a1a24",
   border: "1px solid rgba(255,255,255,.1)",
   borderRadius: 18,
   overflow: "hidden",

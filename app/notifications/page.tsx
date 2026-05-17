@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -257,7 +257,7 @@ export default function NotificationsPage() {
 
   if (!userId && !loading) {
     return (
-      <div style={{ minHeight: "100dvh", background: "#000", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#64748b" }}>
+      <div style={{ minHeight: "100dvh", background: "#14141e", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#64748b" }}>
         <BellIcon />
         <div style={{ marginTop: 12, fontSize: 15, fontWeight: 700 }}>Sign in to see notifications</div>
       </div>
@@ -265,7 +265,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div style={{ minHeight: "100dvh", background: "#000", color: "#f8fafc", paddingBottom: "calc(80px + env(safe-area-inset-bottom))" }}>
+    <div style={{ minHeight: "100dvh", background: "#14141e", color: "#f8fafc", paddingBottom: "calc(80px + env(safe-area-inset-bottom))" }}>
       <div style={{ maxWidth: 600, margin: "0 auto", background: "#020202", minHeight: "100dvh", borderLeft: "1px solid rgba(255,255,255,.07)", borderRight: "1px solid rgba(255,255,255,.07)" }}>
 
         {/* Header */}
@@ -382,7 +382,7 @@ export default function NotificationsPage() {
                     <div style={{
                       position: "absolute", bottom: -1, right: -1,
                       width: 18, height: 18, borderRadius: "50%",
-                      background: "#111", border: "1.5px solid #000",
+                      background: "#1e1e28", border: "1.5px solid #000",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       color,
                     }}>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
@@ -28,11 +28,11 @@ const CLUB_FOLDER: Record<string, string> = {
 
 const TEAM_COLORS: Record<string, string> = {
   Adelaide: "#002b5c", "Brisbane Lions": "#a50034", Brisbane: "#a50034",
-  Carlton: "#031a35", Collingwood: "#111111", Essendon: "#cc0000",
+  Carlton: "#031a35", Collingwood: "#1e1e28", Essendon: "#cc0000",
   Fremantle: "#4b1979", "Geelong Cats": "#003b73", Geelong: "#003b73",
   "Gold Coast": "#c0392b", "GWS Giants": "#e05a1a", GWS: "#e05a1a",
   Hawthorn: "#6b3a1f", Melbourne: "#c8102e", "North Melbourne": "#0055a4",
-  "Port Adelaide": "#008999", Richmond: "#1a1a1a", "St Kilda": "#c8102e",
+  "Port Adelaide": "#008999", Richmond: "#272731", "St Kilda": "#c8102e",
   Sydney: "#c0392b", "West Coast": "#003087", "Western Bulldogs": "#1a4abf",
 };
 
@@ -265,7 +265,7 @@ export default function SearchPage() {
 
 const pageStyle: CSSProperties = {
   minHeight: "100dvh",
-  background: "#000",
+  background: "#14141e",
   color: "#fff",
   paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
 };
@@ -279,7 +279,7 @@ const headerStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   padding: "env(safe-area-inset-top) 20px 0 58px",
-  background: "rgba(0,0,0,0.92)",
+  background: "rgba(24,24,31,0.96)",
   backdropFilter: "blur(28px) saturate(200%)",
   WebkitBackdropFilter: "blur(28px) saturate(200%)",
   borderBottom: "0.5px solid rgba(255,255,255,0.08)",
@@ -303,7 +303,7 @@ const searchBarWrapStyle: CSSProperties = {
   padding: "0 16px",
   height: 52,
   borderRadius: 16,
-  background: "#0d0d0d",
+  background: "#1e1e28",
   border: "1px solid rgba(255,255,255,0.1)",
 };
 
@@ -353,7 +353,7 @@ const rowStyle: CSSProperties = {
   gap: 14,
   padding: "12px 14px",
   borderRadius: 16,
-  background: "#0d0d0d",
+  background: "#1e1e28",
   border: "1px solid rgba(255,255,255,0.08)",
   color: "#fff",
   textDecoration: "none",
