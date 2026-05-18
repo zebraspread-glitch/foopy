@@ -52,7 +52,7 @@ const TEAMS = [
   { name: "Melbourne",         logo: "/team-logos/demons.png",    color: "#c8102e" },
   { name: "North Melbourne",   logo: "/team-logos/kangaroos.png", color: "#0055a4" },
   { name: "Port Adelaide",     logo: "/team-logos/power.png",     color: "#008999" },
-  { name: "Richmond",          logo: "/team-logos/tigers.png",    color: "#272731" },
+  { name: "Richmond",          logo: "/team-logos/tigers.png",    color: "#facc15" },
   { name: "St Kilda",          logo: "/team-logos/saints.png",    color: "#c8102e" },
   { name: "Sydney",            logo: "/team-logos/swans.png",     color: "#c0392b" },
   { name: "West Coast",        logo: "/team-logos/eagles.png",    color: "#003087" },
@@ -75,9 +75,10 @@ function playerImagePath(name: string, team?: string) {
   const folder = TEAMS.find(t => slugName(t.name) === slugName(team ?? ""))?.name
     .toLowerCase().replace(/\s+/g, "") ?? slugName(team ?? "");
   const clubFolder: Record<string, string> = {
-    adelaide: "crows", brisbanelions: "lions", carlton: "blues",
+    adelaide: "crows", adelaidecrows: "crows", brisbane: "lions", brisbanelions: "lions", carlton: "blues",
     collingwood: "magpies", essendon: "bombers", fremantle: "dockers",
-    geelongcats: "cats", goldcoast: "suns", gwsgiants: "giants",
+    geelong: "cats", geelongcats: "cats", goldcoast: "suns", gws: "giants", gwsgiants: "giants",
+    greaterwesternsydney: "giants", greaterwesternsydneygiants: "giants",
     hawthorn: "hawks", melbourne: "demons", northmelbourne: "kangaroos",
     portadelaide: "power", richmond: "tigers", stkilda: "saints",
     sydney: "swans", westcoast: "eagles", westernbulldogs: "bulldogs",
@@ -86,10 +87,22 @@ function playerImagePath(name: string, team?: string) {
   return f ? `/players/${f}/${slugName(name)}.png` : "";
 }
 
+function teamColor(teamName?: string) {
+  const aliases: Record<string, string> = {
+    Brisbane: "Brisbane Lions",
+    Geelong: "Geelong Cats",
+    "Greater Western Sydney": "GWS",
+    "Greater Western Sydney Giants": "GWS",
+    "GWS Giants": "GWS",
+  };
+  const resolved = aliases[teamName ?? ""] ?? teamName;
+  return TEAMS.find(t => t.name === resolved)?.color;
+}
+
 function normaliseFavSlot(slot: FavSlot): FavSlot {
   if (!slot) return null;
   if (slot.type === "player") {
-    return { ...slot, image: playerImagePath(slot.label, slot.sublabel) };
+    return { ...slot, image: playerImagePath(slot.label, slot.sublabel), color: teamColor(slot.sublabel) ?? slot.color };
   }
   const team = TEAMS.find(t => t.name === slot.label);
   if (team) return { ...slot, image: team.logo, color: team.color };

@@ -109,7 +109,7 @@ const TEAM_COLORS: Record<string, string> = {
   "Geelong Cats": "#003b73", Geelong: "#003b73", "Gold Coast": "#c0392b",
   GWS: "#e05a1a", "GWS Giants": "#e05a1a", "Greater Western Sydney": "#e05a1a",
   Hawthorn: "#6b3a1f", Melbourne: "#c8102e", "North Melbourne": "#0055a4",
-  "Port Adelaide": "#008999", Richmond: "#272731", "St Kilda": "#c8102e",
+  "Port Adelaide": "#008999", Richmond: "#facc15", "St Kilda": "#c8102e",
   Sydney: "#c0392b", "West Coast": "#003087", "Western Bulldogs": "#1a4abf",
 };
 

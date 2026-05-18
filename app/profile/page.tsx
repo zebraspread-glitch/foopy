@@ -79,7 +79,7 @@ const TEAMS = [
   { name: "Melbourne", logo: "/team-logos/demons.png", color: "#c8102e" },
   { name: "North Melbourne", logo: "/team-logos/kangaroos.png", color: "#0055a4" },
   { name: "Port Adelaide", logo: "/team-logos/power.png", color: "#008999" },
-  { name: "Richmond", logo: "/team-logos/tigers.png", color: "#272731" },
+  { name: "Richmond", logo: "/team-logos/tigers.png", color: "#facc15" },
   { name: "St Kilda", logo: "/team-logos/saints.png", color: "#c8102e" },
   { name: "Sydney", logo: "/team-logos/swans.png", color: "#c0392b" },
   { name: "West Coast", logo: "/team-logos/eagles.png", color: "#003087" },
@@ -100,64 +100,24 @@ type RawPlayer = { name?: string; team?: string };
 const PLAYERS = (playersRaw as RawPlayer[]).filter((p) => p.name);
 
 const CLUB_FOLDER: Record<string, string> = {
-  Adelaide: "crows",
-  Crows: "crows",
-
-  Brisbane: "lions",
-  "Brisbane Lions": "lions",
-  Lions: "lions",
-
-  Carlton: "blues",
-  Blues: "blues",
-
-  Collingwood: "magpies",
-  Magpies: "magpies",
-
-  Essendon: "bombers",
-  Bombers: "bombers",
-
-  Fremantle: "dockers",
-  Dockers: "dockers",
-
-  Geelong: "cats",
-  "Geelong Cats": "cats",
-  Cats: "cats",
-
-  "Gold Coast": "suns",
-  "Gold Coast Suns": "suns",
-  Suns: "suns",
-
-  GWS: "giants",
-  "GWS Giants": "giants",
-  Giants: "giants",
-
-  Hawthorn: "hawks",
-  Hawks: "hawks",
-
-  Melbourne: "demons",
-  Demons: "demons",
-
-  "North Melbourne": "kangaroos",
-  Kangaroos: "kangaroos",
-
-  "Port Adelaide": "power",
-  Power: "power",
-
-  Richmond: "tigers",
-  Tigers: "tigers",
-
-  "St Kilda": "saints",
-  Saints: "saints",
-
-  Sydney: "swans",
-  Swans: "swans",
-
-  "West Coast": "eagles",
-  "West Coast Eagles": "eagles",
-  Eagles: "eagles",
-
-  "Western Bulldogs": "bulldogs",
-  Bulldogs: "bulldogs",
+  adelaide: "crows", adelaidecrows: "crows", crows: "crows",
+  brisbane: "lions", brisbanelions: "lions", lions: "lions",
+  carlton: "blues", carltonblues: "blues", blues: "blues",
+  collingwood: "magpies", collingwoodmagpies: "magpies", magpies: "magpies",
+  essendon: "bombers", essendonbombers: "bombers", bombers: "bombers",
+  fremantle: "dockers", fremantledockers: "dockers", dockers: "dockers",
+  geelong: "cats", geelongcats: "cats", cats: "cats",
+  goldcoast: "suns", goldcoastsuns: "suns", suns: "suns",
+  gws: "giants", gwsgiants: "giants", greaterwesternsydney: "giants", greaterwesternsydneygiants: "giants", giants: "giants",
+  hawthorn: "hawks", hawthornhawks: "hawks", hawks: "hawks",
+  melbourne: "demons", melbournedemons: "demons", demons: "demons",
+  northmelbourne: "kangaroos", northmelbournekangaroos: "kangaroos", kangaroos: "kangaroos",
+  portadelaide: "power", portadelaidepower: "power", power: "power",
+  richmond: "tigers", richmondtigers: "tigers", tigers: "tigers",
+  stkilda: "saints", stkildasaints: "saints", saints: "saints",
+  sydney: "swans", sydneyswans: "swans", swans: "swans",
+  westcoast: "eagles", westcoasteagles: "eagles", eagles: "eagles",
+  westernbulldogs: "bulldogs", bulldogs: "bulldogs",
 };
 
 function slugName(name: string) {
@@ -165,12 +125,20 @@ function slugName(name: string) {
 }
 
 function playerImagePath(name: string, team?: string) {
-  const folder = CLUB_FOLDER[team ?? ""] ?? slugName(team ?? "");
+  const folder = CLUB_FOLDER[slugName(team ?? "")] ?? slugName(team ?? "");
   return folder ? `/players/${folder}/${slugName(name)}.png` : "";
 }
 
 function teamColor(teamName: string) {
-  return TEAMS.find((t) => t.name === teamName)?.color ?? "#1a1a2e";
+  const aliases: Record<string, string> = {
+    Brisbane: "Brisbane Lions",
+    Geelong: "Geelong Cats",
+    "Greater Western Sydney": "GWS",
+    "Greater Western Sydney Giants": "GWS",
+    "GWS Giants": "GWS",
+  };
+  const resolved = aliases[teamName] ?? teamName;
+  return TEAMS.find((t) => t.name === resolved)?.color ?? "#1a1a2e";
 }
 
 
