@@ -3812,7 +3812,7 @@ const POLL_CATEGORIES: Record<string, { label: string; shortLabel: string; stat:
 type Poll = {
   id: string;
   question: string;
-  poll_type: "team" | "player" | "player_all";
+  poll_type: "team" | "player" | "player_all" | "over_under";
   category_key: string | null;
   created_at: string;
   quarter: number | null; // which quarter this poll was created in (null = pre-game)
