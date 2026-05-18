@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "@/app/lib/supabase";
 import { useRouter } from "next/navigation";
-import { useXP } from "@/app/context/XPContext";
 
 type Profile = {
   id: string;
@@ -35,8 +34,6 @@ type Props = {
 
 export default function CommentSheet({ gameId, gameLabel, eventKey, onClose }: Props) {
   const router = useRouter();
-  const { awardXP } = useXP();
-
   const [userId, setUserId] = useState<string | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -139,7 +136,6 @@ export default function CommentSheet({ gameId, gameLabel, eventKey, onClose }: P
       setBody("");
       setReplyTo(null);
       await loadComments();
-      awardXP("react_play");
     }
     setSubmitting(false);
   }
@@ -156,7 +152,6 @@ export default function CommentSheet({ gameId, gameLabel, eventKey, onClose }: P
     } else {
       await supabase.from("feed_comment_likes")
         .insert({ comment_id: comment.id, user_id: userId });
-      awardXP("like_comment");
     }
 
     await loadComments();

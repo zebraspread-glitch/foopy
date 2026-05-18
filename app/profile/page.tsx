@@ -11,8 +11,6 @@ import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
 import { supabase } from "@/app/lib/supabase";
 import { createNotification } from "@/app/lib/notifications";
-import { useXP } from "@/app/context/XPContext";
-import XPBar from "@/app/components/XPBar";
 import playersRaw from "@/app/data/players.json";
 import { CARD_PLAYERS } from "@/app/data/cardPlayers";
 
@@ -574,8 +572,6 @@ function FavSlotButton({
 /* ═══════════════════ Main Page ═══════════════════ */
 export default function ProfilePage() {
   const router = useRouter();
-  const { xp, log, awardXP } = useXP();
-
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -670,8 +666,6 @@ export default function ProfilePage() {
           const { data } = await supabase.from("profiles").select("*").eq("id", u.id).single();
           await applyPending(u.id, data as Profile | null);
           loadFriends(u.id);
-          // Award daily login XP — XPContext handles cooldown check
-          awardXP("daily_login");
         }
       })
       .catch(() => {})
@@ -775,7 +769,6 @@ export default function ProfilePage() {
     next[pickerSlot] = slot;
     saveFavs(next);
     setPickerOpen(false);
-    awardXP("add_favourite", { slot: pickerSlot });
   }
 
   function removeSlot(i: number) {
@@ -874,7 +867,6 @@ export default function ProfilePage() {
 
     // Notify the addressee
     createNotification(id, "friend_request", user.id);
-    awardXP("add_friend");
 
     setSearchRes((prev) => prev.filter((p) => p.id !== id));
   }
@@ -992,7 +984,6 @@ export default function ProfilePage() {
     setProfile(data as Profile);
     setEditSection(null);
     setEUnameBusy(false);
-    awardXP("set_username");
   }
 
   async function saveBio(e: React.FormEvent) {
@@ -1008,7 +999,6 @@ export default function ProfilePage() {
 
     if (!error) {
       setProfile(data as Profile);
-      awardXP("set_bio");
     }
 
     setEditSection(null);
@@ -1056,7 +1046,6 @@ export default function ProfilePage() {
     setProfile(data as Profile);
     setAvatarUploading(false);
     setEditSection(null);
-    awardXP("set_avatar");
   }
 
   async function uploadBannerFile(file: File) {
@@ -1100,7 +1089,6 @@ export default function ProfilePage() {
     setProfile(data as Profile);
     setBannerUploading(false);
     setEditSection(null);
-    awardXP("set_banner");
   }
 
   function getTeamLogo(name: string) {
@@ -1116,7 +1104,7 @@ export default function ProfilePage() {
       const res = await fetch("/api/squiggle/games", { cache: "no-store" });
       const raw = await res.json();
       const all: { id: number; hteam?: string; ateam?: string }[] = Array.isArray(raw) ? raw : (raw.games ?? []);
-      const matchIds = Object.keys(log.matches ?? {});
+      const matchIds: string[] = [];
       const counts: Record<string, TeamStat> = {};
       for (const mid of matchIds) {
         const game = all.find((g) => String(g.id) === String(mid));
@@ -1187,7 +1175,7 @@ export default function ProfilePage() {
       const all: { id: number; hteam?: string; ateam?: string; hscore?: number; ascore?: number; complete?: number; is_final?: number }[] = Array.isArray(raw) ? raw : (raw.games ?? []);
       const picks: Record<string, "home" | "away"> = {};
       try { Object.assign(picks, JSON.parse(localStorage.getItem("foopy_picks") ?? "{}")); } catch {}
-      const correctIds = new Set((log.correct ?? []).map(String));
+      const correctIds = new Set<string>();
       const teamStats: Record<string, PollTeamStat> = {};
       for (const [gidStr, side] of Object.entries(picks)) {
         const game = all.find((g) => String(g.id) === String(gidStr));
@@ -1312,11 +1300,8 @@ export default function ProfilePage() {
                 @{username || "—"}
               </h1>
 
-              {/* Pills: xp · coins · friends */}
+              {/* Pills: coins · friends */}
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as const, alignItems: "center" }}>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 999, background: "var(--surface-3)", border: "1px solid var(--border-2)" }}>
-                  <XPBar xp={xp} />
-                </div>
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 999, background: "var(--surface-3)", border: "1px solid var(--border-2)" }}>
                   <img src="/coin/coin.png" alt="coins" style={{ width: 16, height: 16, objectFit: "contain" }} />
                   <span style={{ fontSize: 13, fontWeight: 800, color: "var(--text-1)" }}>{(profile?.coins ?? 0).toLocaleString()}</span>
@@ -1344,12 +1329,6 @@ export default function ProfilePage() {
             <button onClick={() => setEditSection("menu")} style={editBtnStyle}>Edit</button>
           </div>
 
-        </div>
-
-        {/* ── XP ── */}
-        <div style={{ background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18, padding: "20px 24px", display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.45)" }}>Total XP</span>
-          <XPBar xp={xp} />
         </div>
 
         {/* ── Favourites ── */}
@@ -1424,7 +1403,7 @@ export default function ProfilePage() {
             [
               { label: "Games",     value: profile?.matches_viewed ?? 0,           color: "var(--text-1)",  onClick: openGamesPopup },
               { label: "Likes",     value: profile?.total_likes ?? totalLikes ?? "—", color: "var(--text-1)",  onClick: openLikesPopup },
-              { label: "Polls Won", value: (log.correct ?? []).length,             color: "#22c55e",  onClick: openPollsPopup },
+              { label: "Polls Won", value: 0,                                       color: "#22c55e",  onClick: openPollsPopup },
               { label: "Cards",     value: cardCount ?? "—",                        color: "#c084fc",  onClick: () => router.push("/album") },
             ] as const
           ).map((s, i, arr) => (

@@ -15,7 +15,6 @@ import { teamColors } from "./utils";
 import { supabase } from "@/app/lib/supabase";
 import { createNotification, notifyMentions } from "@/app/lib/notifications";
 import MentionTextarea from "@/app/components/MentionTextarea";
-import { useXP } from "@/app/context/XPContext";
 
 import type {
   TabKey,
@@ -849,38 +848,59 @@ function miniScoreText(game: MatchGame) {
 }
 
 function RoundGameStrip({ games, activeId, now }: { games: MatchGame[]; activeId: string; now: number }) {
-  if (games.length <= 1) return null;
-
   return (
-    <div style={roundStripShellStyle} className="no-scrollbar">
-      {games.map((game) => {
-        const active = String(game.id) === activeId;
-        const status = getStatus(game);
-        const live = status === "LIVE";
+    <div style={roundStripShellStyle}>
+      {/* Back to home — always visible, non-scrolling */}
+      <Link
+        href="/"
+        aria-label="Back to Scores"
+        style={{
+          flexShrink: 0,
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 44,
+          height: 44,
+          color: "var(--text-1)",
+          textDecoration: "none",
+        }}
+      >
+        <ChevronLeft size={28} strokeWidth={2.4} />
+      </Link>
 
-        return (
-          <Link
-            key={String(game.id)}
-            href={`/match/${game.id}`}
-            style={{
-              ...roundMiniBoxStyle,
-              borderColor: active ? "#3b82f6" : live ? "rgba(34,197,94,.55)" : "var(--border-2)",
-              background: active ? "var(--surface-3)" : "var(--surface-1)",
-            }}
-          >
-            <div style={{ ...roundMiniStatusStyle, color: live ? "#22c55e" : "#d1d5db" }}>{roundStripStatus(game, now)}</div>
-            <div style={roundMiniScoreStyle}>
-              <img src={getLogo(game.hteam)} alt="" style={roundMiniLogoStyle} />
-              <span>{miniScoreText(game)}</span>
-              <img src={getLogo(game.ateam)} alt="" style={roundMiniLogoStyle} />
-            </div>
-            <div style={roundMiniTeamsStyle}>
-              {getAbbr(game.hteam)} v {getAbbr(game.ateam)}
-            </div>
-            {active && <div style={roundMiniActiveLineStyle} />}
-          </Link>
-        );
-      })}
+      {/* Scrollable game pills */}
+      {games.length > 1 && (
+        <div className="no-scrollbar" style={roundStripScrollStyle}>
+          {games.map((game) => {
+            const active = String(game.id) === activeId;
+            const status = getStatus(game);
+            const live = status === "LIVE";
+
+            return (
+              <Link
+                key={String(game.id)}
+                href={`/match/${game.id}`}
+                style={{
+                  ...roundMiniBoxStyle,
+                  borderColor: active ? "#3b82f6" : live ? "rgba(34,197,94,.55)" : "var(--border-2)",
+                  background: active ? "var(--surface-3)" : "var(--surface-1)",
+                }}
+              >
+                <div style={{ ...roundMiniStatusStyle, color: live ? "#22c55e" : "#d1d5db" }}>{roundStripStatus(game, now)}</div>
+                <div style={roundMiniScoreStyle}>
+                  <img src={getLogo(game.hteam)} alt="" style={roundMiniLogoStyle} />
+                  <span>{miniScoreText(game)}</span>
+                  <img src={getLogo(game.ateam)} alt="" style={roundMiniLogoStyle} />
+                </div>
+                <div style={roundMiniTeamsStyle}>
+                  {getAbbr(game.hteam)} v {getAbbr(game.ateam)}
+                </div>
+                {active && <div style={roundMiniActiveLineStyle} />}
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -2047,7 +2067,6 @@ export default function MatchPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { awardXP } = useXP();
   const id = String(params?.id ?? "");
 
   const [mounted, setMounted] = useState(false);
@@ -2109,27 +2128,6 @@ export default function MatchPage() {
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
-
-  // Award XP for viewing a live match
-  useEffect(() => {
-    if (id && game && getStatus(game) === "LIVE") awardXP("view_match", { matchId: id });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, game]);
-
-  // Award XP for a correct winner pick when match is FINAL
-  useEffect(() => {
-    if (!id || !game || getStatus(game) !== "FINAL") return;
-    const gameId = Number(id);
-    if (!gameId) return;
-    const pick = localStorage.getItem(`winner-pick-${id}`) as "home" | "away" | null;
-    if (!pick) return;
-    const hs = game.hscore ?? 0;
-    const as = game.ascore ?? 0;
-    if (hs === as) return; // draw — no XP
-    const winner = hs > as ? "home" : "away";
-    if (pick === winner) awardXP("correct_pick", { gameId });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, game]);
 
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 1000);
@@ -2661,44 +2659,14 @@ export default function MatchPage() {
       });
   }, [id, liveEvents]);
 
-  const backButton = (
-    <div style={{ padding: "calc(env(safe-area-inset-top) + 10px) 16px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-      <button
-        onClick={() => router.back()}
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 6,
-          color: "#60a5fa",
-          fontSize: 14,
-          fontWeight: 700,
-          background: "var(--surface-3)",
-          border: "1px solid var(--border-2)",
-          padding: "8px 12px",
-          borderRadius: 10,
-          cursor: "pointer",
-          fontFamily: "inherit",
-        }}
-      >
-        <svg width="7" height="13" viewBox="0 0 7 13" fill="none" style={{ transform: "rotate(180deg)" }}>
-          <path d="M1 1.5l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-        Scores
-      </button>
-      <div style={{ display: "flex", alignItems: "center", gap: 5, background: "var(--surface-3)", border: "1px solid var(--border-2)", borderRadius: 10, padding: "8px 12px" }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-          <circle cx="12" cy="12" r="3" />
-        </svg>
-        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-2)" }}>{Math.max(1, liveViewerCount)}</span>
-      </div>
-    </div>
-  );
+  // Height of the fixed strip: safe-area + 10px padding + 62px pills + 10px padding
+  const stripSpacer = <div style={{ height: "calc(env(safe-area-inset-top) + 82px)" }} />;
 
   if (!mounted || loading) {
     return (
       <main style={pageStyle} className="page-enter">
-        {backButton}
+        <RoundGameStrip games={roundGames} activeId={id} now={now} />
+        {stripSpacer}
         <section style={emptyStyle}>
           <h1 style={loadingTitleStyle}>Loading match...</h1>
           <p style={mutedStyle}>Getting scores and saved player stats.</p>
@@ -2710,7 +2678,8 @@ export default function MatchPage() {
   if (error || !game) {
     return (
       <main style={pageStyle} className="page-enter">
-        {backButton}
+        <RoundGameStrip games={roundGames} activeId={id} now={now} />
+        {stripSpacer}
         <section style={emptyStyle}>
           <h1>Match not found</h1>
           <p style={mutedStyle}>{error || `No game found for ID: ${id}`}</p>
@@ -2754,13 +2723,14 @@ export default function MatchPage() {
 
   return (
     <main style={pageStyle} className="page-enter">
+      <RoundGameStrip games={roundGames} activeId={id} now={now} />
       <section style={matchCentreStyle}>
-        <RoundGameStrip games={roundGames} activeId={id} now={now} />
+        {stripSpacer}
 
         {/* ── Scoreboard ── */}
         <div ref={scoreboardRef} style={{
           position: "relative", overflow: "hidden",
-          padding: roundGames.length > 1 ? "24px 24px 26px" : "calc(env(safe-area-inset-top) + 24px) 24px 26px",
+          padding: "24px 24px 26px",
           minHeight: 292,
           borderBottom: "1px solid var(--border-1)",
           background: "linear-gradient(180deg, var(--surface-1) 0%, var(--surface-2) 58%, var(--bg) 100%)",
@@ -2780,39 +2750,11 @@ export default function MatchPage() {
             pointerEvents: "none",
           }} />
 
-          <div style={{
-            position: "relative",
-            display: "grid",
-            gridTemplateColumns: "44px 1fr 44px",
-            alignItems: "center",
-            gap: 10,
-            minHeight: 44,
-            marginBottom: 52,
-          }}>
-            <button
-              onClick={() => router.back()}
-              aria-label="Back"
-              style={{
-                width: 44,
-                height: 44,
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "var(--text-1)",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                padding: 0,
-              }}
-            >
-              <ChevronLeft size={38} strokeWidth={2.4} />
-            </button>
-
+          <div style={{ position: "relative", display: "flex", justifyContent: "center", marginBottom: 52 }}>
             <Link
               href="/"
               aria-label="Foopy home"
               style={{
-                justifySelf: "center",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 11,
@@ -2840,8 +2782,6 @@ export default function MatchPage() {
               </span>
               <span>foopy</span>
             </Link>
-
-            <div aria-hidden="true" />
           </div>
 
 
@@ -4164,7 +4104,6 @@ function MatchPolls({
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [pollCommentCounts, setPollCommentCounts] = useState<Record<string, number>>({});
-  const { awardXP } = useXP();
 
   const isAdmin = !!ADMIN_USER_ID && userId === ADMIN_USER_ID;
   const showResults = status === "FINAL";
@@ -4239,23 +4178,6 @@ function MatchPolls({
     const count = polls.filter(p => isPollOpen(p, status, currentPeriod) && !userVotes[p.id]).length;
     onUnansweredCount(count);
   }, [polls, userVotes, status, currentPeriod, loading, onUnansweredCount]);
-
-  // Award XP for correct poll votes when game is FINAL
-  useEffect(() => {
-    if (status !== "FINAL" || polls.length === 0 || Object.keys(userVotes).length === 0) return;
-    for (const poll of polls) {
-      const myVoteOptionId = userVotes[poll.id];
-      if (!myVoteOptionId) continue;
-      const winner = resolveWinner(poll, homeStats, awayStats, homeTeam, awayTeam);
-      if (!winner) continue;
-      const myOption = poll.options.find(o => o.id === myVoteOptionId);
-      if (!myOption) continue;
-      if (!pollOptionMatchesWinner(myOption.label, winner)) continue;
-      const optionCount = poll.options.length;
-      const xpOverride = optionCount >= 4 ? 20 : optionCount === 3 ? 15 : 10;
-      awardXP("poll_correct", { pollId: poll.id, xpOverride });
-    }
-  }, [status, polls, userVotes, homeStats, awayStats, homeTeam, awayTeam, awardXP]);
 
   async function vote(pollId: string, optionId: string) {
     if (!userId) return;
@@ -4499,7 +4421,7 @@ function PollCard({
         <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
           {poll.poll_type === "over_under" && ouPlayerName && (
             <div style={{ width: 40, height: 40, borderRadius: "50%", overflow: "hidden", flexShrink: 0, border: `2px solid ${ouColors.primary}`, background: "rgba(255,255,255,0.06)" }}>
-              <img src={ouImg} alt={ouPlayerName} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+              {ouImg && <img src={ouImg} alt={ouPlayerName} loading="eager" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
             </div>
           )}
           <span style={{ fontSize: 18, fontWeight: 900, color: "#fff", lineHeight: 1.3, letterSpacing: "-0.02em" }}>{poll.question}</span>
@@ -4538,7 +4460,7 @@ function PollCard({
                         <button key={o.id} onClick={() => { onVote(o.id); setPlayerPickerOpen(false); }}
                           style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 10px", borderRadius: 10, border: "none", background: "transparent", cursor: "pointer", textAlign: "left" }}>
                           <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flexShrink: 0, border: `2px solid ${colors.primary}` }}>
-                            <img src={img} alt={o.label} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                            {img && <img src={img} alt={o.label} loading="eager" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
                           </div>
                           <div>
                             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-1)" }}>{o.label}</div>
@@ -4809,7 +4731,7 @@ function CreatePollForm({
                       <button key={p.name} onClick={() => { setOuPlayer(p.name); setOuPlayerPickerOpen(false); }}
                         style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 10px", borderRadius: 10, border: "none", background: ouPlayer === p.name ? "rgba(59,130,246,.18)" : "transparent", cursor: "pointer", textAlign: "left" }}>
                         <div style={{ width: 34, height: 34, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)" }}>
-                          <img src={playerImagePath(p.name, p.team)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                          {playerImagePath(p.name, p.team) && <img src={playerImagePath(p.name, p.team)} alt="" loading="eager" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
                         </div>
                         <div>
                           <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-1)" }}>{p.name}</div>
@@ -4956,8 +4878,8 @@ function PollOptionInner({ label, pollType, winner = false }: { label: string; p
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
-      <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flexShrink: 0, border: `2px solid ${colors.primary}` }}>
-        <img src={img} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+      <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flexShrink: 0, border: `2px solid ${colors.primary}`, background: `${colors.primary}40` }}>
+        {img && <img src={img} alt={label} loading="eager" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
       </div>
       <span style={{ fontSize: 14, fontWeight: 800, color: "var(--text-1)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</span>
       {winner && <CorrectPollTick />}
@@ -4998,13 +4920,25 @@ const createFormStyle: CSSProperties = { margin: "0 16px 16px", padding: "16px",
 const pollTypeToggleStyle: CSSProperties = { flex: 1, padding: "8px 0", borderRadius: 8, border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer" };
 
 const roundStripShellStyle: CSSProperties = {
+  position: "fixed",
+  top: 0,
+  left: 0,
+  right: 0,
+  zIndex: 50,
+  display: "flex",
+  alignItems: "center",
+  paddingTop: "env(safe-area-inset-top)",
+  paddingLeft: 4,
+  background: "var(--bg)",
+  borderBottom: "1px solid var(--border-2)",
+};
+
+const roundStripScrollStyle: CSSProperties = {
+  flex: 1,
   display: "flex",
   gap: 8,
   overflowX: "auto",
-  padding: "10px 12px",
-  paddingTop: "calc(env(safe-area-inset-top) + 10px)",
-  background: "var(--bg)",
-  borderBottom: "1px solid var(--border-2)",
+  padding: "10px 12px 10px 4px",
   scrollSnapType: "x mandatory",
 };
 

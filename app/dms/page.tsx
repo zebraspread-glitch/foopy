@@ -4,7 +4,6 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/app/lib/supabase";
-import { useXP } from "@/app/context/XPContext";
 
 /* ── Types ── */
 type Profile = { id: string; username: string; display_name: string; avatar_url?: string | null };
@@ -116,7 +115,6 @@ export default function DMsPage() {
 function DMsPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { awardXP } = useXP();
   const [user,      setUser]      = useState<User | null>(null);
   const [myProfile, setMyProfile] = useState<Profile | null>(null);
   const [ready,     setReady]     = useState(false);
@@ -396,7 +394,6 @@ function DMsPageInner() {
       last_message_at: new Date().toISOString(),
       last_message_preview: content.length > 60 ? content.slice(0, 60) + "…" : content,
     }).eq("id", convId);
-    awardXP("send_message");
     loadInbox();
     inputRef.current?.focus();
   }

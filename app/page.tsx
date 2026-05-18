@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import matchStatsRaw from "./data/game-stats.json";
 import playerStatsRaw from "./data/players.json";
 import { API_SPORTS_MATCH_IDS } from "./data/apiSportsMatchIds";
@@ -533,7 +533,14 @@ export default function HomePage() {
   const [pullVisible, setPullVisible] = useState(false);
   const roundRef = useRef<HTMLDivElement | null>(null);
   const touchStartY = useRef(0);
+  const touchStartX = useRef(0);
   const isMobile = useIsMobile();
+
+  const [swipeTarget, setSwipeTarget] = useState<number | null>(null);
+  const swipeTargetRef = useRef<number | null>(null);
+  const swipeDirRef = useRef<"left" | "right" | null>(null);
+  const slideWrapRef = useRef<HTMLDivElement | null>(null);
+  const slideContainerRef = useRef<HTMLDivElement | null>(null);
 
   const listStyle: React.CSSProperties = {
     display: "flex",
@@ -607,35 +614,129 @@ export default function HomePage() {
     };
   }, []);
 
-  // Pull-to-refresh touch handlers
+  // Keep stable refs so touch handlers don't go stale between renders
+  const availableRoundsRef = useRef<number[]>([]);
+  const selectedRoundRef = useRef<number>(selectedRound);
+
+  // Pull-to-refresh + horizontal swipe to change round
   useEffect(() => {
-    const THRESHOLD = 72;
+    const PULL_THRESHOLD = 72;
+    const SWIPE_THRESHOLD = 55;
+    // Resolved once per gesture: "v" = vertical, "h" = horizontal, "" = undecided
+    let gesture = "";
 
     function onTouchStart(e: TouchEvent) {
       touchStartY.current = e.touches[0].clientY;
+      touchStartX.current = e.touches[0].clientX;
+      gesture = "";
     }
 
     function onTouchMove(e: TouchEvent) {
-      if (window.scrollY > 0) return;
-      const delta = e.touches[0].clientY - touchStartY.current;
-      if (delta > 20) setPullVisible(true);
+      const dx = e.touches[0].clientX - touchStartX.current;
+      const dy = e.touches[0].clientY - touchStartY.current;
+
+      // Lock gesture direction once movement is unambiguous
+      if (!gesture && (Math.abs(dx) > 6 || Math.abs(dy) > 6)) {
+        gesture = Math.abs(dx) > Math.abs(dy) ? "h" : "v";
+
+        if (gesture === "h") {
+          // Ignore swipes starting on the rounds strip
+          const startTarget = e.target as Node;
+          if (roundRef.current?.contains(startTarget)) {
+            gesture = "rounds";
+            return;
+          }
+          // Determine target round and activate slide panels
+          const rounds = availableRoundsRef.current;
+          const idx = rounds.indexOf(selectedRoundRef.current);
+          if (dx < 0 && idx < rounds.length - 1) {
+            swipeTargetRef.current = rounds[idx + 1];
+            swipeDirRef.current = "left";
+            setSwipeTarget(rounds[idx + 1]);
+          } else if (dx > 0 && idx > 0) {
+            swipeTargetRef.current = rounds[idx - 1];
+            swipeDirRef.current = "right";
+            setSwipeTarget(rounds[idx - 1]);
+          }
+        }
+      }
+
+      if (gesture === "v" && window.scrollY === 0 && dy > 20) setPullVisible(true);
+
+      if (gesture === "h" && swipeTargetRef.current !== null) {
+        e.preventDefault();
+        const W = slideContainerRef.current?.offsetWidth ?? window.innerWidth;
+        let tx: number;
+        if (swipeDirRef.current === "left") {
+          tx = Math.min(0, Math.max(-W, dx));
+        } else {
+          tx = Math.min(0, Math.max(-W, -W + dx));
+        }
+        if (slideWrapRef.current) {
+          slideWrapRef.current.style.transform = `translateX(${tx}px)`;
+        }
+      }
     }
 
     function onTouchEnd(e: TouchEvent) {
-      const delta = e.changedTouches[0].clientY - touchStartY.current;
+      const dx = e.changedTouches[0].clientX - touchStartX.current;
+      const dy = e.changedTouches[0].clientY - touchStartY.current;
       setPullVisible(false);
-      if (delta >= THRESHOLD && window.scrollY === 0 && !refreshing) {
-        haptic("medium");
-        setRefreshing(true);
-        invalidateGames();
-        getGames()
-          .then((data) => setGames(data as Game[]))
-          .finally(() => setRefreshing(false));
+
+      if (gesture === "v") {
+        if (dy >= PULL_THRESHOLD && window.scrollY === 0 && !refreshing) {
+          haptic("medium");
+          setRefreshing(true);
+          invalidateGames();
+          getGames()
+            .then((data) => setGames(data as Game[]))
+            .finally(() => setRefreshing(false));
+        }
+      } else if (gesture === "h" && swipeTargetRef.current !== null) {
+        const W = slideContainerRef.current?.offsetWidth ?? window.innerWidth;
+        const isLeft = swipeDirRef.current === "left";
+
+        if (Math.abs(dx) >= SWIPE_THRESHOLD) {
+          // Commit: animate to target panel then update round
+          haptic("light");
+          const commitTx = isLeft ? -W : 0;
+          if (slideWrapRef.current) {
+            slideWrapRef.current.style.transition = "transform 0.22s ease-out";
+            slideWrapRef.current.style.transform = `translateX(${commitTx}px)`;
+          }
+          const committedRound = swipeTargetRef.current;
+          setTimeout(() => {
+            setSelectedRound(committedRound!);
+            setSwipeTarget(null);
+            swipeTargetRef.current = null;
+            swipeDirRef.current = null;
+            if (slideWrapRef.current) {
+              slideWrapRef.current.style.transition = "";
+              slideWrapRef.current.style.transform = "";
+            }
+          }, 220);
+        } else {
+          // Cancel: snap back to initial position
+          const initialTx = isLeft ? 0 : -W;
+          if (slideWrapRef.current) {
+            slideWrapRef.current.style.transition = "transform 0.18s ease-out";
+            slideWrapRef.current.style.transform = `translateX(${initialTx}px)`;
+          }
+          setTimeout(() => {
+            setSwipeTarget(null);
+            swipeTargetRef.current = null;
+            swipeDirRef.current = null;
+            if (slideWrapRef.current) {
+              slideWrapRef.current.style.transition = "";
+              slideWrapRef.current.style.transform = "";
+            }
+          }, 180);
+        }
       }
     }
 
     document.addEventListener("touchstart", onTouchStart, { passive: true });
-    document.addEventListener("touchmove", onTouchMove, { passive: true });
+    document.addEventListener("touchmove", onTouchMove, { passive: false });
     document.addEventListener("touchend", onTouchEnd, { passive: true });
     return () => {
       document.removeEventListener("touchstart", onTouchStart);
@@ -669,6 +770,37 @@ export default function HomePage() {
 
     return rounds.length ? rounds : Array.from({ length: 25 }, (_, i) => i);
   }, [games]);
+
+  // Keep refs in sync so the touch handler closure always reads the latest values
+  useEffect(() => { availableRoundsRef.current = availableRounds; }, [availableRounds]);
+  useEffect(() => { selectedRoundRef.current = selectedRound; }, [selectedRound]);
+
+  const targetGroups = useMemo(() => {
+    if (swipeTarget === null) return [];
+    const tGames = games
+      .filter((g) => Number(g.round) === Number(swipeTarget) && g.round <= 24)
+      .sort((a, b) => {
+        const tA = new Date(a.date ?? "").getTime();
+        const tB = new Date(b.date ?? "").getTime();
+        return (Number.isFinite(tA) ? tA : Infinity) - (Number.isFinite(tB) ? tB : Infinity);
+      });
+    const groups: Array<{ label: string; games: Game[] }> = [];
+    tGames.forEach((game) => {
+      const label = formatMobileDateLabel(game.date);
+      const existing = groups.find((g) => g.label === label);
+      if (existing) existing.games.push(game);
+      else groups.push({ label, games: [game] });
+    });
+    return groups;
+  }, [games, swipeTarget]);
+
+  // Set initial slide position synchronously before browser paints when a swipe panel mounts
+  useLayoutEffect(() => {
+    if (swipeTarget === null || !slideWrapRef.current || !slideContainerRef.current) return;
+    const W = slideContainerRef.current.offsetWidth;
+    const tx = swipeTarget > selectedRound ? 0 : -W;
+    slideWrapRef.current.style.transform = `translateX(${tx}px)`;
+  }, [swipeTarget, selectedRound]);
 
   const shownGames = useMemo(() => {
     return games
@@ -882,40 +1014,65 @@ free_kicks?: {
     return { disposals: top5(disposalsMap), goals: top5(goalsMap), hitouts: top5(hitoutsMap) };
   }, [shownGames]);
 
+  const byeTeams = useMemo(() => {
+    if (shownGames.length === 0) return [];
+
+    const playingIds = new Set<number>();
+    shownGames.forEach((g) => {
+      if (g.hteamid) playingIds.add(g.hteamid);
+      if (g.ateamid) playingIds.add(g.ateamid);
+    });
+
+    const allTeamIds = Object.keys(TEAM_STYLES).map(Number).sort((a, b) => a - b);
+
+    return allTeamIds
+      .filter((id) => !playingIds.has(id))
+      .map((id) => {
+        // Season record up to and including current round
+        let wins = 0, losses = 0, draws = 0;
+        games.forEach((g) => {
+          if (Number(g.round) > selectedRound) return;
+          if (getStatus(g) !== "COMPLETED") return;
+          const isHome = g.hteamid === id;
+          const isAway = g.ateamid === id;
+          if (!isHome && !isAway) return;
+          const hs = g.hscore ?? 0, as = g.ascore ?? 0;
+          if (hs === as) { draws++; return; }
+          const won = isHome ? hs > as : as > hs;
+          if (won) wins++; else losses++;
+        });
+        const record = draws > 0 ? `${wins}-${losses}-${draws}` : `${wins}-${losses}`;
+
+        const nextGame = games.find(
+          (g) => Number(g.round) > selectedRound && (g.hteamid === id || g.ateamid === id)
+        );
+        let nextText = "";
+        if (nextGame) {
+          const isHome = nextGame.hteamid === id;
+          const oppId = isHome ? nextGame.ateamid : nextGame.hteamid;
+          const opp = oppId ? (TEAM_ABBR[oppId] ?? "") : "";
+          nextText = `Rd ${nextGame.round} ${isHome ? "vs" : "at"} ${opp}`.toUpperCase();
+        }
+        return {
+          id,
+          name: TEAM_NICKNAMES[id] ?? TEAM_NAMES[id] ?? `Team ${id}`,
+          logo: TEAM_STYLES[id]?.logo ?? "",
+          color: TEAM_BAR_COLORS[id] ?? (TEAM_STYLES[id]?.colors[0] ?? "#1e2438"),
+          record,
+          nextText,
+        };
+      });
+  }, [games, shownGames, selectedRound]);
+
   function chooseRound(round: number) {
     setSelectedRound(round);
   }
 
   return (
-    <main style={pageStyle} className="page-enter">
-      {/* Pull-to-refresh indicator */}
-      <div className={`pull-indicator${pullVisible || refreshing ? " visible" : ""}`}>
-        <svg
-          width="18" height="18" viewBox="0 0 24 24" fill="none"
-          stroke="rgba(255,255,255,0.7)" strokeWidth="2.5" strokeLinecap="round"
-          style={{ animation: refreshing ? "spin 0.7s linear infinite" : undefined }}
-        >
-          <polyline points="23 4 23 10 17 10" />
-          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-        </svg>
-      </div>
-
+    <>
       <header style={headerStyle}>
         <div style={headerTopStyle}>
-          <div style={logoWrapStyle}>
-            <div style={logoIconStyle}>
-              <span style={{ fontSize: 15, fontWeight: 950, color: "var(--text-1)", letterSpacing: "-0.03em" }}>F</span>
-            </div>
-          </div>
-
           <span style={headerTitleStyle}>Scores</span>
-
-          <Link href="/profile" style={headerProfileBtnStyle} prefetch={false}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-1)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="8" r="4" />
-              <path d="M4 20c0-3.87 3.58-7 8-7s8 3.13 8 7" />
-            </svg>
-          </Link>
         </div>
 
         <div ref={roundRef} className="no-scrollbar" style={isMobile ? headerRoundsScroll : headerRoundsDesktop}>
@@ -937,7 +1094,7 @@ free_kicks?: {
                     fontWeight: isSelected ? 800 : isCurrent ? 700 : 600,
                   }}
                 >
-                  {round === 0 ? "Opening" : `Rd ${round}`}
+                  {round === 0 ? "Opening" : `Round ${round}`}
                 </span>
 
                 {(isSelected || isCurrent) && (
@@ -953,6 +1110,19 @@ free_kicks?: {
           })}
         </div>
       </header>
+
+      <main style={pageStyle} className="page-enter">
+      {/* Pull-to-refresh indicator */}
+      <div className={`pull-indicator${pullVisible || refreshing ? " visible" : ""}`}>
+        <svg
+          width="18" height="18" viewBox="0 0 24 24" fill="none"
+          stroke="rgba(255,255,255,0.7)" strokeWidth="2.5" strokeLinecap="round"
+          style={{ animation: refreshing ? "spin 0.7s linear infinite" : undefined }}
+        >
+          <polyline points="23 4 23 10 17 10" />
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+        </svg>
+      </div>
 
       <div style={{ height: "calc(92px + env(safe-area-inset-top))" }} />
       <section style={wrapStyle}>
@@ -1025,6 +1195,7 @@ free_kicks?: {
                           faded={homeLost}
                           scoreColor="white"
                           isRecord={isUpcoming}
+                          compactRecord={!isLongCard && isUpcoming}
                           showBorder
                         />
 
@@ -1037,6 +1208,7 @@ free_kicks?: {
                           faded={awayLost}
                           scoreColor="white"
                           isRecord={isUpcoming}
+                          compactRecord={!isLongCard && isUpcoming}
                         />
                       </section>
 
@@ -1058,78 +1230,71 @@ free_kicks?: {
               </div>
             ))}
 
-          {!loading &&
-            isMobile &&
-            mobileGroups.map((group) => (
-              <div
-                key={group.label}
-                style={{
-                  ...mobileGroupStyle,
-                  gridTemplateColumns: group.games.length >= 2 ? "repeat(2, minmax(0, 1fr))" : "1fr",
-                }}
-              >
-                <div style={{ ...mobileGroupLabelStyle, gridColumn: "1 / -1" }}>{group.label}</div>
-
-                {group.games.map((game) => {
-                  const homeId = game.hteamid;
-                  const awayId = game.ateamid;
-
-                  if (!homeId || !awayId) return null;
-
-                  const homeStyle = TEAM_STYLES[homeId];
-                  const awayStyle = TEAM_STYLES[awayId];
-
-                  if (!homeStyle || !awayStyle) return null;
-
-                  const status = getStatus(game);
-                  const isUpcoming = status === "UPCOMING";
-                  const isLongCard = group.games.length === 1;
-                  const homeName = isLongCard
-                    ? TEAM_NICKNAMES[homeId] ?? displayTeamName(game.hteam || TEAM_NAMES[homeId])
-                    : TEAM_ABBR[homeId] ?? displayTeamName(game.hteam || TEAM_NAMES[homeId]);
-                  const awayName = isLongCard
-                    ? TEAM_NICKNAMES[awayId] ?? displayTeamName(game.ateam || TEAM_NAMES[awayId])
-                    : TEAM_ABBR[awayId] ?? displayTeamName(game.ateam || TEAM_NAMES[awayId]);
-
-                  return (
-                    <Link
-                      key={game.id}
-                      href={`/match/${game.id}?from=home`}
-                      prefetch={false}
-                      className={`card${status === "LIVE" ? " card-live" : ""}`}
-                      style={{
-                        ...mobileMatchStyle,
-                        gridColumn: group.games.length === 1 ? "1 / -1" : undefined,
-                      }}
-                    >
-                      <MobileMatchRow
-                        homeLogo={homeStyle.logo}
-                        awayLogo={awayStyle.logo}
-                        homeName={homeName}
-                        awayName={awayName}
-                        homeScoreText={isUpcoming ? getTeamRecord(homeId, games, game) : String(game.hscore ?? 0)}
-                        awayScoreText={isUpcoming ? getTeamRecord(awayId, games, game) : String(game.ascore ?? 0)}
-                        homeGoalsText={isUpcoming ? "" : `${game.hgoals ?? 0}.${game.hbehinds ?? 0}`}
-                        awayGoalsText={isUpcoming ? "" : `${game.agoals ?? 0}.${game.abehinds ?? 0}`}
-                        homePrimaryColor={TEAM_BAR_COLORS[homeId] ?? homeStyle.colors[0]}
-                        awayPrimaryColor={TEAM_BAR_COLORS[awayId] ?? awayStyle.colors[0]}
-                        timeText={getTimeOnly(game)}
-                        homeLost={status === "COMPLETED" && (game.hscore ?? 0) < (game.ascore ?? 0)}
-                        awayLost={status === "COMPLETED" && (game.ascore ?? 0) < (game.hscore ?? 0)}
-                        isUpcoming={isUpcoming}
-                        isLive={status === "LIVE"}
-                        gameId={game.id}
-                      />
-                    </Link>
-                  );
-                })}
+          {!loading && isMobile && (
+            <div ref={slideContainerRef} style={{ overflow: "hidden" }}>
+              <div ref={slideWrapRef} style={{ display: "flex", willChange: "transform" }}>
+                {/* Left panel: current round (or target when swiping right) */}
+                <div style={{ flex: "0 0 100%", minWidth: 0 }}>
+                  <MobileRoundPanel
+                    groups={swipeTarget !== null && swipeTarget < selectedRound ? targetGroups : mobileGroups}
+                    games={games}
+                  />
+                  {(swipeTarget !== null && swipeTarget < selectedRound ? targetGroups : mobileGroups).length === 0 && (
+                    <div style={emptyBoxStyle}>
+                      No games found for Round {swipeTarget !== null && swipeTarget < selectedRound ? swipeTarget : selectedRound}.
+                    </div>
+                  )}
+                </div>
+                {/* Right panel: target round (or current when swiping right) — only during swipe */}
+                {swipeTarget !== null && (
+                  <div style={{ flex: "0 0 100%", minWidth: 0 }}>
+                    <MobileRoundPanel
+                      groups={swipeTarget > selectedRound ? targetGroups : mobileGroups}
+                      games={games}
+                    />
+                    {(swipeTarget > selectedRound ? targetGroups : mobileGroups).length === 0 && (
+                      <div style={emptyBoxStyle}>
+                        No games found for Round {swipeTarget > selectedRound ? swipeTarget : selectedRound}.
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            ))}
+            </div>
+          )}
 
-          {!loading && shownGames.length === 0 && (
+          {!loading && !isMobile && shownGames.length === 0 && (
             <div style={emptyBoxStyle}>No games found for Round {selectedRound}.</div>
           )}
         </div>
+
+        {byeTeams.length > 0 && (
+          <div style={byeTeamsSectionStyle}>
+            <div style={byeTeamsHeaderStyle}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </svg>
+              <span style={byeTeamsLabelStyle}>Bye Teams</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "2px", paddingBottom: "10px" }}>
+              {byeTeams.map((team) => (
+                <div key={team.id} style={mobileStackedTeamWrapStyle}>
+                  <div style={{ width: 8, flexShrink: 0, background: team.color, borderRadius: "0 8px 8px 0" }} />
+                  <div style={mobileStackedTeamRowStyle}>
+                    <div style={mobileStackedTeamLeftStyle}>
+                      <img src={team.logo} alt={team.name} style={mobileLogoStyle} loading="lazy" />
+                      <strong style={mobileTeamNameStyle}>{team.name}</strong>
+                      <span style={{ fontSize: "13px", fontWeight: 700, color: "rgba(255,255,255,0.45)", fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{team.record}</span>
+                    </div>
+                    {team.nextText && (
+                      <span style={{ flexShrink: 0, fontSize: "11px", fontWeight: 800, color: "rgba(255,255,255,0.38)", letterSpacing: "0.04em", paddingRight: "4px" }}>{team.nextText}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {roundStarted && (
           <div style={topPlayersSectionStyle}>
@@ -1221,12 +1386,15 @@ free_kicks?: {
                 <Link key={label} href={`/round-stats?stat=${statKey}&round=${selectedRound}`} prefetch={false} style={{ ...statLeaderBoxStyle, textDecoration: "none", cursor: "pointer" }}>
                   {/* Photo + overlays */}
                   <div style={{ position: "relative", height: 140, background: top.teamColor, overflow: "hidden", borderRadius: "12px 12px 0 0", flexShrink: 0 }}>
-                    <img
-                      src={top.image}
-                      alt={top.name}
-                      style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center" }}
-                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                    />
+                    {top.image && (
+                      <img
+                        src={top.image}
+                        alt={top.name}
+                        loading="eager"
+                        style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center" }}
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                      />
+                    )}
                     {/* gradient overlay */}
                     <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.72) 100%)" }} />
                     {/* rank badge */}
@@ -1250,7 +1418,7 @@ free_kicks?: {
                     <div key={p.name} style={statLeaderRowStyle}>
                       <span style={{ fontSize: "9px", fontWeight: 900, color: "rgba(255,255,255,0.25)", width: 14, textAlign: "right", flexShrink: 0 }}>#{i + 2}</span>
                       <div style={{ width: 24, height: 24, borderRadius: "50%", background: p.teamColor, overflow: "hidden", flexShrink: 0, border: "1px solid rgba(255,255,255,0.1)" }}>
-                        <img src={p.image} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                        {p.image && <img src={p.image} alt={p.name} loading="eager" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />}
                       </div>
                       <span style={{ flex: 1, minWidth: 0, fontSize: "11px", fontWeight: 700, color: "rgba(255,255,255,0.6)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name.split(" ").pop()}</span>
                       <span style={{ fontSize: "13px", fontWeight: 800, color: "var(--text-2)", flexShrink: 0 }}>{p.value}<span style={{ fontSize: "9px", opacity: 0.55, marginLeft: 1 }}>{unit}</span></span>
@@ -1265,6 +1433,86 @@ free_kicks?: {
         )}
       </section>
     </main>
+    </>
+  );
+}
+
+function MobileRoundPanel({
+  groups,
+  games,
+}: {
+  groups: Array<{ label: string; games: Game[] }>;
+  games: Game[];
+}) {
+  return (
+    <>
+      {groups.map((group) => (
+        <div
+          key={group.label}
+          style={{
+            ...mobileGroupStyle,
+            gridTemplateColumns: group.games.length >= 2 ? "repeat(2, minmax(0, 1fr))" : "1fr",
+          }}
+        >
+          <div style={{ ...mobileGroupLabelStyle, gridColumn: "1 / -1" }}>{group.label}</div>
+
+          {group.games.map((game) => {
+            const homeId = game.hteamid;
+            const awayId = game.ateamid;
+
+            if (!homeId || !awayId) return null;
+
+            const homeStyle = TEAM_STYLES[homeId];
+            const awayStyle = TEAM_STYLES[awayId];
+
+            if (!homeStyle || !awayStyle) return null;
+
+            const status = getStatus(game);
+            const isUpcoming = status === "UPCOMING";
+            const isLongCard = group.games.length === 1;
+            const homeName = isLongCard
+              ? TEAM_NICKNAMES[homeId] ?? displayTeamName(game.hteam || TEAM_NAMES[homeId])
+              : TEAM_ABBR[homeId] ?? displayTeamName(game.hteam || TEAM_NAMES[homeId]);
+            const awayName = isLongCard
+              ? TEAM_NICKNAMES[awayId] ?? displayTeamName(game.ateam || TEAM_NAMES[awayId])
+              : TEAM_ABBR[awayId] ?? displayTeamName(game.ateam || TEAM_NAMES[awayId]);
+
+            return (
+              <Link
+                key={game.id}
+                href={`/match/${game.id}?from=home`}
+                prefetch={false}
+                className={`card${status === "LIVE" ? " card-live" : ""}`}
+                style={{
+                  ...mobileMatchStyle,
+                  gridColumn: group.games.length === 1 ? "1 / -1" : undefined,
+                }}
+              >
+                <MobileMatchRow
+                  homeLogo={homeStyle.logo}
+                  awayLogo={awayStyle.logo}
+                  homeName={homeName}
+                  awayName={awayName}
+                  homeScoreText={isUpcoming ? getTeamRecord(homeId, games, game) : String(game.hscore ?? 0)}
+                  awayScoreText={isUpcoming ? getTeamRecord(awayId, games, game) : String(game.ascore ?? 0)}
+                  homeGoalsText={isUpcoming ? "" : `${game.hgoals ?? 0}.${game.hbehinds ?? 0}`}
+                  awayGoalsText={isUpcoming ? "" : `${game.agoals ?? 0}.${game.abehinds ?? 0}`}
+                  homePrimaryColor={TEAM_BAR_COLORS[homeId] ?? homeStyle.colors[0]}
+                  awayPrimaryColor={TEAM_BAR_COLORS[awayId] ?? awayStyle.colors[0]}
+                  timeText={getTimeOnly(game)}
+                  homeLost={status === "COMPLETED" && (game.hscore ?? 0) < (game.ascore ?? 0)}
+                  awayLost={status === "COMPLETED" && (game.ascore ?? 0) < (game.hscore ?? 0)}
+                  isUpcoming={isUpcoming}
+                  isLive={status === "LIVE"}
+                  compactRecord={!isLongCard && isUpcoming}
+                  gameId={game.id}
+                />
+              </Link>
+            );
+          })}
+        </div>
+      ))}
+    </>
   );
 }
 
@@ -1308,6 +1556,7 @@ function MobileMatchRow({
   awayLost,
   isUpcoming,
   isLive,
+  compactRecord,
   gameId,
 }: {
   homeLogo: string;
@@ -1325,6 +1574,7 @@ function MobileMatchRow({
   awayLost: boolean;
   isUpcoming: boolean;
   isLive: boolean;
+  compactRecord: boolean;
   gameId: number;
 }) {
   return (
@@ -1338,6 +1588,7 @@ function MobileMatchRow({
         faded={homeLost}
         winning={!isUpcoming && Number(homeScoreText) > Number(awayScoreText)}
         isRecord={isUpcoming}
+        compactRecord={compactRecord}
         showBorder
       />
 
@@ -1350,6 +1601,7 @@ function MobileMatchRow({
         faded={awayLost}
         winning={!isUpcoming && Number(awayScoreText) > Number(homeScoreText)}
         isRecord={isUpcoming}
+        compactRecord={compactRecord}
       />
 
       <div style={mobileMatchFooterStyle}>
@@ -1377,6 +1629,7 @@ function MobileStackedTeamRow({
   faded,
   winning,
   isRecord,
+  compactRecord,
   showBorder,
 }: {
   logo: string;
@@ -1387,6 +1640,7 @@ function MobileStackedTeamRow({
   faded: boolean;
   winning: boolean;
   isRecord: boolean;
+  compactRecord: boolean;
   showBorder?: boolean;
 }) {
   return (
@@ -1403,7 +1657,7 @@ function MobileStackedTeamRow({
             style={{
               ...mobileStackedScoreStyle,
               color: isRecord ? "#d6d7e3" : "#ffffff",
-              fontSize: "23px",
+              fontSize: compactRecord ? "20px" : "23px",
               fontWeight: 900,
               fontStyle: "normal",
             }}
@@ -1426,6 +1680,7 @@ function TeamRow({
   faded,
   scoreColor,
   isRecord,
+  compactRecord,
   showBorder,
 }: {
   logo: string;
@@ -1436,6 +1691,7 @@ function TeamRow({
   faded: boolean;
   scoreColor: string;
   isRecord: boolean;
+  compactRecord?: boolean;
   showBorder?: boolean;
 }) {
   return (
@@ -1451,7 +1707,7 @@ function TeamRow({
           <strong
             style={{
               ...scoreStyle,
-              fontSize: "28px",
+              fontSize: compactRecord ? "23px" : "28px",
               fontWeight: 900,
               fontStyle: "normal",
               color: isRecord ? "#d6d7e3" : scoreColor,
@@ -1639,12 +1895,10 @@ const headerStyle: React.CSSProperties = {
 
 const headerTopStyle: React.CSSProperties = {
   height: "calc(52px + env(safe-area-inset-top))",
-  display: "grid",
-  gridTemplateColumns: "1fr auto 1fr",
+  display: "flex",
   alignItems: "center",
+  justifyContent: "center",
   paddingTop: "env(safe-area-inset-top)",
-  paddingLeft: "16px",
-  paddingRight: "16px",
 };
 
 const headerRoundsScroll: React.CSSProperties = {
@@ -1690,22 +1944,6 @@ const headerRoundUnderline: React.CSSProperties = {
   borderRadius: "999px",
 };
 
-const logoWrapStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-};
-
-const logoIconStyle: React.CSSProperties = {
-  width: 34,
-  height: 34,
-  borderRadius: "50%",
-  background: "linear-gradient(135deg,#3b82f6 0%,#6366f1 100%)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  boxShadow: "0 2px 10px rgba(99,102,241,0.4)",
-  flexShrink: 0,
-};
 
 const headerTitleStyle: React.CSSProperties = {
   fontSize: 17,
@@ -1715,18 +1953,6 @@ const headerTitleStyle: React.CSSProperties = {
   textAlign: "center",
 };
 
-const headerProfileBtnStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-end",
-  width: 34,
-  height: 34,
-  marginLeft: "auto",
-  background: "none",
-  border: "none",
-  cursor: "pointer",
-  textDecoration: "none",
-};
 
 const wrapStyle: React.CSSProperties = {
   maxWidth: "1320px",
@@ -2095,3 +2321,28 @@ const statLeaderSubStyle: React.CSSProperties = {
   whiteSpace: "nowrap",
   marginTop: "2px",
 };
+
+const byeTeamsSectionStyle: React.CSSProperties = {
+  marginTop: "20px",
+  borderRadius: "16px",
+  border: "1px solid var(--border-1)",
+  background: "var(--surface-3)",
+  overflow: "hidden",
+  boxShadow: "0 2px 12px rgba(0,0,0,0.35)",
+};
+
+const byeTeamsHeaderStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "7px",
+  padding: "12px 16px 10px",
+};
+
+const byeTeamsLabelStyle: React.CSSProperties = {
+  fontSize: "11px",
+  fontWeight: 800,
+  letterSpacing: "0.09em",
+  textTransform: "uppercase",
+  color: "rgba(255,255,255,0.45)",
+};
+

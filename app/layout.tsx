@@ -4,7 +4,6 @@ import BottomNav from "./components/BottomNav";
 import GlobalSideDrawer from "./components/GlobalSideDrawer";
 import NavigationEvents from "./components/NavigationEvents";
 import ThemeModeBootstrap from "./components/ThemeModeBootstrap";
-import { XPProvider } from "./context/XPContext";
 import { FOOPY_THEME_KEY } from "./lib/theme";
 
 export const metadata: Metadata = {
@@ -45,15 +44,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://footywire.com" />
       </head>
       <body>
-        <XPProvider>
-          <ThemeModeBootstrap />
-          <NavigationEvents />
-          <GlobalSideDrawer />
-          <div className="page-shell">
-            {children}
-          </div>
-          <BottomNav />
-        </XPProvider>
+        <ThemeModeBootstrap />
+        <NavigationEvents />
+        <GlobalSideDrawer />
+        <div className="page-shell">
+          {children}
+        </div>
+        <BottomNav />
       </body>
     </html>
   );
