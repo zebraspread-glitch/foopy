@@ -1,0 +1,1 @@
+(function(){try{var m=localStorage.getItem("foopy_theme_mode");if(m!=="light"&&m!=="dark")m="default";document.documentElement.dataset.foopyTheme=m;document.documentElement.style.colorScheme=m==="light"?"light":"dark";}catch(e){}})();

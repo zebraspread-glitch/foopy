@@ -35,13 +35,17 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, ho
   const storageKey = `winner-pick-${matchId}`;
 
   const [authed, setAuthed] = useState<boolean | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(null);
   const [votes, setVotes] = useState<Votes>({ home: 0, away: 0, total: 0 });
   const [myPick, setMyPick] = useState<"home" | "away" | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [hasVoted, setHasVoted] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setAuthed(!!data?.session?.user));
+    supabase.auth.getSession().then(({ data }) => {
+      setAuthed(!!data?.session?.user);
+      setAuthToken(data?.session?.access_token ?? null);
+    });
   }, []);
 
   const homeColor = teamColor(homeTeam);
@@ -112,14 +116,23 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, ho
 
     setSubmitting(true);
     try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
       const res = await fetch("/api/winner-picks", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ matchId, team, side, voterId }),
       });
       if (res.ok) {
         const data = await res.json();
         setVotes({ home: Number(data.home ?? 0), away: Number(data.away ?? 0), total: Number(data.total ?? 0) });
+        if (data.aura_awarded && authToken) {
+          fetch("/api/aura/award", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
+            body: JSON.stringify({ event_type: "winner_pick", related_id: matchId }),
+          }).catch(() => {});
+        }
       }
     } catch {}
     setSubmitting(false);

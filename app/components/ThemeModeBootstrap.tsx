@@ -1,7 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect } from "react";
 import { FOOPY_THEME_KEY, normalizeThemeMode, themeColorForMode } from "@/app/lib/theme";
+
+// useLayoutEffect fires synchronously before paint (anti-flash); falls back to
+// useEffect on the server where layout effects are a no-op.
+const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 function applyThemeFromStorage() {
   const mode = normalizeThemeMode(localStorage.getItem(FOOPY_THEME_KEY));
@@ -18,7 +22,7 @@ function applyThemeFromStorage() {
 }
 
 export default function ThemeModeBootstrap() {
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     applyThemeFromStorage();
 
     const handleThemeChange = () => applyThemeFromStorage();

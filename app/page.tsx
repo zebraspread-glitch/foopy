@@ -531,6 +531,7 @@ export default function HomePage() {
   const [hasLoadedSavedRound, setHasLoadedSavedRound] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [pullVisible, setPullVisible] = useState(false);
+  const [streaksExpanded, setStreaksExpanded] = useState(false);
   const roundRef = useRef<HTMLDivElement | null>(null);
   const touchStartY = useRef(0);
   const touchStartX = useRef(0);
@@ -1064,6 +1065,104 @@ free_kicks?: {
       });
   }, [games, shownGames, selectedRound]);
 
+  const playerStreaks = useMemo(() => {
+    type RawGame = {
+      gameId: number;
+      date: string;
+      teams: Array<{
+        team: { id: number };
+        players: Array<{
+          player: { id: number };
+          goals?: { total?: number };
+          disposals?: number;
+          kicks?: number;
+          tackles?: number;
+        }>;
+      }>;
+    };
+
+    const allStats = matchStatsRaw as unknown as Record<string, RawGame>;
+    const playerGames: Record<number, Array<{ date: string; goals: number; disposals: number; kicks: number; tackles: number }>> = {};
+
+    for (const g of Object.values(allStats)) {
+      for (const t of g.teams) {
+        for (const pl of t.players) {
+          const id = pl.player.id;
+          if (!playerGames[id]) playerGames[id] = [];
+          playerGames[id].push({
+            date: g.date,
+            goals: pl.goals?.total ?? 0,
+            disposals: pl.disposals ?? 0,
+            kicks: pl.kicks ?? 0,
+            tackles: pl.tackles ?? 0,
+          });
+        }
+      }
+    }
+
+    // sort each player's games oldest→newest
+    for (const arr of Object.values(playerGames)) {
+      arr.sort((a, b) => a.date.localeCompare(b.date));
+    }
+
+    // id lookup: apiSportsId → player info
+    const byApiId = new Map<number, PlayerStatsPlayer>();
+    for (const p of playerStatsRaw as PlayerStatsPlayer[]) {
+      if (p.apiSportsId) byApiId.set(p.apiSportsId, p);
+    }
+
+    type StreakEntry = {
+      id: string;
+      name: string;
+      team: string;
+      image: string;
+      teamLogo: string;
+      teamColor: string;
+      streak: number;
+      label: string;
+      emoji: string;
+    };
+
+    const results: StreakEntry[] = [];
+
+    const STREAK_DEFS: Array<{ key: "goals" | "disposals" | "kicks" | "tackles"; threshold: number; label: string; emoji: string; min: number }> = [
+      { key: "goals",     threshold: 1,  label: "game goal streak",        emoji: "🎯", min: 4 },
+      { key: "disposals", threshold: 25, label: "game 25+ disposal streak", emoji: "💪", min: 4 },
+      { key: "tackles",   threshold: 5,  label: "game 5+ tackle streak",    emoji: "🔒", min: 4 },
+    ];
+
+    for (const [idStr, games] of Object.entries(playerGames)) {
+      const apiId = Number(idStr);
+      const info = byApiId.get(apiId);
+      if (!info) continue;
+
+      const id = String((info as { id?: string }).id ?? "");
+      const name = String(info.name || info.player || "");
+      const team = String(info.club ?? info.team ?? "");
+      if (!name || !team) continue;
+
+      const image = playerImagePath(name, team);
+      const teamLogo = getTeamLogoFromName(team);
+      const teamColor = getTeamColorFromName(team);
+
+      for (const def of STREAK_DEFS) {
+        let streak = 0;
+        for (let i = games.length - 1; i >= 0; i--) {
+          if (games[i][def.key] >= def.threshold) streak++;
+          else break;
+        }
+        if (streak >= def.min) {
+          results.push({ id, name, team, image, teamLogo, teamColor, streak, label: `${streak}-${def.label}`, emoji: def.emoji });
+        }
+      }
+    }
+
+    // Sort: longest streak first, then alphabetically
+    results.sort((a, b) => b.streak - a.streak || a.name.localeCompare(b.name));
+
+    return results.slice(0, 20);
+  }, []);
+
   function chooseRound(round: number) {
     setSelectedRound(round);
   }
@@ -1429,6 +1528,46 @@ free_kicks?: {
                 </Link>
               );
             })}
+          </div>
+        )}
+
+        {/* ── Player Streaks ── */}
+        {playerStreaks.length > 0 && selectedRound === currentRound && (
+          <div style={streakSectionStyle}>
+            <div style={streakHeaderStyle}>
+              <span style={{ fontSize: 16 }}>🔥</span>
+              <span style={streakTitleStyle}>Player Streaks</span>
+            </div>
+            {(streaksExpanded ? playerStreaks : playerStreaks.slice(0, 5)).map((s, i) => (
+              <Link key={`${s.name}-${s.label}`} href={`/player/${s.id}`} prefetch={false} style={{ ...streakRowStyle, borderTop: i === 0 ? "none" : "1px solid var(--border-1)", textDecoration: "none", color: "inherit" }}>
+                {/* Avatar */}
+                <div suppressHydrationWarning style={{ width: 40, height: 40, borderRadius: "50%", flexShrink: 0, background: s.teamColor, position: "relative", overflow: "hidden" }}>
+                  {s.image && (
+                    <img src={s.image} alt={s.name} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", borderRadius: "50%" }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                  )}
+                  {!s.image && <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800, color: "#fff" }}>{getInitials(s.name)}</span>}
+                </div>
+                {/* Text */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={streakNameStyle}>{s.name}</div>
+                  <div style={streakLabelStyle}>{s.label}</div>
+                </div>
+                {/* Team logo */}
+                {s.teamLogo && (
+                  <div style={{ width: 32, height: 32, borderRadius: "50%", flexShrink: 0, background: s.teamColor, position: "relative", overflow: "hidden" }}>
+                    <img src={s.teamLogo} alt={s.team} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                  </div>
+                )}
+              </Link>
+            ))}
+            {playerStreaks.length > 5 && (
+              <button
+                onClick={() => setStreaksExpanded(e => !e)}
+                style={{ width: "100%", padding: "12px", background: "none", border: "none", borderTop: "1px solid var(--border-1)", color: "var(--text-3)", fontSize: 13, fontWeight: 700, cursor: "pointer", letterSpacing: "0.02em" }}
+              >
+                {streaksExpanded ? "Show less" : `View ${playerStreaks.length - 5} more`}
+              </button>
+            )}
           </div>
         )}
       </section>
@@ -2344,5 +2483,55 @@ const byeTeamsLabelStyle: React.CSSProperties = {
   letterSpacing: "0.09em",
   textTransform: "uppercase",
   color: "rgba(255,255,255,0.45)",
+};
+
+const streakSectionStyle: React.CSSProperties = {
+  marginTop: "20px",
+  borderRadius: "16px",
+  border: "1px solid var(--border-1)",
+  background: "var(--surface-3)",
+  overflow: "hidden",
+  boxShadow: "0 2px 12px rgba(0,0,0,0.35)",
+};
+
+const streakHeaderStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  padding: "14px 16px 12px",
+  borderBottom: "1px solid var(--border-1)",
+};
+
+const streakTitleStyle: React.CSSProperties = {
+  fontSize: "13px",
+  fontWeight: 800,
+  letterSpacing: "0.08em",
+  textTransform: "uppercase",
+  color: "rgba(255,255,255,0.55)",
+};
+
+const streakRowStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "12px",
+  padding: "11px 14px",
+};
+
+
+const streakNameStyle: React.CSSProperties = {
+  fontSize: "14px",
+  fontWeight: 800,
+  color: "var(--text-1)",
+  letterSpacing: "-0.01em",
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+};
+
+const streakLabelStyle: React.CSSProperties = {
+  fontSize: "12px",
+  fontWeight: 600,
+  color: "var(--text-3)",
+  marginTop: "2px",
 };
 

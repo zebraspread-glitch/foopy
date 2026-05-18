@@ -35,6 +35,7 @@ type Props = {
 export default function CommentSheet({ gameId, gameLabel, eventKey, onClose }: Props) {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [body, setBody] = useState("");
@@ -49,6 +50,7 @@ export default function CommentSheet({ gameId, gameLabel, eventKey, onClose }: P
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setUserId(data.session?.user.id ?? null);
+      setAuthToken(data.session?.access_token ?? null);
     });
   }, []);
 
@@ -125,17 +127,24 @@ export default function CommentSheet({ gameId, gameLabel, eventKey, onClose }: P
   async function handleSubmit() {
     if (!body.trim() || !userId || submitting) return;
     setSubmitting(true);
-    const { error } = await supabase.from("feed_comments").insert({
+    const { data: inserted, error } = await supabase.from("feed_comments").insert({
       game_id: gameId,
       user_id: userId,
       parent_id: replyTo?.id ?? null,
       body: body.trim(),
       event_key: eventKey ?? null,
-    });
-    if (!error) {
+    }).select("id").single();
+    if (!error && inserted) {
       setBody("");
       setReplyTo(null);
       await loadComments();
+      if (authToken) {
+        fetch("/api/aura/award", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
+          body: JSON.stringify({ event_type: "comment_post", related_id: inserted.id }),
+        }).catch(() => {});
+      }
     }
     setSubmitting(false);
   }
@@ -152,6 +161,21 @@ export default function CommentSheet({ gameId, gameLabel, eventKey, onClose }: P
     } else {
       await supabase.from("feed_comment_likes")
         .insert({ comment_id: comment.id, user_id: userId });
+
+      if (authToken) {
+        fetch("/api/aura/award", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
+          body: JSON.stringify({ event_type: "like_given", related_id: comment.id }),
+        }).catch(() => {});
+        if (comment.user_id !== userId) {
+          fetch("/api/aura/award", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
+            body: JSON.stringify({ event_type: "like_received", related_id: comment.id, recipient_id: comment.user_id }),
+          }).catch(() => {});
+        }
+      }
     }
 
     await loadComments();

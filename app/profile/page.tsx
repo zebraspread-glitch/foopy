@@ -9,6 +9,7 @@ import type { CSSProperties } from "react";
 import { X, Plus, Search, RotateCcw, Camera, ImageIcon, AtSign, Pencil, Users } from "lucide-react";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
+import AuraBadge from "@/app/components/AuraBadge";
 import { supabase } from "@/app/lib/supabase";
 import { createNotification } from "@/app/lib/notifications";
 import playersRaw from "@/app/data/players.json";
@@ -30,6 +31,7 @@ type Profile = {
   coins: number | null;
   matches_viewed: number | null;
   total_likes: number | null;
+  aura: number | null;
 };
 
 type FriendEntry = {
@@ -581,7 +583,6 @@ export default function ProfilePage() {
   const [searching, setSearching] = useState(false);
   const [friendsLoading, setFriendsLoading] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [signOutBusy, setSignOutBusy] = useState(false);
 
   // ── Stats section ──
   type StatsPopup = null | "games" | "likes" | "polls";
@@ -634,6 +635,15 @@ export default function ProfilePage() {
           const { data } = await supabase.from("profiles").select("*").eq("id", u.id).single();
           await applyPending(u.id, data as Profile | null);
           loadFriends(u.id);
+          // Award daily login Aura (deduped per calendar day)
+          if (session?.access_token) {
+            const today = new Date().toISOString().split("T")[0];
+            fetch("/api/aura/award", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+              body: JSON.stringify({ event_type: "daily_login", related_id: today }),
+            }).catch(() => {});
+          }
         }
       })
       .catch(() => {})
@@ -1164,11 +1174,6 @@ export default function ProfilePage() {
     setPollsDataLoading(false);
   }
 
-  async function signOut() {
-    setSignOutBusy(true);
-    await supabase.auth.signOut();
-    router.push("/login");
-  }
 
   if (loading) {
     return (
@@ -1268,8 +1273,9 @@ export default function ProfilePage() {
                 @{username || "—"}
               </h1>
 
-              {/* Pills: coins · friends */}
+              {/* Pills: aura · coins · friends */}
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as const, alignItems: "center" }}>
+                <AuraBadge aura={profile?.aura ?? 0} href="/aura-leaderboard" />
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 999, background: "var(--surface-3)", border: "1px solid var(--border-2)" }}>
                   <img src="/coin/coin.png" alt="coins" style={{ width: 16, height: 16, objectFit: "contain" }} />
                   <span style={{ fontSize: 13, fontWeight: 800, color: "var(--text-1)" }}>{(profile?.coins ?? 0).toLocaleString()}</span>
@@ -1399,9 +1405,6 @@ export default function ProfilePage() {
           ))}
         </div>
 
-        <button onClick={signOut} disabled={signOutBusy} style={{ ...signOutBtnStyle, opacity: signOutBusy ? 0.6 : 1 }}>
-          {signOutBusy ? "Signing out…" : "Sign Out"}
-        </button>
       </div>
 
       {previewOpen && previewUrl && previewType && (
@@ -2190,18 +2193,6 @@ const statLabelStyle: CSSProperties = {
   fontWeight: 800,
 };
 
-const signOutBtnStyle: CSSProperties = {
-  width: "100%",
-  padding: 16,
-  borderRadius: 18,
-  background: "rgba(239,68,68,.07)",
-  border: "1px solid rgba(239,68,68,.18)",
-  color: "#f87171",
-  fontWeight: 950,
-  fontSize: 16,
-  cursor: "pointer",
-  letterSpacing: "-0.01em",
-};
 
 const friendRowStyle: CSSProperties = {
   display: "flex",

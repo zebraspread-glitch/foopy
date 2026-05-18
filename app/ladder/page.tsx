@@ -38,6 +38,21 @@ type LadderTeam = {
 
 type Tab = "league" | "finals" | "live";
 
+type FinalsSlot = {
+  seed?: number;
+  team?: LadderTeam;
+  label?: string;
+  detail?: string;
+};
+
+type FinalsMatchup = {
+  id: string;
+  label: string;
+  accent: string;
+  left: FinalsSlot;
+  right: FinalsSlot;
+};
+
 const TEAM_LOGOS: Record<string, string> = {
   Adelaide: "/team-logos/crows.png",
   "Brisbane Lions": "/team-logos/lions.png",
@@ -214,6 +229,198 @@ function sideColour(index: number) {
   return "transparent";
 }
 
+function finalsTeamBackground(team?: string) {
+  const key = String(team ?? "").toLowerCase().trim();
+  const map: Record<string, string> = {
+    adelaide: "#002b5c",
+    "brisbane lions": "#a50034",
+    brisbane: "#a50034",
+    carlton: "#031a35",
+    collingwood: "#111217",
+    essendon: "#111217",
+    fremantle: "#4b1979",
+    geelong: "#003b73",
+    "geelong cats": "#003b73",
+    "gold coast": "#ef4444",
+    "gws giants": "#f97316",
+    "greater western sydney": "#f97316",
+    gws: "#f97316",
+    hawthorn: "#f59e0b",
+    melbourne: "#061a3c",
+    "north melbourne": "#1d4ed8",
+    "port adelaide": "#111217",
+    richmond: "#ffd200",
+    "st kilda": "#ed1b2f",
+    sydney: "#ef4444",
+    "west coast": "#003087",
+    "western bulldogs": "#2563eb",
+  };
+  return map[key] ?? "#1e293b";
+}
+
+function seedSlot(ladder: LadderTeam[], seed: number): FinalsSlot {
+  return { seed, team: ladder[seed - 1], label: ladder[seed - 1]?.team ?? `Seed ${seed}` };
+}
+
+function buildFinalsMatchups(ladder: LadderTeam[]): FinalsMatchup[] {
+  return [
+    {
+      id: "qf-1-4",
+      label: "Double chance",
+      accent: "#fbbf24",
+      left: seedSlot(ladder, 1),
+      right: seedSlot(ladder, 4),
+    },
+    {
+      id: "qf-2-3",
+      label: "Double chance",
+      accent: "#fbbf24",
+      left: seedSlot(ladder, 2),
+      right: seedSlot(ladder, 3),
+    },
+    {
+      id: "wc-7-10",
+      label: "Wildcard",
+      accent: "#3b82f6",
+      left: seedSlot(ladder, 7),
+      right: seedSlot(ladder, 10),
+    },
+    {
+      id: "wc-8-9",
+      label: "Wildcard",
+      accent: "#3b82f6",
+      left: seedSlot(ladder, 8),
+      right: seedSlot(ladder, 9),
+    },
+    {
+      id: "ef-5-lowest",
+      label: "Elimination final",
+      accent: "#ffffff",
+      left: seedSlot(ladder, 5),
+      right: { label: "Lowest-ranked Wildcard winner", detail: "Wildcard winner" },
+    },
+    {
+      id: "ef-6-highest",
+      label: "Elimination final",
+      accent: "#ffffff",
+      left: seedSlot(ladder, 6),
+      right: { label: "Highest-ranked Wildcard winner", detail: "Wildcard winner" },
+    },
+  ];
+}
+
+function FinalsTeamStrip({ slot }: { slot: FinalsSlot }) {
+  const logo = slot.team ? TEAM_LOGOS[slot.team.team] : "";
+  const seedText = slot.seed ? String(slot.seed) : "WC";
+  const label = slot.team ? displayTeamName(slot.team.team) : slot.label ?? "Wildcard winner";
+  const panelBg = slot.team
+    ? finalsTeamBackground(slot.team.team)
+    : "linear-gradient(135deg, #1d4ed8, #0f172a)";
+
+  return (
+    <div style={finalsStripRowStyle} className="finals-strip-row" title={label}>
+      <span style={finalsSeedBlockStyle}>{seedText}</span>
+      <span style={{ ...finalsTeamPanelStyle, background: panelBg }}>
+        {logo ? (
+          <img src={logo} alt="" style={finalsLogoStyle} />
+        ) : (
+          <span style={finalsPlaceholderStyle}>{slot.detail ?? "Wildcard winner"}</span>
+        )}
+      </span>
+    </div>
+  );
+}
+
+function FinalsStageBox({ label, matchup }: { label: string; matchup?: FinalsMatchup }) {
+  const matchupText = matchup
+    ? matchup.left.seed && matchup.right.seed
+      ? `${matchup.left.seed} v ${matchup.right.seed}`
+      : matchup.left.seed
+      ? `${matchup.left.seed} v WC`
+      : ""
+    : "";
+
+  return (
+    <div style={finalsStageBoxStyle} className="finals-stage-box">
+      <span style={finalsStageLabelStyle}>{label}</span>
+      {matchupText && <span style={finalsStageSubStyle}>{matchupText}</span>}
+    </div>
+  );
+}
+
+function FinalsVerticalConnector({ height = 18 }: { height?: number }) {
+  return <span style={{ ...finalsVerticalConnectorStyle, height }} aria-hidden="true" />;
+}
+
+function FinalsWildcardCard({ matchup }: { matchup?: FinalsMatchup }) {
+  if (!matchup) return null;
+  return (
+    <div style={finalsWildcardCardStyle} className="finals-wildcard-card">
+      <FinalsTeamStrip slot={matchup.left} />
+      <FinalsTeamStrip slot={matchup.right} />
+    </div>
+  );
+}
+
+function FinalsMatchups({ matchups }: { matchups: FinalsMatchup[] }) {
+  const matchupById = new Map(matchups.map((matchup) => [matchup.id, matchup]));
+  const qf1 = matchupById.get("qf-1-4");
+  const qf2 = matchupById.get("qf-2-3");
+  const wc1 = matchupById.get("wc-7-10");
+  const wc2 = matchupById.get("wc-8-9");
+  const ef1 = matchupById.get("ef-5-lowest");
+  const ef2 = matchupById.get("ef-6-highest");
+
+  return (
+    <section style={finalsMatchupsSectionStyle} className="finals-matchups">
+      <div style={finalsHeaderStyle}>
+        <span style={finalsTitleStyle}>Finals Picture</span>
+      </div>
+
+      <div style={finalsBracketPanelStyle} className="finals-bracket">
+        <div style={finalsTopRowStyle}>
+          <FinalsStageBox label="GF" />
+        </div>
+
+        <FinalsVerticalConnector height={18} />
+
+        <div style={finalsTwoColumnRowStyle}>
+          <FinalsStageBox label="PF1" />
+          <FinalsStageBox label="PF2" />
+        </div>
+
+        <div style={finalsCrossConnectorStyle} aria-hidden="true">
+          <span style={{ ...finalsCrossLineStyle, transform: "rotate(16deg)" }} />
+          <span style={{ ...finalsCrossLineStyle, transform: "rotate(-16deg)" }} />
+        </div>
+
+        <div style={finalsTwoColumnRowStyle}>
+          <FinalsStageBox label="SF1" />
+          <FinalsStageBox label="SF2" />
+        </div>
+
+        <FinalsVerticalConnector height={18} />
+
+        <div style={finalsFourColumnRowStyle} className="finals-stage-row-four">
+          <FinalsStageBox label="QF1" matchup={qf1} />
+          <FinalsStageBox label="EF1" matchup={ef1} />
+          <FinalsStageBox label="EF2" matchup={ef2} />
+          <FinalsStageBox label="QF2" matchup={qf2} />
+        </div>
+
+        <FinalsVerticalConnector height={16} />
+
+        <div style={finalsAllCardsRowStyle} className="finals-wildcard-row">
+          <FinalsWildcardCard matchup={qf1} />
+          <FinalsWildcardCard matchup={wc1} />
+          <FinalsWildcardCard matchup={wc2} />
+          <FinalsWildcardCard matchup={qf2} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function SkeletonRow({ i }: { i: number }) {
   return (
     <tr style={{ borderBottom: "1px solid var(--border-1)" }}>
@@ -266,11 +473,13 @@ export default function LadderPage() {
     games.filter(isLiveGame).flatMap(g => [g.hteam, g.ateam].filter(Boolean) as string[])
   ), [games]);
   const hasLiveGames = liveTeams.size > 0;
+  const tabs: Tab[] = hasLiveGames ? ["league", "live"] : ["league"];
 
-  const shownLadder =
-    activeTab === "finals" ? ladder.slice(0, 10) :
-    activeTab === "live"   ? liveLadder :
-    ladder;
+  useEffect(() => {
+    if (!hasLiveGames && activeTab === "live") setActiveTab("league");
+  }, [hasLiveGames, activeTab]);
+
+  const shownLadder = activeTab === "live" ? liveLadder : ladder;
 
   // Poll quickly when on the live tab so standings stay current
   useEffect(() => {
@@ -296,6 +505,14 @@ export default function LadderPage() {
       <style jsx global>{`
         .ladder-team-name-mobile {
           display: none;
+        }
+
+        .finals-team-name-mobile {
+          display: none;
+        }
+
+        .finals-strip-row:last-child {
+          border-bottom: 0 !important;
         }
 
         @media (max-width: 700px) {
@@ -424,14 +641,40 @@ export default function LadderPage() {
             padding-left: 14px !important;
             padding-right: 14px !important;
           }
+
+          .finals-matchups {
+            padding: 16px 12px 14px !important;
+          }
+
+          .finals-bracket {
+            padding: 18px 10px 14px !important;
+          }
+
+          .finals-stage-row-four {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          }
+
+          .finals-wildcard-row {
+            grid-template-columns: 1fr !important;
+            max-width: 260px !important;
+          }
+
+          .finals-team-name-full {
+            display: none !important;
+          }
+
+          .finals-team-name-mobile {
+            display: inline !important;
+          }
         }
       `}</style>
 
       <header style={headerStyle} className="ladder-header">
         <span style={titleStyle}>Ladder</span>
         <div style={tabsStyle}>
-          {(["league", "finals", "live"] as Tab[]).map((t) => (
+          {tabs.map((t) => (
             <button
+              type="button"
               key={t}
               onClick={() => setActiveTab(t)}
               style={{ ...tabBtnStyle, ...(activeTab === t ? (t === "live" ? activeTabLiveStyle : activeTabStyle) : {}) }}
@@ -580,6 +823,7 @@ export default function LadderPage() {
                 )}
               </div>
             )}
+
           </div>
         )}
       </div>
@@ -758,6 +1002,189 @@ const legendDotStyle: CSSProperties = {
   height: 9,
   borderRadius: 999,
   display: "inline-block",
+};
+
+const finalsMatchupsSectionStyle: CSSProperties = {
+  padding: "18px 16px 16px",
+  borderTop: "1px solid var(--border-1)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.025), transparent)",
+};
+
+const finalsHeaderStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 12,
+  marginBottom: 12,
+};
+
+const finalsTitleStyle: CSSProperties = {
+  fontSize: 16,
+  fontWeight: 950,
+  letterSpacing: "-0.02em",
+  color: "var(--text-1)",
+};
+
+const finalsBracketPanelStyle: CSSProperties = {
+  position: "relative",
+  padding: "22px 18px 18px",
+  borderRadius: 18,
+  border: "1px solid rgba(214,194,138,0.22)",
+  background: "radial-gradient(circle at 50% 0%, rgba(214,194,138,0.08), rgba(0,0,0,0) 42%), #060708",
+  overflow: "hidden",
+};
+
+const finalsTopRowStyle: CSSProperties = {
+  display: "flex",
+  justifyContent: "center",
+};
+
+const finalsTwoColumnRowStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: 40,
+  alignItems: "center",
+  maxWidth: 420,
+  margin: "0 auto",
+};
+
+const finalsFourColumnRowStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+  gap: 10,
+  alignItems: "center",
+  marginTop: 4,
+};
+
+const finalsStageBoxStyle: CSSProperties = {
+  minHeight: 58,
+  borderRadius: 10,
+  border: "2px solid #d6c28a",
+  background: "#070914",
+  color: "#f5e6b2",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 2,
+  boxShadow: "0 0 0 1px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06)",
+};
+
+const finalsStageLabelStyle: CSSProperties = {
+  fontSize: 28,
+  fontWeight: 1000,
+  lineHeight: 1,
+  letterSpacing: 0,
+};
+
+const finalsStageSubStyle: CSSProperties = {
+  fontSize: 10,
+  fontWeight: 950,
+  color: "rgba(245,230,178,0.72)",
+  lineHeight: 1,
+  letterSpacing: 0,
+  textTransform: "uppercase",
+};
+
+const finalsVerticalConnectorStyle: CSSProperties = {
+  display: "block",
+  width: 2,
+  margin: "0 auto",
+  background: "#d6c28a",
+  opacity: 0.8,
+};
+
+const finalsCrossConnectorStyle: CSSProperties = {
+  position: "relative",
+  height: 44,
+  maxWidth: 300,
+  margin: "-2px auto 0",
+};
+
+const finalsCrossLineStyle: CSSProperties = {
+  position: "absolute",
+  top: 20,
+  left: "15%",
+  width: "70%",
+  height: 2,
+  background: "#d6c28a",
+  transformOrigin: "center",
+  opacity: 0.82,
+};
+
+const finalsWildcardRowStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: 40,
+  maxWidth: 520,
+  margin: "0 auto",
+};
+
+const finalsAllCardsRowStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+  gap: 10,
+};
+
+const finalsWildcardCardStyle: CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 0,
+  minWidth: 0,
+  width: "100%",
+  overflow: "hidden",
+  border: "2px solid #d6c28a",
+  background: "#070914",
+  boxShadow: "0 0 0 1px rgba(0,0,0,0.55)",
+};
+
+const finalsStripRowStyle: CSSProperties = {
+  height: 52,
+  width: "100%",
+  display: "grid",
+  gridTemplateColumns: "46px minmax(0, 1fr)",
+  borderBottom: "2px solid var(--bg)",
+};
+
+const finalsSeedBlockStyle: CSSProperties = {
+  display: "grid",
+  placeItems: "center",
+  background: "#070914",
+  color: "#f8fafc",
+  fontSize: 25,
+  fontWeight: 1000,
+  lineHeight: 1,
+  fontVariantNumeric: "tabular-nums",
+};
+
+const finalsTeamPanelStyle: CSSProperties = {
+  minWidth: 0,
+  display: "grid",
+  placeItems: "center",
+  padding: "5px 14px",
+  boxSizing: "border-box",
+};
+
+const finalsLogoStyle: CSSProperties = {
+  width: 44,
+  height: 44,
+  objectFit: "contain",
+  display: "block",
+  filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.5))",
+};
+
+const finalsPlaceholderStyle: CSSProperties = {
+  display: "block",
+  maxWidth: "100%",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+  textAlign: "center",
+  fontSize: 11,
+  fontWeight: 950,
+  color: "#ffffff",
+  textTransform: "uppercase",
+  letterSpacing: 0,
 };
 
 const errorStyle: CSSProperties = {

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/app/lib/supabase";
+import { supabaseServer } from "@/app/lib/supabase-server";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -31,6 +32,24 @@ export async function POST(req: Request) {
 
   if (!matchId || !team || !side || !voterId) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  }
+
+  // Check if this is the user's first pick for this match (for aura signal)
+  let isFirstPick = false;
+  const authHeader = req.headers.get("authorization");
+  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (token) {
+    const { data: { user } } = await supabaseServer.auth.getUser(token);
+    if (user) {
+      const { data: existing } = await supabaseServer
+        .from("aura_events")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("event_type", "winner_pick")
+        .eq("related_id", String(matchId))
+        .maybeSingle();
+      isFirstPick = !existing;
+    }
   }
 
   // Remove any existing vote this device made for this match
@@ -66,5 +85,5 @@ export async function POST(req: Request) {
   const home = (data ?? []).filter((v) => v.side === "home").length;
   const away = (data ?? []).filter((v) => v.side === "away").length;
 
-  return NextResponse.json({ ok: true, home, away, total: home + away });
+  return NextResponse.json({ ok: true, home, away, total: home + away, aura_awarded: isFirstPick });
 }

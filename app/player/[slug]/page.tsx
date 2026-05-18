@@ -109,8 +109,35 @@ function idList(value: unknown) {
   const id = Number(value);
   return Number.isFinite(id) ? [id] : [];
 }
+function canonicalTeam(t: string) {
+  const key = slugTeam(t);
+  const aliases: Record<string, string> = {
+    adelaidecrows: "adelaide",
+    brisbanelions: "brisbane",
+    carltonblues: "carlton",
+    collingwoodmagpies: "collingwood",
+    essendonbombers: "essendon",
+    fremantledockers: "fremantle",
+    geelongcats: "geelong",
+    goldcoastsuns: "goldcoast",
+    gwsgiants: "gws",
+    greaterwesternsydney: "gws",
+    greaterwesternsydneygiants: "gws",
+    hawthornhawks: "hawthorn",
+    melbournedemons: "melbourne",
+    northmelbournekangaroos: "northmelbourne",
+    portadelaidepower: "portadelaide",
+    richmondtigers: "richmond",
+    stkildasaints: "stkilda",
+    sydneyswans: "sydney",
+    westcoasteagles: "westcoast",
+  };
+
+  return aliases[key] ?? key;
+}
+
 function teamMatches(a: string, b: string) {
-  return slugTeam(a) === slugTeam(b);
+  return canonicalTeam(a) === canonicalTeam(b);
 }
 function playerImgSrc(name: string, team: string) {
   const slug   = name.toLowerCase().replace(/[^a-z0-9]/g, "");

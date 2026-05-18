@@ -118,6 +118,20 @@ function safePlayerName(value: any, fallbackId?: any) {
   return fallbackText ? `Player ${fallbackText}` : "Unknown";
 }
 
+function useCompactViewport(maxWidth = 520) {
+  const [compact, setCompact] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia(`(max-width: ${maxWidth}px)`);
+    const sync = () => setCompact(query.matches);
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, [maxWidth]);
+
+  return compact;
+}
+
 function liveFeedTeamColors(team: any) {
   const key = String(team || "").toLowerCase().trim();
 
@@ -905,7 +919,7 @@ function RoundGameStrip({ games, activeId, now }: { games: MatchGame[]; activeId
   );
 }
 
-function PlayerAvatar({ name, team }: { name: any; team?: any }) {
+function PlayerAvatar({ name, team, size = 48 }: { name: any; team?: any; size?: number }) {
   const safeName = safePlayerName(name, "");
   const safeTeam = safeText(team, "");
   const [failed, setFailed] = useState(false);
@@ -922,6 +936,8 @@ function PlayerAvatar({ name, team }: { name: any; team?: any }) {
     <span
       style={{
         ...playerAvatarWrapStyle,
+        width: size,
+        height: size,
         background: `${bg}80`,
       }}
     >
@@ -931,12 +947,12 @@ function PlayerAvatar({ name, team }: { name: any; team?: any }) {
           src={src}
           alt={safeName}
           fill
-          sizes="48px"
+          sizes={`${size}px`}
           style={playerAvatarImageStyle}
           onError={() => setFailed(true)}
         />
       ) : (
-        <span style={playerInitialsStyle}>{getInitials(safeName)}</span>
+        <span style={{ ...playerInitialsStyle, fontSize: size < 44 ? 12 : 15 }}>{getInitials(safeName)}</span>
       )}
     </span>
   );
@@ -1554,9 +1570,36 @@ function formResult(game: MatchGame, focusTeam: string): "W" | "L" | "D" {
   return "D";
 }
 
-function FormColumn({ team, games }: { team: string; games: MatchGame[] }) {
+function completedTeamGamesToDate(team: string, allGames: MatchGame[], currentGame: MatchGame) {
+  const currentTime = currentGame.date ? new Date(currentGame.date).getTime() : Infinity;
+
+  return allGames
+    .filter((g) => {
+      if (String(g.id) === String(currentGame.id)) return false;
+      if (Number(g.complete) !== 100 && !(g as any).is_final) return false;
+      const isInvolved = flexMatchTeam(g.hteam, team) || flexMatchTeam(g.ateam, team);
+      if (!isInvolved) return false;
+      const gameTime = g.date ? new Date(g.date).getTime() : 0;
+      return Number.isFinite(currentTime) ? gameTime < currentTime : true;
+    })
+    .sort((a, b) => new Date(b.date ?? "").getTime() - new Date(a.date ?? "").getTime());
+}
+
+function recentCompletedTeamGames(team: string, allGames: MatchGame[], currentGame: MatchGame, limit = 5) {
+  return completedTeamGamesToDate(team, allGames, currentGame).slice(0, limit);
+}
+
+function FormColumn({ team, games, compact }: { team: string; games: MatchGame[]; compact: boolean }) {
+  const logoSize = compact ? 30 : 48;
+  const scoreWidth = compact ? 78 : 92;
+  const scoreHeight = compact ? 30 : 34;
+  const scorePadding = compact ? "0 8px" : "0 10px";
+  const scoreFontSize = compact ? 12 : 14;
+  const rowGap = compact ? 5 : 8;
+  const rowWidth = (logoSize * 2) + scoreWidth + (rowGap * 2);
+
   return (
-    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: compact ? 10 : 12 }}>
       {games.length === 0
         ? <span style={{ fontSize: 12, color: "rgba(255,255,255,0.25)", textAlign: "center", padding: "16px 0" }}>No data</span>
         : games.map((g, i) => {
@@ -1565,26 +1608,37 @@ function FormColumn({ team, games }: { team: string; games: MatchGame[] }) {
             const result = formResult(g, team);
             const pillBg = result === "W" ? "#16a34a" : result === "L" ? "#dc2626" : "#475569";
             return (
-              <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              <div key={i} style={{
+                width: rowWidth,
+                display: "grid",
+                gridTemplateColumns: `${logoSize}px ${scoreWidth}px ${logoSize}px`,
+                alignItems: "center",
+                justifyContent: "center",
+                columnGap: rowGap,
+                margin: "0 auto",
+              }}>
                 {/* home logo */}
-                <div style={{ width: 48, height: 48, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)" }}>
+                <div style={{ width: logoSize, height: logoSize, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)" }}>
                   <img src={hLogo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                 </div>
                 {/* score pill */}
                 <div style={{
                   background: pillBg,
-                  borderRadius: 10,
-                  minWidth: 72,
-                  padding: "6px 10px",
-                  textAlign: "center",
-                  flexShrink: 0,
+                  borderRadius: compact ? 8 : 10,
+                  width: scoreWidth,
+                  height: scoreHeight,
+                  padding: scorePadding,
+                  display: "grid",
+                  placeItems: "center",
+                  boxSizing: "border-box",
+                  overflow: "hidden",
                 }}>
-                  <span style={{ fontSize: 14, fontWeight: 900, color: "#fff", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em", lineHeight: 1 }}>
-                    {g.hscore ?? 0} – {g.ascore ?? 0}
+                  <span style={{ display: "block", maxWidth: "100%", fontSize: scoreFontSize, fontWeight: 900, color: "#fff", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums", letterSpacing: 0, lineHeight: 1 }}>
+                    {`${g.hscore ?? 0} - ${g.ascore ?? 0}`}
                   </span>
                 </div>
                 {/* away logo */}
-                <div style={{ width: 48, height: 48, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)" }}>
+                <div style={{ width: logoSize, height: logoSize, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)" }}>
                   <img src={aLogo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                 </div>
               </div>
@@ -1598,24 +1652,9 @@ function FormColumn({ team, games }: { team: string; games: MatchGame[] }) {
 function TeamFormBox({ homeTeam, awayTeam, allGames, currentGame }: {
   homeTeam: string; awayTeam: string; allGames: MatchGame[]; currentGame: MatchGame;
 }) {
-  const currentTime = currentGame.date ? new Date(currentGame.date).getTime() : Infinity;
-
-  function getLast5(team: string) {
-    return allGames
-      .filter((g) => {
-        if (String(g.id) === String(currentGame.id)) return false;
-        if (Number(g.complete) !== 100 && !(g as any).is_final) return false;
-        const isInvolved = flexMatchTeam(g.hteam, team) || flexMatchTeam(g.ateam, team);
-        if (!isInvolved) return false;
-        const gameTime = g.date ? new Date(g.date).getTime() : 0;
-        return Number.isFinite(currentTime) ? gameTime < currentTime : true;
-      })
-      .sort((a, b) => new Date(b.date ?? "").getTime() - new Date(a.date ?? "").getTime())
-      .slice(0, 5);
-  }
-
-  const homeForm = getLast5(homeTeam);
-  const awayForm = getLast5(awayTeam);
+  const homeForm = recentCompletedTeamGames(homeTeam, allGames, currentGame);
+  const awayForm = recentCompletedTeamGames(awayTeam, allGames, currentGame);
+  const compact = useCompactViewport();
   if (!homeForm.length && !awayForm.length) return null;
 
   return (
@@ -1631,11 +1670,307 @@ function TeamFormBox({ homeTeam, awayTeam, allGames, currentGame }: {
           Team form
         </span>
       </div>
-      <div style={{ display: "flex", gap: 0, padding: "16px 12px 18px" }}>
-        <FormColumn team={homeTeam} games={homeForm} />
-        <div style={{ width: 1, background: "rgba(255,255,255,0.08)", flexShrink: 0, margin: "0 8px" }} />
-        <FormColumn team={awayTeam} games={awayForm} />
+      <div style={{ display: "flex", gap: 0, padding: compact ? "14px 8px 16px" : "16px 12px 18px" }}>
+        <FormColumn team={homeTeam} games={homeForm} compact={compact} />
+        <div style={{ width: 1, background: "rgba(255,255,255,0.08)", flexShrink: 0, margin: compact ? "0 6px" : "0 8px" }} />
+        <FormColumn team={awayTeam} games={awayForm} compact={compact} />
       </div>
+    </div>
+  );
+}
+
+type PreviewPlayerLeader = {
+  team: string;
+  name: string;
+  foopyTotal: number;
+  goalsTotal: number;
+  games: number;
+  playerId?: string;
+};
+
+function savedStatsForGame(game: MatchGame) {
+  const key = String(game.id ?? "");
+  const mapped = (API_SPORTS_MATCH_IDS as Record<string, string>)[key];
+  const data = matchStatsJson as Record<string, any>;
+  return data[String(mapped ?? "")] ?? data[key] ?? null;
+}
+
+function playersForTeamInSavedGame(saved: any, game: MatchGame, team: string): PlayerStat[] {
+  const teams = Array.isArray(saved?.teams)
+    ? saved.teams
+    : Array.isArray(saved?.playerStats)
+    ? saved.playerStats
+    : [];
+
+  if (teams.length) {
+    const fallbackIndex = flexMatchTeam(game.hteam, team) ? 0 : 1;
+    const block = getPlayerTeamBlock(teams, getApiTeamId(team), team, fallbackIndex);
+    return (block?.players ?? []).map((player: any) => normalizeSavedPlayer(player, team));
+  }
+
+  const rawPlayers = flexMatchTeam(game.hteam, team)
+    ? saved?.homePlayers
+    : flexMatchTeam(game.ateam, team)
+    ? saved?.awayPlayers
+    : [];
+
+  return Array.isArray(rawPlayers)
+    ? rawPlayers.map((player: any) => normalizeSavedPlayer(player, player?.team || player?.club || team))
+    : [];
+}
+
+function playerSeasonTotalsForTeam(team: string, allGames: MatchGame[], currentGame: MatchGame) {
+  const totals = new Map<string, PreviewPlayerLeader>();
+
+  for (const game of completedTeamGamesToDate(team, allGames, currentGame)) {
+    const saved = savedStatsForGame(game);
+    if (!saved) continue;
+
+    for (const player of playersForTeamInSavedGame(saved, game, team)) {
+      const name = safeText(player.name ?? player.player, "");
+      if (!name) continue;
+
+      const rating = foopyRating(player);
+      const goals = num(player.goals);
+      if (rating <= 0 && goals <= 0) continue;
+
+      const known = findPlayerInfo(name, team);
+      const key = known?.id ?? `${canonicalTeamKey(team)}-${slugName(name)}`;
+      const existing = totals.get(key) ?? {
+        team,
+        name: known?.name ?? name,
+        playerId: known?.id,
+        foopyTotal: 0,
+        goalsTotal: 0,
+        games: 0,
+      };
+
+      existing.foopyTotal += rating;
+      existing.goalsTotal += goals;
+      existing.games += 1;
+      totals.set(key, existing);
+    }
+  }
+
+  return [...totals.values()];
+}
+
+function previewPlayerLeaders(homeTeam: string, awayTeam: string, allGames: MatchGame[], currentGame: MatchGame) {
+  const leadersFor = (team: string) => {
+    const leaders = playerSeasonTotalsForTeam(team, allGames, currentGame);
+    return {
+      topPlayer: [...leaders].sort((a, b) => b.foopyTotal - a.foopyTotal || b.goalsTotal - a.goalsTotal || b.games - a.games)[0] ?? null,
+      topScorer: [...leaders].sort((a, b) => b.goalsTotal - a.goalsTotal || b.foopyTotal - a.foopyTotal || b.games - a.games)[0] ?? null,
+    };
+  };
+
+  const home = leadersFor(homeTeam);
+  const away = leadersFor(awayTeam);
+
+  return {
+    topPlayers: [home.topPlayer, away.topPlayer].filter((player): player is PreviewPlayerLeader => Boolean(player)),
+    topScorers: [home.topScorer, away.topScorer].filter((player): player is PreviewPlayerLeader => Boolean(player)),
+  };
+}
+
+function foopyBadgeColor(value: number) {
+  if (value >= 5) return "#22c55e";
+  if (value >= 4) return "#d9e313";
+  return "#ef4444";
+}
+
+function PreviewLeaderRow({ player }: { player: PreviewPlayerLeader }) {
+  const averageFoopy = player.games ? player.foopyTotal / player.games : 0;
+  const foopyBadgeBg = foopyBadgeColor(averageFoopy);
+  const [failed, setFailed] = useState(false);
+  const src = playerImagePath(player.name, player.team);
+  const colours = teamColors(player.team);
+  const accentColour = ["#000000", "#030303", "#14141e", "#111827"].includes(colours.secondary.toLowerCase())
+    ? colours.primary
+    : colours.secondary;
+  const softAccent = accentColour === "#ffffff" ? "rgba(255,255,255,0.72)" : `${accentColour}cc`;
+
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
+
+  const content = (
+    <div style={{
+      position: "relative",
+      minWidth: 0,
+      minHeight: 232,
+      height: "100%",
+      borderRadius: 15,
+      overflow: "hidden",
+      background: `linear-gradient(180deg, ${colours.primary}35 0%, rgba(9,11,15,0.96) 55%, rgba(4,5,7,1) 100%)`,
+      border: "1px solid rgba(255,255,255,0.13)",
+      boxShadow: `inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -2px 0 ${accentColour}70`,
+      boxSizing: "border-box",
+    }}>
+      <img
+        src={getLogo(player.team)}
+        alt=""
+        style={{
+          position: "absolute",
+          top: 10,
+          right: 10,
+          zIndex: 3,
+          width: 26,
+          height: 26,
+          borderRadius: "50%",
+          objectFit: "cover",
+          padding: 2,
+          background: "rgba(0,0,0,0.30)",
+          border: "1px solid rgba(255,255,255,0.12)",
+          opacity: 0.95,
+        }}
+      />
+      <div style={{
+        position: "relative",
+        height: 156,
+        margin: "4px 0 0",
+        overflow: "hidden",
+      }}>
+        {!failed && src ? (
+          <Image
+            key={src}
+            src={src}
+            alt={player.name}
+            fill
+            sizes="180px"
+            style={{
+              objectFit: "contain",
+              objectPosition: "center bottom",
+              transform: "scale(1.18)",
+              transformOrigin: "center bottom",
+              filter: "drop-shadow(0 14px 16px rgba(0,0,0,0.48))",
+            }}
+            onError={() => setFailed(true)}
+          />
+        ) : (
+          <div style={{
+            position: "absolute",
+            inset: 0,
+            display: "grid",
+            placeItems: "center",
+            color: "var(--text-1)",
+            fontSize: 28,
+            fontWeight: 950,
+          }}>
+            {getInitials(player.name)}
+          </div>
+        )}
+        <div style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: 92,
+          background: "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.78) 72%, rgba(0,0,0,0.98) 100%)",
+        }} />
+      </div>
+      <div style={{
+        position: "relative",
+        zIndex: 2,
+        marginTop: -4,
+        padding: "0 12px 12px",
+        minWidth: 0,
+      }}>
+        <div style={{ fontSize: 14, fontWeight: 1000, color: "var(--text-1)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.05 }}>
+          {player.name}
+        </div>
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+          gap: 10,
+          marginTop: 10,
+          padding: "10px 0 0",
+          borderTop: "1px solid rgba(255,255,255,0.08)",
+        }}>
+          <div style={{ minWidth: 0 }}>
+            <span style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              minWidth: 42,
+              height: 28,
+              padding: "0 9px",
+              borderRadius: 7,
+              background: foopyBadgeBg,
+              color: "#fff",
+              fontSize: 14,
+              fontWeight: 1000,
+              fontVariantNumeric: "tabular-nums",
+            }}>
+              {averageFoopy.toFixed(1)}
+            </span>
+            <span style={{ display: "block", marginTop: 4, fontSize: 9, fontWeight: 950, color: softAccent, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              Foopy
+            </span>
+          </div>
+          <div style={{ minWidth: 0, textAlign: "right" }}>
+            <strong style={{ display: "block", fontSize: 25, fontWeight: 1000, color: "var(--text-1)", letterSpacing: "-0.04em", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+              {player.goalsTotal}
+            </strong>
+            <span style={{ display: "block", marginTop: 4, fontSize: 9, fontWeight: 950, color: softAccent, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              Goals
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return player.playerId ? (
+    <Link href={`/player/${player.playerId}`} prefetch={false} style={{ display: "block", minWidth: 0, textDecoration: "none", color: "inherit" }}>
+      {content}
+    </Link>
+  ) : content;
+}
+
+function PreviewLeaderboard({ title, players, metric }: { title: string; players: PreviewPlayerLeader[]; metric: "foopy" | "goals" }) {
+  return (
+    <div style={{
+      minWidth: 0,
+      padding: "14px",
+      borderRadius: 17,
+      background: "rgba(255,255,255,0.035)",
+      border: "1px solid rgba(255,255,255,0.10)",
+      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.045)",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 1000, color: "var(--text-1)", marginBottom: 4 }}>
+        <span style={{ width: 3, height: 15, borderRadius: 999, background: metric === "foopy" ? "#60a5fa" : "#facc15" }} />
+        {title}
+      </div>
+      {players.length ? (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12, marginTop: 12 }}>
+          {players.map((player) => (
+            <PreviewLeaderRow key={`${metric}-${player.playerId ?? player.name}-${player.team}`} player={player} />
+          ))}
+        </div>
+      ) : (
+        <div style={{ display: "grid", placeItems: "center", minHeight: 86, color: "rgba(255,255,255,0.35)", fontSize: 12, fontWeight: 800 }}>
+          No data
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PlayerLeaderboardsBox({ homeTeam, awayTeam, allGames, currentGame }: {
+  homeTeam: string; awayTeam: string; allGames: MatchGame[]; currentGame: MatchGame;
+}) {
+  const { topPlayers, topScorers } = useMemo(
+    () => previewPlayerLeaders(homeTeam, awayTeam, allGames, currentGame),
+    [homeTeam, awayTeam, allGames, currentGame]
+  );
+
+  if (!topPlayers.length && !topScorers.length) return null;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12, margin: "0 0 14px" }}>
+      <PreviewLeaderboard title="Top players" players={topPlayers} metric="foopy" />
+      <PreviewLeaderboard title="Top scorers" players={topScorers} metric="goals" />
     </div>
   );
 }
@@ -1670,6 +2005,7 @@ function buildLadder(games: MatchGame[]): (LadderTeam & { rank: number })[] {
 function LadderPositionsBox({ homeTeam, awayTeam, allGames }: { homeTeam: string; awayTeam: string; allGames: MatchGame[] }) {
   const ladder = useMemo(() => buildLadder(allGames), [allGames]);
   const rows = ladder.filter(t => flexMatchTeam(t.team, homeTeam) || flexMatchTeam(t.team, awayTeam));
+  const compact = useCompactViewport();
   if (rows.length === 0) return null;
 
   const statCell: React.CSSProperties = {
@@ -1700,6 +2036,7 @@ function LadderPositionsBox({ homeTeam, awayTeam, allGames }: { homeTeam: string
         const logo = getLogo(t.team);
         const pct = t.against > 0 ? (t.for / t.against * 100).toFixed(1) : "–";
         const wdl = t.draws > 0 ? `${t.wins}-${t.losses}-${t.draws}` : `${t.wins}-${t.losses}`;
+        const teamLabel = compact ? getAbbr(t.team) : t.team;
         return (
           <div key={t.team} style={{
             display: "flex", alignItems: "center",
@@ -1711,7 +2048,7 @@ function LadderPositionsBox({ homeTeam, awayTeam, allGames }: { homeTeam: string
               <img src={logo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
             </div>
             <div style={{ flex: 1, fontSize: 15, fontWeight: 800, color: "var(--text-1)", paddingLeft: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              {t.team}
+              {teamLabel}
             </div>
             <div style={statCell}>{t.played}</div>
             <div style={statCell}>{wdl}</div>
@@ -3040,6 +3377,12 @@ export default function MatchPage() {
                   allGames={allGames}
                   currentGame={game}
                 />
+                <PlayerLeaderboardsBox
+                  homeTeam={safeText(game.hteam, "")}
+                  awayTeam={safeText(game.ateam, "")}
+                  allGames={allGames}
+                  currentGame={game}
+                />
                 <LadderPositionsBox
                   homeTeam={safeText(game.hteam, "")}
                   awayTeam={safeText(game.ateam, "")}
@@ -4185,12 +4528,33 @@ function MatchPolls({
     // Allow changing vote before the game starts; block re-votes once live/final
     if (existingVote && status !== "UPCOMING") return;
     if (existingVote === optionId) return; // tapping the same option — no-op
+
     if (existingVote) {
       // Delete old vote then insert new one
-      await supabase.from("match_poll_votes").delete().eq("poll_id", pollId).eq("user_id", userId);
+      const { error } = await supabase.from("match_poll_votes").delete().eq("poll_id", pollId).eq("user_id", userId);
+      if (error) {
+        console.error("Failed to change poll vote", error);
+        return;
+      }
     }
-    await supabase.from("match_poll_votes").insert({ poll_id: pollId, option_id: optionId, user_id: userId });
-    await loadPolls();
+
+    const { error } = await supabase.from("match_poll_votes").insert({ poll_id: pollId, option_id: optionId, user_id: userId });
+    if (error) {
+      console.error("Failed to submit poll vote", error);
+      return;
+    }
+
+    setUserVotes((prev) => ({ ...prev, [pollId]: optionId }));
+    setVoteCounts((prev) => {
+      const next = { ...prev };
+      if (existingVote) next[existingVote] = Math.max(0, (next[existingVote] ?? 0) - 1);
+      next[optionId] = (next[optionId] ?? 0) + 1;
+      return next;
+    });
+    setAllVotes((prev) => [
+      ...prev.filter((v) => !(v.poll_id === pollId && v.user_id === userId)),
+      { poll_id: pollId, option_id: optionId, user_id: userId },
+    ]);
   }
 
   async function deletePoll(pollId: string) {
@@ -4426,14 +4790,14 @@ function PollCard({
           )}
           <span style={{ fontSize: 18, fontWeight: 900, color: "#fff", lineHeight: 1.3, letterSpacing: "-0.02em" }}>{poll.question}</span>
         </div>
-        {onDelete && <button onClick={onDelete} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.25)", fontSize: 16, cursor: "pointer", flexShrink: 0, padding: 0, lineHeight: 1 }}>✕</button>}
+        {onDelete && <button type="button" onClick={onDelete} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.25)", fontSize: 16, cursor: "pointer", flexShrink: 0, padding: 0, lineHeight: 1 }}>✕</button>}
       </div>
 
       {/* Options */}
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {isPlayerAll && !hasVoted && !votingLocked && canVote ? (
           <>
-            <button onClick={() => { setPlayerPickerOpen(true); setPlayerPickerSearch(""); }}
+            <button type="button" onClick={() => { setPlayerPickerOpen(true); setPlayerPickerSearch(""); }}
               style={{ padding: "14px 16px", borderRadius: 14, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)", fontSize: 15, fontWeight: 700, cursor: "pointer", textAlign: "left", width: "100%" }}>
               Pick a player
             </button>
@@ -4444,7 +4808,7 @@ function PollCard({
                   onClick={e => e.stopPropagation()}>
                   <div style={{ padding: "14px 16px 10px", borderBottom: "0.5px solid var(--border-1)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <span style={{ fontSize: 14, fontWeight: 800, color: "var(--text-1)" }}>{poll.question}</span>
-                    <button onClick={() => setPlayerPickerOpen(false)} style={{ background: "none", border: "none", color: "var(--text-3)", fontSize: 18, cursor: "pointer" }}>✕</button>
+                    <button type="button" onClick={() => setPlayerPickerOpen(false)} style={{ background: "none", border: "none", color: "var(--text-3)", fontSize: 18, cursor: "pointer" }}>✕</button>
                   </div>
                   <div style={{ padding: "10px 12px 6px", flexShrink: 0 }}>
                     <input value={playerPickerSearch} onChange={e => setPlayerPickerSearch(e.target.value)} placeholder="Search players…" autoFocus
@@ -4457,7 +4821,7 @@ function PollCard({
                       const img = playerImagePath(o.label, team);
                       const colors = liveFeedTeamColors(team);
                       return (
-                        <button key={o.id} onClick={() => { onVote(o.id); setPlayerPickerOpen(false); }}
+                        <button key={o.id} type="button" onClick={() => { onVote(o.id); setPlayerPickerOpen(false); }}
                           style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 10px", borderRadius: 10, border: "none", background: "transparent", cursor: "pointer", textAlign: "left" }}>
                           <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flexShrink: 0, border: `2px solid ${colors.primary}` }}>
                             {img && <img src={img} alt={o.label} loading="eager" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
@@ -4491,6 +4855,7 @@ function PollCard({
           {isLivePoll && canVote && <span style={{ color: "#22c55e" }}> · Live Q{poll.quarter}</span>}
         </span>
         <button
+          type="button"
           onClick={() => {
             const statsStr = cat ? sorted.map(opt => {
               let val: number | string = "–";

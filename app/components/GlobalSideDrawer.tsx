@@ -89,13 +89,18 @@ const NAV_ITEMS = [
   },
 ];
 
+const AVATAR_BUTTON_PATHS = new Set(["/", "/cards", "/dms", "/search"]);
+
 export default function GlobalSideDrawer() {
   const pathname = usePathname();
-  const hideAvatarButton = pathname?.startsWith("/match/");
+  const avatarButtonPath = pathname === "/" ? "/" : pathname?.replace(/\/$/, "");
+  const showAvatarButton = AVATAR_BUTTON_PATHS.has(avatarButtonPath ?? "");
   const [open, setOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);
   const [initials, setInitials] = useState("?");
+  const [aura, setAura] = useState<number>(0);
+  const [coins, setCoins] = useState<number>(0);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -103,13 +108,15 @@ export default function GlobalSideDrawer() {
       const user = session.user;
       supabase
         .from("profiles")
-        .select("avatar_url, username")
+        .select("avatar_url, username, aura, coins")
         .eq("id", user.id)
         .single()
         .then(({ data }) => {
           if (!data) return;
           setAvatarUrl(data.avatar_url ?? null);
           setUsername(data.username ?? null);
+          setAura(data.aura ?? 0);
+          setCoins(data.coins ?? 0);
           const label = data.username || user.email?.split("@")[0] || "?";
           setInitials(label[0].toUpperCase());
         });
@@ -117,13 +124,13 @@ export default function GlobalSideDrawer() {
   }, []);
 
   useEffect(() => {
-    if (hideAvatarButton) setOpen(false);
-  }, [hideAvatarButton]);
+    if (!showAvatarButton) setOpen(false);
+  }, [showAvatarButton]);
 
   return (
     <>
-      {/* ── Fixed avatar button — sits in every tab's top-left ── */}
-      {!hideAvatarButton && (
+      {/* ── Fixed avatar button — only on primary app tabs ── */}
+      {showAvatarButton && (
       <button
         onClick={() => setOpen(true)}
         aria-label="Open menu"
@@ -257,7 +264,18 @@ export default function GlobalSideDrawer() {
             ) : (
               <div style={{ fontSize: 14, color: "var(--text-2)", fontWeight: 600 }}>Not signed in</div>
             )}
-            <div style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 600, marginTop: 2, letterSpacing: "0.04em" }}>MENU</div>
+            {username && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 5 }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 999, background: "linear-gradient(135deg, rgba(139,92,246,0.18), rgba(59,130,246,0.12), rgba(245,158,11,0.08))", border: "1px solid rgba(139,92,246,0.35)" }}>
+                  <span style={{ fontSize: 10, background: "linear-gradient(135deg, #c084fc, #60a5fa, #fbbf24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", lineHeight: 1 }}>✦</span>
+                  <span style={{ fontSize: 11, fontWeight: 800, background: "linear-gradient(135deg, #c084fc 0%, #818cf8 50%, #fbbf24 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>{aura.toLocaleString()}</span>
+                </div>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 999, background: "var(--surface-3)", border: "1px solid var(--border-2)" }}>
+                  <img src="/coin/coin.png" alt="" style={{ width: 12, height: 12, objectFit: "contain" }} />
+                  <span style={{ fontSize: 11, fontWeight: 800, color: "var(--text-1)" }}>{coins.toLocaleString()}</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
