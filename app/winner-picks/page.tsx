@@ -91,7 +91,7 @@ export default function WinnerPicksPage() {
 
   // Load games
   useEffect(() => {
-    fetch("/api/squiggle/games", { cache: "no-store" })
+    fetch("/api/games", { cache: "no-store" })
       .then((r) => r.json())
       .then((data) => {
         const all: Game[] = Array.isArray(data) ? data : (data.games ?? []);

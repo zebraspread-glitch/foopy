@@ -48,10 +48,12 @@ type StatLeader = {
 };
 
 type PlayerStatsPlayer = {
+  id?: string;
   name?: string;
   player?: string;
   club?: string;
   team?: string;
+  aliases?: string[];
   image?: string;
   imagePath?: string;
   playerImage?: string;
@@ -366,6 +368,35 @@ function slugName(name: string) {
     .replace(/[^a-z0-9]/g, "");
 }
 
+const PLAYER_IMAGE_ALIASES: Record<string, string[]> = {
+  zacharywilliams: ["zacwilliams"],
+  archiemay: ["archermay"],
+  kaylegerreyn: ["kaylegerryn"],
+  nikolascox: ["nikcox"],
+  chrisscerri: ["christopherscerri"],
+  joshdraper: ["joshuadraper"],
+  bradleyclose: ["bradclose"],
+  lennoxhoffman: ["lennoxhofmann"],
+  mitchellknevitt: ["mitchknevitt"],
+  nickdriscoll: ["nicholasdriscoll"],
+  olliedempsey: ["oliverdempsey"],
+  leolombard: ["leonardolombard"],
+  josephfonti: ["joefonti"],
+  joshuakelly: ["joshkelly"],
+  bodieryan: ["brodieryan"],
+  connornash: ["conornash"],
+  mitchellewis: ["mitchlewis"],
+  olliegreeves: ["olivergreeves"],
+  roberthansenjr: ["roberthansen"],
+  joshuagibcus: ["joshgibcus"],
+  noahrobertsthomson: ["noahrobertsthompson"],
+  thomassims: ["tomsims"],
+  danielbutler: ["danbutler"],
+  mitchitoowens: ["mitchowens"],
+  matthewroberts: ["mattyroberts"],
+  willgreen: ["williamgreen"],
+};
+
 function clubToPlayerFolder(club: string) {
   const map: Record<string, string> = {
     Adelaide: "crows",
@@ -419,20 +450,43 @@ function findPlayerInfo(playerName: string) {
 }
 
 function playerImagePath(playerName: string, team?: string) {
+  return playerImageCandidates(playerName, team)[0] ?? "";
+}
+
+function playerImageCandidates(playerName: string, team?: string) {
   const found = findPlayerInfo(playerName);
   const club = found?.club ?? found?.team ?? team ?? "";
   const folder = clubToPlayerFolder(club);
 
-  const image =
-    found?.image ||
-    found?.imagePath ||
-    found?.playerImage ||
-    `${slugName(playerName)}.png`;
+  if (!folder) return [];
 
-  if (!folder || !image) return "";
-  if (String(image).startsWith("/")) return String(image);
+  const urls: string[] = [];
+  const addUrl = (url: string) => {
+    if (url && !urls.includes(url)) urls.push(url);
+  };
+  const addImageFile = (image?: string) => {
+    if (!image) return;
+    if (/^https?:\/\//i.test(image) || image.startsWith("/")) addUrl(image);
+    else addUrl(`/players/${folder}/${image}`);
+  };
+  const addSlug = (value?: string) => {
+    const slug = slugName(value ?? "");
+    if (slug) addUrl(`/players/${folder}/${slug}.png`);
+  };
 
-  return `/players/${folder}/${image}`;
+  addImageFile(found?.image);
+  addImageFile(found?.imagePath);
+  addImageFile(found?.playerImage);
+  addSlug(playerName);
+  addSlug(found?.name);
+  addSlug(found?.player);
+  addSlug(found?.id);
+  for (const alias of found?.aliases ?? []) addSlug(alias);
+
+  const aliasKey = slugName(found?.name ?? playerName);
+  for (const alias of PLAYER_IMAGE_ALIASES[aliasKey] ?? []) addSlug(alias);
+
+  return urls;
 }
 
 function normalizeTeam(s: string) {
@@ -1368,31 +1422,34 @@ free_kicks?: {
         </div>
 
         {byeTeams.length > 0 && (
-          <div style={byeTeamsSectionStyle}>
-            <div style={byeTeamsHeaderStyle}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-              </svg>
-              <span style={byeTeamsLabelStyle}>Bye Teams</span>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "2px", paddingBottom: "10px" }}>
-              {byeTeams.map((team) => (
-                <div key={team.id} style={mobileStackedTeamWrapStyle}>
-                  <div style={{ width: 8, flexShrink: 0, background: team.color, borderRadius: "0 8px 8px 0" }} />
-                  <div style={mobileStackedTeamRowStyle}>
-                    <div style={mobileStackedTeamLeftStyle}>
-                      <img src={team.logo} alt={team.name} style={mobileLogoStyle} loading="lazy" />
-                      <strong style={mobileTeamNameStyle}>{team.name}</strong>
-                      <span style={{ fontSize: "13px", fontWeight: 700, color: "rgba(255,255,255,0.45)", fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{team.record}</span>
+          <>
+            <div style={mobileGroupLabelStyle}>Bye</div>
+            <div style={byeTeamsSectionStyle}>
+              <div style={byeTeamsHeaderStyle}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                </svg>
+                <span style={byeTeamsLabelStyle}>Bye Teams</span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "2px", paddingBottom: "10px" }}>
+                {byeTeams.map((team) => (
+                  <div key={team.id} style={mobileStackedTeamWrapStyle}>
+                    <div style={{ width: 8, flexShrink: 0, background: team.color, borderRadius: "0 8px 8px 0" }} />
+                    <div style={mobileStackedTeamRowStyle}>
+                      <div style={mobileStackedTeamLeftStyle}>
+                        <img src={team.logo} alt={team.name} style={mobileLogoStyle} loading="lazy" />
+                        <strong style={mobileTeamNameStyle}>{team.name}</strong>
+                        <span style={{ fontSize: "13px", fontWeight: 700, color: "rgba(255,255,255,0.45)", fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{team.record}</span>
+                      </div>
+                      {team.nextText && (
+                        <span style={{ flexShrink: 0, fontSize: "11px", fontWeight: 800, color: "rgba(255,255,255,0.38)", letterSpacing: "0.04em", paddingRight: "4px" }}>{team.nextText}</span>
+                      )}
                     </div>
-                    {team.nextText && (
-                      <span style={{ flexShrink: 0, fontSize: "11px", fontWeight: 800, color: "rgba(255,255,255,0.38)", letterSpacing: "0.04em", paddingRight: "4px" }}>{team.nextText}</span>
-                    )}
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          </>
         )}
 
         {roundStarted && (
@@ -1405,7 +1462,7 @@ free_kicks?: {
               <div style={topPlayersGridStyle} className="no-scrollbar">
                 {topPlayers.map((player, index) => {
                   const logo = getTeamLogoFromName(player.team);
-                  const hasImage = !!player.image;
+                  const imageCandidates = playerImageCandidates(player.name, player.team);
 
                   return (
                     <div key={`${player.name}-${index}`} style={topPlayerTileStyle}>
@@ -1413,29 +1470,13 @@ free_kicks?: {
 
                       <div style={topPlayerCircleWrapStyle}>
                         <div style={{ ...topPlayerCircleStyle, background: player.teamColor }}>
-                          {hasImage && (
-                            <img
-                              src={player.image}
-                              alt={player.name}
-                              style={topPlayerImageStyle}
-                              loading="eager"
-                              decoding="async"
-                              onError={(e) => {
-                                e.currentTarget.style.display = "none";
-                                const next = e.currentTarget.nextElementSibling as HTMLElement | null;
-                                if (next) next.style.display = "grid";
-                              }}
-                            />
-                          )}
-
-                          <span
-                            style={{
-                              ...topPlayerInitialsStyle,
-                              display: hasImage ? "none" : "grid",
-                            }}
-                          >
-                            {getInitials(player.name)}
-                          </span>
+                          <PlayerPhoto
+                            candidates={imageCandidates}
+                            alt={player.name}
+                            imageStyle={topPlayerImageStyle}
+                            fallbackStyle={topPlayerInitialsStyle}
+                            initials={getInitials(player.name)}
+                          />
                         </div>
 
                         {logo && <img src={logo} alt="" style={topPlayerLogoStyle} loading="lazy" />}
@@ -1481,19 +1522,18 @@ free_kicks?: {
             ).map(({ label, statKey, leaders, unit }) => {
               const top = leaders[0];
               if (!top) return null;
+              const topImageCandidates = playerImageCandidates(top.name, top.team);
               return (
                 <Link key={label} href={`/round-stats?stat=${statKey}&round=${selectedRound}`} prefetch={false} style={{ ...statLeaderBoxStyle, textDecoration: "none", cursor: "pointer" }}>
                   {/* Photo + overlays */}
                   <div style={{ position: "relative", height: 140, background: top.teamColor, overflow: "hidden", borderRadius: "12px 12px 0 0", flexShrink: 0 }}>
-                    {top.image && (
-                      <img
-                        src={top.image}
-                        alt={top.name}
-                        loading="eager"
-                        style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center" }}
-                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                      />
-                    )}
+                    <PlayerPhoto
+                      candidates={topImageCandidates}
+                      alt={top.name}
+                      imageStyle={statLeaderHeroImageStyle}
+                      fallbackStyle={statLeaderHeroFallbackStyle}
+                      initials={getInitials(top.name)}
+                    />
                     {/* gradient overlay */}
                     <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.72) 100%)" }} />
                     {/* rank badge */}
@@ -1513,16 +1553,26 @@ free_kicks?: {
                   </div>
 
                   {/* 2nd and 3rd */}
-                  {leaders.slice(1).map((p, i) => (
+                  {leaders.slice(1).map((p, i) => {
+                    const imageCandidates = playerImageCandidates(p.name, p.team);
+
+                    return (
                     <div key={p.name} style={statLeaderRowStyle}>
                       <span style={{ fontSize: "9px", fontWeight: 900, color: "rgba(255,255,255,0.25)", width: 14, textAlign: "right", flexShrink: 0 }}>#{i + 2}</span>
                       <div style={{ width: 24, height: 24, borderRadius: "50%", background: p.teamColor, overflow: "hidden", flexShrink: 0, border: "1px solid rgba(255,255,255,0.1)" }}>
-                        {p.image && <img src={p.image} alt={p.name} loading="eager" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />}
+                        <PlayerPhoto
+                          candidates={imageCandidates}
+                          alt={p.name}
+                          imageStyle={statLeaderAvatarImageStyle}
+                          fallbackStyle={statLeaderAvatarFallbackStyle}
+                          initials={getInitials(p.name)}
+                        />
                       </div>
                       <span style={{ flex: 1, minWidth: 0, fontSize: "11px", fontWeight: 700, color: "rgba(255,255,255,0.6)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name.split(" ").pop()}</span>
                       <span style={{ fontSize: "13px", fontWeight: 800, color: "var(--text-2)", flexShrink: 0 }}>{p.value}<span style={{ fontSize: "9px", opacity: 0.55, marginLeft: 1 }}>{unit}</span></span>
                     </div>
-                  ))}
+                    );
+                  })}
 
                   <div style={{ height: 2 }} />
                 </Link>
@@ -1542,10 +1592,13 @@ free_kicks?: {
               <Link key={`${s.name}-${s.label}`} href={`/player/${s.id}`} prefetch={false} style={{ ...streakRowStyle, borderTop: i === 0 ? "none" : "1px solid var(--border-1)", textDecoration: "none", color: "inherit" }}>
                 {/* Avatar */}
                 <div suppressHydrationWarning style={{ width: 40, height: 40, borderRadius: "50%", flexShrink: 0, background: s.teamColor, position: "relative", overflow: "hidden" }}>
-                  {s.image && (
-                    <img src={s.image} alt={s.name} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", borderRadius: "50%" }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-                  )}
-                  {!s.image && <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800, color: "#fff" }}>{getInitials(s.name)}</span>}
+                  <PlayerPhoto
+                    candidates={playerImageCandidates(s.name, s.team)}
+                    alt={s.name}
+                    imageStyle={streakAvatarImageStyle}
+                    fallbackStyle={streakAvatarFallbackStyle}
+                    initials={getInitials(s.name)}
+                  />
                 </div>
                 {/* Text */}
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -1573,6 +1626,57 @@ free_kicks?: {
       </section>
     </main>
     </>
+  );
+}
+
+function PlayerPhoto({
+  candidates,
+  alt,
+  imageStyle,
+  fallbackStyle,
+  initials,
+}: {
+  candidates: string[];
+  alt: string;
+  imageStyle: React.CSSProperties;
+  fallbackStyle: React.CSSProperties;
+  initials: string;
+}) {
+  const candidatesKey = candidates.join("|");
+  const [candidateIndex, setCandidateIndex] = useState(0);
+  const [failed, setFailed] = useState(candidates.length === 0);
+
+  useEffect(() => {
+    setCandidateIndex(0);
+    setFailed(candidates.length === 0);
+  }, [candidatesKey, candidates.length]);
+
+  const src = candidates[candidateIndex];
+
+  if (!src || failed) {
+    return (
+      <span aria-label={alt} style={{ ...fallbackStyle, display: "grid" }}>
+        {initials}
+      </span>
+    );
+  }
+
+  return (
+    <img
+      suppressHydrationWarning
+      src={src}
+      alt={alt}
+      loading="eager"
+      decoding="async"
+      style={imageStyle}
+      onError={() => {
+        if (candidateIndex < candidates.length - 1) {
+          setCandidateIndex((current) => Math.min(current + 1, candidates.length - 1));
+        } else {
+          setFailed(true);
+        }
+      }}
+    />
   );
 }
 
@@ -1897,7 +2001,7 @@ const mobileGroupStyle: React.CSSProperties = {
 
 const mobileGroupLabelStyle: React.CSSProperties = {
   padding: "18px 2px 10px",
-  color: "var(--text-3)",
+  color: "#fff",
   fontSize: "11px",
   fontWeight: 800,
   letterSpacing: "0.09em",
@@ -2318,6 +2422,7 @@ const topPlayerImageStyle: React.CSSProperties = {
   width: "100%",
   height: "100%",
   objectFit: "cover",
+  objectPosition: "top center",
 };
 
 const topPlayerInitialsStyle: React.CSSProperties = {
@@ -2395,6 +2500,23 @@ const statLeaderBoxStyle: React.CSSProperties = {
   gap: "0px",
 };
 
+const statLeaderHeroImageStyle: React.CSSProperties = {
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+  objectPosition: "top center",
+};
+
+const statLeaderHeroFallbackStyle: React.CSSProperties = {
+  width: "100%",
+  height: "100%",
+  placeItems: "center",
+  fontSize: "42px",
+  fontWeight: 950,
+  color: "#fff",
+  background: "rgba(0,0,0,0.18)",
+};
+
 const statLeaderRankBadgeStyle: React.CSSProperties = {
   position: "absolute",
   top: 8,
@@ -2441,6 +2563,22 @@ const statLeaderRowStyle: React.CSSProperties = {
   gap: "7px",
   padding: "6px 12px",
   borderTop: "1px solid var(--border-1)",
+};
+
+const statLeaderAvatarImageStyle: React.CSSProperties = {
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+  objectPosition: "top center",
+};
+
+const statLeaderAvatarFallbackStyle: React.CSSProperties = {
+  width: "100%",
+  height: "100%",
+  placeItems: "center",
+  fontSize: "9px",
+  fontWeight: 900,
+  color: "#fff",
 };
 
 const statLeaderNameStyle: React.CSSProperties = {
@@ -2515,6 +2653,25 @@ const streakRowStyle: React.CSSProperties = {
   alignItems: "center",
   gap: "12px",
   padding: "11px 14px",
+};
+
+const streakAvatarImageStyle: React.CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+  objectPosition: "top center",
+  borderRadius: "50%",
+};
+
+const streakAvatarFallbackStyle: React.CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  placeItems: "center",
+  fontSize: 13,
+  fontWeight: 800,
+  color: "#fff",
 };
 
 

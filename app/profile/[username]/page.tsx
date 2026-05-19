@@ -349,7 +349,7 @@ export default function PublicProfilePage() {
   }, [currentUserId, profile]);
 
   useEffect(() => {
-    fetch("/api/squiggle/games")
+    fetch("/api/games")
       .then(r => r.json())
       .then((games: Array<{ id: number; hteam: string; ateam: string }>) => {
         const map = new Map<number, { hteam: string; ateam: string }>();

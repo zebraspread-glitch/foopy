@@ -54,7 +54,7 @@ const TEAMS = [
 
 
 type FeaturedCard = { player_id: string; rarity: Rarity };
-type SelectedCard = { player: typeof CARD_PLAYERS[0]; card: UserCard };
+type SelectedCard = { player: typeof CARD_PLAYERS[0]; cards: UserCard[] };
 
 function teamShortName(team: string) {
   const map: Record<string, string> = {
@@ -194,22 +194,32 @@ export default function AlbumPage() {
           width: 100%;
         }
         @media (min-width: 768px) {
-          .album-grid { grid-template-columns: repeat(12, 1fr); gap: 6px; }
+          .album-grid {
+            grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+            gap: 10px;
+            align-items: start;
+          }
+        }
+        @media (min-width: 1200px) {
+          .album-grid {
+            grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
+            gap: 12px;
+          }
         }
 
         /* Card detail elements — scale for mobile */
         .ac-rating { position: absolute; top: 4px; right: 4px; font-size: 8px; padding: 1px 4px; border-radius: 4px; line-height: 1.5; }
-        .ac-dup    { position: absolute; top: 4px; left: 4px; font-size: 7px; padding: 1px 4px; border-radius: 4px; line-height: 1.5; }
+        .ac-dup    { position: absolute; top: 4px; left: 50%; transform: translateX(-50%); font-size: 7px; padding: 1px 4px; border-radius: 4px; line-height: 1.5; }
         .ac-name   { font-size: 9px; }
         .ac-logo   { position: absolute; width: 16px; height: 16px; bottom: 4px; left: 4px; border-radius: 50%; overflow: hidden; }
         .ac-pos    { position: absolute; font-size: 7px; bottom: 4px; right: 4px; padding: 1px 3px; border-radius: 4px; }
 
         @media (min-width: 768px) {
-          .ac-rating { font-size: 8px; top: 5px; right: 5px; }
-          .ac-dup    { font-size: 7px; top: 5px; left: 5px; }
-          .ac-name   { font-size: 11px; }
-          .ac-logo   { width: 24px; height: 24px; bottom: 6px; left: 6px; }
-          .ac-pos    { font-size: 9px; bottom: 6px; right: 6px; padding: 2px 5px; }
+          .ac-rating { font-size: 10px; top: 6px; right: 6px; padding: 2px 6px; }
+          .ac-dup    { font-size: 9px; top: 6px; padding: 2px 6px; }
+          .ac-name   { font-size: 12px; }
+          .ac-logo   { width: 26px; height: 26px; bottom: 7px; left: 7px; }
+          .ac-pos    { font-size: 10px; bottom: 7px; right: 7px; padding: 2px 6px; }
         }
 
         .album-tab-btn { transition: color 0.15s ease, background 0.15s ease; }
@@ -298,13 +308,18 @@ export default function AlbumPage() {
         ) : (
           <div className="album-grid">
             {teamPlayers.map((player) => (
-              <AlbumSlot
-                key={player.id}
-                player={player}
-                ownedCards={cardsByPlayer.get(player.id) ?? null}
-                isFeatured={featuredCards.some(f => f.player_id === player.id)}
-                onCardClick={(card) => setSelectedCard({ player, card })}
-              />
+              (() => {
+                const ownedCards = cardsByPlayer.get(player.id) ?? null;
+                return (
+                  <AlbumSlot
+                    key={player.id}
+                    player={player}
+                    ownedCards={ownedCards}
+                    isFeatured={featuredCards.some(f => f.player_id === player.id)}
+                    onCardClick={(cards) => setSelectedCard({ player, cards })}
+                  />
+                );
+              })()
             ))}
           </div>
         )}
@@ -314,12 +329,12 @@ export default function AlbumPage() {
       {selectedCard && (
         <AlbumCardModal
           player={selectedCard.player}
-          card={selectedCard.card}
+          cards={selectedCard.cards}
           isFeatured={featuredCards.some(f => f.player_id === selectedCard.player.id)}
           featuredCount={featuredCards.length}
           selling={selling}
-          onToggleFeatured={() => toggleFeatured(selectedCard.player.id, selectedCard.card.rarity)}
-          onSell={() => handleSell(selectedCard.card)}
+          onToggleFeatured={(card) => toggleFeatured(selectedCard.player.id, card.rarity)}
+          onSell={handleSell}
           onClose={() => setSelectedCard(null)}
         />
       )}
@@ -329,20 +344,36 @@ export default function AlbumPage() {
 
 // ── Album Card Modal ──────────────────────────────────────────────────────────
 
-function AlbumCardModal({ player, card, isFeatured, featuredCount, selling, onToggleFeatured, onSell, onClose }: {
+function AlbumCardModal({ player, cards, isFeatured, featuredCount, selling, onToggleFeatured, onSell, onClose }: {
   player: typeof CARD_PLAYERS[0];
-  card: UserCard;
+  cards: UserCard[];
   isFeatured: boolean;
   featuredCount: number;
   selling: boolean;
-  onToggleFeatured: () => void;
-  onSell: () => void;
+  onToggleFeatured: (card: UserCard) => void;
+  onSell: (card: UserCard) => void;
   onClose: () => void;
 }) {
   const [step, setStep] = useState<"options" | "confirm">("options");
+  const sortedCards = useMemo(
+    () => [...cards].sort((a, b) => RARITY_ORDER[b.rarity] - RARITY_ORDER[a.rarity]),
+    [cards],
+  );
+  const [selectedCardId, setSelectedCardId] = useState(sortedCards[0]?.id ?? "");
+  const card = sortedCards.find((ownedCard) => ownedCard.id === selectedCardId) ?? sortedCards[0];
+
+  useEffect(() => {
+    setSelectedCardId(sortedCards[0]?.id ?? "");
+    setStep("options");
+  }, [sortedCards]);
+
+  if (!card) return null;
+
   const meta = RARITY_META[card.rarity];
   const SELL_VALUES: Record<Rarity, number> = { bronze: 1, silver: 5, gold: 10, diamond: 100, mythic: 500 };
   const sellValue = SELL_VALUES[card.rarity];
+  const totalCopies = sortedCards.reduce((sum, ownedCard) => sum + ownedCard.duplicate_count, 0);
+  const showOwnedCards = sortedCards.length > 1 || totalCopies > 1;
 
   return (
     <div
@@ -366,9 +397,56 @@ function AlbumCardModal({ player, card, isFeatured, featuredCount, selling, onTo
 
         {step === "options" ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {showOwnedCards && (
+              <div style={{ display: "grid", gap: 8 }}>
+                <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: ".14em", color: "rgba(255,255,255,.35)", textAlign: "center" }}>
+                  OWNED CARDS
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(78px, 1fr))", gap: 8 }}>
+                  {sortedCards.map((ownedCard) => {
+                    const ownedMeta = RARITY_META[ownedCard.rarity];
+                    const active = ownedCard.id === card.id;
+                    return (
+                      <button
+                        key={ownedCard.id}
+                        onClick={() => { setSelectedCardId(ownedCard.id); setStep("options"); }}
+                        style={{
+                          appearance: "none",
+                          border: active ? `2px solid ${ownedMeta.color}` : "1px solid var(--border-2)",
+                          background: active ? `${ownedMeta.color}22` : "var(--border-1)",
+                          borderRadius: 12,
+                          padding: 5,
+                          cursor: "pointer",
+                          color: "var(--text-1)",
+                          fontFamily: "inherit",
+                          boxShadow: active ? `0 0 14px ${ownedMeta.glow}` : "none",
+                        }}
+                      >
+                        <div style={{ position: "relative", aspectRatio: "3/4.2", borderRadius: 8, overflow: "hidden" }}>
+                          <img src={`/cards/${ownedCard.rarity}.png`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.08) 0%, rgba(0,0,0,0) 38%, rgba(0,0,0,.7) 100%)" }} />
+                          <div style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,.82)", borderRadius: 5, padding: "1px 5px", fontSize: 9, fontWeight: 1000, color: ownedMeta.color }}>
+                            {ownedCard.rating}
+                          </div>
+                          {ownedCard.duplicate_count > 1 && (
+                            <div style={{ position: "absolute", top: 4, left: "50%", transform: "translateX(-50%)", background: "rgba(0,0,0,.78)", borderRadius: 5, padding: "1px 5px", fontSize: 8, fontWeight: 900, color: "rgba(255,255,255,.72)" }}>
+                              x{ownedCard.duplicate_count}
+                            </div>
+                          )}
+                          <div style={{ position: "absolute", left: 5, right: 5, bottom: 5, fontSize: 9, fontWeight: 900, color: "var(--text-1)", textTransform: "uppercase", textAlign: "center" }}>
+                            {ownedCard.rarity}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Feature / Unfeature */}
             <button
-              onClick={() => { onToggleFeatured(); onClose(); }}
+              onClick={() => { onToggleFeatured(card); onClose(); }}
               style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 18px", borderRadius: 16, border: `1px solid ${isFeatured ? "rgba(255,215,0,.35)" : "var(--border-2)"}`, background: isFeatured ? "rgba(255,215,0,.08)" : "var(--border-1)", color: isFeatured ? "#ffd700" : "#f1f5f9", cursor: "pointer", fontFamily: "inherit", textAlign: "left" as const }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill={isFeatured ? "#ffd700" : "none"} stroke={isFeatured ? "#ffd700" : "#94a3b8"} strokeWidth="2" style={{ flexShrink: 0 }}>
@@ -425,7 +503,7 @@ function AlbumCardModal({ player, card, isFeatured, featuredCount, selling, onTo
                 Go Back
               </button>
               <button
-                onClick={onSell}
+                onClick={() => onSell(card)}
                 disabled={selling}
                 style={{ flex: 1, padding: "13px", borderRadius: 14, border: "none", background: selling ? "rgba(239,68,68,.4)" : "#ef4444", color: "var(--text-1)", fontWeight: 900, fontSize: 14, cursor: selling ? "default" : "pointer", fontFamily: "inherit" }}
               >
@@ -445,37 +523,18 @@ function AlbumSlot({ player, ownedCards, isFeatured, onCardClick }: {
   player: typeof CARD_PLAYERS[0];
   ownedCards: UserCard[] | null;
   isFeatured: boolean;
-  onCardClick: (card: UserCard) => void;
+  onCardClick: (cards: UserCard[]) => void;
 }) {
   const unlocked = !!ownedCards && ownedCards.length > 0;
   const topCard = unlocked ? ownedCards[0] : null;
-  const extraCards = unlocked ? ownedCards.slice(1) : [];
   const totalCopies = unlocked ? ownedCards.reduce((s, c) => s + c.duplicate_count, 0) : 0;
-  const stackCount = unlocked ? (ownedCards.length - 1) + (ownedCards[0].duplicate_count - 1) : 0;
   const meta = topCard ? RARITY_META[topCard.rarity] : null;
 
   return (
     <div
       style={{ position: "relative", aspectRatio: "3/4.2", cursor: unlocked ? "pointer" : "default" }}
-      onClick={() => { if (unlocked && topCard) onCardClick(topCard); }}
+      onClick={() => { if (unlocked && ownedCards) onCardClick(ownedCards); }}
     >
-      {/* Stacked cards behind — rotate only, no translate */}
-      {unlocked && stackCount > 0 && Array.from({ length: Math.min(stackCount, 2) }).map((_, i) => {
-        const stackCard = extraCards[i] ?? ownedCards![0];
-        const sm = RARITY_META[stackCard.rarity];
-        return (
-          <div key={i} style={{
-            position: "absolute", inset: 0, borderRadius: 9, overflow: "hidden",
-            transform: `rotate(${(i + 1) * 6}deg)`,
-            transformOrigin: "bottom center",
-            zIndex: 1 + i,
-            boxShadow: `0 0 0 1px ${sm.color}44`,
-          }}>
-            <img src={`/cards/${stackCard.rarity}.png`} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          </div>
-        );
-      })}
-
       {/* Main card */}
       <div style={{
         position: "absolute", inset: 0, borderRadius: 9, overflow: "hidden", zIndex: 10,
@@ -500,7 +559,7 @@ function AlbumSlot({ player, ownedCards, isFeatured, onCardClick }: {
             </div>
 
             {/* Duplicate count */}
-            {stackCount > 0 && (
+            {totalCopies > 1 && (
               <div className="ac-dup" style={{ background: "rgba(0,0,0,.75)", fontWeight: 900, color: "rgba(255,255,255,.6)" }}>
                 ×{totalCopies}
               </div>
@@ -552,7 +611,7 @@ function AlbumSlot({ player, ownedCards, isFeatured, onCardClick }: {
       {/* Featured badge — static indicator */}
       {isFeatured && (
         <div style={{
-          position: "absolute", top: 3, left: "50%", transform: "translateX(-50%)",
+          position: "absolute", top: totalCopies > 1 ? 24 : 3, left: "50%", transform: "translateX(-50%)",
           zIndex: 20, width: 16, height: 16, borderRadius: "50%",
           background: "#ffd700", display: "flex", alignItems: "center", justifyContent: "center",
           boxShadow: "0 0 6px rgba(255,215,0,0.8)", pointerEvents: "none",

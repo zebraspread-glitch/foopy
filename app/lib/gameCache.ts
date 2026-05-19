@@ -78,7 +78,7 @@ export async function getGames(): Promise<unknown[]> {
 }
 
 async function fetchFresh(): Promise<unknown[]> {
-  const res = await fetch("/api/squiggle/games?fresh=1");
+  const res = await fetch("/api/games?fresh=1");
   if (!res.ok) {
     // Serve stale data rather than crash
     if (mem) return mem.data;

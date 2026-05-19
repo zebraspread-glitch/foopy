@@ -2484,7 +2484,7 @@ export default function MatchPage() {
           setError("");
         }
 
-        const gamesUrl = `/api/squiggle/games?fresh=1&t=${Date.now()}`;
+        const gamesUrl = `/api/games?fresh=1&t=${Date.now()}`;
         const res = await fetch(gamesUrl, { cache: "no-store" });
         if (!res.ok) throw new Error("Could not load Squiggle games.");
 

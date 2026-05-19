@@ -61,6 +61,8 @@ function teamShortName(team: string) {
   return map[team] ?? team;
 }
 
+type SelectedCard = { player: typeof CARD_PLAYERS[0]; cards: UserCard[] };
+
 export default function UserAlbumPage() {
   const router = useRouter();
   const params = useParams();
@@ -71,6 +73,7 @@ export default function UserAlbumPage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [activeTeam, setActiveTeam] = useState(TEAMS[0]);
+  const [selectedCard, setSelectedCard] = useState<SelectedCard | null>(null);
 
   useEffect(() => {
     if (!username) return;
@@ -129,21 +132,31 @@ export default function UserAlbumPage() {
           width: 100%;
         }
         @media (min-width: 768px) {
-          .album-grid { grid-template-columns: repeat(12, 1fr); gap: 6px; }
+          .album-grid {
+            grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+            gap: 10px;
+            align-items: start;
+          }
+        }
+        @media (min-width: 1200px) {
+          .album-grid {
+            grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
+            gap: 12px;
+          }
         }
 
         .ac-rating { position: absolute; top: 4px; right: 4px; font-size: 8px; padding: 1px 4px; border-radius: 4px; line-height: 1.5; }
-        .ac-dup    { position: absolute; top: 4px; left: 4px; font-size: 7px; padding: 1px 4px; border-radius: 4px; line-height: 1.5; }
+        .ac-dup    { position: absolute; top: 4px; left: 50%; transform: translateX(-50%); font-size: 7px; padding: 1px 4px; border-radius: 4px; line-height: 1.5; }
         .ac-name   { font-size: 9px; }
         .ac-logo   { position: absolute; width: 16px; height: 16px; bottom: 4px; left: 4px; border-radius: 50%; overflow: hidden; }
         .ac-pos    { position: absolute; font-size: 7px; bottom: 4px; right: 4px; padding: 1px 3px; border-radius: 4px; }
 
         @media (min-width: 768px) {
-          .ac-rating { font-size: 8px; top: 5px; right: 5px; }
-          .ac-dup    { font-size: 7px; top: 5px; left: 5px; }
-          .ac-name   { font-size: 11px; }
-          .ac-logo   { width: 24px; height: 24px; bottom: 6px; left: 6px; }
-          .ac-pos    { font-size: 9px; bottom: 6px; right: 6px; padding: 2px 5px; }
+          .ac-rating { font-size: 10px; top: 6px; right: 6px; padding: 2px 6px; }
+          .ac-dup    { font-size: 9px; top: 6px; padding: 2px 6px; }
+          .ac-name   { font-size: 12px; }
+          .ac-logo   { width: 26px; height: 26px; bottom: 7px; left: 7px; }
+          .ac-pos    { font-size: 10px; bottom: 7px; right: 7px; padding: 2px 6px; }
         }
 
         .album-tab-btn { transition: color 0.15s ease, background 0.15s ease; }
@@ -238,48 +251,115 @@ export default function UserAlbumPage() {
           </div>
         ) : (
           <div className="album-grid">
-            {teamPlayers.map((player) => (
-              <AlbumSlot key={player.id} player={player} ownedCards={cardsByPlayer.get(player.id) ?? null} />
-            ))}
+            {teamPlayers.map((player) => {
+              const ownedCards = cardsByPlayer.get(player.id) ?? null;
+              return (
+                <AlbumSlot
+                  key={player.id}
+                  player={player}
+                  ownedCards={ownedCards}
+                  onCardClick={(cards) => setSelectedCard({ player, cards })}
+                />
+              );
+            })}
           </div>
         )}
       </div>
+
+      {selectedCard && (
+        <AlbumCardListModal
+          player={selectedCard.player}
+          cards={selectedCard.cards}
+          onClose={() => setSelectedCard(null)}
+        />
+      )}
     </main>
+  );
+}
+
+function AlbumCardListModal({ player, cards, onClose }: {
+  player: typeof CARD_PLAYERS[0];
+  cards: UserCard[];
+  onClose: () => void;
+}) {
+  const sortedCards = useMemo(
+    () => [...cards].sort((a, b) => RARITY_ORDER[b.rarity] - RARITY_ORDER[a.rarity]),
+    [cards],
+  );
+  const totalCopies = sortedCards.reduce((sum, card) => sum + card.duplicate_count, 0);
+
+  return (
+    <div
+      style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,.82)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px 16px" }}
+      onClick={onClose}
+    >
+      <div
+        style={{ background: "var(--surface-1)", border: "1px solid var(--border-2)", borderRadius: 24, padding: "24px 20px 18px", width: "100%", maxWidth: 420 }}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div style={{ textAlign: "center", marginBottom: 18 }}>
+          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: ".16em", color: "rgba(255,255,255,.35)", marginBottom: 8 }}>
+            OWNED CARDS
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 1000, color: "var(--text-1)" }}>{player.name}</div>
+          <div style={{ fontSize: 12, fontWeight: 800, color: "rgba(255,255,255,.45)", marginTop: 3 }}>
+            {totalCopies} card{totalCopies !== 1 ? "s" : ""}
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(86px, 1fr))", gap: 10 }}>
+          {sortedCards.map((card) => {
+            const meta = RARITY_META[card.rarity];
+            return (
+              <div key={card.id} style={{ border: `1.5px solid ${meta.color}88`, background: `${meta.color}12`, borderRadius: 12, padding: 6, boxShadow: `0 0 14px ${meta.glow}` }}>
+                <div style={{ position: "relative", aspectRatio: "3/4.2", borderRadius: 8, overflow: "hidden" }}>
+                  <img src={`/cards/${card.rarity}.png`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.08) 0%, rgba(0,0,0,0) 38%, rgba(0,0,0,.7) 100%)" }} />
+                  <div style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,.82)", borderRadius: 5, padding: "1px 5px", fontSize: 10, fontWeight: 1000, color: meta.color }}>
+                    {card.rating}
+                  </div>
+                  {card.duplicate_count > 1 && (
+                    <div style={{ position: "absolute", top: 4, left: "50%", transform: "translateX(-50%)", background: "rgba(0,0,0,.78)", borderRadius: 5, padding: "1px 5px", fontSize: 9, fontWeight: 900, color: "rgba(255,255,255,.72)" }}>
+                      x{card.duplicate_count}
+                    </div>
+                  )}
+                  <div style={{ position: "absolute", left: 5, right: 5, bottom: 5, fontSize: 10, fontWeight: 900, color: "var(--text-1)", textTransform: "uppercase", textAlign: "center" }}>
+                    {card.rarity}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <button
+          onClick={onClose}
+          style={{ width: "100%", marginTop: 16, padding: "13px", borderRadius: 14, border: "1px solid var(--border-2)", background: "transparent", color: "var(--text-3)", fontWeight: 900, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}
+        >
+          Close
+        </button>
+      </div>
+    </div>
   );
 }
 
 // ── Album Slot ────────────────────────────────────────────────────────────────
 
-function AlbumSlot({ player, ownedCards }: {
+function AlbumSlot({ player, ownedCards, onCardClick }: {
   player: typeof CARD_PLAYERS[0];
   ownedCards: UserCard[] | null;
+  onCardClick: (cards: UserCard[]) => void;
 }) {
   const unlocked = !!ownedCards && ownedCards.length > 0;
   const topCard = unlocked ? ownedCards[0] : null;
-  const extraCards = unlocked ? ownedCards.slice(1) : [];
   const totalCopies = unlocked ? ownedCards.reduce((s, c) => s + c.duplicate_count, 0) : 0;
-  const stackCount = unlocked ? (ownedCards.length - 1) + (ownedCards[0].duplicate_count - 1) : 0;
   const meta = topCard ? RARITY_META[topCard.rarity] : null;
 
   return (
-    <div style={{ position: "relative", aspectRatio: "3/4.2" }}>
-      {/* Stacked cards behind */}
-      {unlocked && stackCount > 0 && Array.from({ length: Math.min(stackCount, 2) }).map((_, i) => {
-        const stackCard = extraCards[i] ?? ownedCards![0];
-        const sm = RARITY_META[stackCard.rarity];
-        return (
-          <div key={i} style={{
-            position: "absolute", inset: 0, borderRadius: 9, overflow: "hidden",
-            transform: `rotate(${(i + 1) * 6}deg)`,
-            transformOrigin: "bottom center",
-            zIndex: 1 + i,
-            boxShadow: `0 0 0 1px ${sm.color}44`,
-          }}>
-            <img src={`/cards/${stackCard.rarity}.png`} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          </div>
-        );
-      })}
-
+    <div
+      style={{ position: "relative", aspectRatio: "3/4.2", cursor: unlocked ? "pointer" : "default" }}
+      onClick={() => { if (unlocked && ownedCards) onCardClick(ownedCards); }}
+    >
       {/* Main card */}
       <div style={{
         position: "absolute", inset: 0, borderRadius: 9, overflow: "hidden", zIndex: 10,
@@ -302,7 +382,7 @@ function AlbumSlot({ player, ownedCards }: {
               {topCard.rating}
             </div>
 
-            {stackCount > 0 && (
+            {totalCopies > 1 && (
               <div className="ac-dup" style={{ background: "rgba(0,0,0,.75)", fontWeight: 900, color: "rgba(255,255,255,.6)" }}>
                 ×{totalCopies}
               </div>

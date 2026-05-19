@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
 import type { User } from "@supabase/supabase-js";
@@ -49,14 +50,42 @@ const RARITY_META: Record<Rarity, { label: string; color: string; glow: string; 
 
 const TEAM_PLAYER_FOLDER: Record<string, string> = {
   Adelaide: "crows",
-  Carlton: "blues",
-  Collingwood: "magpies",
-  Essendon: "bombers",
-  Fremantle: "dockers",
-  GWS: "giants",
-  "Port Adelaide": "power",
-  "Western Bulldogs": "bulldogs",
+  "Adelaide Crows": "crows",
+  Brisbane: "lions",
   "Brisbane Lions": "lions",
+  Carlton: "blues",
+  "Carlton Blues": "blues",
+  Collingwood: "magpies",
+  "Collingwood Magpies": "magpies",
+  Essendon: "bombers",
+  "Essendon Bombers": "bombers",
+  Fremantle: "dockers",
+  "Fremantle Dockers": "dockers",
+  Geelong: "cats",
+  "Geelong Cats": "cats",
+  "Gold Coast": "suns",
+  "Gold Coast Suns": "suns",
+  GWS: "giants",
+  "GWS Giants": "giants",
+  "Greater Western Sydney": "giants",
+  Hawthorn: "hawks",
+  "Hawthorn Hawks": "hawks",
+  Melbourne: "demons",
+  "Melbourne Demons": "demons",
+  "North Melbourne": "kangaroos",
+  "North Melbourne Kangaroos": "kangaroos",
+  "Port Adelaide": "power",
+  "Port Adelaide Power": "power",
+  Richmond: "tigers",
+  "Richmond Tigers": "tigers",
+  "St Kilda": "saints",
+  "St Kilda Saints": "saints",
+  Sydney: "swans",
+  "Sydney Swans": "swans",
+  "West Coast": "eagles",
+  "West Coast Eagles": "eagles",
+  "Western Bulldogs": "bulldogs",
+  Bulldogs: "bulldogs",
 };
 
 const PACKS: { type: PackType; label: string; cost: number; cards: string; image: string; accent: string; description: string }[] = [
@@ -123,11 +152,149 @@ const ALL_TEAMS = [
   "Fremantle",
   "GWS",
   "Port Adelaide",
+  "Geelong",
+  "Gold Coast",
+  "Hawthorn",
+  "Melbourne",
+  "North Melbourne",
+  "Richmond",
+  "St Kilda",
+  "Sydney",
+  "West Coast",
 ];
 
 const RARITY_SELL_VALUE: Record<Rarity, number> = {
   bronze: 1, silver: 5, gold: 10, diamond: 100, mythic: 500,
 };
+
+type CardImageSource = Pick<UserCard, "player_id" | "player_name" | "team"> & {
+  player_image?: string;
+};
+
+const CARD_IMAGE_ALIASES: Record<string, string[]> = {
+  archiemay: ["archermay"],
+  bodieryan: ["brodieryan"],
+  bradleyclose: ["bradclose"],
+  chrisscerri: ["christopherscerri"],
+  connornash: ["conornash"],
+  danielbutler: ["danbutler"],
+  josephfonti: ["joefonti"],
+  joshdraper: ["joshuadraper"],
+  joshuagibcus: ["joshgibcus"],
+  joshuakelly: ["joshkelly"],
+  kaylegerreyn: ["kaylegerryn"],
+  lennoxhoffman: ["lennoxhofmann"],
+  leolombard: ["leonardolombard"],
+  matthewroberts: ["mattyroberts"],
+  mitchellewis: ["mitchlewis"],
+  mitchitoowens: ["mitchowens"],
+  nickdriscoll: ["nicholasdriscoll"],
+  nikolascox: ["nikcox"],
+  noahrobertsthomson: ["noahrobertsthompson"],
+  olliedempsey: ["oliverdempsey"],
+  olliegreeves: ["olivergreeves"],
+  roberthansenjr: ["roberthansen"],
+  thomassims: ["tomsims"],
+  willgreen: ["williamgreen"],
+  zacharywilliams: ["zacwilliams"],
+};
+
+function normalizePlayerId(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function getTeamPlayerFolder(team: string) {
+  return TEAM_PLAYER_FOLDER[team] ?? normalizePlayerId(team);
+}
+
+function getPlayerInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+}
+
+function cardImageCandidates(card: CardImageSource) {
+  const folder = getTeamPlayerFolder(card.team);
+  const playerId = normalizePlayerId(card.player_id);
+  const nameId = normalizePlayerId(card.player_name);
+  const urls: string[] = [];
+  const add = (url?: string) => {
+    if (url && !urls.includes(url)) urls.push(url);
+  };
+
+  add(card.player_image);
+  add(`/players/${folder}/${playerId}.png`);
+  add(`/players/${folder}/${nameId}.png`);
+  CARD_IMAGE_ALIASES[playerId]?.forEach((alias) => add(`/players/${folder}/${alias}.png`));
+
+  return urls;
+}
+
+const cardPlayerImageStyle: CSSProperties = {
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+  objectPosition: "center top",
+};
+
+const cardPlayerFallbackStyle: CSSProperties = {
+  width: "100%",
+  height: "100%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "0 8%",
+  color: "var(--text-1)",
+  fontSize: "clamp(12px, 2.4vw, 18px)",
+  fontWeight: 1000,
+  lineHeight: 1,
+  textAlign: "center",
+  textShadow: "0 1px 8px rgba(0,0,0,.65)",
+};
+
+function CardPlayerImage({
+  card,
+  imageStyle,
+  fallbackStyle,
+  loading = "lazy",
+}: {
+  card: CardImageSource;
+  imageStyle?: CSSProperties;
+  fallbackStyle?: CSSProperties;
+  loading?: "eager" | "lazy";
+}) {
+  const candidates = useMemo(
+    () => cardImageCandidates(card),
+    [card.player_id, card.player_name, card.team, card.player_image],
+  );
+  const candidateKey = candidates.join("|");
+  const [candidateIndex, setCandidateIndex] = useState(0);
+  const src = candidates[candidateIndex];
+
+  useEffect(() => {
+    setCandidateIndex(0);
+  }, [candidateKey]);
+
+  if (!src) {
+    return (
+      <div style={{ ...cardPlayerFallbackStyle, ...fallbackStyle }}>
+        {getPlayerInitials(card.player_name)}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      key={src}
+      src={src}
+      alt={card.player_name}
+      loading={loading}
+      onError={() => setCandidateIndex((index) => index + 1)}
+      style={imageStyle}
+    />
+  );
+}
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
@@ -143,6 +310,8 @@ export default function CardsPage() {
   // filters
   const [rarityFilter, setRarityFilter] = useState<Rarity | "all">("all");
   const [teamFilter, setTeamFilter] = useState<string>("all");
+  const [teamMenuOpen, setTeamMenuOpen] = useState(false);
+  const teamMenuRef = useRef<HTMLDivElement | null>(null);
   const [sortBy, setSortBy] = useState<SortKey>("newest");
 
   // pack odds tooltip
@@ -208,6 +377,18 @@ export default function CardsPage() {
         });
     }
   }, [user, fetchBalance, fetchCards]);
+
+  useEffect(() => {
+    if (!teamMenuOpen) return;
+
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (teamMenuRef.current?.contains(event.target as Node)) return;
+      setTeamMenuOpen(false);
+    };
+
+    window.addEventListener("pointerdown", closeOnOutsideClick);
+    return () => window.removeEventListener("pointerdown", closeOnOutsideClick);
+  }, [teamMenuOpen]);
 
   // ── Pack opening ──────────────────────────────────────────────────────────
 
@@ -329,22 +510,17 @@ export default function CardsPage() {
         .open-btn:active:not(:disabled) { opacity: 0.8 !important; transform: scale(0.97); }
         .pill-scroll { scrollbar-width: none; }
         .pill-scroll::-webkit-scrollbar { display: none; }
-        .team-filter-select option {
-          background: var(--surface-1);
-          color: var(--text-1);
-          font-weight: 700;
-        }
         @media (min-width: 720px) {
-          .team-filter-select {
+          .team-filter-button {
             height: 34px;
             min-width: 190px;
             transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
           }
-          .team-filter-select:hover {
+          .team-filter-button:hover {
             background-color: rgba(255,255,255,.11) !important;
             border-color: rgba(255,255,255,.22) !important;
           }
-          .team-filter-select:focus {
+          .team-filter-button:focus-visible {
             border-color: rgba(96,165,250,.7) !important;
             box-shadow: 0 0 0 3px rgba(96,165,250,.16);
           }
@@ -368,6 +544,18 @@ export default function CardsPage() {
       </header>
 
       <div style={contentStyle}>
+        {/* ── Passes entry point ── */}
+        <Link href="/passes" style={passesBannerStyle}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 22 }}>🎫</span>
+            <div>
+              <div style={{ fontWeight: 900, fontSize: 15, color: "#fff", letterSpacing: "-0.01em" }}>Passes</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", fontWeight: 600, marginTop: 1 }}>Earn Aura &amp; Coins from your team &amp; players</div>
+            </div>
+          </div>
+          <span style={{ fontSize: 18, color: "rgba(255,255,255,0.5)" }}>›</span>
+        </Link>
+
         {/* ── NOT LOGGED IN ── */}
         {!user && (
           <>
@@ -419,18 +607,52 @@ export default function CardsPage() {
               {/* Team filter */}
               <div style={filterRowStyle}>
                 <span style={filterLabelStyle}>Team</span>
-                <select
-                  className="team-filter-select"
-                  value={teamFilter}
-                  onChange={(event) => setTeamFilter(event.target.value)}
-                  style={filterSelectStyle}
-                  aria-label="Filter cards by team"
-                >
-                  <option value="all">All teams</option>
-                  {ALL_TEAMS.map((team) => (
-                    <option key={team} value={team}>{team}</option>
-                  ))}
-                </select>
+                <div ref={teamMenuRef} style={teamFilterWrapStyle}>
+                  <button
+                    type="button"
+                    className="team-filter-button"
+                    onClick={() => setTeamMenuOpen((open) => !open)}
+                    style={teamFilterButtonStyle}
+                    aria-haspopup="listbox"
+                    aria-expanded={teamMenuOpen}
+                    aria-label="Filter cards by team"
+                  >
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {teamFilter === "all" ? "All teams" : teamFilter}
+                    </span>
+                    <span aria-hidden="true" style={{ marginLeft: "auto", color: "rgba(255,255,255,.72)", fontSize: 10 }}>
+                      ▾
+                    </span>
+                  </button>
+
+                  {teamMenuOpen && (
+                    <div role="listbox" aria-label="Team options" style={teamFilterMenuStyle}>
+                      {["all", ...ALL_TEAMS].map((team) => {
+                        const label = team === "all" ? "All teams" : team;
+                        const active = teamFilter === team;
+                        return (
+                          <button
+                            key={team}
+                            type="button"
+                            role="option"
+                            aria-selected={active}
+                            onClick={() => {
+                              setTeamFilter(team);
+                              setTeamMenuOpen(false);
+                            }}
+                            style={{
+                              ...teamFilterOptionStyle,
+                              background: active ? "rgba(96,165,250,.18)" : "transparent",
+                              color: active ? "#fff" : "rgba(255,255,255,.72)",
+                            }}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Sort */}
@@ -621,7 +843,6 @@ function PackShopPreview() {
 
 function PlayerCard({ card, onSell }: { card: UserCard; onSell?: () => void }) {
   const meta = RARITY_META[card.rarity];
-  const folder = TEAM_PLAYER_FOLDER[card.team] ?? "lions";
 
   return (
     <div
@@ -684,12 +905,7 @@ function PlayerCard({ card, onSell }: { card: UserCard; onSell?: () => void }) {
         boxShadow: `0 0 14px ${meta.glow}`,
         background: TEAM_COLORS[card.team] ?? "var(--surface-3)",
       }}>
-        <img
-          src={`/players/${folder}/${card.player_id}.png`}
-          alt={card.player_name}
-          loading="lazy"
-          style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }}
-        />
+        <CardPlayerImage card={card} imageStyle={cardPlayerImageStyle} />
       </div>
 
       {/* Player name — centered just below player circle */}
@@ -784,7 +1000,7 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
                   {card.is_new && <div style={{ position: "absolute", top: 6, left: "50%", transform: "translateX(-50%)", background: "linear-gradient(90deg,#16a34a,#22c55e)", borderRadius: 99, padding: "2px 7px", fontSize: 7, fontWeight: 900, color: "var(--text-1)", letterSpacing: ".1em", boxShadow: "0 2px 8px rgba(34,197,94,.5)", whiteSpace: "nowrap" }}>✦ NEW</div>}
                   {/* Player circle */}
                   <div style={{ position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)", width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", border: `2px solid ${m.color}`, boxShadow: `0 0 10px ${m.glow}`, background: "var(--bg)" }}>
-                    <img src={card.player_image} alt={card.player_name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
+                    <CardPlayerImage card={card} imageStyle={cardPlayerImageStyle} />
                   </div>
                   {/* Player name */}
                   <div style={{ position: "absolute", top: "71%", left: 0, right: 0, textAlign: "center", padding: "0 4px" }}>
@@ -871,7 +1087,7 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
                       </div>
                     )}
                     <div style={{ position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)", width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", border: `2.5px solid ${meta.color}`, boxShadow: `0 0 20px ${meta.glow}`, background: TEAM_COLORS[current.team] ?? "var(--surface-3)" }}>
-                      <img src={current.player_image} alt={current.player_name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
+                      <CardPlayerImage card={current} imageStyle={cardPlayerImageStyle} loading="eager" />
                     </div>
                     <div style={{ position: "absolute", top: "71%", left: 0, right: 0, textAlign: "center", padding: "0 10px" }}>
                       <div style={{ fontSize: 13, fontWeight: 900, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: `0 0 12px ${meta.glow}` }}>{current.player_name}</div>
@@ -1100,6 +1316,18 @@ const contentStyle: React.CSSProperties = {
   padding: "16px 14px",
 };
 
+const passesBannerStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  padding: "14px 16px",
+  marginBottom: 16,
+  borderRadius: 16,
+  background: "linear-gradient(135deg, rgba(109,40,217,0.25), rgba(168,85,247,0.15))",
+  border: "1.5px solid rgba(167,139,250,0.3)",
+  textDecoration: "none",
+};
+
 const guestBannerStyle: React.CSSProperties = {
   background: "var(--surface-2)",
   border: "1px solid var(--border-2)",
@@ -1214,9 +1442,18 @@ const pillRowStyle: React.CSSProperties = {
   paddingBottom: 2,
 };
 
-const filterSelectStyle: React.CSSProperties = {
+const teamFilterWrapStyle: React.CSSProperties = {
+  position: "relative",
+  width: "min(230px, 100%)",
+  flexShrink: 1,
+};
+
+const teamFilterButtonStyle: React.CSSProperties = {
   width: "min(230px, 100%)",
   appearance: "none",
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
   backgroundColor: "rgba(255,255,255,.075)",
   border: "1px solid var(--border-3)",
   borderRadius: 10,
@@ -1227,15 +1464,37 @@ const filterSelectStyle: React.CSSProperties = {
   fontWeight: 800,
   outline: "none",
   padding: "7px 34px 7px 12px",
-  backgroundImage: [
-    "linear-gradient(45deg, transparent 50%, rgba(255,255,255,.72) 50%)",
-    "linear-gradient(135deg, rgba(255,255,255,.72) 50%, transparent 50%)",
-    "linear-gradient(90deg, transparent, var(--border-2))",
-  ].join(", "),
-  backgroundPosition: "calc(100% - 16px) 50%, calc(100% - 11px) 50%, 100% 0",
-  backgroundSize: "5px 5px, 5px 5px",
-  backgroundRepeat: "no-repeat",
   boxShadow: "inset 0 1px 0 var(--border-1), 0 1px 8px rgba(0,0,0,.22)",
+};
+
+const teamFilterMenuStyle: React.CSSProperties = {
+  position: "absolute",
+  top: "calc(100% + 6px)",
+  left: 0,
+  zIndex: 80,
+  width: "min(260px, calc(100vw - 56px))",
+  maxHeight: 280,
+  overflowY: "auto",
+  background: "var(--surface-1)",
+  border: "1px solid var(--border-2)",
+  borderRadius: 12,
+  padding: 6,
+  boxShadow: "0 18px 42px rgba(0,0,0,.55)",
+};
+
+const teamFilterOptionStyle: React.CSSProperties = {
+  appearance: "none",
+  border: "none",
+  width: "100%",
+  borderRadius: 9,
+  padding: "9px 10px",
+  background: "transparent",
+  cursor: "pointer",
+  color: "rgba(255,255,255,.72)",
+  fontFamily: "inherit",
+  fontSize: 12,
+  fontWeight: 800,
+  textAlign: "left",
 };
 
 const cardGridStyle: React.CSSProperties = {

@@ -1079,7 +1079,7 @@ export default function ProfilePage() {
     if (gamesData.length > 0) return;
     setGamesDataLoading(true);
     try {
-      const res = await fetch("/api/squiggle/games", { cache: "no-store" });
+      const res = await fetch("/api/games", { cache: "no-store" });
       const raw = await res.json();
       const all: { id: number; hteam?: string; ateam?: string }[] = Array.isArray(raw) ? raw : (raw.games ?? []);
       const matchIds: string[] = [];
@@ -1148,7 +1148,7 @@ export default function ProfilePage() {
     if (pollsData.length > 0) return;
     setPollsDataLoading(true);
     try {
-      const res = await fetch("/api/squiggle/games", { cache: "no-store" });
+      const res = await fetch("/api/games", { cache: "no-store" });
       const raw = await res.json();
       const all: { id: number; hteam?: string; ateam?: string; hscore?: number; ascore?: number; complete?: number; is_final?: number }[] = Array.isArray(raw) ? raw : (raw.games ?? []);
       const picks: Record<string, "home" | "away"> = {};

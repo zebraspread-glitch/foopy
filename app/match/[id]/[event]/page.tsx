@@ -228,7 +228,7 @@ export default function EventCommentsPage() {
 
   useEffect(() => {
     if (!gameId) return;
-    fetch("/api/squiggle/games")
+    fetch("/api/games")
       .then(r => r.json())
       .then((games: any[]) => {
         const g = games.find((x: any) => Number(x.id) === gameId);

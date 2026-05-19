@@ -1,0 +1,606 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { CSSProperties, ReactNode } from "react";
+import Link from "next/link";
+import { supabase } from "@/app/lib/supabase";
+import {
+  AFL_TEAMS,
+  MAX_PLAYER_PASSES,
+  PLAYER_PASS_COST,
+  TEAM_PASS_COST,
+  PLAYER_PASS_LEVELS,
+  TEAM_PASS_LEVELS,
+  getPassLevel,
+  type TeamPass,
+  type PlayerPass,
+  type PassReward,
+  type PassLevelInfo,
+} from "@/app/lib/passes";
+import { auraToastEmitter } from "@/app/lib/auraToastEmitter";
+import playersRaw from "@/app/data/players.json";
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const TEAM_LOGOS: Record<string, string> = {
+  "Adelaide Crows": "/team-logos/crows.png", "Brisbane Lions": "/team-logos/lions.png",
+  Carlton: "/team-logos/blues.png", Collingwood: "/team-logos/magpies.png",
+  Essendon: "/team-logos/bombers.png", Fremantle: "/team-logos/dockers.png",
+  "Geelong Cats": "/team-logos/cats.png", "Gold Coast Suns": "/team-logos/suns.png",
+  "GWS Giants": "/team-logos/giants.png", Hawthorn: "/team-logos/hawks.png",
+  Melbourne: "/team-logos/demons.png", "North Melbourne": "/team-logos/kangaroos.png",
+  "Port Adelaide": "/team-logos/power.png", Richmond: "/team-logos/tigers.png",
+  "St Kilda": "/team-logos/saints.png", "Sydney Swans": "/team-logos/swans.png",
+  "West Coast Eagles": "/team-logos/eagles.png", "Western Bulldogs": "/team-logos/bulldogs.png",
+};
+
+const TEAM_COLORS: Record<string, string> = {
+  "Adelaide Crows": "#002b5c", "Brisbane Lions": "#a50034", Carlton: "#031a35",
+  Collingwood: "#1a1a1a", Essendon: "#ef4444", Fremantle: "#7c3aed",
+  "Geelong Cats": "#1e3a8a", "Gold Coast Suns": "#ef4444", "GWS Giants": "#f97316",
+  Hawthorn: "#78350f", Melbourne: "#1e40af", "North Melbourne": "#1e3a8a",
+  "Port Adelaide": "#1e293b", Richmond: "#f59e0b", "St Kilda": "#dc2626",
+  "Sydney Swans": "#dc2626", "West Coast Eagles": "#1d4ed8", "Western Bulldogs": "#1e40af",
+};
+
+const teamLogo  = (n: string) => TEAM_LOGOS[n]  ?? "/team-logos/default.png";
+const teamColor = (n: string) => TEAM_COLORS[n] ?? "#6d28d9";
+
+// Maps short team names (from players.json) and full names to public folder names
+const TEAM_FOLDER: Record<string, string> = {
+  Adelaide: "crows",          "Adelaide Crows": "crows",
+  Brisbane: "lions",          "Brisbane Lions": "lions",
+  Carlton: "blues",
+  Collingwood: "magpies",
+  Essendon: "bombers",
+  Fremantle: "dockers",
+  GWS: "giants",              "GWS Giants": "giants",
+  Geelong: "cats",            "Geelong Cats": "cats",
+  "Gold Coast": "suns",       "Gold Coast Suns": "suns",
+  Hawthorn: "hawks",
+  Melbourne: "demons",
+  "North Melbourne": "kangaroos",
+  "Port Adelaide": "power",
+  Richmond: "tigers",
+  "St Kilda": "saints",
+  Sydney: "swans",            "Sydney Swans": "swans",
+  "West Coast": "eagles",     "West Coast Eagles": "eagles",
+  "Western Bulldogs": "bulldogs",
+};
+
+// Build image src from name + team — images live at /players/{folder}/{slugname}.png
+function playerImgSrc(playerName: string, teamName: string): string {
+  const folder = TEAM_FOLDER[teamName] ?? teamName.toLowerCase().replace(/[^a-z]/g, "");
+  const slug   = playerName.toLowerCase().replace(/[^a-z]/g, "");
+  if (!folder || !slug) return "";
+  return `/players/${folder}/${slug}.png`;
+}
+
+function fmtCoins(n: number) {
+  return n >= 1000 ? `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k` : String(n);
+}
+
+function CoinImg({ size = 14 }: { size?: number }) {
+  return <img suppressHydrationWarning src="/coin/coin.png" alt="coins" style={{ width: size, height: size, objectFit: "contain", verticalAlign: "middle", display: "inline-block" }} />;
+}
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+type Tab = "player" | "team";
+
+type PassesData = {
+  teamPass: TeamPass | null;
+  playerPasses: PlayerPass[];
+  pendingRewards: unknown[];
+  recentRewards: PassReward[];
+  playerPassCount: number;
+  hasBoughtTeamPass: boolean;
+  coins: number;
+};
+
+// ── XP Bar ────────────────────────────────────────────────────────────────────
+
+function XpBar({ level }: { level: PassLevelInfo }) {
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+        <span style={{ fontSize: 9, fontWeight: 900, color: level.color, letterSpacing: "0.06em" }}>
+          {level.name.toUpperCase()} · {level.multiplier}×
+        </span>
+        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>
+          {level.isMaxed ? "MAX" : `${level.xp}/${level.nextXp}`}
+        </span>
+      </div>
+      <div style={{ background: "rgba(0,0,0,0.45)", borderRadius: 999, height: 4, overflow: "hidden" }}>
+        <div style={{
+          width: `${Math.round(level.progress * 100)}%`, height: "100%", borderRadius: 999,
+          background: `linear-gradient(90deg,${level.darkColor},${level.color})`,
+          boxShadow: `0 0 6px ${level.color}80`,
+        }} />
+      </div>
+    </div>
+  );
+}
+
+// ── Player pass card ──────────────────────────────────────────────────────────
+
+function PlayerCard({ pass }: { pass: PlayerPass }) {
+  const level = getPassLevel(pass.xp ?? 0, PLAYER_PASS_LEVELS);
+  const img   = playerImgSrc(pass.player_name, pass.team_name);
+  return (
+    <div style={{
+      borderRadius: 16, overflow: "hidden", position: "relative",
+      background: level.gradient,
+      border: `1.5px solid ${level.color}55`,
+      boxShadow: `0 4px 24px ${level.color}22, 0 0 0 0.5px rgba(255,255,255,0.06)`,
+      aspectRatio: "3/4",
+      display: "flex", flexDirection: "column",
+    }}>
+      {/* shimmer edge */}
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1.5, background: `linear-gradient(90deg,transparent,${level.color}cc,transparent)`, zIndex: 3 }} />
+
+      {/* level badge */}
+      <div style={{ position: "absolute", top: 8, left: 8, zIndex: 4, background: level.color, color: "#000", fontSize: 7.5, fontWeight: 900, letterSpacing: "0.1em", padding: "2px 7px", borderRadius: 999 }}>
+        {level.name.toUpperCase()}
+      </div>
+
+      {/* season year */}
+      <div style={{ position: "absolute", top: 8, right: 8, zIndex: 4, fontSize: 8, fontWeight: 900, color: "rgba(255,255,255,0.35)", letterSpacing: "0.06em" }}>
+        2026
+      </div>
+
+      {/* photo — fills ~70% of card */}
+      <div style={{ flex: 1, overflow: "hidden", position: "relative", background: "rgba(0,0,0,0.2)" }}>
+        {img
+          ? <img src={img} alt={pass.player_name} suppressHydrationWarning
+              style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", display: "block" }}
+              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+          : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 44 }}>👤</div>
+        }
+        {/* fade into footer */}
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 40, background: `linear-gradient(to bottom, transparent, ${level.gradient.match(/#[0-9a-f]{6}/i)?.[0] ?? "#1a0a00"})` }} />
+      </div>
+
+      {/* footer info */}
+      <div style={{ padding: "8px 10px 10px", background: "rgba(0,0,0,0.25)", flexShrink: 0 }}>
+        <div style={{ fontWeight: 900, fontSize: 12, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 1 }}>{pass.player_name}</div>
+        <div style={{ fontSize: 9.5, color: "rgba(255,255,255,0.45)", marginBottom: 6 }}>{pass.team_name}</div>
+        <XpBar level={level} />
+      </div>
+    </div>
+  );
+}
+
+// ── Team pass card ────────────────────────────────────────────────────────────
+
+function TeamCard({ pass }: { pass: TeamPass }) {
+  const level  = getPassLevel(pass.xp ?? 0, TEAM_PASS_LEVELS);
+  const color  = teamColor(pass.team_name);
+  return (
+    <div style={{ display: "flex", justifyContent: "center" }}>
+      <div style={{
+        width: "100%", maxWidth: 280,
+        borderRadius: 20, overflow: "hidden", position: "relative",
+        background: level.gradient,
+        border: `1.5px solid ${level.color}55`,
+        boxShadow: `0 6px 32px ${level.color}28, 0 0 0 0.5px rgba(255,255,255,0.06)`,
+        aspectRatio: "3/4",
+        display: "flex", flexDirection: "column",
+      }}>
+        {/* shimmer top */}
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1.5, background: `linear-gradient(90deg,transparent,${level.color}cc,transparent)`, zIndex: 3 }} />
+
+        {/* level badge */}
+        <div style={{ position: "absolute", top: 10, left: 10, zIndex: 4, background: level.color, color: "#000", fontSize: 7.5, fontWeight: 900, letterSpacing: "0.1em", padding: "2px 8px", borderRadius: 999 }}>
+          {level.name.toUpperCase()}
+        </div>
+        {/* year */}
+        <div style={{ position: "absolute", top: 10, right: 10, zIndex: 4, fontSize: 8, fontWeight: 900, color: "rgba(255,255,255,0.35)", letterSpacing: "0.06em" }}>
+          2026
+        </div>
+
+        {/* logo area */}
+        <div style={{ flex: 1, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+          {/* glow behind logo */}
+          <div style={{ position: "absolute", width: "70%", height: "70%", borderRadius: "50%", background: `${color}40`, filter: "blur(32px)" }} />
+          <div style={{ width: 150, height: 150, borderRadius: "50%", overflow: "hidden", flexShrink: 0, position: "relative", zIndex: 1 }}>
+            <img src={teamLogo(pass.team_name)} alt={pass.team_name}
+              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+          </div>
+          {/* fade into footer */}
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 48, background: `linear-gradient(to bottom, transparent, ${level.gradient.match(/#[0-9a-f]{6}/i)?.[0] ?? "#1a0a00"})` }} />
+        </div>
+
+        {/* footer */}
+        <div style={{ padding: "10px 12px 14px", background: "rgba(0,0,0,0.25)", flexShrink: 0 }}>
+          <div style={{ fontWeight: 900, fontSize: 16, color: "#fff", marginBottom: 1, letterSpacing: "-0.01em" }}>{pass.team_name}</div>
+          <div style={{ fontSize: 10, color: level.color, fontWeight: 800, marginBottom: 8, letterSpacing: "0.04em" }}>TEAM PASS · 2026 SEASON</div>
+          <XpBar level={level} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Empty state card ──────────────────────────────────────────────────────────
+
+function EmptyCard({ tab, coins }: { tab: Tab; coins: number }) {
+  const cost = tab === "player" ? PLAYER_PASS_COST : TEAM_PASS_COST;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "56px 20px", textAlign: "center" }}>
+      <span style={{ fontSize: 44 }}>{tab === "team" ? "🏆" : "⭐"}</span>
+      <div style={{ fontWeight: 800, fontSize: 16, color: "var(--text-1)" }}>
+        No {tab === "team" ? "Team" : "Player"} Pass
+      </div>
+      <div style={{ fontSize: 13, color: "var(--text-3)", maxWidth: 260 }}>
+        {tab === "team"
+          ? "Support your team and earn bonus rewards every time they win."
+          : "Follow your favourite players and earn rewards based on their Foopy Rating each game."}
+      </div>
+      {coins < cost && (
+        <div style={{ fontSize: 12, color: "var(--text-3)" }}>
+          Need <CoinImg size={11} /> {fmtCoins(cost - coins)} more coins
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main Page ─────────────────────────────────────────────────────────────────
+
+export default function PassesPage() {
+  const [token, setToken]             = useState<string | null>(null);
+  const [authed, setAuthed]           = useState<boolean | null>(null);
+  const [data, setData]               = useState<PassesData | null>(null);
+  const [loading, setLoading]         = useState(true);
+  const [tab, setTab]                 = useState<Tab>("player");
+  const [teamPickerOpen, setTeamPickerOpen]     = useState(false);
+  const [playerPickerOpen, setPlayerPickerOpen] = useState(false);
+  const [earningsOpen, setEarningsOpen]         = useState(false);
+  const [playerSearch, setPlayerSearch]         = useState("");
+  const [purchaseErr, setPurchaseErr]           = useState<string | null>(null);
+  const autoClaimFired = useRef(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: s }) => {
+      setAuthed(!!s.session);
+      setToken(s.session?.access_token ?? null);
+    });
+  }, []);
+
+  const fetchData = useCallback(async (tok: string) => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/passes", { headers: { Authorization: `Bearer ${tok}` } });
+      if (res.ok) setData(await res.json());
+    } catch {}
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (token) fetchData(token);
+    else if (authed === false) setLoading(false);
+  }, [token, authed, fetchData]);
+
+  // Auto-claim pending rewards on first load
+  useEffect(() => {
+    if (!token || !data || autoClaimFired.current) return;
+    if ((data.pendingRewards?.length ?? 0) === 0) return;
+    autoClaimFired.current = true;
+    fetch("/api/passes/claim", { method: "POST", headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json())
+      .then((result) => {
+        if (result.claimed > 0 && result.totalAura > 0) auraToastEmitter.emit(result.totalAura, "pass rewards");
+        fetchData(token);
+      })
+      .catch(() => {});
+  }, [data, token, fetchData]);
+
+  async function handleSetTeam(teamName: string) {
+    if (!token) return;
+    setTeamPickerOpen(false);
+    setPurchaseErr(null);
+    const res = await fetch("/api/passes/team", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ team_name: teamName }),
+    });
+    if (res.ok) {
+      fetchData(token);
+    } else {
+      const body = await res.json().catch(() => ({}));
+      setPurchaseErr(body.error ?? "Purchase failed");
+      setTimeout(() => setPurchaseErr(null), 4000);
+    }
+  }
+
+  async function addPlayerPass(playerId: string) {
+    if (!token) return;
+    setPlayerPickerOpen(false);
+    setPlayerSearch("");
+    setPurchaseErr(null);
+    const res = await fetch("/api/passes/player", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ player_id: playerId }),
+    });
+    if (res.ok) {
+      fetchData(token);
+    } else {
+      const body = await res.json().catch(() => ({}));
+      setPurchaseErr(body.error ?? "Purchase failed");
+      setTimeout(() => setPurchaseErr(null), 4000);
+    }
+  }
+
+  function openGetPasses() {
+    if (tab === "team") setTeamPickerOpen(true);
+    else setPlayerPickerOpen(true);
+  }
+
+  const ownedIds = new Set((data?.playerPasses ?? []).map((p) => p.player_id));
+  const filtered = playerSearch.trim().length < 2 ? [] :
+    (playersRaw as any[]).filter((p) => String(p.name ?? p.player ?? "").toLowerCase().includes(playerSearch.toLowerCase())).slice(0, 30);
+
+  const coins      = data?.coins ?? 0;
+  const passcost   = tab === "player" ? PLAYER_PASS_COST : TEAM_PASS_COST;
+  const canGetMore = tab === "player"
+    ? (data?.playerPassCount ?? 0) < MAX_PLAYER_PASSES
+    : !data?.teamPass;
+
+  if (authed === false) {
+    return (
+      <div style={pageStyle}>
+        <div style={headerStyle}><span style={titleStyle}>Passes</span></div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "80px 32px", textAlign: "center", gap: 14 }}>
+          <div style={{ fontSize: 44 }}>🎫</div>
+          <div style={{ fontWeight: 900, fontSize: 18, color: "var(--text-1)" }}>Sign in to use Passes</div>
+          <div style={{ fontSize: 13, color: "var(--text-3)", maxWidth: 260 }}>Earn Aura and Coins from your favourite team and players every round.</div>
+          <Link href="/login" style={{ marginTop: 8, display: "inline-block", padding: "12px 28px", background: "linear-gradient(135deg,#7c3aed,#a855f7)", color: "#fff", borderRadius: 999, fontWeight: 800, fontSize: 15, textDecoration: "none" }}>Sign In</Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={pageStyle}>
+      {/* Header */}
+      <div style={headerStyle}>
+        <span style={titleStyle}>Passes</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {data && <span style={{ fontSize: 13, fontWeight: 800, color: "#fbbf24", display: "flex", alignItems: "center", gap: 4 }}><CoinImg size={16} />{fmtCoins(coins)}</span>}
+          {data && (
+            <button onClick={() => setEarningsOpen(true)} style={{ padding: "7px 14px", borderRadius: 999, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.75)", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>
+              Earnings
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Tab toggle + Get Passes */}
+      <div style={{ padding: "14px 16px 0", display: "flex", alignItems: "center", gap: 10 }}>
+        {/* Toggle */}
+        <div style={{ display: "flex", background: "rgba(255,255,255,0.06)", borderRadius: 999, padding: 3, flex: 1 }}>
+          {(["player", "team"] as Tab[]).map((t) => (
+            <button key={t} onClick={() => setTab(t)} style={{
+              flex: 1, padding: "8px 0", borderRadius: 999, border: "none",
+              background: tab === t ? "rgba(255,255,255,0.12)" : "transparent",
+              color: tab === t ? "var(--text-1)" : "var(--text-3)",
+              fontWeight: tab === t ? 800 : 600, fontSize: 13,
+              cursor: "pointer", transition: "all 0.15s",
+            }}>
+              {t === "player" ? "Players" : "Team"}
+            </button>
+          ))}
+        </div>
+
+        {/* Get Passes button */}
+        {canGetMore && (
+          <button suppressHydrationWarning onClick={openGetPasses} style={{
+            padding: "10px 18px", borderRadius: 999,
+            background: "linear-gradient(135deg,#854d0e,#ca8a04)",
+            border: "none", color: "#fff", fontWeight: 900, fontSize: 13,
+            cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0,
+            display: "flex", alignItems: "center", gap: 5,
+          }}>
+            Get Pass · <CoinImg size={12} /> {fmtCoins(passcost)}
+          </button>
+        )}
+      </div>
+
+      {/* Purchase error */}
+      {purchaseErr && (
+        <div style={{ margin: "10px 16px 0", padding: "10px 14px", borderRadius: 12, background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", fontSize: 13, fontWeight: 700, color: "#f87171" }}>
+          {purchaseErr === "Not enough coins"
+            ? <span>Not enough coins — open packs to earn more <CoinImg size={13} /></span>
+            : purchaseErr}
+        </div>
+      )}
+
+      {/* Content */}
+      {loading ? (
+        <div style={{ display: "flex", justifyContent: "center", padding: "80px 0" }}>
+          <div style={{ width: 28, height: 28, border: "2.5px solid var(--border-2)", borderTop: "2.5px solid #a78bfa", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+        </div>
+      ) : tab === "team" ? (
+        <div style={{ padding: "16px 16px 100px" }}>
+          {data?.teamPass
+            ? <TeamCard pass={data.teamPass} />
+            : <EmptyCard tab="team" coins={coins} />
+          }
+        </div>
+      ) : (
+        <div style={{ padding: "16px 16px 100px" }}>
+          {(data?.playerPasses.length ?? 0) === 0 ? (
+            <EmptyCard tab="player" coins={coins} />
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              {data!.playerPasses.map((pass) => (
+                <PlayerCard key={pass.id} pass={pass} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Earnings */}
+      {earningsOpen && data && (
+        <EarningsModal
+          rewards={data.recentRewards}
+          playerPasses={data.playerPasses}
+          teamPass={data.teamPass}
+          onClose={() => setEarningsOpen(false)}
+        />
+      )}
+
+      {/* Team Picker */}
+      {teamPickerOpen && (
+        <Modal title={`Buy Team Pass · ${fmtCoins(TEAM_PASS_COST)} coins`} onClose={() => setTeamPickerOpen(false)}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+            {AFL_TEAMS.map((team) => {
+              const active = data?.teamPass?.team_name === team;
+              return (
+                <button key={team} onClick={() => handleSetTeam(team)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 12, border: `1px solid ${active ? teamColor(team) + "70" : "var(--border-2)"}`, background: active ? `${teamColor(team)}18` : "rgba(255,255,255,0.03)", cursor: "pointer", width: "100%", textAlign: "left" }}>
+                  <img src={teamLogo(team)} alt={team} style={{ width: 30, height: 30, objectFit: "contain" }} />
+                  <span style={{ fontWeight: 700, fontSize: 14, color: "var(--text-1)", flex: 1 }}>{team}</span>
+                  {active && <span style={{ fontSize: 11, color: "#a78bfa", fontWeight: 800 }}>Active</span>}
+                </button>
+              );
+            })}
+          </div>
+        </Modal>
+      )}
+
+      {/* Player Picker */}
+      {playerPickerOpen && (
+        <Modal centered title={`Add Player Pass · ${fmtCoins(PLAYER_PASS_COST)} coins`} onClose={() => { setPlayerPickerOpen(false); setPlayerSearch(""); }}>
+          <input type="text" placeholder="Search player name…" value={playerSearch} onChange={(e) => setPlayerSearch(e.target.value)} autoFocus
+            style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: "1.5px solid var(--border-2)", background: "var(--surface-2)", color: "var(--text-1)", fontSize: 15, fontWeight: 600, marginBottom: 10, outline: "none", boxSizing: "border-box" }}
+          />
+          {playerSearch.trim().length < 2 ? (
+            <div style={{ textAlign: "center", padding: "24px 0", color: "var(--text-3)", fontSize: 13 }}>Type at least 2 characters</div>
+          ) : filtered.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "24px 0", color: "var(--text-3)", fontSize: 13 }}>No players found</div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 5, maxHeight: 400, overflowY: "auto" }}>
+              {filtered.map((p: any, i: number) => {
+                const pid   = String(p.id ?? "");
+                const pname = String(p.name ?? p.player ?? "");
+                const team  = String(p.club ?? p.team ?? "");
+                const owned  = ownedIds.has(pid);
+                const imgSrc = playerImgSrc(pname, team);
+                return (
+                  <button key={`${pid}_${i}`} onClick={() => !owned && addPlayerPass(pid)} disabled={owned} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 12, border: "1px solid var(--border-2)", background: owned ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.04)", cursor: owned ? "default" : "pointer", opacity: owned ? 0.45 : 1, width: "100%", textAlign: "left" }}>
+                    <div style={{ width: 44, height: 44, borderRadius: 10, overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.07)" }}>
+                      {imgSrc
+                        ? <img src={imgSrc} alt={pname} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                        : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>👤</div>
+                      }
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 800, fontSize: 14, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pname}</div>
+                      <div style={{ fontSize: 12, color: "var(--text-3)" }}>{team}</div>
+                    </div>
+                    <span style={{ fontSize: 11, fontWeight: 800, flexShrink: 0, color: owned ? "#a78bfa" : "#fbbf24", display: "flex", alignItems: "center", gap: 3 }}>
+                      {owned ? "Owned" : <><CoinImg size={12} />{fmtCoins(PLAYER_PASS_COST)}</>}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+// ── Earnings Modal ────────────────────────────────────────────────────────────
+
+function EarningsModal({ rewards, playerPasses, teamPass, onClose }: {
+  rewards: PassReward[];
+  playerPasses: PlayerPass[];
+  teamPass: TeamPass | null;
+  onClose: () => void;
+}) {
+  const passName = (r: PassReward): string => {
+    if (r.pass_type === "team") return teamPass?.team_name ?? "Team Pass";
+    return playerPasses.find((p) => p.id === r.pass_id)?.player_name ?? "Player Pass";
+  };
+
+  const totalAura  = rewards.reduce((s, r) => s + r.aura_reward, 0);
+  const totalCoins = rewards.reduce((s, r) => s + r.coin_reward, 0);
+
+  return (
+    <Modal title="Pass Earnings" onClose={onClose} centered>
+      {/* Totals */}
+      <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
+        <div style={{ flex: 1, background: "rgba(167,139,250,0.1)", border: "1px solid rgba(167,139,250,0.2)", borderRadius: 12, padding: "10px 14px", textAlign: "center" }}>
+          <div style={{ fontSize: 18, fontWeight: 900, color: "#a78bfa" }}>{totalAura.toLocaleString()}</div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontWeight: 700, marginTop: 2 }}>AURA EARNED</div>
+        </div>
+        <div style={{ flex: 1, background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.2)", borderRadius: 12, padding: "10px 14px", textAlign: "center" }}>
+          <div style={{ fontSize: 18, fontWeight: 900, color: "#fbbf24", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+            <CoinImg size={16} />{fmtCoins(totalCoins)}
+          </div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontWeight: 700, marginTop: 2 }}>COINS EARNED</div>
+        </div>
+      </div>
+
+      {rewards.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "32px 0", color: "rgba(255,255,255,0.35)", fontSize: 13 }}>No earnings yet this season</div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {rewards.map((r) => (
+            <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+              <div style={{ width: 8, height: 8, borderRadius: "50%", flexShrink: 0, background: r.pass_type === "team" ? "#fbbf24" : "#a78bfa" }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 800, fontSize: 13, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{passName(r)}</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 1 }}>
+                  {new Date(r.claimed_at).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}
+                </div>
+              </div>
+              <div style={{ textAlign: "right", flexShrink: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: "#a78bfa" }}>+{r.aura_reward} Aura</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#fbbf24", display: "flex", alignItems: "center", gap: 3, justifyContent: "flex-end", marginTop: 1 }}>
+                  +<CoinImg size={10} />{r.coin_reward}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+
+function Modal({ title, onClose, children, centered }: { title: string; onClose: () => void; children: ReactNode; centered?: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  return (
+    <div ref={ref} onClick={(e) => { if (e.target === ref.current) onClose(); }}
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 9000, display: "flex", alignItems: centered ? "center" : "flex-end", justifyContent: "center", padding: centered ? "0 16px" : 0 }}>
+      <div style={{ background: "var(--surface-1)", borderRadius: centered ? 20 : "20px 20px 0 0", width: "100%", maxWidth: centered ? 480 : undefined, maxHeight: "85dvh", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 16px 12px", borderBottom: "1px solid var(--border-1)" }}>
+          <span style={{ fontWeight: 900, fontSize: 15, color: "var(--text-1)" }}>{title}</span>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-3)", fontSize: 20, cursor: "pointer", lineHeight: 1 }}>✕</button>
+        </div>
+        <div style={{ padding: "12px 14px 24px", overflowY: "auto", flex: 1 }}>{children}</div>
+      </div>
+    </div>
+  );
+}
+
+// ── Styles ────────────────────────────────────────────────────────────────────
+
+const pageStyle: CSSProperties = { minHeight: "100dvh", background: "var(--bg)" };
+
+const headerStyle: CSSProperties = {
+  display: "flex", alignItems: "center", justifyContent: "space-between",
+  padding: "56px 16px 12px", borderBottom: "1px solid var(--border-1)",
+};
+
+const titleStyle: CSSProperties = {
+  fontSize: 26, fontWeight: 900, color: "var(--text-1)", letterSpacing: "-0.03em",
+};
