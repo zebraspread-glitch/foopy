@@ -163,7 +163,12 @@ function PlayerCard({ pass }: { pass: PlayerPass }) {
 
       {/* footer info */}
       <div style={{ padding: "8px 10px 10px", background: "rgba(0,0,0,0.25)", flexShrink: 0 }}>
-        <div style={{ fontWeight: 900, fontSize: 12, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 1 }}>{pass.player_name}</div>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 1 }}>
+          <div style={{ fontWeight: 900, fontSize: 12, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>{pass.player_name}</div>
+          {pass.serial_number != null && (
+            <div style={{ fontSize: 9, fontWeight: 900, color: level.color, letterSpacing: "0.04em", flexShrink: 0, marginLeft: 5 }}>#{pass.serial_number}</div>
+          )}
+        </div>
         <div style={{ fontSize: 9.5, color: "rgba(255,255,255,0.45)", marginBottom: 6 }}>{pass.team_name}</div>
         <XpBar level={level} />
       </div>
@@ -213,7 +218,12 @@ function TeamCard({ pass }: { pass: TeamPass }) {
 
         {/* footer */}
         <div style={{ padding: "10px 12px 14px", background: "rgba(0,0,0,0.25)", flexShrink: 0 }}>
-          <div style={{ fontWeight: 900, fontSize: 16, color: "#fff", marginBottom: 1, letterSpacing: "-0.01em" }}>{pass.team_name}</div>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 1 }}>
+            <div style={{ fontWeight: 900, fontSize: 16, color: "#fff", letterSpacing: "-0.01em" }}>{pass.team_name}</div>
+            {pass.serial_number != null && (
+              <div style={{ fontSize: 11, fontWeight: 900, color: level.color, letterSpacing: "0.04em" }}>#{pass.serial_number}</div>
+            )}
+          </div>
           <div style={{ fontSize: 10, color: level.color, fontWeight: 800, marginBottom: 8, letterSpacing: "0.04em" }}>TEAM PASS · 2026 SEASON</div>
           <XpBar level={level} />
         </div>
@@ -246,6 +256,318 @@ function EmptyCard({ tab, coins }: { tab: Tab; coins: number }) {
   );
 }
 
+// ── Pass Leaderboard ──────────────────────────────────────────────────────────
+
+type LeaderboardEntry = {
+  id: string;
+  user_id: string;
+  serial_number: number | null;
+  xp: number;
+  created_at: string;
+  username: string | null;
+  avatar_url: string | null;
+};
+
+function PassLeaderboard({ pass, onClose }: { pass: PlayerPass; onClose: () => void }) {
+  const [sort, setSort]         = useState<"first" | "level">("first");
+  const [entries, setEntries]   = useState<LeaderboardEntry[]>([]);
+  const [loadingLb, setLoadingLb] = useState(true);
+  const [myId, setMyId]         = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setMyId(data.user?.id ?? null));
+  }, []);
+
+  useEffect(() => {
+    async function load() {
+      setLoadingLb(true);
+      try {
+        const res = await fetch(`/api/passes/leaderboard?player_id=${encodeURIComponent(pass.player_id)}`);
+        if (res.ok) setEntries(await res.json());
+      } catch {}
+      setLoadingLb(false);
+    }
+    load();
+  }, [pass.player_id]);
+
+  const sorted = [...entries].sort((a, b) =>
+    sort === "first"
+      ? (a.serial_number ?? 999999) - (b.serial_number ?? 999999)
+      : (b.xp ?? 0) - (a.xp ?? 0)
+  );
+
+  const myRank = sorted.findIndex(e => e.user_id === myId) + 1;
+  const total  = sorted.length;
+  const imgSrc = playerImgSrc(pass.player_name, pass.team_name);
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 11000, background: "var(--bg)", display: "flex", flexDirection: "column", overflowY: "auto" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", padding: "calc(env(safe-area-inset-top) + 14px) 20px 14px", borderBottom: "1px solid var(--border-2)", background: "var(--bg)", position: "sticky", top: 0, zIndex: 2 }}>
+        <button onClick={onClose} style={{ background: "none", border: "none", color: "#60a5fa", fontSize: 15, fontWeight: 900, cursor: "pointer", padding: 0, marginRight: 16 }}>← Back</button>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 900, fontSize: 17, color: "var(--text-1)" }}>Leaderboard</div>
+          <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 700, marginTop: 1 }}>{pass.player_name} · {pass.team_name}</div>
+        </div>
+        {imgSrc && (
+          <img src={imgSrc} alt={pass.player_name} style={{ width: 42, height: 42, borderRadius: "50%", objectFit: "cover", objectPosition: "top", border: "2px solid var(--border-3)", background: "var(--surface-2)" }}
+            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+        )}
+      </div>
+
+      <div style={{ maxWidth: 680, margin: "0 auto", width: "100%", padding: "16px 16px calc(100px + env(safe-area-inset-bottom))" }}>
+        {/* Sort toggle */}
+        <div style={{ display: "flex", background: "rgba(255,255,255,0.06)", borderRadius: 999, padding: 3, marginBottom: 14 }}>
+          {(["first", "level"] as const).map(s => (
+            <button key={s} onClick={() => setSort(s)} style={{
+              flex: 1, padding: "8px 0", borderRadius: 999, border: "none",
+              background: sort === s ? "rgba(255,255,255,0.12)" : "transparent",
+              color: sort === s ? "var(--text-1)" : "var(--text-3)",
+              fontWeight: sort === s ? 800 : 600, fontSize: 13, cursor: "pointer",
+              fontFamily: "inherit",
+            }}>
+              {s === "first" ? "First Bought" : "Level"}
+            </button>
+          ))}
+        </div>
+
+        {/* Your position */}
+        {myRank > 0 && (
+          <div style={{ textAlign: "center", marginBottom: 14, fontSize: 13, color: "var(--text-3)", fontWeight: 700 }}>
+            You are <span style={{ color: "var(--text-1)", fontWeight: 900 }}>#{myRank}</span> of <span style={{ color: "var(--text-1)", fontWeight: 900 }}>{total}</span>
+          </div>
+        )}
+
+        {loadingLb ? (
+          <div style={{ display: "flex", justifyContent: "center", padding: "60px 0" }}>
+            <div style={{ width: 28, height: 28, border: "2.5px solid var(--border-2)", borderTop: "2.5px solid #a78bfa", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+          </div>
+        ) : sorted.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "60px 0", color: "var(--text-3)", fontSize: 14, fontWeight: 700 }}>No pass holders yet</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 300, margin: "0 auto", width: "100%" }}>
+            {sorted.map((entry, idx) => {
+              const level  = getPassLevel(entry.xp ?? 0, PLAYER_PASS_LEVELS);
+              const isMe   = entry.user_id === myId;
+              const serial = entry.serial_number;
+              const rankLabel = sort === "first" && serial != null ? `#${serial}` : `#${idx + 1}`;
+              const rankColor = idx === 0 ? "#ffd700" : idx === 1 ? "#c0c0c0" : idx === 2 ? "#cd7f32" : "rgba(255,255,255,0.55)";
+
+              return (
+                <div key={entry.id} style={{
+                  borderRadius: 16, overflow: "hidden", position: "relative",
+                  background: level.gradient,
+                  border: `1.5px solid ${isMe ? level.color + "99" : level.color + "55"}`,
+                  boxShadow: isMe
+                    ? `0 4px 24px ${level.color}44, 0 0 0 0.5px rgba(255,255,255,0.08)`
+                    : `0 4px 24px ${level.color}22, 0 0 0 0.5px rgba(255,255,255,0.06)`,
+                  aspectRatio: "3/4",
+                  display: "flex", flexDirection: "column",
+                }}>
+                  {/* shimmer top edge */}
+                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1.5, background: `linear-gradient(90deg,transparent,${level.color}cc,transparent)`, zIndex: 3 }} />
+
+                  {/* level badge — top left */}
+                  <div style={{ position: "absolute", top: 8, left: 8, zIndex: 5, background: level.color, color: "#000", fontSize: 7.5, fontWeight: 900, letterSpacing: "0.1em", padding: "2px 7px", borderRadius: 999 }}>
+                    {level.name.toUpperCase()}
+                  </div>
+
+                  {/* rank / serial — top right */}
+                  <div style={{ position: "absolute", top: 8, right: 8, zIndex: 5, fontSize: 8, fontWeight: 900, color: isMe ? level.color : rankColor, letterSpacing: "0.06em" }}>
+                    {rankLabel}
+                  </div>
+
+                  {/* player photo — fills remaining space */}
+                  <div style={{ flex: 1, overflow: "hidden", position: "relative", background: "rgba(0,0,0,0.2)" }}>
+                    {imgSrc
+                      ? <img src={imgSrc} alt={pass.player_name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", display: "block" }}
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                      : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 44 }}>👤</div>
+                    }
+                    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 40, background: `linear-gradient(to bottom,transparent,${level.gradient.match(/#[0-9a-f]{6}/i)?.[0] ?? "#0a0a14"})` }} />
+                  </div>
+
+                  {/* footer */}
+                  <div style={{ padding: "8px 10px 10px", background: "rgba(0,0,0,0.25)", flexShrink: 0 }}>
+                    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 1 }}>
+                      <div style={{ fontWeight: 900, fontSize: 12, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>
+                        {entry.username ? `@${entry.username}` : "Unknown"}
+                      </div>
+                      {isMe && <span style={{ fontSize: 8, fontWeight: 900, color: level.color, flexShrink: 0, marginLeft: 4 }}>YOU</span>}
+                    </div>
+                    <div style={{ fontSize: 9.5, color: "rgba(255,255,255,0.45)", marginBottom: 6 }}>{pass.team_name}</div>
+                    {/* xp bar */}
+                    <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                        <span style={{ fontSize: 9, fontWeight: 900, color: level.color, letterSpacing: "0.06em" }}>{level.name.toUpperCase()} · {level.multiplier}×</span>
+                        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>{level.isMaxed ? "MAX" : `${entry.xp ?? 0}/${level.nextXp}`}</span>
+                      </div>
+                      <div style={{ background: "rgba(0,0,0,0.45)", borderRadius: 999, height: 4, overflow: "hidden" }}>
+                        <div style={{ width: `${Math.round(level.progress * 100)}%`, height: "100%", borderRadius: 999, background: `linear-gradient(90deg,${level.darkColor},${level.color})`, boxShadow: `0 0 6px ${level.color}80` }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Team Pass Leaderboard ─────────────────────────────────────────────────────
+
+type TeamLeaderboardEntry = {
+  id: string;
+  user_id: string;
+  team_name: string;
+  serial_number: number | null;
+  xp: number;
+  created_at: string;
+  username: string | null;
+  avatar_url: string | null;
+};
+
+function TeamPassLeaderboard({ pass, onClose }: { pass: TeamPass; onClose: () => void }) {
+  const [sort, setSort]           = useState<"first" | "level">("first");
+  const [entries, setEntries]     = useState<TeamLeaderboardEntry[]>([]);
+  const [loadingLb, setLoadingLb] = useState(true);
+  const [myId, setMyId]           = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setMyId(data.user?.id ?? null));
+  }, []);
+
+  useEffect(() => {
+    async function load() {
+      setLoadingLb(true);
+      try {
+        const res = await fetch(`/api/passes/team-leaderboard?team_name=${encodeURIComponent(pass.team_name)}`);
+        if (res.ok) setEntries(await res.json());
+      } catch {}
+      setLoadingLb(false);
+    }
+    load();
+  }, [pass.team_name]);
+
+  const sorted = [...entries].sort((a, b) =>
+    sort === "first"
+      ? (a.serial_number ?? 999999) - (b.serial_number ?? 999999)
+      : (b.xp ?? 0) - (a.xp ?? 0)
+  );
+
+  const myRank = sorted.findIndex(e => e.user_id === myId) + 1;
+  const total  = sorted.length;
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 11000, background: "var(--bg)", display: "flex", flexDirection: "column", overflowY: "auto" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", padding: "calc(env(safe-area-inset-top) + 14px) 20px 14px", borderBottom: "1px solid var(--border-2)", background: "var(--bg)", position: "sticky", top: 0, zIndex: 2 }}>
+        <button onClick={onClose} style={{ background: "none", border: "none", color: "#60a5fa", fontSize: 15, fontWeight: 900, cursor: "pointer", padding: 0, marginRight: 16 }}>← Back</button>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 900, fontSize: 17, color: "var(--text-1)" }}>Leaderboard</div>
+          <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 700, marginTop: 1 }}>{pass.team_name} · Team Pass</div>
+        </div>
+        <img src={teamLogo(pass.team_name)} alt={pass.team_name}
+          style={{ width: 42, height: 42, borderRadius: "50%", objectFit: "cover", border: "2px solid var(--border-3)", background: teamColor(pass.team_name), flexShrink: 0 }} />
+      </div>
+
+      <div style={{ maxWidth: 680, margin: "0 auto", width: "100%", padding: "16px 16px calc(100px + env(safe-area-inset-bottom))" }}>
+        {/* Sort toggle */}
+        <div style={{ display: "flex", background: "rgba(255,255,255,0.06)", borderRadius: 999, padding: 3, marginBottom: 14 }}>
+          {(["first", "level"] as const).map(s => (
+            <button key={s} onClick={() => setSort(s)} style={{
+              flex: 1, padding: "8px 0", borderRadius: 999, border: "none",
+              background: sort === s ? "rgba(255,255,255,0.12)" : "transparent",
+              color: sort === s ? "var(--text-1)" : "var(--text-3)",
+              fontWeight: sort === s ? 800 : 600, fontSize: 13, cursor: "pointer", fontFamily: "inherit",
+            }}>
+              {s === "first" ? "First Bought" : "Level"}
+            </button>
+          ))}
+        </div>
+
+        {/* Your position */}
+        {myRank > 0 && (
+          <div style={{ textAlign: "center", marginBottom: 14, fontSize: 13, color: "var(--text-3)", fontWeight: 700 }}>
+            You are <span style={{ color: "var(--text-1)", fontWeight: 900 }}>#{myRank}</span> of <span style={{ color: "var(--text-1)", fontWeight: 900 }}>{total}</span>
+          </div>
+        )}
+
+        {loadingLb ? (
+          <div style={{ display: "flex", justifyContent: "center", padding: "60px 0" }}>
+            <div style={{ width: 28, height: 28, border: "2.5px solid var(--border-2)", borderTop: "2.5px solid #a78bfa", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+          </div>
+        ) : sorted.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "60px 0", color: "var(--text-3)", fontSize: 14, fontWeight: 700 }}>No pass holders yet</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 300, margin: "0 auto", width: "100%" }}>
+            {sorted.map((entry, idx) => {
+              const level  = getPassLevel(entry.xp ?? 0, TEAM_PASS_LEVELS);
+              const isMe   = entry.user_id === myId;
+              const serial = entry.serial_number;
+              const rankLabel = sort === "first" && serial != null ? `#${serial}` : `#${idx + 1}`;
+              const rankColor = idx === 0 ? "#ffd700" : idx === 1 ? "#c0c0c0" : idx === 2 ? "#cd7f32" : "rgba(255,255,255,0.55)";
+              const color = teamColor(entry.team_name);
+
+              return (
+                <div key={entry.id} style={{
+                  borderRadius: 20, overflow: "hidden", position: "relative",
+                  background: level.gradient,
+                  border: `1.5px solid ${isMe ? level.color + "99" : level.color + "55"}`,
+                  boxShadow: isMe ? `0 6px 28px ${level.color}44` : `0 4px 24px ${level.color}22`,
+                  aspectRatio: "3/4",
+                  display: "flex", flexDirection: "column",
+                }}>
+                  {/* shimmer */}
+                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1.5, background: `linear-gradient(90deg,transparent,${level.color}cc,transparent)`, zIndex: 3 }} />
+                  {/* level badge */}
+                  <div style={{ position: "absolute", top: 10, left: 10, zIndex: 4, background: level.color, color: "#000", fontSize: 7.5, fontWeight: 900, letterSpacing: "0.1em", padding: "2px 8px", borderRadius: 999 }}>
+                    {level.name.toUpperCase()}
+                  </div>
+                  {/* rank */}
+                  <div style={{ position: "absolute", top: 10, right: 10, zIndex: 4, fontSize: 8, fontWeight: 900, color: isMe ? level.color : rankColor, letterSpacing: "0.06em" }}>
+                    {rankLabel}
+                  </div>
+                  {/* logo area */}
+                  <div style={{ flex: 1, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                    <div style={{ position: "absolute", width: "70%", height: "70%", borderRadius: "50%", background: `${color}40`, filter: "blur(32px)" }} />
+                    <div style={{ width: 110, height: 110, borderRadius: "50%", overflow: "hidden", flexShrink: 0, position: "relative", zIndex: 1 }}>
+                      <img src={teamLogo(entry.team_name)} alt={entry.team_name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                    </div>
+                    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 48, background: `linear-gradient(to bottom,transparent,${level.gradient.match(/#[0-9a-f]{6}/i)?.[0] ?? "#1a0a00"})` }} />
+                  </div>
+                  {/* footer */}
+                  <div style={{ padding: "10px 12px 14px", background: "rgba(0,0,0,0.25)", flexShrink: 0 }}>
+                    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 1 }}>
+                      <div style={{ fontWeight: 900, fontSize: 14, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>
+                        {entry.username ? `@${entry.username}` : "Unknown"}
+                      </div>
+                      {isMe && <span style={{ fontSize: 8, fontWeight: 900, color: level.color, flexShrink: 0, marginLeft: 4 }}>YOU</span>}
+                    </div>
+                    <div style={{ fontSize: 9.5, color: "rgba(255,255,255,0.45)", marginBottom: 8 }}>{entry.team_name} · Team Pass</div>
+                    <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                        <span style={{ fontSize: 9, fontWeight: 900, color: level.color, letterSpacing: "0.06em" }}>{level.name.toUpperCase()} · {level.multiplier}×</span>
+                        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>{level.isMaxed ? "MAX" : `${entry.xp}/${level.nextXp}`}</span>
+                      </div>
+                      <div style={{ background: "rgba(0,0,0,0.45)", borderRadius: 999, height: 4, overflow: "hidden" }}>
+                        <div style={{ width: `${Math.round(level.progress * 100)}%`, height: "100%", borderRadius: 999, background: `linear-gradient(90deg,${level.darkColor},${level.color})`, boxShadow: `0 0 6px ${level.color}80` }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function PassesPage() {
@@ -260,6 +582,10 @@ export default function PassesPage() {
   const [playerSearch, setPlayerSearch]         = useState("");
   const [pendingPlayer, setPendingPlayer]       = useState<{ pid: string; name: string; team: string; imgSrc: string } | null>(null);
   const [purchaseErr, setPurchaseErr]           = useState<string | null>(null);
+  const [selectedPass, setSelectedPass]         = useState<PlayerPass | null>(null);
+  const [leaderboardPass, setLeaderboardPass]   = useState<PlayerPass | null>(null);
+  const [selectedTeamPass, setSelectedTeamPass]       = useState<TeamPass | null>(null);
+  const [leaderboardTeamPass, setLeaderboardTeamPass] = useState<TeamPass | null>(null);
   const autoClaimFired = useRef(false);
 
   useEffect(() => {
@@ -426,7 +752,9 @@ export default function PassesPage() {
       ) : tab === "team" ? (
         <div style={{ padding: "16px 16px 100px" }}>
           {data?.teamPass
-            ? <TeamCard pass={data.teamPass} />
+            ? <div onClick={() => setSelectedTeamPass(data.teamPass!)} style={{ cursor: "pointer" }}>
+                <TeamCard pass={data.teamPass} />
+              </div>
             : <EmptyCard tab="team" coins={coins} />
           }
         </div>
@@ -437,11 +765,102 @@ export default function PassesPage() {
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
               {data!.playerPasses.map((pass) => (
-                <PlayerCard key={pass.id} pass={pass} />
+                <div key={pass.id} onClick={() => setSelectedPass(pass)} style={{ cursor: "pointer" }}>
+                  <PlayerCard pass={pass} />
+                </div>
               ))}
             </div>
           )}
         </div>
+      )}
+
+      {/* Pass detail modal */}
+      {selectedPass && (
+        <Modal title={selectedPass.player_name} onClose={() => setSelectedPass(null)} centered>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {/* Card preview */}
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <div style={{ width: 180 }}>
+                <PlayerCard pass={selectedPass} />
+              </div>
+            </div>
+            {/* Stats row */}
+            {(() => {
+              const level = getPassLevel(selectedPass.xp ?? 0, PLAYER_PASS_LEVELS);
+              return (
+                <div style={{ display: "flex", gap: 8 }}>
+                  <div style={{ flex: 1, background: `${level.color}12`, border: `1px solid ${level.color}30`, borderRadius: 12, padding: "10px 12px", textAlign: "center" }}>
+                    <div style={{ fontSize: 16, fontWeight: 900, color: level.color }}>{level.name}</div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: 700, marginTop: 2 }}>LEVEL</div>
+                  </div>
+                  <div style={{ flex: 1, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "10px 12px", textAlign: "center" }}>
+                    <div style={{ fontSize: 16, fontWeight: 900, color: "var(--text-1)" }}>{selectedPass.xp ?? 0}</div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: 700, marginTop: 2 }}>XP</div>
+                  </div>
+                  {selectedPass.serial_number != null && (
+                    <div style={{ flex: 1, background: `${level.color}12`, border: `1px solid ${level.color}30`, borderRadius: 12, padding: "10px 12px", textAlign: "center" }}>
+                      <div style={{ fontSize: 16, fontWeight: 900, color: level.color }}>#{selectedPass.serial_number}</div>
+                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: 700, marginTop: 2 }}>SERIAL</div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+            {/* Leaderboard button */}
+            <button
+              onClick={() => { setLeaderboardPass(selectedPass); setSelectedPass(null); }}
+              style={{ width: "100%", padding: "13px 0", borderRadius: 999, border: "none", background: "linear-gradient(135deg,#312e81,#4f46e5)", color: "#fff", fontWeight: 900, fontSize: 15, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+            >
+              🏆 Leaderboard
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Leaderboard overlay */}
+      {leaderboardPass && (
+        <PassLeaderboard pass={leaderboardPass} onClose={() => setLeaderboardPass(null)} />
+      )}
+
+      {/* Team pass detail modal */}
+      {selectedTeamPass && (
+        <Modal title={selectedTeamPass.team_name} onClose={() => setSelectedTeamPass(null)} centered>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <TeamCard pass={selectedTeamPass} />
+            {(() => {
+              const level = getPassLevel(selectedTeamPass.xp ?? 0, TEAM_PASS_LEVELS);
+              return (
+                <div style={{ display: "flex", gap: 8 }}>
+                  <div style={{ flex: 1, background: `${level.color}12`, border: `1px solid ${level.color}30`, borderRadius: 12, padding: "10px 12px", textAlign: "center" }}>
+                    <div style={{ fontSize: 16, fontWeight: 900, color: level.color }}>{level.name}</div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: 700, marginTop: 2 }}>LEVEL</div>
+                  </div>
+                  <div style={{ flex: 1, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "10px 12px", textAlign: "center" }}>
+                    <div style={{ fontSize: 16, fontWeight: 900, color: "var(--text-1)" }}>{selectedTeamPass.xp ?? 0}</div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: 700, marginTop: 2 }}>XP</div>
+                  </div>
+                  {selectedTeamPass.serial_number != null && (
+                    <div style={{ flex: 1, background: `${level.color}12`, border: `1px solid ${level.color}30`, borderRadius: 12, padding: "10px 12px", textAlign: "center" }}>
+                      <div style={{ fontSize: 16, fontWeight: 900, color: level.color }}>#{selectedTeamPass.serial_number}</div>
+                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: 700, marginTop: 2 }}>SERIAL</div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+            <button
+              onClick={() => { setLeaderboardTeamPass(selectedTeamPass); setSelectedTeamPass(null); }}
+              style={{ width: "100%", padding: "13px 0", borderRadius: 999, border: "none", background: "linear-gradient(135deg,#312e81,#4f46e5)", color: "#fff", fontWeight: 900, fontSize: 15, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+            >
+              🏆 Leaderboard
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Team leaderboard overlay */}
+      {leaderboardTeamPass && (
+        <TeamPassLeaderboard pass={leaderboardTeamPass} onClose={() => setLeaderboardTeamPass(null)} />
       )}
 
       {/* Earnings */}
@@ -493,6 +912,7 @@ export default function PassesPage() {
                     team_name: pendingPlayer.team,
                     active: true,
                     xp: 0,
+                    serial_number: null,
                     created_at: "",
                   }} />
                 </div>

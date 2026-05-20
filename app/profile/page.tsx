@@ -1283,16 +1283,28 @@ export default function ProfilePage() {
                 @{username || "—"}
               </h1>
 
-              {/* Pills: aura · coins · friends */}
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as const, alignItems: "center" }}>
-                <AuraBadge aura={profile?.aura ?? 0} href="/aura-leaderboard" />
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 999, background: "var(--surface-3)", border: "1px solid var(--border-2)" }}>
-                  <img src="/coin/coin.png" alt="coins" style={{ width: 16, height: 16, objectFit: "contain" }} />
-                  <span style={{ fontSize: 13, fontWeight: 800, color: "var(--text-1)" }}>{(profile?.coins ?? 0).toLocaleString()}</span>
+              {/* Stats row */}
+              <div style={{ display: "flex", gap: 80, alignItems: "flex-start" }}>
+                {/* Aura */}
+                <a href="/aura-leaderboard" style={{ textDecoration: "none", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3 }}>
+                  <span style={{ fontSize: 20, fontWeight: 900, background: "linear-gradient(135deg, #c084fc 0%, #818cf8 50%, #fbbf24 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", lineHeight: 1 }}>✦ {(profile?.aura ?? 0).toLocaleString()}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.05em", textTransform: "uppercase" }}>Aura</span>
+                </a>
+                {/* Coins */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                    <img src="/coin/coin.png" alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />
+                    <span style={{ fontSize: 20, fontWeight: 900, color: "var(--text-1)", lineHeight: 1 }}>{(profile?.coins ?? 0).toLocaleString()}</span>
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.05em", textTransform: "uppercase" }}>Coins</span>
                 </div>
-                <button onClick={openFriends} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 999, background: "var(--surface-3)", border: "1px solid var(--border-2)", color: "var(--text-1)", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
-                  <Users size={14} color="#94a3b8" strokeWidth={2} />
-                  <span>{friends.length} friends</span>
+                {/* Friends */}
+                <button onClick={openFriends} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3, background: "none", border: "none", padding: 0, cursor: "pointer" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                    <Users size={18} color="var(--text-1)" strokeWidth={2.5} />
+                    <span style={{ fontSize: 20, fontWeight: 900, color: "var(--text-1)", lineHeight: 1 }}>{friends.length}</span>
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.05em", textTransform: "uppercase" }}>Friends</span>
                 </button>
               </div>
             </div>

@@ -7,6 +7,7 @@ import { Users, Layers } from "lucide-react";
 import { supabase } from "@/app/lib/supabase";
 import AuraBadge from "@/app/components/AuraBadge";
 import { CARD_PLAYERS } from "@/app/data/cardPlayers";
+import { getPassLevel, PLAYER_PASS_LEVELS, TEAM_PASS_LEVELS, type PlayerPass, type TeamPass } from "@/app/lib/passes";
 import playersData from "@/app/data/players.json";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import { foopyRating } from "@/app/match/[id]/utils";
@@ -264,6 +265,8 @@ export default function PublicProfilePage() {
   const [friendStatus,  setFriendStatus]  = useState<"none" | "pending_sent" | "pending_received" | "accepted">("none");
   const [friendLoading, setFriendLoading] = useState(false);
   const [playerStatsMap, setPlayerStatsMap] = useState<Map<string, { rating: string; gb: string; d: string; k: string; h: string; m: string; t: string; ho: string }>>(new Map());
+  const [playerPasses,   setPlayerPasses]   = useState<PlayerPass[]>([]);
+  const [teamPass,       setTeamPass]       = useState<TeamPass | null>(null);
 
   // Fetch player stats for all player_ event key comments so we can embed them in the URL
   useEffect(() => {
@@ -408,6 +411,14 @@ export default function PublicProfilePage() {
         setFriends([]);
       }
 
+      // Fetch passes
+      const [{ data: ppData }, { data: tpData }] = await Promise.all([
+        supabase.from("user_player_passes").select("*").eq("user_id", p.id).eq("active", true).order("created_at", { ascending: true }),
+        supabase.from("user_team_passes").select("*").eq("user_id", p.id).eq("active", true).maybeSingle(),
+      ]);
+      setPlayerPasses((ppData ?? []) as PlayerPass[]);
+      setTeamPass((tpData ?? null) as TeamPass | null);
+
       setLoading(false);
     }
 
@@ -524,15 +535,27 @@ export default function PublicProfilePage() {
               <h1 style={{ margin: "0 0 10px", fontSize: 18, fontWeight: 950, letterSpacing: "-0.04em", lineHeight: 1, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
                 @{profile.username}
               </h1>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as const, alignItems: "center" }}>
-                <AuraBadge aura={profile.aura ?? 0} href="/aura-leaderboard" />
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 999, background: "var(--surface-3)", border: "1px solid var(--border-2)" }}>
-                  <Layers size={14} color="#94a3b8" strokeWidth={2} />
-                  <span style={{ fontSize: 13, fontWeight: 800, color: "var(--text-1)" }}>{cardCount.toLocaleString()} cards</span>
-                </div>
-                <button onClick={() => setShowFriends(true)} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 999, background: "var(--surface-3)", border: "1px solid var(--border-2)", color: "var(--text-1)", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
-                  <Users size={14} color="#94a3b8" strokeWidth={2} />
-                  <span>{friends.length} friends</span>
+              <div style={{ display: "flex", gap: 80, alignItems: "flex-start" }}>
+                {/* Aura */}
+                <a href="/aura-leaderboard" style={{ textDecoration: "none", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3 }}>
+                  <span style={{ fontSize: 20, fontWeight: 900, background: "linear-gradient(135deg, #c084fc 0%, #818cf8 50%, #fbbf24 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", lineHeight: 1 }}>✦ {(profile.aura ?? 0).toLocaleString()}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.05em", textTransform: "uppercase" }}>Aura</span>
+                </a>
+                {/* Cards */}
+                <Link href={`/album/${profile.username}`} style={{ textDecoration: "none", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                    <Layers size={18} color="var(--text-1)" strokeWidth={2.5} />
+                    <span style={{ fontSize: 20, fontWeight: 900, color: "var(--text-1)", lineHeight: 1 }}>{cardCount.toLocaleString()}</span>
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.05em", textTransform: "uppercase" }}>Cards</span>
+                </Link>
+                {/* Friends */}
+                <button onClick={() => setShowFriends(true)} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3, background: "none", border: "none", padding: 0, cursor: "pointer" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                    <Users size={18} color="var(--text-1)" strokeWidth={2.5} />
+                    <span style={{ fontSize: 20, fontWeight: 900, color: "var(--text-1)", lineHeight: 1 }}>{friends.length}</span>
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.05em", textTransform: "uppercase" }}>Friends</span>
                 </button>
               </div>
             </div>
@@ -609,6 +632,19 @@ export default function PublicProfilePage() {
 
         {/* ── Featured Cards ── */}
         {(() => {
+          const RARITY_GRADIENT: Record<string, string> = {
+            bronze:      "linear-gradient(155deg,#3b1a08,#6b3010)",
+            silver:      "linear-gradient(155deg,#1c1c2a,#2e2e42)",
+            gold:        "linear-gradient(155deg,#2e2600,#4a3c00)",
+            emerald:     "linear-gradient(155deg,#031f13,#063d22)",
+            sapphire:    "linear-gradient(155deg,#06183b,#0a2d6b)",
+            ruby:        "linear-gradient(155deg,#3b0606,#6b0a0a)",
+            amethyst:    "linear-gradient(155deg,#1a0a33,#2d1060)",
+            diamond:     "linear-gradient(155deg,#00103d,#002966)",
+            pinkdiamond: "linear-gradient(155deg,#2d0a1a,#5a1030)",
+            mythic:      "linear-gradient(155deg,#1a0033,#36006b)",
+          };
+
           const featuredSlots = (profile.featured_cards ?? []).slice(0, 5);
           const featuredWithData = featuredSlots
             .map(fc => ({ fc, player: CARD_PLAYERS.find(p => p.id === fc.player_id) }))
@@ -617,29 +653,53 @@ export default function PublicProfilePage() {
 
           return (
             <Link href={`/album/${profile.username}`} style={{ textDecoration: "none", color: "var(--text-1)" }}>
-              <section style={{ background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18, padding: "18px 16px 20px", overflow: "hidden" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text-3)", textTransform: "uppercase" as const, letterSpacing: "0.08em" }}>featured cards</div>
+              <section style={{ background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18, padding: "16px 16px 20px", overflow: "hidden" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+                  <div style={{ fontSize: 12, fontWeight: 900, color: "var(--text-3)", textTransform: "uppercase" as const, letterSpacing: "0.1em" }}>Featured Cards</div>
                   {hasFeatured && <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-4)" }}>{featuredWithData.length}/5</div>}
                 </div>
                 {hasFeatured ? (
-                  <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 2, scrollbarWidth: "none" as const }}>
+                  <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4, scrollbarWidth: "none" as const, scrollSnapType: "x mandatory" }}>
                     {featuredWithData.map(({ fc, player }, idx) => {
                       const meta = RARITY_META[fc.rarity] ?? RARITY_META.bronze;
+                      const gradient = RARITY_GRADIENT[fc.rarity] ?? RARITY_GRADIENT.bronze;
+                      const label = fc.rarity === "pinkdiamond" ? "Pink Diamond" : fc.rarity.charAt(0).toUpperCase() + fc.rarity.slice(1);
                       return (
-                        <div key={idx} style={{ flexShrink: 0, position: "relative", width: 110, height: 154, borderRadius: 14, overflow: "hidden", border: `1.5px solid ${meta.color}99`, boxShadow: `0 2px 16px ${meta.glow}` }}>
-                          <img src={`/cards/${fc.rarity}.png`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-                          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.04) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,.5) 65%, rgba(0,0,0,.88) 100%)" }} />
-                          <div style={{ position: "absolute", top: "11%", left: "50%", transform: "translateX(-50%)", width: "66%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", border: `2px solid ${meta.color}`, boxShadow: `0 0 12px ${meta.glow}`, background: "var(--bg)" }}>
-                            <img src={`/players/${player.folder}/${player.id}.png`} alt={player.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
+                        <div key={idx} style={{
+                          flex: "0 0 calc((100% - 20px) / 3)",
+                          scrollSnapAlign: "start",
+                          borderRadius: 16, overflow: "hidden",
+                          background: gradient,
+                          border: `1.5px solid ${meta.color}55`,
+                          boxShadow: `0 4px 20px ${meta.glow}, 0 0 0 0.5px rgba(255,255,255,0.05)`,
+                          display: "flex", flexDirection: "column", position: "relative",
+                        }}>
+                          {/* shimmer top edge */}
+                          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1.5, background: `linear-gradient(90deg,transparent,${meta.color}cc,transparent)`, zIndex: 3 }} />
+
+                          {/* rarity badge */}
+                          <div style={{ position: "absolute", top: 8, left: 8, zIndex: 4, background: meta.color, color: "#000", fontSize: 7, fontWeight: 900, letterSpacing: "0.08em", padding: "2px 6px", borderRadius: 999 }}>
+                            {label.toUpperCase()}
                           </div>
-                          <div style={{ position: "absolute", top: 5, right: 5, background: "rgba(0,0,0,.85)", color: meta.color, fontSize: 7, fontWeight: 1000, padding: "2px 5px", borderRadius: 5, border: `1px solid ${meta.color}44`, letterSpacing: ".04em" }}>
-                            {fc.rarity.toUpperCase()}
+
+                          {/* year */}
+                          <div style={{ position: "absolute", top: 8, right: 8, zIndex: 4, fontSize: 7, fontWeight: 900, color: "rgba(255,255,255,0.3)", letterSpacing: "0.06em" }}>2026</div>
+
+                          {/* photo */}
+                          <div style={{ height: 150, overflow: "hidden", position: "relative", background: "rgba(0,0,0,0.2)" }}>
+                            <img
+                              src={`/players/${player.folder}/${player.id}.png`}
+                              alt={player.name}
+                              style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", display: "block" }}
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                            />
+                            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 40, background: `linear-gradient(to bottom, transparent, ${gradient.match(/#[0-9a-f]{6}/i)?.[0] ?? "#1a0a00"})` }} />
                           </div>
-                          <div style={{ position: "absolute", bottom: 10, left: 0, right: 0, textAlign: "center", padding: "0 5px" }}>
-                            <div style={{ fontSize: 9, fontWeight: 900, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: `0 0 10px ${meta.glow}` }}>
-                              {player.name}
-                            </div>
+
+                          {/* footer */}
+                          <div style={{ padding: "7px 8px 10px", background: "rgba(0,0,0,0.2)", flexShrink: 0 }}>
+                            <div style={{ fontWeight: 900, fontSize: 11, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{player.name}</div>
+                            <div style={{ fontSize: 9, color: meta.color, fontWeight: 800, marginTop: 2, letterSpacing: "0.03em" }}>{player.team}</div>
                           </div>
                         </div>
                       );
@@ -657,6 +717,86 @@ export default function PublicProfilePage() {
             </Link>
           );
         })()}
+
+        {/* ── Passes ── */}
+        {(teamPass || playerPasses.length > 0) && (
+          <section style={{ background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18, padding: "16px 16px 20px", overflow: "hidden" }}>
+            <div style={{ fontSize: 12, fontWeight: 900, color: "var(--text-3)", textTransform: "uppercase" as const, letterSpacing: "0.1em", marginBottom: 16 }}>Passes</div>
+
+            {/* Team pass */}
+            {teamPass && (() => {
+              const level = getPassLevel(teamPass.xp ?? 0, TEAM_PASS_LEVELS);
+              const team  = TEAMS.find(t => t.name === teamPass.team_name || slugName(t.name) === slugName(teamPass.team_name));
+              return (
+                <div style={{ marginBottom: playerPasses.length > 0 ? 14 : 0 }}>
+                  <div style={{ fontSize: 10, fontWeight: 800, color: "var(--text-3)", letterSpacing: "0.06em", textTransform: "uppercase" as const, marginBottom: 8 }}>Team</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 14, background: level.gradient, border: `1.5px solid ${level.color}44`, position: "relative", overflow: "hidden" }}>
+                    <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1.5, background: `linear-gradient(90deg,transparent,${level.color}cc,transparent)` }} />
+                    <div style={{ width: 44, height: 44, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(0,0,0,0.3)" }}>
+                      <img src={team?.logo ?? "/team-logos/default.png"} alt={teamPass.team_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <div style={{ fontWeight: 900, fontSize: 14, color: "#fff" }}>{teamPass.team_name}</div>
+                        {teamPass.serial_number != null && <div style={{ fontSize: 11, fontWeight: 900, color: level.color }}>#{teamPass.serial_number}</div>}
+                      </div>
+                      <div style={{ fontSize: 10, color: level.color, fontWeight: 800, letterSpacing: "0.06em", marginBottom: 5 }}>{level.name.toUpperCase()} · {level.multiplier}×</div>
+                      <div style={{ background: "rgba(0,0,0,0.35)", borderRadius: 999, height: 3, overflow: "hidden" }}>
+                        <div style={{ width: `${Math.round(level.progress * 100)}%`, height: "100%", borderRadius: 999, background: `linear-gradient(90deg,${level.darkColor},${level.color})` }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Player passes */}
+            {playerPasses.length > 0 && (
+              <>
+                <div style={{ fontSize: 10, fontWeight: 800, color: "var(--text-3)", letterSpacing: "0.06em", textTransform: "uppercase" as const, marginBottom: 8 }}>
+                  Players · {playerPasses.length}
+                </div>
+                <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4, scrollbarWidth: "none" as const, scrollSnapType: "x mandatory" }}>
+                  {playerPasses.map((pass) => {
+                    const level  = getPassLevel(pass.xp ?? 0, PLAYER_PASS_LEVELS);
+                    const imgSrc = playerImagePath(pass.player_name, pass.team_name);
+                    return (
+                      <div key={pass.id} style={{
+                        flex: "0 0 calc((100% - 20px) / 3)", scrollSnapAlign: "start",
+                        borderRadius: 14, overflow: "hidden", background: level.gradient,
+                        border: `1.5px solid ${level.color}44`,
+                        boxShadow: `0 2px 12px ${level.color}22`,
+                        display: "flex", flexDirection: "column", position: "relative",
+                      }}>
+                        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1.5, background: `linear-gradient(90deg,transparent,${level.color}cc,transparent)`, zIndex: 3 }} />
+                        <div style={{ position: "absolute", top: 6, left: 6, zIndex: 4, background: level.color, color: "#000", fontSize: 6.5, fontWeight: 900, letterSpacing: "0.08em", padding: "1px 5px", borderRadius: 999 }}>
+                          {level.name.toUpperCase()}
+                        </div>
+                        <div style={{ height: 100, overflow: "hidden", position: "relative", background: "rgba(0,0,0,0.2)" }}>
+                          {imgSrc
+                            ? <img src={imgSrc} alt={pass.player_name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", display: "block" }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                            : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>👤</div>
+                          }
+                          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 30, background: `linear-gradient(to bottom,transparent,${level.gradient.match(/#[0-9a-f]{6}/i)?.[0] ?? "#0a0a14"})` }} />
+                        </div>
+                        <div style={{ padding: "6px 8px 8px", background: "rgba(0,0,0,0.2)", flexShrink: 0 }}>
+                          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+                            <div style={{ fontWeight: 900, fontSize: 10, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>{pass.player_name}</div>
+                            {pass.serial_number != null && <div style={{ fontSize: 8, fontWeight: 900, color: level.color, marginLeft: 4, flexShrink: 0 }}>#{pass.serial_number}</div>}
+                          </div>
+                          <div style={{ fontSize: 8, color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>{pass.team_name}</div>
+                          <div style={{ background: "rgba(0,0,0,0.35)", borderRadius: 999, height: 2.5, overflow: "hidden" }}>
+                            <div style={{ width: `${Math.round(level.progress * 100)}%`, height: "100%", borderRadius: 999, background: `linear-gradient(90deg,${level.darkColor},${level.color})` }} />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </section>
+        )}
 
         {/* ── Album ── */}
         <Link href={`/album/${profile.username}`} style={{

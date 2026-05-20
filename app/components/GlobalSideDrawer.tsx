@@ -265,14 +265,15 @@ export default function GlobalSideDrawer() {
               <div style={{ fontSize: 14, color: "var(--text-2)", fontWeight: 600 }}>Not signed in</div>
             )}
             {username && (
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 5 }}>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 999, background: "linear-gradient(135deg, rgba(139,92,246,0.18), rgba(59,130,246,0.12), rgba(245,158,11,0.08))", border: "1px solid rgba(139,92,246,0.35)" }}>
-                  <span style={{ fontSize: 10, background: "linear-gradient(135deg, #c084fc, #60a5fa, #fbbf24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", lineHeight: 1 }}>✦</span>
-                  <span style={{ fontSize: 11, fontWeight: 800, background: "linear-gradient(135deg, #c084fc 0%, #818cf8 50%, #fbbf24 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>{aura.toLocaleString()}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 5 }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                  <span style={{ fontSize: 12, background: "linear-gradient(135deg, #c084fc, #60a5fa, #fbbf24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", lineHeight: 1 }}>✦</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, background: "linear-gradient(135deg, #c084fc 0%, #818cf8 50%, #fbbf24 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>{aura.toLocaleString()} Aura</span>
                 </div>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 999, background: "var(--surface-3)", border: "1px solid var(--border-2)" }}>
-                  <img src="/coin/coin.png" alt="" style={{ width: 12, height: 12, objectFit: "contain" }} />
-                  <span style={{ fontSize: 11, fontWeight: 800, color: "var(--text-1)" }}>{coins.toLocaleString()}</span>
+                <span style={{ color: "var(--border-2)" }}>·</span>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                  <img src="/coin/coin.png" alt="" style={{ width: 13, height: 13, objectFit: "contain" }} />
+                  <span style={{ fontSize: 13, fontWeight: 800, color: "var(--text-1)" }}>{coins.toLocaleString()}</span>
                 </div>
               </div>
             )}

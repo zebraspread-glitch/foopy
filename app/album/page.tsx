@@ -221,6 +221,7 @@ export default function AlbumPage() {
         .ac-name   { font-size: 9px; }
         .ac-logo   { position: absolute; width: 16px; height: 16px; bottom: 4px; left: 4px; border-radius: 50%; overflow: hidden; }
         .ac-pos    { position: absolute; font-size: 7px; bottom: 4px; right: 4px; padding: 1px 3px; border-radius: 4px; }
+        .ac-year   { position: absolute; top: 4px; left: 4px; font-size: 7px; font-weight: 900; color: rgba(255,255,255,0.35); letter-spacing: 0.05em; }
 
         @media (min-width: 768px) {
           .ac-rating { font-size: 10px; top: 6px; right: 6px; padding: 2px 6px; }
@@ -228,6 +229,7 @@ export default function AlbumPage() {
           .ac-name   { font-size: 12px; }
           .ac-logo   { width: 26px; height: 26px; bottom: 7px; left: 7px; }
           .ac-pos    { font-size: 10px; bottom: 7px; right: 7px; padding: 2px 6px; }
+          .ac-year   { top: 6px; left: 6px; font-size: 9px; }
         }
 
         .album-tab-btn { transition: color 0.15s ease, background 0.15s ease; }
@@ -560,7 +562,7 @@ function AlbumSlot({ player, ownedCards, isFeatured, onCardClick }: {
           alt=""
           style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
         />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.08) 0%, rgba(0,0,0,0) 38%, rgba(0,0,0,.65) 72%, rgba(0,0,0,.92) 100%)" }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.15) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,.72) 75%, rgba(0,0,0,.88) 100%)" }} />
 
         {unlocked && topCard && meta ? (
           <>
@@ -580,9 +582,7 @@ function AlbumSlot({ player, ownedCards, isFeatured, onCardClick }: {
             <div style={{
               position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)",
               width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden",
-              border: `2px solid ${meta.color}`,
-              boxShadow: `0 0 12px ${meta.glow}`,
-              background: TEAM_COLORS[player.team] ?? "#1a1a24",
+              background: (TEAM_COLORS[player.team] ?? "#1e2438") + "33",
             }}>
               <img
                 src={`/players/${player.folder}/${player.id}.png`}
@@ -603,9 +603,9 @@ function AlbumSlot({ player, ownedCards, isFeatured, onCardClick }: {
               <img src={player.teamLogo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
 
-            {/* Position — bottom right */}
+            {/* Year — bottom right */}
             <div className="ac-pos" style={{ background: "rgba(0,0,0,.7)", fontWeight: 900, color: "rgba(255,255,255,.75)", letterSpacing: ".05em" }}>
-              {player.position}
+              2025
             </div>
           </>
         ) : (

@@ -3,6 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { CARD_PLAYERS } from "@/app/data/cardPlayers";
+import { getPassLevel, PLAYER_PASS_LEVELS, TEAM_PASS_LEVELS, type PlayerPass, type TeamPass } from "@/app/lib/passes";
+import PassLeaderboard from "@/app/components/PassLeaderboard";
+import TeamPassLeaderboard from "@/app/components/TeamPassLeaderboard";
 
 type Rarity = "bronze" | "silver" | "gold" | "emerald" | "sapphire" | "ruby" | "amethyst" | "diamond" | "pinkdiamond" | "mythic";
 
@@ -82,6 +85,11 @@ export default function UserAlbumPage() {
   const [notFound, setNotFound] = useState(false);
   const [activeTeam, setActiveTeam] = useState(TEAMS[0]);
   const [selectedCard, setSelectedCard] = useState<SelectedCard | null>(null);
+  const [view, setView] = useState<"album" | "passes">("album");
+  const [playerPasses, setPlayerPasses] = useState<PlayerPass[]>([]);
+  const [teamPass, setTeamPass] = useState<TeamPass | null>(null);
+  const [leaderboardPlayerPass, setLeaderboardPlayerPass] = useState<PlayerPass | null>(null);
+  const [leaderboardTeamPass,   setLeaderboardTeamPass]   = useState<TeamPass | null>(null);
 
   useEffect(() => {
     if (!username) return;
@@ -95,6 +103,8 @@ export default function UserAlbumPage() {
         if (!data) return;
         setProfile(data.profile);
         setUserCards(data.cards);
+        setPlayerPasses(data.playerPasses ?? []);
+        setTeamPass(data.teamPass ?? null);
         setLoading(false);
       })
       .catch(() => { setNotFound(true); setLoading(false); });
@@ -158,6 +168,7 @@ export default function UserAlbumPage() {
         .ac-name   { font-size: 9px; }
         .ac-logo   { position: absolute; width: 16px; height: 16px; bottom: 4px; left: 4px; border-radius: 50%; overflow: hidden; }
         .ac-pos    { position: absolute; font-size: 7px; bottom: 4px; right: 4px; padding: 1px 3px; border-radius: 4px; }
+        .ac-year   { position: absolute; top: 4px; left: 4px; font-size: 7px; font-weight: 900; color: rgba(255,255,255,0.35); letter-spacing: 0.05em; }
 
         @media (min-width: 768px) {
           .ac-rating { font-size: 10px; top: 6px; right: 6px; padding: 2px 6px; }
@@ -165,6 +176,7 @@ export default function UserAlbumPage() {
           .ac-name   { font-size: 12px; }
           .ac-logo   { width: 26px; height: 26px; bottom: 7px; left: 7px; }
           .ac-pos    { font-size: 10px; bottom: 7px; right: 7px; padding: 2px 6px; }
+          .ac-year   { top: 6px; left: 6px; font-size: 9px; }
         }
 
         .album-tab-btn { transition: color 0.15s ease, background 0.15s ease; }
@@ -202,63 +214,88 @@ export default function UserAlbumPage() {
 
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 18, fontWeight: 1000, letterSpacing: "-.02em", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {loading ? "Card Album" : `${displayName}'s Album`}
+              {loading ? "Loading…" : `${displayName}`}
             </div>
-            {!loading && (
+            {!loading && view === "album" && (
               <div style={{ fontSize: 12, color: "rgba(255,255,255,.4)", fontWeight: 600, marginTop: 1 }}>
                 {unlockedCount} of {totalCount} unlocked · {pct}%
               </div>
             )}
+            {!loading && view === "passes" && (
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,.4)", fontWeight: 600, marginTop: 1 }}>
+                {playerPasses.length} player pass{playerPasses.length !== 1 ? "es" : ""}{teamPass ? " · 1 team pass" : ""}
+              </div>
+            )}
           </div>
 
-          {/* Progress bar */}
-          {!loading && (
+          {/* Progress bar (album only) */}
+          {!loading && view === "album" && (
             <div style={{ width: 52, height: 4, borderRadius: 99, background: "var(--surface-3)", overflow: "hidden", flexShrink: 0 }}>
               <div style={{ height: "100%", width: `${pct}%`, borderRadius: 99, background: "linear-gradient(90deg,#60a5fa,#a78bfa)", transition: "width 0.4s ease" }} />
             </div>
           )}
         </div>
 
-        {/* Team tabs */}
-        <div style={{ display: "flex", overflowX: "auto", scrollbarWidth: "none", padding: "0 12px" }}>
-          {TEAMS.map((team) => {
-            const players = CARD_PLAYERS.filter((p) => p.team === team);
-            const unlocked = players.filter((p) => cardsByPlayer.has(p.id)).length;
-            const active = team === activeTeam;
-            return (
-              <button
-                key={team}
-                className="album-tab-btn"
-                onClick={() => setActiveTeam(team)}
-                style={{
-                  appearance: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap",
-                  padding: "9px 14px 10px", flexShrink: 0,
-                  fontSize: 13, fontWeight: 800,
-                  background: "transparent",
-                  color: active ? "#fff" : "rgba(255,255,255,.35)",
-                  borderBottom: active ? "2px solid #fff" : "2px solid transparent",
-                }}
-              >
-                {teamShortName(team)}
-                {!loading && (
-                  <span style={{ marginLeft: 5, fontSize: 11, fontWeight: 600, color: active ? "rgba(255,255,255,.5)" : "rgba(255,255,255,.2)" }}>
-                    {unlocked}/{players.length}
-                  </span>
-                )}
+        {/* Album / Passes toggle */}
+        <div style={{ display: "flex", padding: "0 12px 10px", gap: 8 }}>
+          <div style={{ display: "flex", background: "rgba(255,255,255,0.07)", borderRadius: 999, padding: 3, flex: 1 }}>
+            {(["album", "passes"] as const).map((v) => (
+              <button key={v} onClick={() => setView(v)} style={{
+                flex: 1, padding: "7px 0", borderRadius: 999, border: "none",
+                background: view === v ? "rgba(255,255,255,0.13)" : "transparent",
+                color: view === v ? "#fff" : "rgba(255,255,255,.38)",
+                fontWeight: view === v ? 800 : 600, fontSize: 13,
+                cursor: "pointer", fontFamily: "inherit",
+                transition: "all 0.15s",
+              }}>
+                {v === "album" ? "Album" : "Passes"}
               </button>
-            );
-          })}
+            ))}
+          </div>
         </div>
+
+        {/* Team tabs — only in album view */}
+        {view === "album" && (
+          <div style={{ display: "flex", overflowX: "auto", scrollbarWidth: "none", padding: "0 12px" }}>
+            {TEAMS.map((team) => {
+              const players = CARD_PLAYERS.filter((p) => p.team === team);
+              const unlocked = players.filter((p) => cardsByPlayer.has(p.id)).length;
+              const active = team === activeTeam;
+              return (
+                <button
+                  key={team}
+                  className="album-tab-btn"
+                  onClick={() => setActiveTeam(team)}
+                  style={{
+                    appearance: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap",
+                    padding: "9px 14px 10px", flexShrink: 0,
+                    fontSize: 13, fontWeight: 800,
+                    background: "transparent",
+                    color: active ? "#fff" : "rgba(255,255,255,.35)",
+                    borderBottom: active ? "2px solid #fff" : "2px solid transparent",
+                  }}
+                >
+                  {teamShortName(team)}
+                  {!loading && (
+                    <span style={{ marginLeft: 5, fontSize: 11, fontWeight: 600, color: active ? "rgba(255,255,255,.5)" : "rgba(255,255,255,.2)" }}>
+                      {unlocked}/{players.length}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* Grid */}
-      <div style={{ padding: "10px 10px 0" }}>
-        {loading ? (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 0", gap: 14 }}>
-            <div className="spinner" />
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,.3)", fontWeight: 600 }}>Loading album…</div>
-          </div>
-        ) : (
+      {/* Content */}
+      {loading ? (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 0", gap: 14 }}>
+          <div className="spinner" />
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,.3)", fontWeight: 600 }}>Loading…</div>
+        </div>
+      ) : view === "album" ? (
+        <div style={{ padding: "10px 10px 0" }}>
           <div className="album-grid">
             {teamPlayers.map((player) => {
               const ownedCards = cardsByPlayer.get(player.id) ?? null;
@@ -272,8 +309,15 @@ export default function UserAlbumPage() {
               );
             })}
           </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <PassesView
+          playerPasses={playerPasses}
+          teamPass={teamPass}
+          onPlayerPassClick={(p) => setLeaderboardPlayerPass(p)}
+          onTeamPassClick={(t) => setLeaderboardTeamPass(t)}
+        />
+      )}
 
       {selectedCard && (
         <AlbumCardListModal
@@ -282,9 +326,170 @@ export default function UserAlbumPage() {
           onClose={() => setSelectedCard(null)}
         />
       )}
+
+      {leaderboardPlayerPass && (
+        <PassLeaderboard pass={leaderboardPlayerPass} onClose={() => setLeaderboardPlayerPass(null)} />
+      )}
+      {leaderboardTeamPass && (
+        <TeamPassLeaderboard pass={leaderboardTeamPass} onClose={() => setLeaderboardTeamPass(null)} />
+      )}
     </main>
   );
 }
+
+// ── Passes View ───────────────────────────────────────────────────────────────
+
+const TEAM_LOGOS: Record<string, string> = {
+  Adelaide: "/team-logos/crows.png", "Brisbane Lions": "/team-logos/lions.png",
+  Carlton: "/team-logos/blues.png", Collingwood: "/team-logos/magpies.png",
+  Essendon: "/team-logos/bombers.png", Fremantle: "/team-logos/dockers.png",
+  "Geelong Cats": "/team-logos/cats.png", Geelong: "/team-logos/cats.png",
+  "Gold Coast Suns": "/team-logos/suns.png", "Gold Coast": "/team-logos/suns.png",
+  "GWS Giants": "/team-logos/giants.png", GWS: "/team-logos/giants.png",
+  Hawthorn: "/team-logos/hawks.png", Melbourne: "/team-logos/demons.png",
+  "North Melbourne": "/team-logos/kangaroos.png", "Port Adelaide": "/team-logos/power.png",
+  Richmond: "/team-logos/tigers.png", "St Kilda": "/team-logos/saints.png",
+  "Sydney Swans": "/team-logos/swans.png", Sydney: "/team-logos/swans.png",
+  "West Coast Eagles": "/team-logos/eagles.png", "West Coast": "/team-logos/eagles.png",
+  "Western Bulldogs": "/team-logos/bulldogs.png",
+};
+
+const TEAM_FOLDER: Record<string, string> = {
+  Adelaide: "crows", "Adelaide Crows": "crows",
+  Brisbane: "lions", "Brisbane Lions": "lions",
+  Carlton: "blues", Collingwood: "magpies", Essendon: "bombers",
+  Fremantle: "dockers", GWS: "giants", "GWS Giants": "giants",
+  Geelong: "cats", "Geelong Cats": "cats",
+  "Gold Coast": "suns", "Gold Coast Suns": "suns",
+  Hawthorn: "hawks", Melbourne: "demons",
+  "North Melbourne": "kangaroos", "Port Adelaide": "power",
+  Richmond: "tigers", "St Kilda": "saints",
+  Sydney: "swans", "Sydney Swans": "swans",
+  "West Coast": "eagles", "West Coast Eagles": "eagles",
+  "Western Bulldogs": "bulldogs",
+};
+
+function playerImgSrc(playerName: string, teamName: string): string {
+  const folder = TEAM_FOLDER[teamName] ?? teamName.toLowerCase().replace(/[^a-z]/g, "");
+  const slug   = playerName.toLowerCase().replace(/[^a-z]/g, "");
+  if (!folder || !slug) return "";
+  return `/players/${folder}/${slug}.png`;
+}
+
+function PassesView({ playerPasses, teamPass, onPlayerPassClick, onTeamPassClick }: {
+  playerPasses: PlayerPass[];
+  teamPass: TeamPass | null;
+  onPlayerPassClick: (p: PlayerPass) => void;
+  onTeamPassClick: (t: TeamPass) => void;
+}) {
+  const hasAny = playerPasses.length > 0 || !!teamPass;
+
+  if (!hasAny) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 24px", gap: 12, textAlign: "center" }}>
+        <div style={{ fontSize: 40 }}>🎫</div>
+        <div style={{ fontSize: 17, fontWeight: 900, color: "var(--text-1)" }}>No passes yet</div>
+        <div style={{ fontSize: 13, color: "rgba(255,255,255,.4)", fontWeight: 600 }}>This user hasn't bought any passes.</div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ padding: "14px 14px 0", display: "flex", flexDirection: "column", gap: 20 }}>
+
+      {/* Team pass */}
+      {teamPass && (() => {
+        const level = getPassLevel(teamPass.xp ?? 0, TEAM_PASS_LEVELS);
+        const logo  = TEAM_LOGOS[teamPass.team_name] ?? "/team-logos/default.png";
+        return (
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.35)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Team Pass</div>
+            <div onClick={() => onTeamPassClick(teamPass!)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", borderRadius: 16, background: level.gradient, border: `1.5px solid ${level.color}44`, position: "relative", overflow: "hidden", cursor: "pointer" }}>
+              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1.5, background: `linear-gradient(90deg,transparent,${level.color}cc,transparent)` }} />
+              <div style={{ width: 52, height: 52, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(0,0,0,0.3)" }}>
+                <img src={logo} alt={teamPass.team_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 3 }}>
+                  <div style={{ fontWeight: 900, fontSize: 16, color: "#fff" }}>{teamPass.team_name}</div>
+                  {teamPass.serial_number != null && <div style={{ fontSize: 13, fontWeight: 900, color: level.color }}>#{teamPass.serial_number}</div>}
+                </div>
+                <div style={{ fontSize: 11, color: level.color, fontWeight: 800, letterSpacing: "0.05em", marginBottom: 6 }}>{level.name.toUpperCase()} · {level.multiplier}×</div>
+                <div style={{ background: "rgba(0,0,0,0.35)", borderRadius: 999, height: 4, overflow: "hidden" }}>
+                  <div style={{ width: `${Math.round(level.progress * 100)}%`, height: "100%", borderRadius: 999, background: `linear-gradient(90deg,${level.darkColor},${level.color})` }} />
+                </div>
+                <div style={{ marginTop: 4, fontSize: 10, color: "rgba(255,255,255,.3)", fontWeight: 600 }}>
+                  {level.isMaxed ? "MAX" : `${teamPass.xp ?? 0} / ${level.nextXp} XP`}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Player passes */}
+      {playerPasses.length > 0 && (
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.35)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
+            Player Passes · {playerPasses.length}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
+            {playerPasses.map((pass) => {
+              const level  = getPassLevel(pass.xp ?? 0, PLAYER_PASS_LEVELS);
+              const imgSrc = playerImgSrc(pass.player_name, pass.team_name);
+              return (
+                <div key={pass.id} onClick={() => onPlayerPassClick(pass)} style={{
+                  borderRadius: 16, overflow: "hidden", position: "relative",
+                  background: level.gradient, cursor: "pointer",
+                  border: `1.5px solid ${level.color}55`,
+                  boxShadow: `0 4px 24px ${level.color}22, 0 0 0 0.5px rgba(255,255,255,0.06)`,
+                  aspectRatio: "3/4",
+                  display: "flex", flexDirection: "column",
+                }}>
+                  {/* shimmer */}
+                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1.5, background: `linear-gradient(90deg,transparent,${level.color}cc,transparent)`, zIndex: 3 }} />
+                  {/* level badge */}
+                  <div style={{ position: "absolute", top: 8, left: 8, zIndex: 4, background: level.color, color: "#000", fontSize: 7.5, fontWeight: 900, letterSpacing: "0.1em", padding: "2px 7px", borderRadius: 999 }}>
+                    {level.name.toUpperCase()}
+                  </div>
+                  {/* year */}
+                  <div style={{ position: "absolute", top: 8, right: 8, zIndex: 4, fontSize: 8, fontWeight: 900, color: "rgba(255,255,255,0.35)", letterSpacing: "0.06em" }}>2026</div>
+                  {/* photo */}
+                  <div style={{ flex: 1, overflow: "hidden", position: "relative", background: "rgba(0,0,0,0.2)" }}>
+                    {imgSrc
+                      ? <img src={imgSrc} alt={pass.player_name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", display: "block" }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                      : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 44 }}>👤</div>
+                    }
+                    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 40, background: `linear-gradient(to bottom,transparent,${level.gradient.match(/#[0-9a-f]{6}/i)?.[0] ?? "#0a0a14"})` }} />
+                  </div>
+                  {/* footer */}
+                  <div style={{ padding: "8px 10px 10px", background: "rgba(0,0,0,0.25)", flexShrink: 0 }}>
+                    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 1 }}>
+                      <div style={{ fontWeight: 900, fontSize: 12, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>{pass.player_name}</div>
+                      {pass.serial_number != null && <div style={{ fontSize: 9, fontWeight: 900, color: level.color, letterSpacing: "0.04em", flexShrink: 0, marginLeft: 5 }}>#{pass.serial_number}</div>}
+                    </div>
+                    <div style={{ fontSize: 9.5, color: "rgba(255,255,255,0.45)", marginBottom: 6 }}>{pass.team_name}</div>
+                    <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                        <span style={{ fontSize: 9, fontWeight: 900, color: level.color, letterSpacing: "0.06em" }}>{level.name.toUpperCase()} · {level.multiplier}×</span>
+                        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>{level.isMaxed ? "MAX" : `${pass.xp ?? 0}/${level.nextXp}`}</span>
+                      </div>
+                      <div style={{ background: "rgba(0,0,0,0.45)", borderRadius: 999, height: 4, overflow: "hidden" }}>
+                        <div style={{ width: `${Math.round(level.progress * 100)}%`, height: "100%", borderRadius: 999, background: `linear-gradient(90deg,${level.darkColor},${level.color})`, boxShadow: `0 0 6px ${level.color}80` }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Album Card List Modal ─────────────────────────────────────────────────────
 
 function AlbumCardListModal({ player, cards, onClose }: {
   player: typeof CARD_PLAYERS[0];
@@ -383,7 +588,7 @@ function AlbumSlot({ player, ownedCards, onCardClick }: {
           alt=""
           style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
         />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.08) 0%, rgba(0,0,0,0) 38%, rgba(0,0,0,.65) 72%, rgba(0,0,0,.92) 100%)" }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.15) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,.72) 75%, rgba(0,0,0,.88) 100%)" }} />
 
         {unlocked && topCard && meta ? (
           <>
@@ -400,9 +605,7 @@ function AlbumSlot({ player, ownedCards, onCardClick }: {
             <div style={{
               position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)",
               width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden",
-              border: `2px solid ${meta.color}`,
-              boxShadow: `0 0 12px ${meta.glow}`,
-              background: TEAM_COLORS[player.team] ?? "#1a1a24",
+              background: (TEAM_COLORS[player.team] ?? "#1e2438") + "33",
             }}>
               <img
                 src={`/players/${player.folder}/${player.id}.png`}
@@ -422,7 +625,7 @@ function AlbumSlot({ player, ownedCards, onCardClick }: {
             </div>
 
             <div className="ac-pos" style={{ background: "rgba(0,0,0,.7)", fontWeight: 900, color: "rgba(255,255,255,.75)", letterSpacing: ".05em" }}>
-              {player.position}
+              2025
             </div>
           </>
         ) : (

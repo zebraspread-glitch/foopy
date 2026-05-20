@@ -439,24 +439,35 @@ export default function CardsPage() {
 
   // ── Sell card ─────────────────────────────────────────────────────────────
 
+  const [sellError, setSellError] = useState<string | null>(null);
+
   async function handleSell(card: UserCard) {
     if (selling) return;
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) return;
+    setSellError(null);
     setSelling(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        setSellError("You must be logged in to sell cards.");
+        return;
+      }
       const res = await fetch("/api/cards/sell", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify({ cardId: card.id }),
       });
       const data = await res.json();
-      if (!res.ok) { alert(data.error ?? "Failed to sell card"); return; }
+      if (!res.ok) {
+        setSellError(data.error ?? "Failed to sell card. Please try again.");
+        return;
+      }
       setCoins(data.newCoins);
       setSellCard(null);
+      setSellError(null);
       if (user) fetchCards(user.id);
-    } catch {
-      alert("Something went wrong.");
+    } catch (err) {
+      console.error("Sell error:", err);
+      setSellError("Something went wrong. Please try again.");
     } finally {
       setSelling(false);
     }
@@ -727,11 +738,12 @@ export default function CardsPage() {
         <SellConfirmModal
           card={sellCard}
           selling={selling}
+          sellError={sellError}
           isFeatured={featuredCards.some(f => f.player_id === sellCard.player_id)}
           featuredCount={featuredCards.length}
           onToggleFeatured={() => toggleFeaturedCard(sellCard.player_id, sellCard.rarity)}
           onConfirm={() => handleSell(sellCard)}
-          onCancel={() => setSellCard(null)}
+          onCancel={() => { setSellCard(null); setSellError(null); }}
         />
       )}
     </main>
@@ -933,6 +945,8 @@ function PlayerCard({ card, onSell }: { card: UserCard; onSell?: () => void }) {
       <div style={{ position: "absolute", width: 18, height: 18, bottom: 5, left: 5, borderRadius: "50%", overflow: "hidden", background: "rgba(0,0,0,.55)", border: "1.5px solid var(--border-3)" }}>
         <img src={card.team_logo} alt={card.team} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       </div>
+      {/* Year */}
+      <div style={{ position: "absolute", bottom: 5, right: 5, fontSize: 8, fontWeight: 900, color: "rgba(255,255,255,.55)", letterSpacing: ".05em", background: "rgba(0,0,0,.7)", borderRadius: 4, padding: "1px 4px" }}>2025</div>
     </div>
   );
 }
@@ -1024,6 +1038,8 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
                   <div style={{ position: "absolute", width: 14, height: 14, bottom: 4, left: 4, borderRadius: "50%", overflow: "hidden", background: "rgba(0,0,0,.55)", border: "1.5px solid var(--border-3)" }}>
                     <img src={card.team_logo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   </div>
+                  {/* Year */}
+                  <div style={{ position: "absolute", bottom: 4, right: 4, fontSize: 7, fontWeight: 900, color: "rgba(255,255,255,.55)", letterSpacing: ".05em", background: "rgba(0,0,0,.7)", borderRadius: 4, padding: "1px 3px" }}>2025</div>
                 </div>
               );
             })}
@@ -1109,6 +1125,8 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
                     <div style={{ position: "absolute", width: 26, height: 26, bottom: 8, left: 8, borderRadius: "50%", overflow: "hidden", background: "rgba(0,0,0,.55)", border: "1.5px solid rgba(255,255,255,.2)" }}>
                       <img src={current.team_logo} alt={current.team} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     </div>
+                    {/* Year */}
+                    <div style={{ position: "absolute", bottom: 8, right: 8, fontSize: 10, fontWeight: 900, color: "rgba(255,255,255,.55)", letterSpacing: ".05em", background: "rgba(0,0,0,.7)", borderRadius: 5, padding: "2px 6px" }}>2025</div>
                   </>
                 )}
               </div>
@@ -1152,9 +1170,10 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
 
 // ── Sell Confirm Modal ────────────────────────────────────────────────────────
 
-function SellConfirmModal({ card, selling, isFeatured, featuredCount, onToggleFeatured, onConfirm, onCancel }: {
+function SellConfirmModal({ card, selling, sellError, isFeatured, featuredCount, onToggleFeatured, onConfirm, onCancel }: {
   card: UserCard;
   selling: boolean;
+  sellError: string | null;
   isFeatured: boolean;
   featuredCount: number;
   onToggleFeatured: () => void;
@@ -1238,6 +1257,11 @@ function SellConfirmModal({ card, selling, isFeatured, featuredCount, onToggleFe
             <p style={{ textAlign: "center", color: "rgba(255,255,255,.45)", fontSize: 13, fontWeight: 700, margin: "0 0 16px" }}>
               This cannot be undone.
             </p>
+            {sellError && (
+              <div style={{ background: "rgba(239,68,68,.12)", border: "1px solid rgba(239,68,68,.35)", borderRadius: 10, padding: "10px 14px", marginBottom: 14, textAlign: "center", fontSize: 13, fontWeight: 700, color: "#f87171" }}>
+                {sellError}
+              </div>
+            )}
             <div style={{ display: "flex", gap: 10 }}>
               <button
                 onClick={() => setStep("options")}

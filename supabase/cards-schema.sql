@@ -26,7 +26,7 @@ create table if not exists public.user_cards (
   player_name     text    not null,
   team            text    not null,
   team_logo       text    not null,
-  rarity          text    not null check (rarity in ('bronze','silver','gold','diamond','mythic')),
+  rarity          text    not null check (rarity in ('bronze','silver','gold','emerald','sapphire','ruby','amethyst','diamond','pinkdiamond','mythic')),
   rating          integer not null,
   duplicate_count integer not null default 1,
   pack_type       text    not null,
