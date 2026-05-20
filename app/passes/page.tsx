@@ -258,6 +258,7 @@ export default function PassesPage() {
   const [playerPickerOpen, setPlayerPickerOpen] = useState(false);
   const [earningsOpen, setEarningsOpen]         = useState(false);
   const [playerSearch, setPlayerSearch]         = useState("");
+  const [pendingPlayer, setPendingPlayer]       = useState<{ pid: string; name: string; team: string; imgSrc: string } | null>(null);
   const [purchaseErr, setPurchaseErr]           = useState<string | null>(null);
   const autoClaimFired = useRef(false);
 
@@ -318,6 +319,7 @@ export default function PassesPage() {
     if (!token) return;
     setPlayerPickerOpen(false);
     setPlayerSearch("");
+    setPendingPlayer(null);
     setPurchaseErr(null);
     const res = await fetch("/api/passes/player", {
       method: "POST",
@@ -395,8 +397,8 @@ export default function PassesPage() {
         </div>
 
         {/* Get Passes button */}
-        {canGetMore && (
-          <button suppressHydrationWarning onClick={openGetPasses} style={{
+        <button suppressHydrationWarning onClick={canGetMore ? openGetPasses : undefined} style={{
+            visibility: canGetMore ? "visible" : "hidden",
             padding: "10px 18px", borderRadius: 999,
             background: "linear-gradient(135deg,#854d0e,#ca8a04)",
             border: "none", color: "#fff", fontWeight: 900, fontSize: 13,
@@ -405,7 +407,6 @@ export default function PassesPage() {
           }}>
             Get Pass · <CoinImg size={12} /> {fmtCoins(passcost)}
           </button>
-        )}
       </div>
 
       {/* Purchase error */}
@@ -473,41 +474,125 @@ export default function PassesPage() {
 
       {/* Player Picker */}
       {playerPickerOpen && (
-        <Modal centered title={`Add Player Pass · ${fmtCoins(PLAYER_PASS_COST)} coins`} onClose={() => { setPlayerPickerOpen(false); setPlayerSearch(""); }}>
-          <input type="text" placeholder="Search player name…" value={playerSearch} onChange={(e) => setPlayerSearch(e.target.value)} autoFocus
-            style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: "1.5px solid var(--border-2)", background: "var(--surface-2)", color: "var(--text-1)", fontSize: 15, fontWeight: 600, marginBottom: 10, outline: "none", boxSizing: "border-box" }}
-          />
-          {playerSearch.trim().length < 2 ? (
-            <div style={{ textAlign: "center", padding: "24px 0", color: "var(--text-3)", fontSize: 13 }}>Type at least 2 characters</div>
-          ) : filtered.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "24px 0", color: "var(--text-3)", fontSize: 13 }}>No players found</div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 5, maxHeight: 400, overflowY: "auto" }}>
-              {filtered.map((p: any, i: number) => {
-                const pid   = String(p.id ?? "");
-                const pname = String(p.name ?? p.player ?? "");
-                const team  = String(p.club ?? p.team ?? "");
-                const owned  = ownedIds.has(pid);
-                const imgSrc = playerImgSrc(pname, team);
-                return (
-                  <button key={`${pid}_${i}`} onClick={() => !owned && addPlayerPass(pid)} disabled={owned} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 12, border: "1px solid var(--border-2)", background: owned ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.04)", cursor: owned ? "default" : "pointer", opacity: owned ? 0.45 : 1, width: "100%", textAlign: "left" }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 10, overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.07)" }}>
-                      {imgSrc
-                        ? <img src={imgSrc} alt={pname} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                        : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>👤</div>
-                      }
+        <Modal
+          centered
+          title={pendingPlayer ? "Player Pass" : `Add Player Pass · ${fmtCoins(PLAYER_PASS_COST)} coins`}
+          onClose={() => { setPlayerPickerOpen(false); setPlayerSearch(""); setPendingPlayer(null); }}
+        >
+          {pendingPlayer ? (
+            /* ── Confirmation screen ── */
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {/* Card preview */}
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <div style={{ width: 160 }}>
+                  <PlayerCard pass={{
+                    id: "",
+                    user_id: "",
+                    player_id: pendingPlayer.pid,
+                    player_name: pendingPlayer.name,
+                    team_name: pendingPlayer.team,
+                    active: true,
+                    xp: 0,
+                    created_at: "",
+                  }} />
+                </div>
+              </div>
+
+              {/* Pass info */}
+              <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={{ fontWeight: 900, fontSize: 16, color: "var(--text-1)" }}>{pendingPlayer.name}</div>
+                <div style={{ fontSize: 13, color: "var(--text-3)" }}>{pendingPlayer.team}</div>
+                <div style={{ height: 1, background: "var(--border-1)" }} />
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.55 }}>
+                  Earn <span style={{ color: "#a78bfa", fontWeight: 800 }}>Aura</span> &amp; <span style={{ color: "#fbbf24", fontWeight: 800 }}>Coins</span> based on {pendingPlayer.name.split(" ")[0]}'s Foopy Rating each game. The pass levels up as you earn XP, increasing your reward multiplier up to <span style={{ color: "#c084fc", fontWeight: 800 }}>7×</span>.
+                </div>
+                <div style={{ height: 1, background: "var(--border-1)" }} />
+                {/* Multipliers preview */}
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {PLAYER_PASS_LEVELS.map((lvl, i) => (
+                    <div key={lvl.name} style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 999, background: `${lvl.color}18`, border: `1px solid ${lvl.color}40` }}>
+                      <span style={{ fontSize: 10, fontWeight: 900, color: lvl.color }}>{lvl.name}</span>
+                      <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: 700 }}>{[1,1.25,1.5,1.75,2,2.5,3,4,5,7][i]}×</span>
                     </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 800, fontSize: 14, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pname}</div>
-                      <div style={{ fontSize: 12, color: "var(--text-3)" }}>{team}</div>
-                    </div>
-                    <span style={{ fontSize: 11, fontWeight: 800, flexShrink: 0, color: owned ? "#a78bfa" : "#fbbf24", display: "flex", alignItems: "center", gap: 3 }}>
-                      {owned ? "Owned" : <><CoinImg size={12} />{fmtCoins(PLAYER_PASS_COST)}</>}
-                    </span>
-                  </button>
-                );
-              })}
+                  ))}
+                </div>
+              </div>
+
+              {/* Price row */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", background: "rgba(255,255,255,0.04)", borderRadius: 14, border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div>
+                  <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 700, marginBottom: 2 }}>COST</div>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: "#fbbf24", display: "flex", alignItems: "center", gap: 5 }}>
+                    <CoinImg size={18} />{fmtCoins(PLAYER_PASS_COST)}
+                  </div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 700, marginBottom: 2 }}>YOUR BALANCE</div>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: coins >= PLAYER_PASS_COST ? "#fbbf24" : "#f87171", display: "flex", alignItems: "center", gap: 5, justifyContent: "flex-end" }}>
+                    <CoinImg size={18} />{fmtCoins(coins)}
+                  </div>
+                </div>
+              </div>
+
+              {coins < PLAYER_PASS_COST && (
+                <div style={{ padding: "10px 14px", borderRadius: 12, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", fontSize: 13, fontWeight: 700, color: "#f87171", textAlign: "center" }}>
+                  Need <CoinImg size={13} /> {fmtCoins(PLAYER_PASS_COST - coins)} more — open packs to earn coins
+                </div>
+              )}
+
+              {/* Buttons */}
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={() => setPendingPlayer(null)} style={{ flex: 1, padding: "13px 0", borderRadius: 999, border: "1px solid var(--border-2)", background: "rgba(255,255,255,0.05)", color: "var(--text-2)", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
+                  ← Back
+                </button>
+                <button
+                  onClick={() => coins >= PLAYER_PASS_COST && addPlayerPass(pendingPlayer.pid)}
+                  disabled={coins < PLAYER_PASS_COST}
+                  style={{ flex: 2, padding: "13px 0", borderRadius: 999, border: "none", background: coins >= PLAYER_PASS_COST ? "linear-gradient(135deg,#854d0e,#ca8a04)" : "rgba(255,255,255,0.08)", color: coins >= PLAYER_PASS_COST ? "#fff" : "rgba(255,255,255,0.3)", fontWeight: 900, fontSize: 15, cursor: coins >= PLAYER_PASS_COST ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+                >
+                  Get Pass · <CoinImg size={14} /> {fmtCoins(PLAYER_PASS_COST)}
+                </button>
+              </div>
             </div>
+          ) : (
+            /* ── Search screen ── */
+            <>
+              <input type="text" placeholder="Search player name…" value={playerSearch} onChange={(e) => setPlayerSearch(e.target.value)} autoFocus
+                style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: "1.5px solid var(--border-2)", background: "var(--surface-2)", color: "var(--text-1)", fontSize: 15, fontWeight: 600, marginBottom: 10, outline: "none", boxSizing: "border-box" }}
+              />
+              {playerSearch.trim().length < 2 ? (
+                <div style={{ textAlign: "center", padding: "24px 0", color: "var(--text-3)", fontSize: 13 }}>Type at least 2 characters</div>
+              ) : filtered.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "24px 0", color: "var(--text-3)", fontSize: 13 }}>No players found</div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 5, maxHeight: 400, overflowY: "auto" }}>
+                  {filtered.map((p: any, i: number) => {
+                    const pid   = String(p.id ?? "");
+                    const pname = String(p.name ?? p.player ?? "");
+                    const team  = String(p.club ?? p.team ?? "");
+                    const owned  = ownedIds.has(pid);
+                    const imgSrc = playerImgSrc(pname, team);
+                    return (
+                      <button key={`${pid}_${i}`} onClick={() => !owned && setPendingPlayer({ pid, name: pname, team, imgSrc })} disabled={owned} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 12, border: "1px solid var(--border-2)", background: owned ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.04)", cursor: owned ? "default" : "pointer", opacity: owned ? 0.45 : 1, width: "100%", textAlign: "left" }}>
+                        <div style={{ width: 44, height: 44, borderRadius: 10, overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.07)" }}>
+                          {imgSrc
+                            ? <img src={imgSrc} alt={pname} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                            : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>👤</div>
+                          }
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 800, fontSize: 14, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pname}</div>
+                          <div style={{ fontSize: 12, color: "var(--text-3)" }}>{team}</div>
+                        </div>
+                        <span style={{ fontSize: 11, fontWeight: 800, flexShrink: 0, color: owned ? "#a78bfa" : "#fbbf24", display: "flex", alignItems: "center", gap: 3 }}>
+                          {owned ? "Owned" : <><CoinImg size={12} />{fmtCoins(PLAYER_PASS_COST)}</>}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           )}
         </Modal>
       )}

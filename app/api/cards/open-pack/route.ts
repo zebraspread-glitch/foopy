@@ -10,7 +10,7 @@ const supabaseAdmin = createClient(
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-type Rarity = "bronze" | "silver" | "gold" | "diamond" | "mythic";
+type Rarity = "bronze" | "silver" | "gold" | "emerald" | "sapphire" | "ruby" | "amethyst" | "diamond" | "pinkdiamond" | "mythic";
 type PackType = "starter" | "general" | "mythical";
 
 interface PackConfig {
@@ -26,19 +26,19 @@ const PACK_CONFIGS: Record<PackType, PackConfig> = {
   starter: {
     cost: 100,
     normalCount: 3,
-    normalOdds: { bronze: 70, silver: 25, gold: 5, diamond: 0, mythic: 0 },
+    normalOdds: { bronze: 55, silver: 30, gold: 12, emerald: 3, sapphire: 0, ruby: 0, amethyst: 0, diamond: 0, pinkdiamond: 0, mythic: 0 },
     guaranteedMythic: false,
   },
   general: {
     cost: 200,
     normalCount: 7,
-    normalOdds: { bronze: 45, silver: 30, gold: 17, diamond: 1, mythic: 0.1 },
+    normalOdds: { bronze: 50, silver: 24, gold: 12, emerald: 6, sapphire: 3.5, ruby: 2, amethyst: 1, diamond: 0.35, pinkdiamond: 0.1, mythic: 0.05 },
     guaranteedMythic: false,
   },
   mythical: {
     cost: 3000,
     normalCount: 3,
-    normalOdds: { bronze: 35, silver: 30, gold: 20, diamond: 15, mythic: 0 },
+    normalOdds: { bronze: 18, silver: 22, gold: 20, emerald: 15, sapphire: 10, ruby: 7, amethyst: 4, diamond: 2, pinkdiamond: 1, mythic: 0 },
     guaranteedMythic: true,
   },
 };
@@ -46,11 +46,16 @@ const PACK_CONFIGS: Record<PackType, PackConfig> = {
 // ── Rating ranges per rarity ─────────────────────────────────────────────────
 
 const RATING_RANGES: Record<Rarity, [number, number]> = {
-  bronze:  [60, 74],
-  silver:  [75, 82],
-  gold:    [83, 89],
-  diamond: [90, 94],
-  mythic:  [95, 99],
+  bronze:      [1,   5],
+  silver:      [5,   9],
+  gold:        [10,  24],
+  emerald:     [25,  39],
+  sapphire:    [40,  54],
+  ruby:        [55,  69],
+  amethyst:    [70,  79],
+  diamond:     [80,  89],
+  pinkdiamond: [90,  99],
+  mythic:      [100, 100],
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

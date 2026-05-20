@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { CARD_PLAYERS } from "@/app/data/cardPlayers";
 
-type Rarity = "bronze" | "silver" | "gold" | "diamond" | "mythic";
+type Rarity = "bronze" | "silver" | "gold" | "emerald" | "sapphire" | "ruby" | "amethyst" | "diamond" | "pinkdiamond" | "mythic";
 
 interface UserCard {
   id: string;
@@ -20,7 +20,10 @@ interface ProfileInfo {
   avatar_url: string | null;
 }
 
-const RARITY_ORDER: Record<Rarity, number> = { bronze: 0, silver: 1, gold: 2, diamond: 3, mythic: 4 };
+const RARITY_ORDER: Record<Rarity, number> = {
+  bronze: 0, silver: 1, gold: 2, emerald: 3, sapphire: 4,
+  ruby: 5, amethyst: 6, diamond: 7, pinkdiamond: 8, mythic: 9,
+};
 
 const TEAM_COLORS: Record<string, string> = {
   Adelaide: "#002b5c", "Brisbane Lions": "#a50034", Carlton: "#031a35",
@@ -33,11 +36,16 @@ const TEAM_COLORS: Record<string, string> = {
 };
 
 const RARITY_META: Record<Rarity, { color: string; glow: string }> = {
-  bronze:  { color: "#cd7f32", glow: "rgba(205,127,50,0.6)" },
-  silver:  { color: "#c0c0c0", glow: "rgba(192,192,192,0.6)" },
-  gold:    { color: "#ffd700", glow: "rgba(255,215,0,0.6)" },
-  diamond: { color: "#67e8f9", glow: "rgba(103,232,249,0.7)" },
-  mythic:  { color: "#c084fc", glow: "rgba(192,132,252,0.8)" },
+  bronze:      { color: "#cd7f32", glow: "rgba(205,127,50,0.6)" },
+  silver:      { color: "#c0c0c0", glow: "rgba(192,192,192,0.6)" },
+  gold:        { color: "#ffd700", glow: "rgba(255,215,0,0.6)" },
+  emerald:     { color: "#10b981", glow: "rgba(16,185,129,0.65)" },
+  sapphire:    { color: "#3b82f6", glow: "rgba(59,130,246,0.65)" },
+  ruby:        { color: "#ef4444", glow: "rgba(239,68,68,0.65)" },
+  amethyst:    { color: "#a78bfa", glow: "rgba(167,139,250,0.70)" },
+  diamond:     { color: "#67e8f9", glow: "rgba(103,232,249,0.70)" },
+  pinkdiamond: { color: "#f472b6", glow: "rgba(244,114,182,0.70)" },
+  mythic:      { color: "#c084fc", glow: "rgba(192,132,252,0.80)" },
 };
 
 const TEAMS = [
@@ -174,6 +182,7 @@ export default function UserAlbumPage() {
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
         borderBottom: "1px solid var(--border-1)",
+        paddingTop: "env(safe-area-inset-top)",
       }}>
         {/* Top row */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px 10px" }}>

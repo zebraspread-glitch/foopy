@@ -14,7 +14,7 @@ import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/app/lib/supabase";
 import { CARD_PLAYERS } from "@/app/data/cardPlayers";
 
-type Rarity = "bronze" | "silver" | "gold" | "diamond" | "mythic";
+type Rarity = "bronze" | "silver" | "gold" | "emerald" | "sapphire" | "ruby" | "amethyst" | "diamond" | "pinkdiamond" | "mythic";
 
 interface UserCard {
   id: string;
@@ -24,7 +24,10 @@ interface UserCard {
   duplicate_count: number;
 }
 
-const RARITY_ORDER: Record<Rarity, number> = { bronze: 0, silver: 1, gold: 2, diamond: 3, mythic: 4 };
+const RARITY_ORDER: Record<Rarity, number> = {
+  bronze: 0, silver: 1, gold: 2, emerald: 3, sapphire: 4,
+  ruby: 5, amethyst: 6, diamond: 7, pinkdiamond: 8, mythic: 9,
+};
 
 const TEAM_COLORS: Record<string, string> = {
   Adelaide: "#002b5c", "Brisbane Lions": "#a50034", Carlton: "#031a35",
@@ -37,11 +40,16 @@ const TEAM_COLORS: Record<string, string> = {
 };
 
 const RARITY_META: Record<Rarity, { color: string; glow: string }> = {
-  bronze:  { color: "#cd7f32", glow: "rgba(205,127,50,0.6)" },
-  silver:  { color: "#c0c0c0", glow: "rgba(192,192,192,0.6)" },
-  gold:    { color: "#ffd700", glow: "rgba(255,215,0,0.6)" },
-  diamond: { color: "#67e8f9", glow: "rgba(103,232,249,0.7)" },
-  mythic:  { color: "#c084fc", glow: "rgba(192,132,252,0.8)" },
+  bronze:      { color: "#cd7f32", glow: "rgba(205,127,50,0.6)" },
+  silver:      { color: "#c0c0c0", glow: "rgba(192,192,192,0.6)" },
+  gold:        { color: "#ffd700", glow: "rgba(255,215,0,0.6)" },
+  emerald:     { color: "#10b981", glow: "rgba(16,185,129,0.65)" },
+  sapphire:    { color: "#3b82f6", glow: "rgba(59,130,246,0.65)" },
+  ruby:        { color: "#ef4444", glow: "rgba(239,68,68,0.65)" },
+  amethyst:    { color: "#a78bfa", glow: "rgba(167,139,250,0.70)" },
+  diamond:     { color: "#67e8f9", glow: "rgba(103,232,249,0.70)" },
+  pinkdiamond: { color: "#f472b6", glow: "rgba(244,114,182,0.70)" },
+  mythic:      { color: "#c084fc", glow: "rgba(192,132,252,0.80)" },
 };
 
 const TEAMS = [
@@ -370,7 +378,10 @@ function AlbumCardModal({ player, cards, isFeatured, featuredCount, selling, onT
   if (!card) return null;
 
   const meta = RARITY_META[card.rarity];
-  const SELL_VALUES: Record<Rarity, number> = { bronze: 1, silver: 5, gold: 10, diamond: 100, mythic: 500 };
+  const SELL_VALUES: Record<Rarity, number> = {
+    bronze: 1, silver: 3, gold: 10, emerald: 25, sapphire: 60,
+    ruby: 150, amethyst: 300, diamond: 600, pinkdiamond: 1200, mythic: 2500,
+  };
   const sellValue = SELL_VALUES[card.rarity];
   const totalCopies = sortedCards.reduce((sum, ownedCard) => sum + ownedCard.duplicate_count, 0);
   const showOwnedCards = sortedCards.length > 1 || totalCopies > 1;

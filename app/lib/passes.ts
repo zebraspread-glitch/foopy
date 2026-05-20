@@ -6,7 +6,7 @@ export const TEAM_PASS_COST    = 1500;  // coins to buy (one-time slot)
 
 // ── Pass level definitions ────────────────────────────────────────────────────
 
-export type PassLevelName = "Bronze" | "Silver" | "Gold" | "Diamond" | "Mythic";
+export type PassLevelName = "Bronze" | "Silver" | "Gold" | "Emerald" | "Sapphire" | "Ruby" | "Amethyst" | "Diamond" | "Pink Diamond" | "Mythic";
 
 interface LevelDef {
   name:       PassLevelName;
@@ -17,22 +17,32 @@ interface LevelDef {
 }
 
 export const PLAYER_PASS_LEVELS: LevelDef[] = [
-  { name: "Bronze",  color: "#e8a87c", darkColor: "#7a3d10", gradient: "linear-gradient(155deg,#3b1a08,#6b3010)",  xpRequired: 0    },
-  { name: "Silver",  color: "#d4d4d4", darkColor: "#555",    gradient: "linear-gradient(155deg,#1c1c2a,#2e2e42)",  xpRequired: 500  },
-  { name: "Gold",    color: "#ffd700", darkColor: "#7a6000", gradient: "linear-gradient(155deg,#2e2600,#4a3c00)",  xpRequired: 1000 },
-  { name: "Diamond", color: "#7dd3fc", darkColor: "#0050a0", gradient: "linear-gradient(155deg,#00103d,#002966)",  xpRequired: 1500 },
-  { name: "Mythic",  color: "#c084fc", darkColor: "#5b1ea8", gradient: "linear-gradient(155deg,#1a0033,#36006b)",  xpRequired: 2000 },
+  { name: "Bronze",       color: "#e8a87c", darkColor: "#7a3d10", gradient: "linear-gradient(155deg,#3b1a08,#6b3010)",  xpRequired: 0     },
+  { name: "Silver",       color: "#d4d4d4", darkColor: "#555",    gradient: "linear-gradient(155deg,#1c1c2a,#2e2e42)",  xpRequired: 300   },
+  { name: "Gold",         color: "#ffd700", darkColor: "#7a6000", gradient: "linear-gradient(155deg,#2e2600,#4a3c00)",  xpRequired: 700   },
+  { name: "Emerald",      color: "#10b981", darkColor: "#065f3a", gradient: "linear-gradient(155deg,#031f13,#063d22)",  xpRequired: 1200  },
+  { name: "Sapphire",     color: "#3b82f6", darkColor: "#1e40af", gradient: "linear-gradient(155deg,#06183b,#0a2d6b)",  xpRequired: 2000  },
+  { name: "Ruby",         color: "#ef4444", darkColor: "#991b1b", gradient: "linear-gradient(155deg,#3b0606,#6b0a0a)",  xpRequired: 3000  },
+  { name: "Amethyst",     color: "#a78bfa", darkColor: "#5b21b6", gradient: "linear-gradient(155deg,#1a0a33,#2d1060)",  xpRequired: 4500  },
+  { name: "Diamond",      color: "#67e8f9", darkColor: "#0050a0", gradient: "linear-gradient(155deg,#00103d,#002966)",  xpRequired: 6500  },
+  { name: "Pink Diamond", color: "#f472b6", darkColor: "#be185d", gradient: "linear-gradient(155deg,#2d0a1a,#5a1030)",  xpRequired: 9000  },
+  { name: "Mythic",       color: "#c084fc", darkColor: "#5b1ea8", gradient: "linear-gradient(155deg,#1a0033,#36006b)",  xpRequired: 12000 },
 ];
 
 export const TEAM_PASS_LEVELS: LevelDef[] = [
-  { name: "Bronze",  color: "#e8a87c", darkColor: "#7a3d10", gradient: "linear-gradient(155deg,#3b1a08,#6b3010)",  xpRequired: 0    },
-  { name: "Silver",  color: "#d4d4d4", darkColor: "#555",    gradient: "linear-gradient(155deg,#1c1c2a,#2e2e42)",  xpRequired: 2000 },
-  { name: "Gold",    color: "#ffd700", darkColor: "#7a6000", gradient: "linear-gradient(155deg,#2e2600,#4a3c00)",  xpRequired: 4000 },
-  { name: "Diamond", color: "#7dd3fc", darkColor: "#0050a0", gradient: "linear-gradient(155deg,#00103d,#002966)",  xpRequired: 6000 },
-  { name: "Mythic",  color: "#c084fc", darkColor: "#5b1ea8", gradient: "linear-gradient(155deg,#1a0033,#36006b)",  xpRequired: 8000 },
+  { name: "Bronze",       color: "#e8a87c", darkColor: "#7a3d10", gradient: "linear-gradient(155deg,#3b1a08,#6b3010)",  xpRequired: 0     },
+  { name: "Silver",       color: "#d4d4d4", darkColor: "#555",    gradient: "linear-gradient(155deg,#1c1c2a,#2e2e42)",  xpRequired: 1000  },
+  { name: "Gold",         color: "#ffd700", darkColor: "#7a6000", gradient: "linear-gradient(155deg,#2e2600,#4a3c00)",  xpRequired: 2500  },
+  { name: "Emerald",      color: "#10b981", darkColor: "#065f3a", gradient: "linear-gradient(155deg,#031f13,#063d22)",  xpRequired: 4500  },
+  { name: "Sapphire",     color: "#3b82f6", darkColor: "#1e40af", gradient: "linear-gradient(155deg,#06183b,#0a2d6b)",  xpRequired: 7000  },
+  { name: "Ruby",         color: "#ef4444", darkColor: "#991b1b", gradient: "linear-gradient(155deg,#3b0606,#6b0a0a)",  xpRequired: 10000 },
+  { name: "Amethyst",     color: "#a78bfa", darkColor: "#5b21b6", gradient: "linear-gradient(155deg,#1a0a33,#2d1060)",  xpRequired: 14000 },
+  { name: "Diamond",      color: "#67e8f9", darkColor: "#0050a0", gradient: "linear-gradient(155deg,#00103d,#002966)",  xpRequired: 18000 },
+  { name: "Pink Diamond", color: "#f472b6", darkColor: "#be185d", gradient: "linear-gradient(155deg,#2d0a1a,#5a1030)",  xpRequired: 23000 },
+  { name: "Mythic",       color: "#c084fc", darkColor: "#5b1ea8", gradient: "linear-gradient(155deg,#1a0033,#36006b)",  xpRequired: 30000 },
 ];
 
-const LEVEL_MULTIPLIERS = [1, 1.5, 2, 3, 5] as const;
+const LEVEL_MULTIPLIERS = [1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5, 7] as const;
 
 export interface PassLevelInfo {
   levelIdx:   number;

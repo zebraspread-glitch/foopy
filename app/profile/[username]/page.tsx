@@ -61,11 +61,16 @@ const TEAMS = [
 ];
 
 const RARITY_META: Record<string, { color: string; glow: string }> = {
-  bronze:  { color: "#cd7f32", glow: "rgba(205,127,50,0.6)" },
-  silver:  { color: "#c0c0c0", glow: "rgba(192,192,192,0.6)" },
-  gold:    { color: "#ffd700", glow: "rgba(255,215,0,0.6)" },
-  diamond: { color: "#67e8f9", glow: "rgba(103,232,249,0.7)" },
-  mythic:  { color: "#c084fc", glow: "rgba(192,132,252,0.8)" },
+  bronze:      { color: "#cd7f32", glow: "rgba(205,127,50,0.6)" },
+  silver:      { color: "#c0c0c0", glow: "rgba(192,192,192,0.6)" },
+  gold:        { color: "#ffd700", glow: "rgba(255,215,0,0.6)" },
+  emerald:     { color: "#10b981", glow: "rgba(16,185,129,0.65)" },
+  sapphire:    { color: "#3b82f6", glow: "rgba(59,130,246,0.65)" },
+  ruby:        { color: "#ef4444", glow: "rgba(239,68,68,0.65)" },
+  amethyst:    { color: "#a78bfa", glow: "rgba(167,139,250,0.70)" },
+  diamond:     { color: "#67e8f9", glow: "rgba(103,232,249,0.70)" },
+  pinkdiamond: { color: "#f472b6", glow: "rgba(244,114,182,0.70)" },
+  mythic:      { color: "#c084fc", glow: "rgba(192,132,252,0.80)" },
 };
 
 function slugName(s: string) {

@@ -8,7 +8,7 @@ import type { User } from "@supabase/supabase-js";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type Rarity = "bronze" | "silver" | "gold" | "diamond" | "mythic";
+type Rarity = "bronze" | "silver" | "gold" | "emerald" | "sapphire" | "ruby" | "amethyst" | "diamond" | "pinkdiamond" | "mythic";
 type PackType = "starter" | "general" | "mythical";
 type SortKey = "newest" | "rating_desc" | "rating_asc" | "rarity";
 
@@ -38,14 +38,22 @@ interface OpenedCard {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const RARITY_ORDER: Record<Rarity, number> = { bronze: 0, silver: 1, gold: 2, diamond: 3, mythic: 4 };
+const RARITY_ORDER: Record<Rarity, number> = {
+  bronze: 0, silver: 1, gold: 2, emerald: 3, sapphire: 4,
+  ruby: 5, amethyst: 6, diamond: 7, pinkdiamond: 8, mythic: 9,
+};
 
 const RARITY_META: Record<Rarity, { label: string; color: string; glow: string; bg: string }> = {
-  bronze:  { label: "Bronze",  color: "#cd7f32", glow: "rgba(205,127,50,0.55)",  bg: "rgba(205,127,50,0.12)" },
-  silver:  { label: "Silver",  color: "#c0c0c0", glow: "rgba(192,192,192,0.55)", bg: "rgba(192,192,192,0.10)" },
-  gold:    { label: "Gold",    color: "#ffd700", glow: "rgba(255,215,0,0.55)",   bg: "rgba(255,215,0,0.12)" },
-  diamond: { label: "Diamond", color: "#67e8f9", glow: "rgba(103,232,249,0.6)",  bg: "rgba(103,232,249,0.12)" },
-  mythic:  { label: "Mythic",  color: "#c084fc", glow: "rgba(192,132,252,0.7)",  bg: "rgba(192,132,252,0.14)" },
+  bronze:      { label: "Bronze",       color: "#cd7f32", glow: "rgba(205,127,50,0.55)",   bg: "rgba(205,127,50,0.12)" },
+  silver:      { label: "Silver",       color: "#c0c0c0", glow: "rgba(192,192,192,0.55)",  bg: "rgba(192,192,192,0.10)" },
+  gold:        { label: "Gold",         color: "#ffd700", glow: "rgba(255,215,0,0.55)",    bg: "rgba(255,215,0,0.12)" },
+  emerald:     { label: "Emerald",      color: "#10b981", glow: "rgba(16,185,129,0.60)",   bg: "rgba(16,185,129,0.12)" },
+  sapphire:    { label: "Sapphire",     color: "#3b82f6", glow: "rgba(59,130,246,0.60)",   bg: "rgba(59,130,246,0.12)" },
+  ruby:        { label: "Ruby",         color: "#ef4444", glow: "rgba(239,68,68,0.60)",    bg: "rgba(239,68,68,0.12)" },
+  amethyst:    { label: "Amethyst",     color: "#a78bfa", glow: "rgba(167,139,250,0.65)",  bg: "rgba(167,139,250,0.12)" },
+  diamond:     { label: "Diamond",      color: "#67e8f9", glow: "rgba(103,232,249,0.65)",  bg: "rgba(103,232,249,0.12)" },
+  pinkdiamond: { label: "Pink Diamond", color: "#f472b6", glow: "rgba(244,114,182,0.65)",  bg: "rgba(244,114,182,0.12)" },
+  mythic:      { label: "Mythic",       color: "#c084fc", glow: "rgba(192,132,252,0.75)",  bg: "rgba(192,132,252,0.14)" },
 };
 
 const TEAM_PLAYER_FOLDER: Record<string, string> = {
@@ -96,7 +104,7 @@ const PACKS: { type: PackType; label: string; cost: number; cards: string; image
     cards: "3 cards",
     image: "/packs/starter.png",
     accent: "#cd7f32",
-    description: "Up to Gold rarity",
+    description: "Up to Emerald rarity",
   },
   {
     type: "general",
@@ -120,15 +128,22 @@ const PACKS: { type: PackType; label: string; cost: number; cards: string; image
 
 const RARITY_ODDS: Record<PackType, { rarity: Rarity; pct: string }[]> = {
   starter: [
-    { rarity: "bronze", pct: "70%" }, { rarity: "silver", pct: "25%" }, { rarity: "gold", pct: "5%" },
+    { rarity: "bronze", pct: "55%" }, { rarity: "silver", pct: "30%" },
+    { rarity: "gold", pct: "12%" },   { rarity: "emerald", pct: "3%" },
   ],
   general: [
-    { rarity: "bronze", pct: "45%" }, { rarity: "silver", pct: "30%" }, { rarity: "gold", pct: "17%" },
-    { rarity: "diamond", pct: "1%" }, { rarity: "mythic", pct: "0.1%" },
+    { rarity: "bronze", pct: "50%" },      { rarity: "silver", pct: "24%" },
+    { rarity: "gold", pct: "12%" },        { rarity: "emerald", pct: "6%" },
+    { rarity: "sapphire", pct: "3.5%" },   { rarity: "ruby", pct: "2%" },
+    { rarity: "amethyst", pct: "1%" },     { rarity: "diamond", pct: "0.35%" },
+    { rarity: "pinkdiamond", pct: "0.1%" }, { rarity: "mythic", pct: "0.05%" },
   ],
   mythical: [
-    { rarity: "bronze", pct: "35%" }, { rarity: "silver", pct: "30%" }, { rarity: "gold", pct: "20%" },
-    { rarity: "diamond", pct: "15%" }, { rarity: "mythic", pct: "100% (1 guaranteed)" },
+    { rarity: "bronze", pct: "18%" },   { rarity: "silver", pct: "22%" },
+    { rarity: "gold", pct: "20%" },     { rarity: "emerald", pct: "15%" },
+    { rarity: "sapphire", pct: "10%" }, { rarity: "ruby", pct: "7%" },
+    { rarity: "amethyst", pct: "4%" },  { rarity: "diamond", pct: "2%" },
+    { rarity: "pinkdiamond", pct: "1%" }, { rarity: "mythic", pct: "100% (1 guaranteed)" },
   ],
 };
 
@@ -164,7 +179,8 @@ const ALL_TEAMS = [
 ];
 
 const RARITY_SELL_VALUE: Record<Rarity, number> = {
-  bronze: 1, silver: 5, gold: 10, diamond: 100, mythic: 500,
+  bronze: 1, silver: 3, gold: 10, emerald: 25, sapphire: 60,
+  ruby: 150, amethyst: 300, diamond: 600, pinkdiamond: 1200, mythic: 2500,
 };
 
 type CardImageSource = Pick<UserCard, "player_id" | "player_name" | "team"> & {
@@ -547,7 +563,7 @@ export default function CardsPage() {
         {/* ── Passes entry point ── */}
         <Link href="/passes" style={passesBannerStyle}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 22 }}>🎫</span>
+            <span style={{ fontSize: 20 }}>🏅</span>
             <div>
               <div style={{ fontWeight: 900, fontSize: 15, color: "#fff", letterSpacing: "-0.01em" }}>Passes</div>
               <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", fontWeight: 600, marginTop: 1 }}>Earn Aura &amp; Coins from your team &amp; players</div>
@@ -596,7 +612,7 @@ export default function CardsPage() {
                 <span style={filterLabelStyle}>Rarity</span>
                 <div className="pill-scroll" style={pillRowStyle}>
                   <FilterPill active={rarityFilter === "all"} onClick={() => setRarityFilter("all")}>All</FilterPill>
-                  {(["bronze", "silver", "gold", "diamond", "mythic"] as Rarity[]).map((r) => (
+                  {(["bronze", "silver", "gold", "emerald", "sapphire", "ruby", "amethyst", "diamond", "pinkdiamond", "mythic"] as Rarity[]).map((r) => (
                     <FilterPill key={r} active={rarityFilter === r} color={RARITY_META[r].color} onClick={() => setRarityFilter(r)}>
                       {RARITY_META[r].label}
                     </FilterPill>
@@ -901,9 +917,7 @@ function PlayerCard({ card, onSell }: { card: UserCard; onSell?: () => void }) {
         aspectRatio: "1/1",
         borderRadius: "50%",
         overflow: "hidden",
-        border: `2.5px solid ${meta.color}`,
-        boxShadow: `0 0 14px ${meta.glow}`,
-        background: TEAM_COLORS[card.team] ?? "var(--surface-3)",
+        background: (TEAM_COLORS[card.team] ?? "#1e2438") + "33",
       }}>
         <CardPlayerImage card={card} imageStyle={cardPlayerImageStyle} />
       </div>
@@ -937,8 +951,8 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
 
   const current = cards[index];
   const meta = current ? RARITY_META[current.rarity] : null;
-  const isRare = current?.rarity === "diamond" || current?.rarity === "mythic";
-  const REVEAL_DURATION = current?.rarity === "mythic" ? 1400 : 1100;
+  const isRare = current ? RARITY_ORDER[current.rarity] >= RARITY_ORDER["amethyst"] : false;
+  const REVEAL_DURATION = current?.rarity === "mythic" ? 1600 : current?.rarity === "pinkdiamond" ? 1400 : 1100;
 
   const flip = () => {
     if (revealing) return;
@@ -999,7 +1013,7 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
                   {/* NEW badge */}
                   {card.is_new && <div style={{ position: "absolute", top: 6, left: "50%", transform: "translateX(-50%)", background: "linear-gradient(90deg,#16a34a,#22c55e)", borderRadius: 99, padding: "2px 7px", fontSize: 7, fontWeight: 900, color: "var(--text-1)", letterSpacing: ".1em", boxShadow: "0 2px 8px rgba(34,197,94,.5)", whiteSpace: "nowrap" }}>✦ NEW</div>}
                   {/* Player circle */}
-                  <div style={{ position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)", width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", border: `2px solid ${m.color}`, boxShadow: `0 0 10px ${m.glow}`, background: "var(--bg)" }}>
+                  <div style={{ position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)", width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", background: "rgba(0,0,0,0.18)" }}>
                     <CardPlayerImage card={card} imageStyle={cardPlayerImageStyle} />
                   </div>
                   {/* Player name */}
@@ -1056,7 +1070,7 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
               {/* Rarity label */}
               <div style={{ position: "absolute", bottom: "12%", left: "50%", transform: "translateX(-50%)", whiteSpace: "nowrap", animation: `revealText ${REVEAL_DURATION}ms ease-out forwards` }}>
                 <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: ".28em", color: meta.color, textShadow: `0 0 20px ${meta.color}, 0 0 40px ${meta.color}88` }}>
-                  {current?.rarity === "mythic" ? "✦ MYTHIC ✦" : "✦ DIAMOND ✦"}
+                  {current ? `✦ ${RARITY_META[current.rarity].label.toUpperCase()} ✦` : ""}
                 </div>
               </div>
             </div>
@@ -1086,7 +1100,7 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
                         ✦ NEW
                       </div>
                     )}
-                    <div style={{ position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)", width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", border: `2.5px solid ${meta.color}`, boxShadow: `0 0 20px ${meta.glow}`, background: TEAM_COLORS[current.team] ?? "var(--surface-3)" }}>
+                    <div style={{ position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)", width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", background: (TEAM_COLORS[current.team] ?? "#1e2438") + "33" }}>
                       <CardPlayerImage card={current} imageStyle={cardPlayerImageStyle} loading="eager" />
                     </div>
                     <div style={{ position: "absolute", top: "71%", left: 0, right: 0, textAlign: "center", padding: "0 10px" }}>
@@ -1320,11 +1334,11 @@ const passesBannerStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  padding: "14px 16px",
+  padding: "13px 16px",
   marginBottom: 16,
-  borderRadius: 16,
-  background: "linear-gradient(135deg, rgba(109,40,217,0.25), rgba(168,85,247,0.15))",
-  border: "1.5px solid rgba(167,139,250,0.3)",
+  borderRadius: 14,
+  background: "var(--surface-2)",
+  border: "1px solid var(--border-2)",
   textDecoration: "none",
 };
 

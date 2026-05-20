@@ -8,11 +8,8 @@ const supabaseAdmin = createClient(
 );
 
 const RARITY_VALUE: Record<string, number> = {
-  bronze: 1,
-  silver: 5,
-  gold: 10,
-  diamond: 100,
-  mythic: 500,
+  bronze: 1, silver: 3, gold: 10, emerald: 25, sapphire: 60,
+  ruby: 150, amethyst: 300, diamond: 600, pinkdiamond: 1200, mythic: 2500,
 };
 
 async function getUserFromRequest(req: NextRequest) {
