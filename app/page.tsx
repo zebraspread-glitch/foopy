@@ -586,6 +586,7 @@ export default function HomePage() {
   const [refreshing, setRefreshing] = useState(false);
   const [pullVisible, setPullVisible] = useState(false);
   const [streaksExpanded, setStreaksExpanded] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const roundRef = useRef<HTMLDivElement | null>(null);
   const touchStartY = useRef(0);
   const touchStartX = useRef(0);
@@ -602,6 +603,8 @@ export default function HomePage() {
     flexDirection: "column",
     gap: "0px",
   };
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     // Ref ensures round is set only once — cached load shouldn't be overridden by fresh load
@@ -1591,14 +1594,16 @@ free_kicks?: {
             {(streaksExpanded ? playerStreaks : playerStreaks.slice(0, 5)).map((s, i) => (
               <Link key={`${s.name}-${s.label}`} href={`/player/${s.id}`} prefetch={false} style={{ ...streakRowStyle, borderTop: i === 0 ? "none" : "1px solid var(--border-1)", textDecoration: "none", color: "inherit" }}>
                 {/* Avatar */}
-                <div suppressHydrationWarning style={{ width: 40, height: 40, borderRadius: "50%", flexShrink: 0, background: s.teamColor, position: "relative", overflow: "hidden" }}>
-                  <PlayerPhoto
-                    candidates={playerImageCandidates(s.name, s.team)}
-                    alt={s.name}
-                    imageStyle={streakAvatarImageStyle}
-                    fallbackStyle={streakAvatarFallbackStyle}
-                    initials={getInitials(s.name)}
-                  />
+                <div style={{ width: 40, height: 40, borderRadius: "50%", flexShrink: 0, background: s.teamColor, position: "relative", overflow: "hidden" }}>
+                  {mounted && (
+                    <PlayerPhoto
+                      candidates={playerImageCandidates(s.name, s.team)}
+                      alt={s.name}
+                      imageStyle={streakAvatarImageStyle}
+                      fallbackStyle={streakAvatarFallbackStyle}
+                      initials={getInitials(s.name)}
+                    />
+                  )}
                 </div>
                 {/* Text */}
                 <div style={{ flex: 1, minWidth: 0 }}>

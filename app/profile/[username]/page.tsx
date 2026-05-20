@@ -73,8 +73,9 @@ function slugName(s: string) {
 }
 
 function playerImagePath(name: string, team?: string) {
-  const folder = TEAMS.find(t => slugName(t.name) === slugName(team ?? ""))?.name
-    .toLowerCase().replace(/\s+/g, "") ?? slugName(team ?? "");
+  const resolvedTeam = team || playerBySlug.get(slugName(name))?.team || "";
+  const folder = TEAMS.find(t => slugName(t.name) === slugName(resolvedTeam))?.name
+    .toLowerCase().replace(/\s+/g, "") ?? slugName(resolvedTeam);
   const clubFolder: Record<string, string> = {
     adelaide: "crows", adelaidecrows: "crows", brisbane: "lions", brisbanelions: "lions", carlton: "blues",
     collingwood: "magpies", essendon: "bombers", fremantle: "dockers",

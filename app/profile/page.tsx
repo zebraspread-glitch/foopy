@@ -100,6 +100,10 @@ const RARITY_META: Record<string, { color: string; glow: string }> = {
 /* ─────────────────── Player helpers ─────────────────── */
 type RawPlayer = { name?: string; team?: string };
 const PLAYERS = (playersRaw as RawPlayer[]).filter((p) => p.name);
+const playerTeamBySlug = new Map<string, string>();
+for (const p of PLAYERS) {
+  if (p.name && p.team) playerTeamBySlug.set(slugName(p.name), p.team);
+}
 
 const CLUB_FOLDER: Record<string, string> = {
   adelaide: "crows", adelaidecrows: "crows", crows: "crows",
@@ -127,7 +131,8 @@ function slugName(name: string) {
 }
 
 function playerImagePath(name: string, team?: string) {
-  const folder = CLUB_FOLDER[slugName(team ?? "")] ?? slugName(team ?? "");
+  const resolvedTeam = team || playerTeamBySlug.get(slugName(name)) || "";
+  const folder = CLUB_FOLDER[slugName(resolvedTeam)] ?? slugName(resolvedTeam);
   return folder ? `/players/${folder}/${slugName(name)}.png` : "";
 }
 
