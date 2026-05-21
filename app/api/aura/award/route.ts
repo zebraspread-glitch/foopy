@@ -11,10 +11,11 @@ export async function POST(req: Request) {
   if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { event_type, related_id, recipient_id } = body as {
+  const { event_type, related_id, recipient_id, amount } = body as {
     event_type: string;
     related_id: string;
     recipient_id?: string;
+    amount?: number;
   };
 
   if (!event_type || !related_id) {
@@ -25,6 +26,6 @@ export async function POST(req: Request) {
   const targetUserId =
     event_type === "like_received" && recipient_id ? recipient_id : user.id;
 
-  const result = await awardAura(targetUserId, event_type, related_id);
+  const result = await awardAura(targetUserId, event_type, related_id, amount);
   return NextResponse.json(result);
 }

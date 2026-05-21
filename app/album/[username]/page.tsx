@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { CARD_PLAYERS } from "@/app/data/cardPlayers";
 import { getPassLevel, PLAYER_PASS_LEVELS, TEAM_PASS_LEVELS, type PlayerPass, type TeamPass } from "@/app/lib/passes";
 import PassLeaderboard from "@/app/components/PassLeaderboard";
 import TeamPassLeaderboard from "@/app/components/TeamPassLeaderboard";
+import { supabase } from "@/app/lib/supabase";
 
 type Rarity = "bronze" | "silver" | "gold" | "emerald" | "sapphire" | "ruby" | "amethyst" | "diamond" | "pinkdiamond" | "mythic";
 
@@ -78,6 +79,7 @@ export default function UserAlbumPage() {
   const router = useRouter();
   const params = useParams();
   const username = String(params.username || "").toLowerCase();
+  const teamTabsRef = useRef<HTMLDivElement>(null);
 
   const [profile, setProfile] = useState<ProfileInfo | null>(null);
   const [userCards, setUserCards] = useState<UserCard[]>([]);
@@ -90,6 +92,14 @@ export default function UserAlbumPage() {
   const [teamPass, setTeamPass] = useState<TeamPass | null>(null);
   const [leaderboardPlayerPass, setLeaderboardPlayerPass] = useState<PlayerPass | null>(null);
   const [leaderboardTeamPass,   setLeaderboardTeamPass]   = useState<TeamPass | null>(null);
+  const [myUserId, setMyUserId] = useState<string | null>(null);
+  const [tradeTarget, setTradeTarget] = useState<{ card: UserCard; player: typeof CARD_PLAYERS[0] } | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setMyUserId(session?.user?.id ?? null);
+    });
+  }, []);
 
   useEffect(() => {
     if (!username) return;
@@ -256,34 +266,54 @@ export default function UserAlbumPage() {
 
         {/* Team tabs — only in album view */}
         {view === "album" && (
-          <div style={{ display: "flex", overflowX: "auto", scrollbarWidth: "none", padding: "0 12px" }}>
-            {TEAMS.map((team) => {
-              const players = CARD_PLAYERS.filter((p) => p.team === team);
-              const unlocked = players.filter((p) => cardsByPlayer.has(p.id)).length;
-              const active = team === activeTeam;
-              return (
-                <button
-                  key={team}
-                  className="album-tab-btn"
-                  onClick={() => setActiveTeam(team)}
-                  style={{
-                    appearance: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap",
-                    padding: "9px 14px 10px", flexShrink: 0,
-                    fontSize: 13, fontWeight: 800,
-                    background: "transparent",
-                    color: active ? "#fff" : "rgba(255,255,255,.35)",
-                    borderBottom: active ? "2px solid #fff" : "2px solid transparent",
-                  }}
-                >
-                  {teamShortName(team)}
-                  {!loading && (
-                    <span style={{ marginLeft: 5, fontSize: 11, fontWeight: 600, color: active ? "rgba(255,255,255,.5)" : "rgba(255,255,255,.2)" }}>
-                      {unlocked}/{players.length}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+          <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+            {/* Left arrow */}
+            <button
+              onClick={() => teamTabsRef.current?.scrollBy({ left: -160, behavior: "instant" as ScrollBehavior })}
+              style={{ position: "absolute", left: 0, zIndex: 5, appearance: "none", border: "none", background: "linear-gradient(to right, var(--bottom-nav-bg) 60%, transparent)", padding: "0 10px 0 6px", height: "100%", cursor: "pointer", color: "rgba(255,255,255,.5)", fontSize: 14, flexShrink: 0 }}
+              aria-label="Scroll left"
+            >‹</button>
+
+            <div
+              ref={teamTabsRef}
+              style={{ display: "flex", overflowX: "scroll", scrollbarWidth: "none", msOverflowStyle: "none", padding: "0 32px", flex: 1, scrollSnapType: "x proximity" } as React.CSSProperties}
+            >
+              <style>{`.team-tabs-inner::-webkit-scrollbar { display: none; }`}</style>
+              {TEAMS.map((team) => {
+                const players = CARD_PLAYERS.filter((p) => p.team === team);
+                const unlocked = players.filter((p) => cardsByPlayer.has(p.id)).length;
+                const active = team === activeTeam;
+                return (
+                  <button
+                    key={team}
+                    className="album-tab-btn"
+                    onClick={() => setActiveTeam(team)}
+                    style={{
+                      appearance: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap",
+                      padding: "9px 14px 10px", flexShrink: 0,
+                      fontSize: 13, fontWeight: 800,
+                      background: "transparent",
+                      color: active ? "#fff" : "rgba(255,255,255,.35)",
+                      borderBottom: active ? "2px solid #fff" : "2px solid transparent",
+                    }}
+                  >
+                    {teamShortName(team)}
+                    {!loading && (
+                      <span style={{ marginLeft: 5, fontSize: 11, fontWeight: 600, color: active ? "rgba(255,255,255,.5)" : "rgba(255,255,255,.2)" }}>
+                        {unlocked}/{players.length}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Right arrow */}
+            <button
+              onClick={() => teamTabsRef.current?.scrollBy({ left: 160, behavior: "instant" as ScrollBehavior })}
+              style={{ position: "absolute", right: 0, zIndex: 5, appearance: "none", border: "none", background: "linear-gradient(to left, var(--bottom-nav-bg) 60%, transparent)", padding: "0 6px 0 10px", height: "100%", cursor: "pointer", color: "rgba(255,255,255,.5)", fontSize: 14, flexShrink: 0 }}
+              aria-label="Scroll right"
+            >›</button>
           </div>
         )}
       </div>
@@ -299,12 +329,20 @@ export default function UserAlbumPage() {
           <div className="album-grid">
             {teamPlayers.map((player) => {
               const ownedCards = cardsByPlayer.get(player.id) ?? null;
+              const isOwnAlbum = myUserId && profile && myUserId === profile.id;
               return (
                 <AlbumSlot
                   key={player.id}
                   player={player}
                   ownedCards={ownedCards}
-                  onCardClick={(cards) => setSelectedCard({ player, cards })}
+                  onCardClick={(cards) => {
+                    if (isOwnAlbum) {
+                      setSelectedCard({ player, cards });
+                    } else {
+                      // Offer a trade for the best card of this player
+                      setTradeTarget({ card: cards[0], player });
+                    }
+                  }}
                 />
               );
             })}
@@ -324,6 +362,17 @@ export default function UserAlbumPage() {
           player={selectedCard.player}
           cards={selectedCard.cards}
           onClose={() => setSelectedCard(null)}
+        />
+      )}
+
+      {tradeTarget && profile && myUserId && myUserId !== profile.id && (
+        <TradeOfferModal
+          requestCard={tradeTarget.card}
+          requestPlayer={tradeTarget.player}
+          receiverId={profile.id}
+          receiverName={profile.username ?? username}
+          myUserId={myUserId}
+          onClose={() => setTradeTarget(null)}
         />
       )}
 
@@ -586,6 +635,243 @@ function AlbumCardListModal({ player, cards, onClose }: {
         >
           Close
         </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Trade Offer Modal ─────────────────────────────────────────────────────────
+
+type MyCard = {
+  id: string;
+  player_id: string;
+  player_name: string;
+  team: string;
+  team_logo: string;
+  rarity: Rarity;
+  rating: number;
+  duplicate_count: number;
+};
+
+function TradeOfferModal({
+  requestCard,
+  requestPlayer,
+  receiverId,
+  receiverName,
+  myUserId,
+  onClose,
+}: {
+  requestCard: UserCard;
+  requestPlayer: typeof CARD_PLAYERS[0];
+  receiverId: string;
+  receiverName: string;
+  myUserId: string;
+  onClose: () => void;
+}) {
+  const [myCards, setMyCards] = useState<MyCard[]>([]);
+  const [loadingMyCards, setLoadingMyCards] = useState(true);
+  const [selectedOfferIds, setSelectedOfferIds] = useState<Set<string>>(new Set());
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) { setLoadingMyCards(false); return; }
+      const { data } = await supabase
+        .from("user_cards")
+        .select("id, player_id, player_name, team, team_logo, rarity, rating, duplicate_count")
+        .eq("user_id", myUserId)
+        .order("rating", { ascending: false });
+      setMyCards((data ?? []) as MyCard[]);
+      setLoadingMyCards(false);
+    });
+  }, [myUserId]);
+
+  function toggleOffer(id: string) {
+    setSelectedOfferIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  async function sendOffer() {
+    if (sending || sent) return;
+    setSending(true);
+    setError(null);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setError("You need to be logged in."); setSending(false); return; }
+
+    const offerItems = myCards
+      .filter((c) => selectedOfferIds.has(c.id))
+      .map((c) => ({
+        card_id: c.id,
+        player_id: c.player_id,
+        player_name: c.player_name,
+        team: c.team,
+        team_logo: c.team_logo,
+        rarity: c.rarity,
+        rating: c.rating,
+      }));
+
+    const requestItems = [{
+      card_id: requestCard.id,
+      player_id: requestPlayer.id,
+      player_name: requestPlayer.name,
+      team: requestPlayer.team,
+      team_logo: requestPlayer.teamLogo ?? "",
+      rarity: requestCard.rarity,
+      rating: requestCard.rating,
+    }];
+
+    const res = await fetch("/api/trades", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        receiver_id: receiverId,
+        message: message.trim() || null,
+        offer_items: offerItems,
+        request_items: requestItems,
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) { setError(data.error ?? "Failed to send offer."); setSending(false); return; }
+    setSent(true);
+    setSending(false);
+  }
+
+  const requestMeta = RARITY_META[requestCard.rarity];
+  const selectedCards = myCards.filter((c) => selectedOfferIds.has(c.id));
+
+  return (
+    <div
+      style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,.85)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px 16px" }}
+      onClick={onClose}
+    >
+      <div
+        style={{ background: "var(--surface-1)", border: "1px solid var(--border-2)", borderRadius: 24, width: "100%", maxWidth: 460, maxHeight: "85dvh", overflowY: "auto", display: "flex", flexDirection: "column" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div style={{ padding: "20px 20px 14px", borderBottom: "1px solid var(--border-1)" }}>
+          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: ".14em", color: "rgba(255,255,255,.35)", marginBottom: 6 }}>TRADE OFFER</div>
+          <div style={{ fontSize: 17, fontWeight: 1000 }}>Offer a trade to <span style={{ color: "#60a5fa" }}>@{receiverName}</span></div>
+        </div>
+
+        <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 20 }}>
+
+          {/* Card you want */}
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: ".12em", color: "rgba(255,255,255,.35)", marginBottom: 10 }}>YOU WANT</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 14, border: `1.5px solid ${requestMeta.color}55`, background: `${requestMeta.color}12` }}>
+              <div style={{ width: 44, height: 44, borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.08)", flexShrink: 0 }}>
+                <img src={`/players/${requestPlayer.folder}/${requestPlayer.id}.png`} alt={requestPlayer.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 900, fontSize: 14 }}>{requestPlayer.name}</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,.45)", marginTop: 1 }}>{requestPlayer.team}</div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
+                <span style={{ fontSize: 11, fontWeight: 900, color: requestMeta.color, letterSpacing: ".06em" }}>{requestCard.rarity.toUpperCase()}</span>
+                <span style={{ fontSize: 12, fontWeight: 900, color: "rgba(255,255,255,.6)" }}>{requestCard.rating}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Cards you offer */}
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: ".12em", color: "rgba(255,255,255,.35)", marginBottom: 10 }}>
+              YOU OFFER {selectedOfferIds.size > 0 && <span style={{ color: "#60a5fa" }}>· {selectedOfferIds.size} selected</span>}
+            </div>
+            {loadingMyCards ? (
+              <div style={{ display: "flex", justifyContent: "center", padding: "24px 0" }}>
+                <div style={{ width: 22, height: 22, border: "2.5px solid var(--border-2)", borderTop: "2.5px solid #60a5fa", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+              </div>
+            ) : myCards.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "20px 0", color: "rgba(255,255,255,.35)", fontSize: 13, fontWeight: 600 }}>You have no cards to offer.</div>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(76px, 1fr))", gap: 8, maxHeight: 300, overflowY: "auto" }}>
+                {myCards.map((card) => {
+                  const meta = RARITY_META[card.rarity];
+                  const selected = selectedOfferIds.has(card.id);
+                  return (
+                    <button
+                      key={card.id}
+                      onClick={() => toggleOffer(card.id)}
+                      style={{
+                        appearance: "none", border: `2px solid ${selected ? meta.color : meta.color + "44"}`,
+                        borderRadius: 10, background: selected ? `${meta.color}22` : `${meta.color}0a`,
+                        cursor: "pointer", padding: 6, display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                        boxShadow: selected ? `0 0 12px ${meta.glow}` : "none",
+                        transition: "all 0.15s", position: "relative",
+                      }}
+                    >
+                      <div style={{ width: "100%", aspectRatio: "1/1", borderRadius: 6, overflow: "hidden", background: "rgba(255,255,255,0.06)" }}>
+                        <img src={`/players/${CARD_PLAYERS.find(p => p.id === card.player_id)?.folder ?? ""}/${card.player_id}.png`} alt={card.player_name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                      </div>
+                      <div style={{ fontSize: 8, fontWeight: 900, color: meta.color, letterSpacing: ".06em", lineHeight: 1 }}>{card.rarity.toUpperCase()}</div>
+                      <div style={{ fontSize: 9, fontWeight: 900, color: "rgba(255,255,255,.8)", textAlign: "center", lineHeight: 1.2, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{card.player_name}</div>
+                      {selected && (
+                        <div style={{ position: "absolute", top: 4, right: 4, width: 14, height: 14, borderRadius: "50%", background: meta.color, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <svg width="8" height="8" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#000" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Message */}
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: ".12em", color: "rgba(255,255,255,.35)", marginBottom: 8 }}>MESSAGE (OPTIONAL)</div>
+            <textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Add a message to your offer…"
+              maxLength={200}
+              rows={2}
+              style={{ width: "100%", background: "var(--surface-2)", border: "1px solid var(--border-2)", borderRadius: 12, color: "var(--text-1)", fontSize: 13, padding: "10px 12px", fontFamily: "inherit", resize: "none", outline: "none", boxSizing: "border-box" }}
+            />
+          </div>
+
+          {error && (
+            <div style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#fca5a5", fontWeight: 600 }}>
+              {error}
+            </div>
+          )}
+
+          {sent ? (
+            <div style={{ background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.3)", borderRadius: 14, padding: "14px", textAlign: "center", fontSize: 14, fontWeight: 900, color: "#86efac" }}>
+              ✓ Trade offer sent!
+            </div>
+          ) : (
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={onClose} style={{ flex: 1, padding: "13px", borderRadius: 14, border: "1px solid var(--border-2)", background: "transparent", color: "var(--text-3)", fontWeight: 900, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
+                Cancel
+              </button>
+              <button
+                onClick={sendOffer}
+                disabled={sending || myCards.length === 0}
+                style={{
+                  flex: 2, padding: "13px", borderRadius: 14, border: "none",
+                  background: sending ? "rgba(255,255,255,.1)" : "linear-gradient(135deg,#3b82f6,#6366f1)",
+                  color: "#fff", fontWeight: 900, fontSize: 14, cursor: sending ? "not-allowed" : "pointer", fontFamily: "inherit",
+                  opacity: sending ? 0.6 : 1, transition: "opacity 0.15s",
+                }}
+              >
+                {sending ? "Sending…" : "Send Trade Offer"}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -8,14 +8,16 @@ const AURA_AMOUNTS: Record<string, number> = {
   winner_pick:     3,
   daily_login:     10,
   live_game_view:  10,
+  poll_correct:    20, // default; overridden per-poll based on option count / rarity
 };
 
 export async function awardAura(
   userId: string,
   eventType: string,
-  relatedId: string
+  relatedId: string,
+  amountOverride?: number
 ): Promise<{ awarded: boolean; amount: number }> {
-  const amount = AURA_AMOUNTS[eventType];
+  const amount = amountOverride ?? AURA_AMOUNTS[eventType];
   if (!amount) return { awarded: false, amount: 0 };
 
   const { error } = await supabaseServer.from("aura_events").insert({

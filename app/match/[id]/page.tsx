@@ -4665,6 +4665,63 @@ function MatchPolls({
     onUnansweredCount(count);
   }, [polls, userVotes, status, currentPeriod, loading, onUnansweredCount]);
 
+  // Award aura for correct poll answers when results come in
+  useEffect(() => {
+    if (status !== "FINAL" || loading || !userId || polls.length === 0 || allVotes.length === 0) return;
+
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) return;
+
+      for (const poll of polls) {
+        const myOptionId = userVotes[poll.id];
+        if (!myOptionId) continue;
+
+        const winner = resolveWinner(poll, homeStats, awayStats, homeTeam, awayTeam);
+        if (!winner) continue;
+
+        const winOpt = poll.options.find(o => pollOptionMatchesWinner(o.label, winner));
+        if (!winOpt || winOpt.id !== myOptionId) continue;
+
+        // Calculate aura amount based on poll type and voter count
+        let auraAmount: number;
+        const isPlayerAll = poll.poll_type === "player_all";
+
+        if (isPlayerAll) {
+          // Count how many people voted for the same winning option
+          const voterCount = allVotes.filter(v => v.poll_id === poll.id && v.option_id === myOptionId).length;
+          // Scale: 1 person = 100, drops as more people chose it, floor at 20
+          if (voterCount === 1)       auraAmount = 100;
+          else if (voterCount <= 3)   auraAmount = 75;
+          else if (voterCount <= 7)   auraAmount = 50;
+          else if (voterCount <= 15)  auraAmount = 35;
+          else                        auraAmount = 20;
+        } else {
+          // Fixed tiers based on number of options
+          const optCount = poll.options.length;
+          auraAmount = optCount >= 4 ? 40 : optCount === 3 ? 30 : 20;
+        }
+
+        const res = await fetch("/api/aura/award", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            event_type: "poll_correct",
+            related_id: `poll_${poll.id}`,
+            amount: auraAmount,
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.awarded) auraToastEmitter.emit(auraAmount, "correct poll answer");
+        }
+      }
+    });
+  }, [status, loading, userId, polls, allVotes, userVotes, homeStats, awayStats, homeTeam, awayTeam]);
+
   async function vote(pollId: string, optionId: string) {
     if (!userId) return;
     const existingVote = userVotes[pollId];
