@@ -788,7 +788,8 @@ function DMsPageInner() {
 
   /* ═══════════ GROUP THREAD VIEW ═══════════ */
   if (activeGroup) return (
-    <main style={{ position: "fixed", inset: 0, background: "var(--bg)", display: "flex", flexDirection: "column", zIndex: 110 }}>
+    <main style={{ position: "fixed", inset: 0, background: "var(--bg)", display: "flex", justifyContent: "center", zIndex: 110 }}>
+    <div style={{ width: "100%", maxWidth: 680, display: "flex", flexDirection: "column", height: "100%", borderInline: "0.5px solid var(--border-2)" }}>
 
       {/* ── Group members modal ── */}
       {membersModalOpen && (
@@ -962,12 +963,14 @@ function DMsPageInner() {
           )}
         </div>
       </div>
+    </div>
     </main>
   );
 
   /* ═══════════ DM THREAD VIEW ═══════════ */
   if (activeConv) return (
-    <main style={{ position: "fixed", inset: 0, background: "var(--bg)", display: "flex", flexDirection: "column", zIndex: 110 }}>
+    <main style={{ position: "fixed", inset: 0, background: "var(--bg)", display: "flex", justifyContent: "center", zIndex: 110 }}>
+    <div style={{ width: "100%", maxWidth: 680, display: "flex", flexDirection: "column", height: "100%", borderInline: "0.5px solid var(--border-2)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, paddingTop: "calc(12px + env(safe-area-inset-top))", paddingBottom: 12, paddingInline: 8, background: "var(--bottom-nav-bg)", backdropFilter: "blur(28px) saturate(200%)", WebkitBackdropFilter: "blur(28px) saturate(200%)", borderBottom: "0.5px solid var(--border-2)", flexShrink: 0 }}>
         <button onClick={() => setActiveConv(null)} style={{ background: "none", border: "none", padding: "6px 10px", cursor: "pointer", display: "flex", alignItems: "center", flexShrink: 0 }}>
           <svg width="10" height="17" viewBox="0 0 10 17" fill="none"><path d="M9 1.5L1.5 8.5L9 15.5" stroke="var(--text-1)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -1034,6 +1037,7 @@ function DMsPageInner() {
           )}
         </div>
       </div>
+    </div>
     </main>
   );
 
@@ -1042,7 +1046,8 @@ function DMsPageInner() {
   const noConvoFriends = filteredInbox.filter(e => !e.convId);
 
   return (
-    <main style={{ minHeight: "100dvh", background: "var(--bg)", color: "var(--text-1)", paddingBottom: "calc(80px + env(safe-area-inset-bottom))" }} className="page-enter">
+    <main style={{ minHeight: "100dvh", background: "var(--bg)", color: "var(--text-1)", paddingBottom: "calc(80px + env(safe-area-inset-bottom))", display: "flex", justifyContent: "center" }} className="page-enter">
+    <div style={{ width: "100%", maxWidth: 680, borderInline: "0.5px solid var(--border-2)", minHeight: "100dvh" }}>
       {/* ── Explore groups modal ── */}
       {discoverOpen && (() => {
         const officialGroups = discoverResults.filter(g => g.team_name === "General");
@@ -1415,6 +1420,7 @@ function DMsPageInner() {
           </>
         )}
       </div>
+    </div>
     </main>
   );
 }
