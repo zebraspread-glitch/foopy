@@ -122,10 +122,15 @@ export async function POST(req: Request) {
   }
 
   // Notify the receiver they have a new trade offer (fallback if DB trigger isn't set up)
-  await admin.from("notifications").upsert(
-    { user_id: receiver_id, type: "trade_offer", actor_id: user.id, data: { trade_id: trade.id }, read: false },
-    { onConflict: "user_id,type,actor_id", ignoreDuplicates: true }
-  ).catch(() => {}); // non-fatal
+  try {
+    await admin.from("notifications").insert({
+      user_id: receiver_id,
+      type: "trade_offer",
+      actor_id: user.id,
+      data: { trade_id: trade.id },
+      read: false,
+    });
+  } catch (_) { /* non-fatal */ }
 
   return NextResponse.json({ ok: true, trade_id: trade.id });
 }
