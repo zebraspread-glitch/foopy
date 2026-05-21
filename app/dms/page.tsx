@@ -154,6 +154,7 @@ function DMsPageInner() {
   const [membersModalOpen,    setMembersModalOpen]    = useState(false);
   const [membersModalList,    setMembersModalList]    = useState<{ id: string; username: string; display_name: string; avatar_url: string | null }[]>([]);
   const [membersModalLoading, setMembersModalLoading] = useState(false);
+  const [membersSearch,       setMembersSearch]       = useState("");
 
   /* ── Discover state ── */
   const [discoverOpen,    setDiscoverOpen]    = useState(false);
@@ -657,6 +658,7 @@ function DMsPageInner() {
     setMembersModalOpen(true);
     setMembersModalLoading(true);
     setMembersModalList([]);
+    setMembersSearch("");
     const { data: members } = await supabase
       .from("group_chat_members")
       .select("user_id")
@@ -790,26 +792,45 @@ function DMsPageInner() {
 
       {/* ── Group members modal ── */}
       {membersModalOpen && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 300, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px 16px" }}>
           <div onClick={() => setMembersModalOpen(false)} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)" }} />
-          <div style={{ position: "relative", width: "100%", maxWidth: 480, maxHeight: "80dvh", background: "var(--surface-1)", borderRadius: "20px 20px 0 0", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-            <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 0" }}>
-              <div style={{ width: 36, height: 4, borderRadius: 2, background: "var(--surface-3)" }} />
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "16px 20px 14px", borderBottom: "1px solid var(--border-2)" }}>
+          <div style={{ position: "relative", width: "100%", maxWidth: 420, maxHeight: "80dvh", background: "var(--surface-1)", borderRadius: 20, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "24px 20px 16px", borderBottom: "1px solid var(--border-2)" }}>
               {(activeGroup.image_url || TEAM_LOGOS[activeGroup.team_name])
                 ? <img src={activeGroup.image_url || TEAM_LOGOS[activeGroup.team_name]!} alt={activeGroup.team_name} style={{ width: 64, height: 64, borderRadius: "50%", objectFit: "cover", background: TEAM_COLORS[activeGroup.team_name] ?? "#1a1a1a" }} />
                 : <div style={{ width: 64, height: 64, borderRadius: "50%", background: activeGroup.team_name === "General" ? "linear-gradient(135deg,#1e3a5f,#2563eb)" : "linear-gradient(135deg,#1a3d2e,#063d22)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32 }}>{activeGroup.team_name === "General" ? "💬" : "🏉"}</div>
               }
               <div style={{ fontWeight: 800, fontSize: 18, color: "var(--text-1)", textAlign: "center" }}>{activeGroup.team_name}</div>
               <div style={{ fontSize: 13, color: "var(--text-3)" }}>{activeGroup.member_count} member{activeGroup.member_count !== 1 ? "s" : ""}</div>
+              {/* Action buttons */}
+              <div style={{ display: "flex", gap: 10, marginTop: 4, width: "100%" }}>
+                <button onClick={() => { setMembersModalOpen(false); openInviteModal(); }} style={{ flex: 1, padding: "9px 20px", borderRadius: 999, background: "var(--surface-3)", border: "none", color: "var(--text-1)", fontWeight: 700, fontSize: 14, cursor: "pointer", whiteSpace: "nowrap" }}>Invite</button>
+                {activeGroup.created_by === myProfile.id
+                  ? <button onClick={() => { setMembersModalOpen(false); deleteGroup(); }} style={{ flex: 1, padding: "9px 20px", borderRadius: 999, background: "#ef4444", border: "none", color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", whiteSpace: "nowrap" }}>Delete group</button>
+                  : <button onClick={() => { setMembersModalOpen(false); leaveGroup(); }} style={{ flex: 1, padding: "9px 20px", borderRadius: 999, background: "#ef4444", border: "none", color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", whiteSpace: "nowrap" }}>Leave group</button>
+                }
+              </div>
             </div>
+            {!membersModalLoading && membersModalList.length > 0 && (
+              <div style={{ padding: "10px 16px 4px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--surface-2)", borderRadius: 12, padding: "8px 12px" }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="var(--text-3)" strokeWidth="2.2"/><path d="m21 21-4.35-4.35" stroke="var(--text-3)" strokeWidth="2.2" strokeLinecap="round"/></svg>
+                  <input
+                    placeholder="Search members…"
+                    value={membersSearch}
+                    onChange={e => setMembersSearch(e.target.value)}
+                    style={{ flex: 1, background: "none", border: "none", outline: "none", color: "var(--text-1)", fontSize: 14, fontFamily: "inherit" }}
+                  />
+                  {membersSearch && <button onClick={() => setMembersSearch("")} style={{ background: "none", border: "none", color: "var(--text-3)", cursor: "pointer", padding: 0, fontSize: 14, lineHeight: 1 }}>✕</button>}
+                </div>
+              </div>
+            )}
             <div style={{ overflowY: "auto", flex: 1 }}>
               {membersModalLoading ? (
                 <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--text-3)", fontSize: 14 }}>Loading members…</div>
               ) : membersModalList.length === 0 ? (
                 <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--text-3)", fontSize: 14 }}>No members found.</div>
-              ) : membersModalList.map((member, i) => (
+              ) : membersModalList.filter(m => !membersSearch || m.username.toLowerCase().includes(membersSearch.toLowerCase()) || m.display_name.toLowerCase().includes(membersSearch.toLowerCase())).map((member, i) => (
                 <button key={member.id} onClick={() => { setMembersModalOpen(false); router.push(`/profile/${member.username}`); }}
                   style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "11px 20px", background: "none", border: "none", borderTop: i > 0 ? "1px solid var(--border-2)" : "none", cursor: "pointer", textAlign: "left" }}>
                   <Avatar name={member.username} url={member.avatar_url} size={40} />
@@ -882,11 +903,6 @@ function DMsPageInner() {
           <div style={{ fontWeight: 700, fontSize: 15, color: "var(--text-1)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{activeGroup.team_name}</div>
           <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 400 }}>{activeGroup.member_count} member{activeGroup.member_count !== 1 ? "s" : ""}</div>
         </button>
-        <button onClick={openInviteModal} style={{ background: "var(--surface-2)", border: "1px solid var(--border-2)", borderRadius: 20, padding: "6px 14px", color: "var(--text-2)", fontWeight: 700, fontSize: 13, cursor: "pointer", flexShrink: 0 }}>Invite</button>
-        {activeGroup.created_by === myProfile.id
-          ? <button onClick={deleteGroup} style={{ background: "none", border: "none", color: "#f87171", fontWeight: 700, fontSize: 13, cursor: "pointer", padding: "6px 8px", flexShrink: 0 }}>Delete</button>
-          : <button onClick={leaveGroup} style={{ background: "none", border: "none", color: "#f87171", fontWeight: 700, fontSize: 13, cursor: "pointer", padding: "6px 8px", flexShrink: 0 }}>Leave</button>
-        }
       </div>
 
       {/* Messages */}
