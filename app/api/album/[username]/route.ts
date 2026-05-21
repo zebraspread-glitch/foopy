@@ -13,7 +13,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ use
 
   const { data: profile, error: profileError } = await supabaseAdmin
     .from("profiles")
-    .select("id, username, avatar_url")
+    .select("id, username, display_name, avatar_url")
     .ilike("username", username)
     .maybeSingle();
 

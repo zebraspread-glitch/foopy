@@ -7,7 +7,10 @@ export type NotifType =
   | "friend_request"
   | "friend_accepted"
   | "poll_win"
-  | "level_up";
+  | "level_up"
+  | "trade_offer"
+  | "trade_accepted"
+  | "trade_declined";
 
 export interface NotifData {
   comment_body?: string;

@@ -12,7 +12,10 @@ type NotifType =
   | "friend_request"
   | "friend_accepted"
   | "poll_win"
-  | "level_up";
+  | "level_up"
+  | "trade_offer"
+  | "trade_accepted"
+  | "trade_declined";
 
 type Actor = {
   id: string;
@@ -88,6 +91,21 @@ function notifContent(n: Notification): { icon: React.ReactNode; text: string; s
         text: `You reached Level ${level ?? "?"}!`,
         sub: "Keep earning XP to unlock more rewards",
       };
+    case "trade_offer":
+      return {
+        icon: <TradeIcon />,
+        text: `${name} sent you a trade offer`,
+      };
+    case "trade_accepted":
+      return {
+        icon: <TradeIcon />,
+        text: `${name} accepted your trade offer`,
+      };
+    case "trade_declined":
+      return {
+        icon: <TradeIcon />,
+        text: `${name} declined your trade offer`,
+      };
     default:
       return { icon: <BellIcon />, text: "New notification" };
   }
@@ -102,6 +120,9 @@ function iconColor(type: NotifType): string {
     case "friend_accepted": return "#22c55e";
     case "poll_win":        return "#f59e0b";
     case "level_up":        return "#ffd700";
+    case "trade_offer":     return "#a78bfa";
+    case "trade_accepted":  return "#4ade80";
+    case "trade_declined":  return "#f87171";
     default:                return "#64748b";
   }
 }
@@ -172,6 +193,14 @@ function BellIcon() {
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
       <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+  );
+}
+
+function TradeIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 16V4m0 0L3 8m4-4l4 4"/><path d="M17 8v12m0 0l4-4m-4 4l-4-4"/>
     </svg>
   );
 }

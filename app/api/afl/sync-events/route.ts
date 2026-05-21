@@ -133,10 +133,15 @@ export async function GET(req: Request) {
   // Fetch all current events for this game
   const { data: existing } = await supabase
     .from("live_game_feed")
-    .select("id, period, minute, type, team_id, player_id, home_score, away_score, inferred")
+    .select("id, period, minute, type, team_id, player_id, home_score, away_score, inferred, player_fp")
     .eq("api_game_id", gameId);
 
   const realExisting = (existing ?? []).filter((r: any) => !r.inferred);
+
+  // Build a map of existing key -> stored player_fp so we can preserve it
+  const existingFPMap = new Map<string, number | null>(
+    realExisting.map((r: any) => [key(r), r.player_fp ?? null])
+  );
 
   // Skip if real events are already identical
   const apiKeys = new Set(rawRows.map(key));
@@ -150,11 +155,18 @@ export async function GET(req: Request) {
   // Wait for FP map now that we know we'll need it
   const fpMap = await fpMapPromise;
 
-  // Attach player_fp to each row
-  const apiRows = rawRows.map((row) => ({
-    ...row,
-    player_fp: row.player_id != null ? (fpMap.get(Number(row.player_id)) ?? null) : null,
-  }));
+  // Attach player_fp: preserve existing stored FP for old events, use live FP only for new events
+  const apiRows = rawRows.map((row) => {
+    const k = key(row);
+    const storedFP = existingFPMap.get(k); // undefined = brand new event, null/number = already existed
+    const isNew = !existingFPMap.has(k);
+    return {
+      ...row,
+      player_fp: isNew
+        ? (row.player_id != null ? (fpMap.get(Number(row.player_id)) ?? null) : null)
+        : storedFP,
+    };
+  });
 
   // Delete inferred events that a real event now covers.
   const inferred = (existing ?? []).filter((r: any) => r.inferred);

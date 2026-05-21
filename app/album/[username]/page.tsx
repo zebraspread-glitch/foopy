@@ -21,6 +21,7 @@ interface UserCard {
 interface ProfileInfo {
   id: string;
   username: string | null;
+  display_name: string | null;
   avatar_url: string | null;
 }
 
@@ -94,6 +95,8 @@ export default function UserAlbumPage() {
   const [leaderboardTeamPass,   setLeaderboardTeamPass]   = useState<TeamPass | null>(null);
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [tradeTarget, setTradeTarget] = useState<{ card: UserCard; player: typeof CARD_PLAYERS[0] } | null>(null);
+  const [cardPicker, setCardPicker] = useState<{ player: typeof CARD_PLAYERS[0]; cards: UserCard[] } | null>(null);
+  const [showTradesInbox, setShowTradesInbox] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -138,7 +141,7 @@ export default function UserAlbumPage() {
   const totalCount = teamPlayers.length;
   const pct = totalCount > 0 ? Math.round((unlockedCount / totalCount) * 100) : 0;
 
-  const displayName = profile?.username ? `@${profile.username}` : username;
+  const displayName = profile?.display_name || (profile?.username ? `@${profile.username}` : username);
 
   if (notFound) {
     return (
@@ -244,6 +247,19 @@ export default function UserAlbumPage() {
               <div style={{ height: "100%", width: `${pct}%`, borderRadius: 99, background: "linear-gradient(90deg,#60a5fa,#a78bfa)", transition: "width 0.4s ease" }} />
             </div>
           )}
+
+          {/* Trades button */}
+          {myUserId && (
+            <button
+              onClick={() => setShowTradesInbox(true)}
+              style={{ appearance: "none", border: "none", background: "var(--surface-3)", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-1)", flexShrink: 0 }}
+              title="Trades"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M7 16V4m0 0L3 8m4-4l4 4"/><path d="M17 8v12m0 0l4-4m-4 4l-4-4"/>
+              </svg>
+            </button>
+          )}
         </div>
 
         {/* Album / Passes toggle */}
@@ -338,9 +354,10 @@ export default function UserAlbumPage() {
                   onCardClick={(cards) => {
                     if (isOwnAlbum) {
                       setSelectedCard({ player, cards });
-                    } else {
-                      // Offer a trade for the best card of this player
+                    } else if (cards.length === 1) {
                       setTradeTarget({ card: cards[0], player });
+                    } else {
+                      setCardPicker({ player, cards });
                     }
                   }}
                 />
@@ -365,6 +382,18 @@ export default function UserAlbumPage() {
         />
       )}
 
+      {cardPicker && profile && myUserId && myUserId !== profile.id && (
+        <CardPickerModal
+          player={cardPicker.player}
+          cards={cardPicker.cards}
+          onClose={() => setCardPicker(null)}
+          onSelect={(card) => {
+            setCardPicker(null);
+            setTradeTarget({ card, player: cardPicker.player });
+          }}
+        />
+      )}
+
       {tradeTarget && profile && myUserId && myUserId !== profile.id && (
         <TradeOfferModal
           requestCard={tradeTarget.card}
@@ -374,6 +403,10 @@ export default function UserAlbumPage() {
           myUserId={myUserId}
           onClose={() => setTradeTarget(null)}
         />
+      )}
+
+      {showTradesInbox && myUserId && (
+        <TradesInboxModal myUserId={myUserId} onClose={() => setShowTradesInbox(false)} />
       )}
 
       {leaderboardPlayerPass && (
@@ -574,6 +607,289 @@ function PassesView({ playerPasses, teamPass, onPlayerPassClick, onTeamPassClick
 
 // ── Album Card List Modal ─────────────────────────────────────────────────────
 
+type TradeOffer = {
+  id: string;
+  sender_id: string;
+  receiver_id: string;
+  status: "pending" | "accepted" | "declined" | "cancelled";
+  created_at: string;
+  sender: { id: string; username: string | null; display_name: string | null } | null;
+  receiver: { id: string; username: string | null; display_name: string | null } | null;
+  items: { id: string; direction: "offer" | "request"; player_id: string; player_name: string; rarity: Rarity; rating: number; team: string; team_logo: string }[];
+};
+
+function TradeMiniCard({ rarity, playerName, team, rating }: { rarity: Rarity; playerName: string; team: string; rating: number }) {
+  const meta = RARITY_META[rarity];
+  const player = CARD_PLAYERS.find(p => p.name === playerName || p.id === playerName);
+  return (
+    <div style={{ width: 56, position: "relative", aspectRatio: "3/4.2", borderRadius: 8, overflow: "hidden", boxShadow: `0 0 0 1.5px ${meta.color}88, 0 3px 12px ${meta.glow}` }}>
+      <img src={`/cards/${rarity}.png`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom,rgba(0,0,0,.1) 0%,rgba(0,0,0,0) 35%,rgba(0,0,0,.75) 72%,rgba(0,0,0,.92) 100%)" }} />
+      {player && (
+        <div style={{ position: "absolute", top: "14%", left: "50%", transform: "translateX(-50%)", width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", background: (TEAM_COLORS[team] ?? "#1e2438") + "44" }}>
+          <img src={`/players/${player.folder}/${player.id}.png`} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
+        </div>
+      )}
+      <div style={{ position: "absolute", top: 3, right: 3, fontSize: 7, fontWeight: 1000, color: meta.color, background: "rgba(0,0,0,.85)", borderRadius: 4, padding: "1px 3px" }}>{rating}</div>
+      <div style={{ position: "absolute", bottom: 3, left: 0, right: 0, textAlign: "center", fontSize: 6.5, fontWeight: 900, color: meta.color, letterSpacing: ".06em" }}>{rarity.toUpperCase()}</div>
+    </div>
+  );
+}
+
+function TradesInboxModal({ myUserId, onClose }: { myUserId: string; onClose: () => void }) {
+  const [tab, setTab] = useState<"incoming" | "sent" | "history">("incoming");
+  const [trades, setTrades] = useState<TradeOffer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [acting, setActing] = useState<string | null>(null);
+
+  async function fetchTrades() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const res = await fetch("/api/trades", { headers: { Authorization: `Bearer ${session.access_token}` } });
+    if (res.ok) { const d = await res.json(); setTrades(d.trades ?? []); }
+    setLoading(false);
+  }
+
+  useEffect(() => { fetchTrades(); }, []);
+
+  async function doAction(tradeId: string, action: "accept" | "decline" | "cancel") {
+    setActing(tradeId);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setActing(null); return; }
+    const res = await fetch(`/api/trades/${tradeId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ action }),
+    });
+    if (res.ok) await fetchTrades();
+    setActing(null);
+  }
+
+  const incoming = trades.filter(t => t.receiver_id === myUserId && t.status === "pending");
+  const sent     = trades.filter(t => t.sender_id  === myUserId && t.status === "pending");
+  const history  = trades.filter(t => t.status !== "pending");
+
+  const tabList = [
+    { key: "incoming" as const, label: "Incoming", count: incoming.length },
+    { key: "sent"     as const, label: "Sent",     count: sent.length },
+    { key: "history"  as const, label: "History",  count: null },
+  ];
+
+  const current = tab === "incoming" ? incoming : tab === "sent" ? sent : history;
+
+  function TradeRow({ trade }: { trade: TradeOffer }) {
+    const isSender = trade.sender_id === myUserId;
+    const other = isSender ? trade.receiver : trade.sender;
+    const otherName = other?.display_name || other?.username || "Unknown";
+    const offerItems   = trade.items.filter(i => i.direction === "offer");
+    const requestItems = trade.items.filter(i => i.direction === "request");
+    // From my perspective: "you offer" = offer items (sender gives), "you want" = request items
+    const myOffer  = isSender ? offerItems   : requestItems;
+    const myWant   = isSender ? requestItems : offerItems;
+
+    const statusColors: Record<string, string> = {
+      accepted:  "#4ade80",
+      declined:  "#f87171",
+      cancelled: "rgba(255,255,255,.35)",
+      pending:   "#60a5fa",
+    };
+
+    return (
+      <div style={{ padding: "14px 0", borderBottom: "1px solid rgba(255,255,255,.07)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,.85)" }}>
+            {isSender ? `To @${otherName}` : `From @${otherName}`}
+          </div>
+          {tab === "history" && (
+            <div style={{ fontSize: 11, fontWeight: 800, color: statusColors[trade.status] ?? "#fff", letterSpacing: ".04em" }}>
+              {trade.status.toUpperCase()}
+            </div>
+          )}
+        </div>
+
+        <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+          {/* They give / you offer */}
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.35)", marginBottom: 6, letterSpacing: ".08em" }}>
+              {isSender ? "YOU OFFER" : "THEY OFFER"}
+            </div>
+            <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+              {offerItems.map(item => (
+                <TradeMiniCard key={item.id} rarity={item.rarity} playerName={item.player_name} team={item.team} rating={item.rating} />
+              ))}
+            </div>
+          </div>
+
+          {/* Arrow */}
+          <div style={{ paddingTop: 28, color: "rgba(255,255,255,.25)", fontSize: 16 }}>⇄</div>
+
+          {/* They want / you want */}
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.35)", marginBottom: 6, letterSpacing: ".08em" }}>
+              {isSender ? "YOU WANT" : "THEY WANT"}
+            </div>
+            <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+              {requestItems.map(item => (
+                <TradeMiniCard key={item.id} rarity={item.rarity} playerName={item.player_name} team={item.team} rating={item.rating} />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        {trade.status === "pending" && (
+          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+            {!isSender && (
+              <>
+                <button
+                  onClick={() => doAction(trade.id, "accept")}
+                  disabled={!!acting}
+                  style={{ flex: 1, padding: "9px", borderRadius: 10, border: "none", background: "rgba(74,222,128,.15)", color: "#4ade80", fontWeight: 800, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}
+                >
+                  {acting === trade.id ? "…" : "Accept"}
+                </button>
+                <button
+                  onClick={() => doAction(trade.id, "decline")}
+                  disabled={!!acting}
+                  style={{ flex: 1, padding: "9px", borderRadius: 10, border: "none", background: "rgba(248,113,113,.12)", color: "#f87171", fontWeight: 800, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}
+                >
+                  Decline
+                </button>
+              </>
+            )}
+            {isSender && (
+              <button
+                onClick={() => doAction(trade.id, "cancel")}
+                disabled={!!acting}
+                style={{ padding: "9px 18px", borderRadius: 10, border: "1px solid rgba(255,255,255,.12)", background: "transparent", color: "rgba(255,255,255,.4)", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}
+              >
+                Cancel offer
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(0,0,0,.85)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
+      onClick={onClose}
+    >
+      <div
+        style={{ background: "#111", borderRadius: 20, width: "100%", maxWidth: 480, maxHeight: "88dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div style={{ padding: "16px 18px 0", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+            <div style={{ fontSize: 17, fontWeight: 900, letterSpacing: "-.02em" }}>Trades</div>
+            <button onClick={onClose} style={{ appearance: "none", border: "none", background: "rgba(255,255,255,.08)", borderRadius: "50%", width: 30, height: 30, cursor: "pointer", color: "rgba(255,255,255,.6)", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+          </div>
+          {/* Tabs */}
+          <div style={{ display: "flex", borderBottom: "1px solid rgba(255,255,255,.08)" }}>
+            {tabList.map(t => (
+              <button
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                style={{ appearance: "none", border: "none", background: "none", cursor: "pointer", padding: "8px 16px 10px", fontFamily: "inherit", fontSize: 13, fontWeight: tab === t.key ? 900 : 600, color: tab === t.key ? "#fff" : "rgba(255,255,255,.38)", borderBottom: tab === t.key ? "2px solid #fff" : "2px solid transparent", marginBottom: -1, transition: "all 0.15s" }}
+              >
+                {t.label}
+                {t.count != null && t.count > 0 && (
+                  <span style={{ marginLeft: 5, background: "#3b82f6", color: "#fff", borderRadius: 99, fontSize: 10, fontWeight: 900, padding: "1px 6px" }}>{t.count}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Body */}
+        <div style={{ overflowY: "auto", flex: 1, padding: "0 18px" }}>
+          {loading ? (
+            <div style={{ display: "flex", justifyContent: "center", padding: "40px 0" }}>
+              <div style={{ width: 24, height: 24, border: "2.5px solid rgba(255,255,255,.1)", borderTop: "2.5px solid #60a5fa", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+            </div>
+          ) : current.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "40px 0", color: "rgba(255,255,255,.3)", fontSize: 14, fontWeight: 600 }}>
+              {tab === "incoming" ? "No incoming offers" : tab === "sent" ? "No sent offers" : "No trade history"}
+            </div>
+          ) : (
+            current.map(trade => <TradeRow key={trade.id} trade={trade} />)
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CardPickerModal({ player, cards, onClose, onSelect }: {
+  player: typeof CARD_PLAYERS[0];
+  cards: UserCard[];
+  onClose: () => void;
+  onSelect: (card: UserCard) => void;
+}) {
+  const sorted = useMemo(
+    () => [...cards].sort((a, b) => RARITY_ORDER[b.rarity] - RARITY_ORDER[a.rarity]),
+    [cards],
+  );
+
+  return (
+    <div
+      style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,.82)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px 16px" }}
+      onClick={onClose}
+    >
+      <div
+        style={{ background: "#111", borderRadius: 20, width: "100%", maxWidth: 420, padding: "20px 20px 28px" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{ padding: "0 0 18px" }}>
+          <div style={{ fontSize: 17, fontWeight: 900, letterSpacing: "-.02em" }}>{player.name}</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,.4)", marginTop: 2 }}>
+            Which card do you want to trade for?
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(sorted.length, 3)}, 1fr)`, gap: 12, padding: "0 16px" }}>
+          {sorted.map((card) => {
+            const meta = RARITY_META[card.rarity];
+            return (
+              <button
+                key={card.id}
+                onClick={() => onSelect(card)}
+                style={{ appearance: "none", border: "none", background: "none", cursor: "pointer", padding: 0, position: "relative" }}
+              >
+                <div style={{
+                  position: "relative", aspectRatio: "3/4.2", borderRadius: 12, overflow: "hidden",
+                  boxShadow: `0 0 0 2px ${meta.color}88, 0 6px 24px ${meta.glow}`,
+                  transition: "transform 0.15s",
+                }}>
+                  <img src={`/cards/${card.rarity}.png`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.1) 0%, rgba(0,0,0,0) 38%, rgba(0,0,0,.72) 72%, rgba(0,0,0,.9) 100%)" }} />
+                  {/* Player photo */}
+                  <div style={{ position: "absolute", top: "16%", left: "50%", transform: "translateX(-50%)", width: "66%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", background: (TEAM_COLORS[player.team] ?? "#1e2438") + "44" }}>
+                    <img src={`/players/${player.folder}/${player.id}.png`} alt={player.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
+                  </div>
+                  {/* Rating */}
+                  <div style={{ position: "absolute", top: 6, right: 6, fontSize: 10, fontWeight: 1000, color: meta.color, background: "rgba(0,0,0,.85)", borderRadius: 5, padding: "2px 5px", border: `1px solid ${meta.color}44` }}>{card.rating}</div>
+                  {/* Duplicate count */}
+                  {card.duplicate_count > 1 && (
+                    <div style={{ position: "absolute", top: 6, left: 6, fontSize: 9, fontWeight: 900, color: "rgba(255,255,255,.7)", background: "rgba(0,0,0,.8)", borderRadius: 5, padding: "2px 5px" }}>×{card.duplicate_count}</div>
+                  )}
+                  {/* Rarity */}
+                  <div style={{ position: "absolute", bottom: 6, left: 0, right: 0, textAlign: "center" }}>
+                    <div style={{ fontSize: 9, fontWeight: 900, color: meta.color, letterSpacing: ".1em" }}>{card.rarity.toUpperCase()}</div>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AlbumCardListModal({ player, cards, onClose }: {
   player: typeof CARD_PLAYERS[0];
   cards: UserCard[];
@@ -653,6 +969,168 @@ type MyCard = {
   duplicate_count: number;
 };
 
+const LAZY_BATCH = 20;
+
+function LazyCardGrid({ cards, selectedIds, onSelect }: {
+  cards: (UserCard | MyCard)[];
+  selectedIds: Set<string>;
+  onSelect: (card: UserCard | MyCard) => void;
+}) {
+  const [visible, setVisible] = useState(LAZY_BATCH);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Reset count when the card list changes (search query changed)
+  useEffect(() => { setVisible(LAZY_BATCH); }, [cards]);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setVisible(v => Math.min(v + LAZY_BATCH, cards.length)); },
+      { threshold: 0.1 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [cards.length]);
+
+  return (
+    <>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 7 }}>
+        {cards.slice(0, visible).map(card => {
+          const player = CARD_PLAYERS.find(p => p.id === card.player_id);
+          return (
+            <MiniCard
+              key={card.id}
+              card={card as MyCard}
+              player={player}
+              selected={selectedIds.has(card.id)}
+              onToggle={() => onSelect(card)}
+            />
+          );
+        })}
+      </div>
+      {visible < cards.length && (
+        <div ref={sentinelRef} style={{ height: 1, marginTop: 8 }} />
+      )}
+    </>
+  );
+}
+
+function MiniCard({ card, player, selected, onToggle }: {
+  card: MyCard;
+  player: typeof CARD_PLAYERS[0] | undefined;
+  selected: boolean;
+  onToggle: () => void;
+}) {
+  const meta = RARITY_META[card.rarity];
+  return (
+    <button
+      onClick={onToggle}
+      style={{
+        appearance: "none", border: "none", background: "none",
+        cursor: "pointer", padding: 0, position: "relative",
+        outline: "none", borderRadius: 8,
+        transform: selected ? "scale(1.04)" : "scale(1)",
+        transition: "transform 0.15s",
+      }}
+    >
+      {/* Card shell */}
+      <div style={{
+        position: "relative", aspectRatio: "3/4.2", borderRadius: 8, overflow: "hidden",
+        boxShadow: selected
+          ? `0 0 0 2.5px ${meta.color}, 0 4px 18px ${meta.glow}`
+          : `0 0 0 1px ${meta.color}55, 0 2px 8px rgba(0,0,0,.4)`,
+        transition: "box-shadow 0.15s",
+      }}>
+        {/* Card art */}
+        <img
+          src={`/cards/${card.rarity}.png`}
+          alt=""
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+        />
+        {/* Gradient */}
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.1) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,.7) 72%, rgba(0,0,0,.88) 100%)" }} />
+        {/* Player photo */}
+        {player && (
+          <div style={{
+            position: "absolute", top: "14%", left: "50%", transform: "translateX(-50%)",
+            width: "70%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden",
+            background: (TEAM_COLORS[player.team] ?? "#1e2438") + "33",
+          }}>
+            <img
+              src={`/players/${player.folder}/${player.id}.png`}
+              alt={player.name}
+              style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }}
+            />
+          </div>
+        )}
+        {/* Rating */}
+        <div style={{
+          position: "absolute", top: 3, right: 3, fontSize: 7, fontWeight: 1000,
+          color: meta.color, background: "rgba(0,0,0,.8)", borderRadius: 4,
+          padding: "1px 4px", border: `1px solid ${meta.color}44`, lineHeight: 1.5,
+        }}>{card.rating}</div>
+        {/* Name */}
+        <div style={{
+          position: "absolute", bottom: 0, left: 0, right: 0, padding: "0 4px 4px",
+          textAlign: "center", fontSize: 7.5, fontWeight: 900, color: "#fff",
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          textShadow: `0 0 8px ${meta.glow}`,
+        }}>{card.player_name.split(" ").pop()}</div>
+      </div>
+      {/* Check badge */}
+      {selected && (
+        <div style={{
+          position: "absolute", top: -4, left: -4, width: 16, height: 16,
+          borderRadius: "50%", background: meta.color,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: `0 0 6px ${meta.glow}`,
+        }}>
+          <svg width="9" height="9" viewBox="0 0 12 12" fill="none">
+            <path d="M2 6l3 3 5-5" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+      )}
+    </button>
+  );
+}
+
+function TradeCardSlot({ card, player, onRemove }: { card: UserCard | MyCard; player: typeof CARD_PLAYERS[0] | undefined; onRemove: () => void }) {
+  const meta = RARITY_META[card.rarity];
+  return (
+    <div style={{ position: "relative", width: "100%" }}>
+      {/* Card art — overflow hidden only here */}
+      <div style={{ position: "relative", aspectRatio: "3/4.2", borderRadius: 10, overflow: "hidden", boxShadow: `0 0 0 2px ${meta.color}88, 0 4px 16px ${meta.glow}` }}>
+        <img src={`/cards/${card.rarity}.png`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom,rgba(0,0,0,.1) 0%,rgba(0,0,0,0) 35%,rgba(0,0,0,.75) 72%,rgba(0,0,0,.92) 100%)" }} />
+        {player && (
+          <div style={{ position: "absolute", top: "15%", left: "50%", transform: "translateX(-50%)", width: "65%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", background: (TEAM_COLORS[player.team] ?? "#1e2438") + "44" }}>
+            <img src={`/players/${player.folder}/${player.id}.png`} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
+          </div>
+        )}
+        <div style={{ position: "absolute", top: 4, right: 4, fontSize: 8, fontWeight: 1000, color: meta.color, background: "rgba(0,0,0,.85)", borderRadius: 4, padding: "1px 4px" }}>{card.rating}</div>
+        <div style={{ position: "absolute", bottom: 4, left: 0, right: 0, textAlign: "center", fontSize: 7, fontWeight: 900, color: meta.color, letterSpacing: ".08em" }}>{card.rarity.toUpperCase()}</div>
+      </div>
+      {/* X button — outside overflow:hidden so it's never clipped */}
+      <button onClick={onRemove} style={{ position: "absolute", top: -7, left: -7, width: 18, height: 18, borderRadius: "50%", background: "#ef4444", border: "2px solid #111", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 2 }}>
+        <svg width="8" height="8" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2l-8 8" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>
+      </button>
+    </div>
+  );
+}
+
+function EmptyCardSlot({ label, onClick, disabled }: { label?: string; onClick?: () => void; disabled?: boolean }) {
+  return (
+    <div
+      onClick={disabled ? undefined : onClick}
+      style={{ width: "100%", aspectRatio: "3/4.2", borderRadius: 10, border: "1.5px dashed rgba(255,255,255,.15)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: disabled ? "default" : "pointer", gap: 4, transition: "border-color 0.15s", background: "rgba(255,255,255,.03)" }}
+    >
+      {!disabled && <div style={{ fontSize: 20, color: "rgba(255,255,255,.2)", lineHeight: 1 }}>+</div>}
+      {label && <div style={{ fontSize: 8, fontWeight: 700, color: "rgba(255,255,255,.2)", textAlign: "center", padding: "0 4px" }}>{label}</div>}
+    </div>
+  );
+}
+
 function TradeOfferModal({
   requestCard,
   requestPlayer,
@@ -668,209 +1146,232 @@ function TradeOfferModal({
   myUserId: string;
   onClose: () => void;
 }) {
+  // "Want" = cards we're requesting from receiver
+  const [wantCards, setWantCards] = useState<UserCard[]>([requestCard]);
+  const [wantPlayers, setWantPlayers] = useState<(typeof CARD_PLAYERS[0])[]>([requestPlayer]);
+  const [receiverAllCards, setReceiverAllCards] = useState<UserCard[]>([]);
+  const [receiverSearch, setReceiverSearch] = useState("");
+  const [showWantPicker, setShowWantPicker] = useState(false);
+
+  // "Offer" = cards we're giving to receiver
   const [myCards, setMyCards] = useState<MyCard[]>([]);
-  const [loadingMyCards, setLoadingMyCards] = useState(true);
-  const [selectedOfferIds, setSelectedOfferIds] = useState<Set<string>>(new Set());
-  const [message, setMessage] = useState("");
+  const [offerIds, setOfferIds] = useState<Set<string>>(new Set());
+  const [offerSearch, setOfferSearch] = useState("");
+  const [showOfferPicker, setShowOfferPicker] = useState(false);
+
+  const [loadingMine, setLoadingMine] = useState(true);
+  const [loadingTheirs, setLoadingTheirs] = useState(true);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session) { setLoadingMyCards(false); return; }
-      const { data } = await supabase
-        .from("user_cards")
-        .select("id, player_id, player_name, team, team_logo, rarity, rating, duplicate_count")
-        .eq("user_id", myUserId)
-        .order("rating", { ascending: false });
-      setMyCards((data ?? []) as MyCard[]);
-      setLoadingMyCards(false);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) { setLoadingMine(false); setLoadingTheirs(false); return; }
+      // Fetch independently so each picker shows up as soon as its data arrives
+      supabase.from("user_cards").select("id,player_id,player_name,team,team_logo,rarity,rating,duplicate_count")
+        .eq("user_id", myUserId).order("rating", { ascending: false })
+        .then(({ data }) => { setMyCards((data ?? []) as MyCard[]); setLoadingMine(false); });
+      supabase.from("user_cards").select("id,player_id,player_name,team,team_logo,rarity,rating,duplicate_count")
+        .eq("user_id", receiverId).order("rating", { ascending: false })
+        .then(({ data }) => { setReceiverAllCards((data ?? []) as UserCard[]); setLoadingTheirs(false); });
     });
-  }, [myUserId]);
+  }, [myUserId, receiverId]);
+
+  function addWant(card: UserCard) {
+    const player = CARD_PLAYERS.find(p => p.id === card.player_id);
+    if (!player) return;
+    setWantCards(prev => [...prev, card]);
+    setWantPlayers(prev => [...prev, player]);
+    setShowWantPicker(false);
+    setReceiverSearch("");
+  }
+  function removeWant(idx: number) {
+    setWantCards(prev => prev.filter((_, i) => i !== idx));
+    setWantPlayers(prev => prev.filter((_, i) => i !== idx));
+  }
 
   function toggleOffer(id: string) {
-    setSelectedOfferIds((prev) => {
+    setOfferIds(prev => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) next.delete(id); else if (next.size < 3) next.add(id);
       return next;
     });
   }
 
   async function sendOffer() {
     if (sending || sent) return;
-    setSending(true);
-    setError(null);
+    setSending(true); setError(null);
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { setError("You need to be logged in."); setSending(false); return; }
+    if (!session) { setError("Not logged in."); setSending(false); return; }
 
-    const offerItems = myCards
-      .filter((c) => selectedOfferIds.has(c.id))
-      .map((c) => ({
-        card_id: c.id,
-        player_id: c.player_id,
-        player_name: c.player_name,
-        team: c.team,
-        team_logo: c.team_logo,
-        rarity: c.rarity,
-        rating: c.rating,
-      }));
-
-    const requestItems = [{
-      card_id: requestCard.id,
-      player_id: requestPlayer.id,
-      player_name: requestPlayer.name,
-      team: requestPlayer.team,
-      team_logo: requestPlayer.teamLogo ?? "",
-      rarity: requestCard.rarity,
-      rating: requestCard.rating,
-    }];
+    const offerItems = myCards.filter(c => offerIds.has(c.id)).map(c => ({
+      card_id: c.id, player_id: c.player_id, player_name: c.player_name,
+      team: c.team, team_logo: c.team_logo, rarity: c.rarity, rating: c.rating,
+    }));
+    const requestItems = wantCards.map((c, i) => ({
+      card_id: c.id, player_id: wantPlayers[i]?.id ?? "", player_name: wantPlayers[i]?.name ?? c.player_id,
+      team: wantPlayers[i]?.team ?? "", team_logo: wantPlayers[i]?.teamLogo ?? "", rarity: c.rarity, rating: c.rating,
+    }));
 
     const res = await fetch("/api/trades", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({
-        receiver_id: receiverId,
-        message: message.trim() || null,
-        offer_items: offerItems,
-        request_items: requestItems,
-      }),
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ receiver_id: receiverId, offer_items: offerItems, request_items: requestItems }),
     });
-
     const data = await res.json();
-    if (!res.ok) { setError(data.error ?? "Failed to send offer."); setSending(false); return; }
-    setSent(true);
-    setSending(false);
+    if (!res.ok) { setError(data.error ?? "Failed to send."); setSending(false); return; }
+    setSent(true); setSending(false);
   }
 
-  const requestMeta = RARITY_META[requestCard.rarity];
-  const selectedCards = myCards.filter((c) => selectedOfferIds.has(c.id));
+  const canSend = wantCards.length > 0 && offerIds.size > 0 && !sending && !sent;
+
+  // Filtered receiver cards for want-picker (exclude already wanted)
+  const wantedIds = new Set(wantCards.map(c => c.id));
+  const filteredReceiverCards = (() => {
+    const q = receiverSearch.trim().toLowerCase();
+    const pool = receiverAllCards.filter(c => !wantedIds.has(c.id));
+    if (!q) return pool;
+    return pool.filter(c => {
+      const p = CARD_PLAYERS.find(pl => pl.id === c.player_id);
+      return (p?.name ?? "").toLowerCase().includes(q) || c.rarity.toLowerCase().includes(q) || (p?.team ?? "").toLowerCase().includes(q);
+    });
+  })();
+
+  // Filtered own cards for offer-picker (exclude already offered)
+  const filteredMyCards = (() => {
+    const q = offerSearch.trim().toLowerCase();
+    const pool = myCards.filter(c => !offerIds.has(c.id));
+    if (!q) return pool;
+    return pool.filter(c => c.player_name.toLowerCase().includes(q) || c.rarity.toLowerCase().includes(q) || c.team.toLowerCase().includes(q));
+  })();
+
+  const offeredCards = myCards.filter(c => offerIds.has(c.id));
 
   return (
     <div
-      style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,.85)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px 16px" }}
+      style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,.85)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
       onClick={onClose}
     >
       <div
-        style={{ background: "var(--surface-1)", border: "1px solid var(--border-2)", borderRadius: 24, width: "100%", maxWidth: 460, maxHeight: "85dvh", overflowY: "auto", display: "flex", flexDirection: "column" }}
-        onClick={(e) => e.stopPropagation()}
+        style={{ background: "#111", borderRadius: 20, width: "100%", maxWidth: 540, maxHeight: "90dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}
+        onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div style={{ padding: "20px 20px 14px", borderBottom: "1px solid var(--border-1)" }}>
-          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: ".14em", color: "rgba(255,255,255,.35)", marginBottom: 6 }}>TRADE OFFER</div>
-          <div style={{ fontSize: 17, fontWeight: 1000 }}>Offer a trade to <span style={{ color: "#60a5fa" }}>@{receiverName}</span></div>
+        <div style={{ padding: "16px 18px 12px", borderBottom: "1px solid rgba(255,255,255,.08)", flexShrink: 0 }}>
+          <div style={{ fontSize: 16, fontWeight: 900, letterSpacing: "-.02em" }}>
+            Trade with <span style={{ color: "#60a5fa" }}>@{receiverName}</span>
+          </div>
         </div>
 
-        <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 20 }}>
+        <div style={{ overflowY: "auto", flex: 1 }}>
+          {/* Two-column trade area */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, background: "rgba(255,255,255,.07)" }}>
 
-          {/* Card you want */}
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: ".12em", color: "rgba(255,255,255,.35)", marginBottom: 10 }}>YOU WANT</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 14, border: `1.5px solid ${requestMeta.color}55`, background: `${requestMeta.color}12` }}>
-              <div style={{ width: 44, height: 44, borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.08)", flexShrink: 0 }}>
-                <img src={`/players/${requestPlayer.folder}/${requestPlayer.id}.png`} alt={requestPlayer.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+            {/* LEFT — You want */}
+            <div style={{ background: "#111", padding: "14px 12px" }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.4)", letterSpacing: ".1em", marginBottom: 10 }}>YOU WANT</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
+                {wantCards.map((card, i) => (
+                  <TradeCardSlot key={card.id} card={card} player={wantPlayers[i]} onRemove={() => removeWant(i)} />
+                ))}
+                {wantCards.length < 3 && (
+                  <EmptyCardSlot label="Add card" onClick={() => { setShowWantPicker(true); setShowOfferPicker(false); }} />
+                )}
+                {Array.from({ length: Math.max(0, 2 - wantCards.length) }).map((_, i) => (
+                  <EmptyCardSlot key={i} disabled />
+                ))}
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 900, fontSize: 14 }}>{requestPlayer.name}</div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,.45)", marginTop: 1 }}>{requestPlayer.team}</div>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
-                <span style={{ fontSize: 11, fontWeight: 900, color: requestMeta.color, letterSpacing: ".06em" }}>{requestCard.rarity.toUpperCase()}</span>
-                <span style={{ fontSize: 12, fontWeight: 900, color: "rgba(255,255,255,.6)" }}>{requestCard.rating}</span>
+            </div>
+
+            {/* RIGHT — You offer */}
+            <div style={{ background: "#111", padding: "14px 12px" }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.4)", letterSpacing: ".1em", marginBottom: 10 }}>YOU OFFER</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
+                {offeredCards.map(card => {
+                  const player = CARD_PLAYERS.find(p => p.id === card.player_id);
+                  return <TradeCardSlot key={card.id} card={card} player={player} onRemove={() => toggleOffer(card.id)} />;
+                })}
+                {offerIds.size < 3 && (
+                  <EmptyCardSlot label="Add card" onClick={() => { setShowOfferPicker(true); setShowWantPicker(false); }} />
+                )}
+                {Array.from({ length: Math.max(0, 2 - offerIds.size) }).map((_, i) => (
+                  <EmptyCardSlot key={i} disabled />
+                ))}
               </div>
             </div>
           </div>
 
-          {/* Cards you offer */}
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: ".12em", color: "rgba(255,255,255,.35)", marginBottom: 10 }}>
-              YOU OFFER {selectedOfferIds.size > 0 && <span style={{ color: "#60a5fa" }}>· {selectedOfferIds.size} selected</span>}
-            </div>
-            {loadingMyCards ? (
-              <div style={{ display: "flex", justifyContent: "center", padding: "24px 0" }}>
-                <div style={{ width: 22, height: 22, border: "2.5px solid var(--border-2)", borderTop: "2.5px solid #60a5fa", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+          {/* Picker area */}
+          {(showWantPicker || showOfferPicker) && (
+            <div style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,.08)" }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.35)", letterSpacing: ".1em", marginBottom: 8 }}>
+                {showWantPicker ? `PICK FROM @${receiverName}'S CARDS` : "PICK FROM YOUR CARDS"}
               </div>
-            ) : myCards.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "20px 0", color: "rgba(255,255,255,.35)", fontSize: 13, fontWeight: 600 }}>You have no cards to offer.</div>
+
+              {(showWantPicker ? loadingTheirs : loadingMine) ? (
+                <div style={{ display: "flex", justifyContent: "center", padding: "16px 0" }}>
+                  <div style={{ width: 20, height: 20, border: "2.5px solid rgba(255,255,255,.1)", borderTop: "2.5px solid #60a5fa", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+                </div>
+              ) : (
+                <>
+                  <div style={{ position: "relative", marginBottom: 10 }}>
+                    <svg style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", opacity: 0.3 }} width="13" height="13" viewBox="0 0 20 20" fill="none">
+                      <circle cx="8.5" cy="8.5" r="5.5" stroke="white" strokeWidth="2"/>
+                      <path d="M13 13l3.5 3.5" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                    <input
+                      type="text"
+                      value={showWantPicker ? receiverSearch : offerSearch}
+                      onChange={e => showWantPicker ? setReceiverSearch(e.target.value) : setOfferSearch(e.target.value)}
+                      placeholder="Search…"
+                      style={{ width: "100%", background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 9, color: "#fff", fontSize: 13, padding: "8px 12px 8px 30px", fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
+                    />
+                  </div>
+                  {(() => {
+                    const cards = showWantPicker ? filteredReceiverCards : filteredMyCards;
+                    if (cards.length === 0) return <div style={{ textAlign: "center", padding: "12px 0", color: "rgba(255,255,255,.3)", fontSize: 12 }}>No cards found</div>;
+                    return (
+                      <LazyCardGrid
+                        cards={cards}
+                        onSelect={(card) => {
+                          if (showWantPicker) {
+                            addWant(card as UserCard);
+                          } else {
+                            toggleOffer(card.id);
+                            setShowOfferPicker(false);
+                            setOfferSearch("");
+                          }
+                        }}
+                        selectedIds={showWantPicker ? wantedIds : offerIds}
+                      />
+                    );
+                  })()}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Actions */}
+          <div style={{ padding: "12px 14px 18px", display: "flex", flexDirection: "column", gap: 10 }}>
+            {error && (
+              <div style={{ background: "rgba(239,68,68,.1)", border: "1px solid rgba(239,68,68,.25)", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "#fca5a5", fontWeight: 600 }}>{error}</div>
+            )}
+            {sent ? (
+              <div style={{ textAlign: "center", padding: "8px 0", fontSize: 14, fontWeight: 900, color: "#4ade80" }}>Trade offer sent! ✓</div>
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(76px, 1fr))", gap: 8, maxHeight: 300, overflowY: "auto" }}>
-                {myCards.map((card) => {
-                  const meta = RARITY_META[card.rarity];
-                  const selected = selectedOfferIds.has(card.id);
-                  return (
-                    <button
-                      key={card.id}
-                      onClick={() => toggleOffer(card.id)}
-                      style={{
-                        appearance: "none", border: `2px solid ${selected ? meta.color : meta.color + "44"}`,
-                        borderRadius: 10, background: selected ? `${meta.color}22` : `${meta.color}0a`,
-                        cursor: "pointer", padding: 6, display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-                        boxShadow: selected ? `0 0 12px ${meta.glow}` : "none",
-                        transition: "all 0.15s", position: "relative",
-                      }}
-                    >
-                      <div style={{ width: "100%", aspectRatio: "1/1", borderRadius: 6, overflow: "hidden", background: "rgba(255,255,255,0.06)" }}>
-                        <img src={`/players/${CARD_PLAYERS.find(p => p.id === card.player_id)?.folder ?? ""}/${card.player_id}.png`} alt={card.player_name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                      </div>
-                      <div style={{ fontSize: 8, fontWeight: 900, color: meta.color, letterSpacing: ".06em", lineHeight: 1 }}>{card.rarity.toUpperCase()}</div>
-                      <div style={{ fontSize: 9, fontWeight: 900, color: "rgba(255,255,255,.8)", textAlign: "center", lineHeight: 1.2, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{card.player_name}</div>
-                      {selected && (
-                        <div style={{ position: "absolute", top: 4, right: 4, width: 14, height: 14, borderRadius: "50%", background: meta.color, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <svg width="8" height="8" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#000" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={onClose} style={{ flex: 1, padding: "12px", borderRadius: 12, border: "1px solid rgba(255,255,255,.12)", background: "transparent", color: "rgba(255,255,255,.45)", fontWeight: 800, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+                <button
+                  onClick={sendOffer}
+                  disabled={!canSend}
+                  style={{ flex: 2, padding: "12px", borderRadius: 12, border: "none", background: canSend ? "linear-gradient(135deg,#3b82f6,#6366f1)" : "rgba(255,255,255,.08)", color: canSend ? "#fff" : "rgba(255,255,255,.25)", fontWeight: 900, fontSize: 13, cursor: canSend ? "pointer" : "not-allowed", fontFamily: "inherit", transition: "all 0.15s" }}
+                >
+                  {sending ? "Sending…" : "Send Offer"}
+                </button>
               </div>
             )}
           </div>
-
-          {/* Message */}
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: ".12em", color: "rgba(255,255,255,.35)", marginBottom: 8 }}>MESSAGE (OPTIONAL)</div>
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Add a message to your offer…"
-              maxLength={200}
-              rows={2}
-              style={{ width: "100%", background: "var(--surface-2)", border: "1px solid var(--border-2)", borderRadius: 12, color: "var(--text-1)", fontSize: 13, padding: "10px 12px", fontFamily: "inherit", resize: "none", outline: "none", boxSizing: "border-box" }}
-            />
-          </div>
-
-          {error && (
-            <div style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#fca5a5", fontWeight: 600 }}>
-              {error}
-            </div>
-          )}
-
-          {sent ? (
-            <div style={{ background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.3)", borderRadius: 14, padding: "14px", textAlign: "center", fontSize: 14, fontWeight: 900, color: "#86efac" }}>
-              ✓ Trade offer sent!
-            </div>
-          ) : (
-            <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={onClose} style={{ flex: 1, padding: "13px", borderRadius: 14, border: "1px solid var(--border-2)", background: "transparent", color: "var(--text-3)", fontWeight: 900, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
-                Cancel
-              </button>
-              <button
-                onClick={sendOffer}
-                disabled={sending || myCards.length === 0}
-                style={{
-                  flex: 2, padding: "13px", borderRadius: 14, border: "none",
-                  background: sending ? "rgba(255,255,255,.1)" : "linear-gradient(135deg,#3b82f6,#6366f1)",
-                  color: "#fff", fontWeight: 900, fontSize: 14, cursor: sending ? "not-allowed" : "pointer", fontFamily: "inherit",
-                  opacity: sending ? 0.6 : 1, transition: "opacity 0.15s",
-                }}
-              >
-                {sending ? "Sending…" : "Send Trade Offer"}
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </div>

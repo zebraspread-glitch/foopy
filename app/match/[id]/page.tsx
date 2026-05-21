@@ -775,7 +775,7 @@ function toTeamSlug(name: string): string {
   return overrides[name] ?? name.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
-function TeamScore({ team, score, align = "left" }: { team: any; score: any; align?: "left" | "right" }) {
+function TeamScore({ team, score, goals, behinds, align = "left" }: { team: any; score: any; goals?: number; behinds?: number; align?: "left" | "right" }) {
   const safeTeam = safeText(team, "");
   const displayScore = typeof score === "string" ? score : scoreText(score);
   const isRecordScore = typeof displayScore === "string" && displayScore.includes("-");
@@ -791,6 +791,8 @@ function TeamScore({ team, score, align = "left" }: { team: any; score: any; ali
       setAnimKey(k => k + 1);
     }
   }, [score]);
+
+  const showGB = !isRecordScore && goals != null && behinds != null;
 
   return (
     <div style={{
@@ -831,6 +833,18 @@ function TeamScore({ team, score, align = "left" }: { team: any; score: any; ali
       >
         {displayScore}
       </div>
+      {/* G.B */}
+      {showGB && (
+        <div style={{
+          fontSize: "clamp(11px, 2.6vw, 14px)", fontWeight: 700,
+          color: "rgba(255,255,255,.38)",
+          fontVariantNumeric: "tabular-nums",
+          letterSpacing: ".02em",
+          marginTop: -6,
+        }}>
+          {goals}.{behinds}
+        </div>
+      )}
       {/* Name */}
       <div style={{
         fontSize: "clamp(13px, 3.2vw, 18px)", fontWeight: 900, color: "#f4f4f5",
@@ -3261,7 +3275,13 @@ export default function MatchPage() {
             alignItems: "center",
             gap: 16,
           }}>
-            <TeamScore team={game.hteam} score={homeScoreDisplay} align="left" />
+            <TeamScore
+              team={game.hteam}
+              score={homeScoreDisplay}
+              goals={status !== "UPCOMING" ? displayHomeStats.reduce((s, p) => s + num(p.goals), 0) : undefined}
+              behinds={status !== "UPCOMING" ? displayHomeStats.reduce((s, p) => s + num(p.behinds), 0) : undefined}
+              align="left"
+            />
 
             {/* Centre */}
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, minWidth: 0, alignSelf: "end", paddingBottom: 19 }}>
@@ -3318,7 +3338,13 @@ export default function MatchPage() {
 
             </div>
 
-            <TeamScore team={game.ateam} score={awayScoreDisplay} align="right" />
+            <TeamScore
+              team={game.ateam}
+              score={awayScoreDisplay}
+              goals={status !== "UPCOMING" ? displayAwayStats.reduce((s, p) => s + num(p.goals), 0) : undefined}
+              behinds={status !== "UPCOMING" ? displayAwayStats.reduce((s, p) => s + num(p.behinds), 0) : undefined}
+              align="right"
+            />
           </div>
 
           {/* Venue + round row — only for upcoming games */}
