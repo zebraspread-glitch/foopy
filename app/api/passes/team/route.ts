@@ -98,6 +98,22 @@ export async function POST(req: Request) {
     data = inserted;
   }
 
+  // Auto-join the team's group chat
+  const { data: groupChat } = await supabaseServer
+    .from("group_chats")
+    .select("id")
+    .eq("team_name", canonical)
+    .maybeSingle();
+
+  if (groupChat) {
+    await supabaseServer
+      .from("group_chat_members")
+      .upsert(
+        { group_chat_id: groupChat.id, user_id: user.id },
+        { onConflict: "group_chat_id,user_id", ignoreDuplicates: true }
+      );
+  }
+
   return NextResponse.json({ teamPass: data });
 }
 

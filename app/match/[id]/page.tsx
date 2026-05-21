@@ -579,6 +579,20 @@ function playerFreesFor(player: PlayerStat) {
   return num(player.freesFor ?? player.frees ?? player.ff ?? player.freeKicksFor);
 }
 
+function fantasyPoints(p: PlayerStat): number {
+  return (
+    num(p.kicks)         * 3 +
+    num(p.handballs)     * 2 +
+    num(p.marks)         * 3 +
+    num(p.tackles)       * 4 +
+    num(p.freesFor)      * 1 +
+    num(p.freesAgainst)  * -3 +
+    num(p.hitouts)       * 1 +
+    num(p.goals)         * 6 +
+    num(p.behinds)       * 1
+  );
+}
+
 function getSortValue(player: PlayerStat, key: SortKey) {
   if (key === "foopy") {
     const savedFoopy = num(player.foopy);
@@ -590,6 +604,8 @@ function getSortValue(player: PlayerStat, key: SortKey) {
   if (key === "goalAssists") {
     return num((player as any).goalAssists);
   }
+
+  if (key === "fantasy") return fantasyPoints(player);
 
   return num((player as any)[key]);
 }
@@ -979,6 +995,8 @@ function LiveFeedPlayer({
   homeTeam,
   awayTeam,
   commentCount,
+  topComment,
+  playerFP,
   onCommentClick,
 }: {
   event: LiveEvent;
@@ -986,6 +1004,8 @@ function LiveFeedPlayer({
   awayTeam: any;
   eventKey?: string;
   commentCount?: number;
+  topComment?: { body: string; username: string; avatar: string | null };
+  playerFP?: number | null;
   onCommentClick?: () => void;
 }) {
   const isInferred = Boolean((event as any).optimistic) || Boolean((event as any).inferred);
@@ -1020,36 +1040,90 @@ function LiveFeedPlayer({
       }}
     >
       <div style={{
-        ...liveFeedBoxStyle,
         background: "var(--surface-1)",
         border: "none",
         borderRadius: 18,
-        minHeight: type === "BEHIND" ? 56 : liveFeedBoxStyle.minHeight,
-        padding: type === "BEHIND" ? "8px 14px 8px 12px" : liveFeedBoxStyle.padding,
+        overflow: "hidden",
       }}>
-        {isInferred ? <TeamEventAvatar team={team} /> : <PlayerAvatar name={playerName} team={team} />}
+        {/* Main event row */}
+        <div style={{
+          ...liveFeedBoxStyle,
+          background: "transparent",
+          border: "none",
+          borderRadius: 0,
+          minHeight: type === "BEHIND" ? 56 : liveFeedBoxStyle.minHeight,
+          padding: type === "BEHIND" ? "8px 14px 8px 12px" : liveFeedBoxStyle.padding,
+        }}>
+          {isInferred ? <TeamEventAvatar team={team} /> : <PlayerAvatar name={playerName} team={team} />}
 
-        <div style={liveFeedInfoStyle}>
-          <div style={liveFeedNameStyle}>{playerName}</div>
-          <div style={{ ...liveFeedActionStyle, color: type === "GOAL" ? "#22c55e" : type === "BEHIND" ? "#f8fafc" : "#facc15" }}>
-            {type}
+          <div style={liveFeedInfoStyle}>
+            <div style={liveFeedNameStyle}>{playerName}</div>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <div style={{ ...liveFeedActionStyle, color: type === "GOAL" ? "#22c55e" : type === "BEHIND" ? "#f8fafc" : "#facc15", fontSize: type === "BEHIND" ? 15 : liveFeedActionStyle.fontSize }}>
+                {type}
+              </div>
+              {playerFP != null && !isInferred && (
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontWeight: 500, marginLeft: 10, lineHeight: 1 }}>
+                  {playerFP} FP
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div style={liveFeedRightStyle}>
+            <div style={liveFeedTimeBadgeStyle}>
+              <span style={liveFeedQuarterStyle}>{eventQuarter(event)}</span>
+              <span style={liveFeedTimeDotStyle}>·</span>
+              <span style={liveFeedMinuteStyle}>{event.minute ?? "-"}'</span>
+            </div>
+
+            {!topComment && (
+              <button onClick={onCommentClick} style={commentBubbleBtnStyle}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+                {(commentCount ?? 0) > 0 && <span style={commentCountStyle}>{commentCount}</span>}
+              </button>
+            )}
           </div>
         </div>
 
-        <div style={liveFeedRightStyle}>
-          <div style={liveFeedTimeBadgeStyle}>
-            <span style={liveFeedQuarterStyle}>{eventQuarter(event)}</span>
-            <span style={liveFeedTimeDotStyle}>·</span>
-            <span style={liveFeedMinuteStyle}>{event.minute ?? "-"}'</span>
+        {/* Top comment preview — inside the dark box, below the event row */}
+        {topComment && (
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 7,
+            padding: "6px 14px 9px 14px",
+            borderTop: "1px solid rgba(255,255,255,0.06)",
+          }}>
+            {topComment.avatar ? (
+              <img
+                src={topComment.avatar}
+                alt={topComment.username}
+                style={{ width: 18, height: 18, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
+              />
+            ) : (
+              <div style={{
+                width: 18, height: 18, borderRadius: "50%", flexShrink: 0,
+                background: "rgba(255,255,255,0.15)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.6)",
+              }}>
+                {topComment.username.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <span style={{ fontSize: 12, color: "#fff", lineHeight: 1.4, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", flex: 1 }}>
+              {topComment.body}
+            </span>
+            <button onClick={onCommentClick} style={commentBubbleBtnStyle}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+              {(commentCount ?? 0) > 0 && <span style={commentCountStyle}>{commentCount}</span>}
+            </button>
           </div>
-
-          <button onClick={onCommentClick} style={commentBubbleBtnStyle}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-            </svg>
-            {(commentCount ?? 0) > 0 && <span style={commentCountStyle}>{commentCount}</span>}
-          </button>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -1166,6 +1240,7 @@ function StatTable({ stats, isLive, isFinal, team, gameId, bestRating }: { stats
                 </>
               ) : (
                 <>
+  {sortHeader("FP", "fantasy")}
   {sortHeader("CLR", "clearances")}
   {sortHeader("GA", "goalAssists")}
   {sortHeader("FF", "freesFor")}
@@ -1239,6 +1314,7 @@ function StatTable({ stats, isLive, isFinal, team, gameId, bestRating }: { stats
                     </>
                   ) : (
                     <>
+  <td style={tdStyle}>{fantasyPoints(p)}</td>
   <td style={tdStyle}>{statValue(p.clearances)}</td>
   <td style={tdStyle}>{statValue((p as any).goalAssists ?? 0)}</td>
   <td style={tdStyle}>{statValue(p.freesFor)}</td>
@@ -2422,6 +2498,7 @@ export default function MatchPage() {
   const [feedError, setFeedError] = useState("");
   const [feedLoading, setFeedLoading] = useState(true);
   const [eventCommentCounts, setEventCommentCounts] = useState<Record<string, number>>({});
+  const [eventTopComments, setEventTopComments] = useState<Record<string, { body: string; username: string; avatar: string | null }>>({});
   const seenEventKeys = useRef(new Set<string>());
   const initialFeedLoaded = useRef(false);
   const lastScoreRef = useRef<{ home: number; away: number } | null>(null);
@@ -2981,18 +3058,49 @@ export default function MatchPage() {
 
     supabase
       .from("feed_comments")
-      .select("event_key")
+      .select("event_key, body, likes, user_id, parent_id")
       .eq("game_id", gameId)
       .not("event_key", "is", null)
-      .then(({ data }) => {
+      .then(async ({ data }) => {
         if (!data) return;
 
         const counts: Record<string, number> = {};
-        for (const row of data as { event_key: string }[]) {
+        // Only top-level comments (no parent) are candidates for top comment preview
+        const topCandidates: Record<string, { body: string; likes: number; user_id: string }> = {};
+
+        for (const row of data as { event_key: string; body: string; likes: number | null; user_id: string; parent_id: string | null }[]) {
           counts[row.event_key] = (counts[row.event_key] ?? 0) + 1;
+          if (!row.parent_id) {
+            const likes = row.likes ?? 0;
+            const existing = topCandidates[row.event_key];
+            if (!existing || likes > existing.likes) {
+              topCandidates[row.event_key] = { body: row.body, likes, user_id: row.user_id };
+            }
+          }
         }
 
         setEventCommentCounts(counts);
+
+        // Load profiles for top comment authors
+        const userIds = Array.from(new Set(Object.values(topCandidates).map((c) => c.user_id)));
+        if (userIds.length === 0) return;
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, username, display_name, avatar_url")
+          .in("id", userIds);
+        const profileMap: Record<string, { name: string; avatar: string | null }> = {};
+        for (const p of profiles ?? []) {
+          profileMap[p.id] = {
+            name: (p as any).display_name || (p as any).username || "User",
+            avatar: (p as any).avatar_url ?? null,
+          };
+        }
+        const topMap: Record<string, { body: string; username: string; avatar: string | null }> = {};
+        for (const [key, c] of Object.entries(topCandidates)) {
+          const prof = profileMap[c.user_id];
+          topMap[key] = { body: c.body, username: prof?.name ?? "User", avatar: prof?.avatar ?? null };
+        }
+        setEventTopComments(topMap);
       });
   }, [id, liveEvents]);
 
@@ -3406,6 +3514,13 @@ export default function MatchPage() {
                   const ek = scoreEventKey(event, index);
                   const commentKey = commentKeyForEvent(eventCommentCounts, event, index);
                   const isFresh = freshEventKeys.has(ek);
+                  const eventPlayer = findPlayerForLiveEvent(event, safeText(game.hteam, ""), safeText(game.ateam, ""));
+                  const eventPlayerStat = eventPlayer
+                    ? [...displayHomeStats, ...displayAwayStats].find(p =>
+                        ((p as any).name || (p as any).player || "").toLowerCase() === (eventPlayer.name || "").toLowerCase()
+                      )
+                    : undefined;
+                  const eventPlayerFP = eventPlayerStat ? fantasyPoints(eventPlayerStat) : null;
 
                   return (
                     <div
@@ -3430,6 +3545,8 @@ export default function MatchPage() {
                           awayTeam={game.ateam}
                           eventKey={commentKey}
                           commentCount={commentCountForEvent(eventCommentCounts, event, index)}
+                          topComment={eventTopComments[commentKey]}
+                          playerFP={eventPlayerFP}
                           onCommentClick={() => {
                             const inferredTeam = safeText((event as any).teamName, "");
                             const apiTeam = teamNameFromEvent(event);
@@ -4857,7 +4974,10 @@ function PollCard({
         <button
           type="button"
           onClick={() => {
-            const statsStr = cat ? sorted.map(opt => {
+            const statsStr = cat ? (isPlayerAll && userVote
+              ? sorted.filter(o => o.id === userVote)
+              : sorted
+            ).map(opt => {
               let val: number | string = "–";
               if (cat.type === "player") {
                 const ps = [...homeStats, ...awayStats].find(p => ((p as any).name || (p as any).player || "").toLowerCase() === opt.label.toLowerCase());

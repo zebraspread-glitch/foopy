@@ -583,6 +583,7 @@ export default function PassesPage() {
   const [pendingPlayer, setPendingPlayer]       = useState<{ pid: string; name: string; team: string; imgSrc: string } | null>(null);
   const [purchaseErr, setPurchaseErr]           = useState<string | null>(null);
   const [selectedPass, setSelectedPass]         = useState<PlayerPass | null>(null);
+  const [playerSortBy, setPlayerSortBy]         = useState<"recent" | "level">("recent");
   const [leaderboardPass, setLeaderboardPass]   = useState<PlayerPass | null>(null);
   const [selectedTeamPass, setSelectedTeamPass]       = useState<TeamPass | null>(null);
   const [leaderboardTeamPass, setLeaderboardTeamPass] = useState<TeamPass | null>(null);
@@ -763,13 +764,40 @@ export default function PassesPage() {
           {(data?.playerPasses.length ?? 0) === 0 ? (
             <EmptyCard tab="player" coins={coins} />
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              {data!.playerPasses.map((pass) => (
-                <div key={pass.id} onClick={() => setSelectedPass(pass)} style={{ cursor: "pointer" }}>
-                  <PlayerCard pass={pass} />
-                </div>
-              ))}
-            </div>
+            <>
+              {/* Sort controls */}
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 5, marginBottom: 10 }}>
+                {(["recent", "level"] as const).map((key) => (
+                  <button
+                    key={key}
+                    onClick={() => setPlayerSortBy(key)}
+                    style={{
+                      appearance: "none", border: "none", cursor: "pointer",
+                      padding: "5px 12px", borderRadius: 999,
+                      fontSize: 11, fontWeight: 800, fontFamily: "inherit",
+                      background: playerSortBy === key ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.06)",
+                      color: playerSortBy === key ? "#fff" : "rgba(255,255,255,.38)",
+                      transition: "background 0.15s, color 0.15s",
+                    }}
+                  >
+                    {key === "recent" ? "Recent" : "Level"}
+                  </button>
+                ))}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                {[...data!.playerPasses]
+                  .sort((a, b) =>
+                    playerSortBy === "level"
+                      ? (b.xp ?? 0) - (a.xp ?? 0)
+                      : new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                  )
+                  .map((pass) => (
+                    <div key={pass.id} onClick={() => setSelectedPass(pass)} style={{ cursor: "pointer" }}>
+                      <PlayerCard pass={pass} />
+                    </div>
+                  ))}
+              </div>
+            </>
           )}
         </div>
       )}
@@ -875,13 +903,13 @@ export default function PassesPage() {
 
       {/* Team Picker */}
       {teamPickerOpen && (
-        <Modal title={`Buy Team Pass · ${fmtCoins(TEAM_PASS_COST)} coins`} onClose={() => setTeamPickerOpen(false)}>
+        <Modal title={`Buy Team Pass · ${fmtCoins(TEAM_PASS_COST)} coins`} onClose={() => setTeamPickerOpen(false)} centered>
           <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
             {AFL_TEAMS.map((team) => {
               const active = data?.teamPass?.team_name === team;
               return (
                 <button key={team} onClick={() => handleSetTeam(team)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 12, border: `1px solid ${active ? teamColor(team) + "70" : "var(--border-2)"}`, background: active ? `${teamColor(team)}18` : "rgba(255,255,255,0.03)", cursor: "pointer", width: "100%", textAlign: "left" }}>
-                  <img src={teamLogo(team)} alt={team} style={{ width: 30, height: 30, objectFit: "contain" }} />
+                  <img src={teamLogo(team)} alt={team} style={{ width: 32, height: 32, objectFit: "cover", borderRadius: "50%", flexShrink: 0 }} />
                   <span style={{ fontWeight: 700, fontSize: 14, color: "var(--text-1)", flex: 1 }}>{team}</span>
                   {active && <span style={{ fontSize: 11, color: "#a78bfa", fontWeight: 800 }}>Active</span>}
                 </button>
@@ -902,21 +930,27 @@ export default function PassesPage() {
             /* ── Confirmation screen ── */
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               {/* Card preview */}
-              <div style={{ display: "flex", justifyContent: "center" }}>
-                <div style={{ width: 160 }}>
-                  <PlayerCard pass={{
-                    id: "",
-                    user_id: "",
-                    player_id: pendingPlayer.pid,
-                    player_name: pendingPlayer.name,
-                    team_name: pendingPlayer.team,
-                    active: true,
-                    xp: 0,
-                    serial_number: null,
-                    created_at: "",
-                  }} />
-                </div>
-              </div>
+              {(() => {
+                const existingPass = data?.playerPasses?.find((p) => p.player_id === pendingPlayer.pid);
+                const previewPass: PlayerPass = existingPass ?? {
+                  id: "",
+                  user_id: "",
+                  player_id: pendingPlayer.pid,
+                  player_name: pendingPlayer.name,
+                  team_name: pendingPlayer.team,
+                  active: true,
+                  xp: 0,
+                  serial_number: null,
+                  created_at: "",
+                };
+                return (
+                  <div style={{ display: "flex", justifyContent: "center" }}>
+                    <div style={{ width: 160 }}>
+                      <PlayerCard pass={previewPass} />
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Pass info */}
               <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>

@@ -529,6 +529,9 @@ export default function CardsPage() {
         @keyframes revealFlash { 0% { opacity: 0; } 25% { opacity: 1; } 100% { opacity: 0; } }
         @keyframes revealText { 0% { opacity: 0; transform: translateX(-50%) scale(0.7); } 30% { opacity: 1; transform: translateX(-50%) scale(1.08); } 65% { opacity: 1; transform: translateX(-50%) scale(1); } 100% { opacity: 0; transform: translateX(-50%) scale(0.95); } }
         @keyframes revealRays { 0% { opacity: 0; transform: scale(0.5) rotate(0deg); } 20% { opacity: 0.6; } 100% { opacity: 0; transform: scale(2.2) rotate(30deg); } }
+        @keyframes revealParticle { 0% { opacity: 0; transform: scale(0) translateY(0); } 15% { opacity: 1; transform: scale(1) translateY(0); } 100% { opacity: 0; transform: scale(0.4) translateY(-50px); } }
+        @keyframes revealScreenEdge { 0% { opacity: 0; } 20% { opacity: 1; } 100% { opacity: 0; } }
+        @keyframes mythicPulse { 0%,100% { opacity: 0; } 15% { opacity: 0.55; } 45% { opacity: 0.3; } 75% { opacity: 0.45; } }
         .cards-grid { animation: fadeIn 0.22s ease; }
         .card-item { transition: transform 0.12s ease; cursor: pointer; }
         .card-item:active { transform: scale(0.95); }
@@ -951,6 +954,138 @@ function PlayerCard({ card, onSell }: { card: UserCard; onSell?: () => void }) {
   );
 }
 
+// ── Rarity Reveal Overlay ─────────────────────────────────────────────────────
+
+function RarityRevealOverlay({ rarity, meta, duration }: { rarity: Rarity; meta: { color: string; glow: string }; duration: number }) {
+  const order = RARITY_ORDER[rarity];
+  const label = `✦ ${RARITY_META[rarity].label.toUpperCase()} ✦`;
+
+  // Sapphire — elegant glow, 2 rings, soft label
+  if (order === 4) {
+    return (
+      <div style={{ position: "absolute", inset: -60, zIndex: 30, pointerEvents: "none", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at 50% 50%, ${meta.color}25 0%, transparent 60%)`, animation: `revealFlash ${duration}ms ease-out forwards` }} />
+        <div style={{ position: "absolute", width: "40%", aspectRatio: "1", borderRadius: "50%", border: `2px solid ${meta.color}`, animation: `revealRing ${duration * 0.82}ms ease-out forwards` }} />
+        <div style={{ position: "absolute", width: "40%", aspectRatio: "1", borderRadius: "50%", border: `1px solid ${meta.color}66`, animation: `revealRing ${duration}ms 110ms ease-out forwards` }} />
+        <div style={{ position: "absolute", bottom: "12%", left: "50%", whiteSpace: "nowrap", animation: `revealText ${duration}ms ease-out forwards` }}>
+          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: ".24em", color: meta.color, textShadow: `0 0 14px ${meta.color}` }}>{label}</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Ruby — warm burst, 3 rings, brighter flash, label
+  if (order === 5) {
+    return (
+      <div style={{ position: "absolute", inset: -60, zIndex: 30, pointerEvents: "none", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at 50% 50%, ${meta.color}38 0%, transparent 65%)`, animation: `revealFlash ${duration}ms ease-out forwards` }} />
+        <div style={{ position: "absolute", width: "40%", aspectRatio: "1", borderRadius: "50%", border: `2px solid ${meta.color}`, animation: `revealRing ${duration * 0.65}ms ease-out forwards` }} />
+        <div style={{ position: "absolute", width: "40%", aspectRatio: "1", borderRadius: "50%", border: `1.5px solid ${meta.color}88`, animation: `revealRing ${duration * 0.85}ms 70ms ease-out forwards` }} />
+        <div style={{ position: "absolute", width: "40%", aspectRatio: "1", borderRadius: "50%", border: `1px solid ${meta.color}55`, animation: `revealRing ${duration}ms 140ms ease-out forwards` }} />
+        <div style={{ position: "absolute", bottom: "12%", left: "50%", whiteSpace: "nowrap", animation: `revealText ${duration}ms ease-out forwards` }}>
+          <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: ".26em", color: meta.color, textShadow: `0 0 18px ${meta.color}, 0 0 36px ${meta.color}66` }}>{label}</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Amethyst — rays + 3 rings + label
+  if (order === 6) {
+    return (
+      <div style={{ position: "absolute", inset: -60, zIndex: 30, pointerEvents: "none", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at 50% 50%, ${meta.color}30 0%, transparent 65%)`, animation: `revealFlash ${duration}ms ease-out forwards` }} />
+        <div style={{ position: "absolute", inset: 0, background: `conic-gradient(from 0deg, transparent 0deg, ${meta.color}18 20deg, transparent 40deg, transparent 60deg, ${meta.color}12 80deg, transparent 100deg, transparent 120deg, ${meta.color}18 140deg, transparent 160deg, transparent 180deg, ${meta.color}14 200deg, transparent 220deg, transparent 240deg, ${meta.color}18 260deg, transparent 280deg, transparent 300deg, ${meta.color}12 320deg, transparent 340deg, transparent 360deg)`, animation: `revealRays ${duration}ms ease-out forwards`, borderRadius: "50%" }} />
+        <div style={{ position: "absolute", width: "40%", aspectRatio: "1", borderRadius: "50%", border: `2px solid ${meta.color}`, animation: `revealRing ${duration * 0.65}ms ease-out forwards` }} />
+        <div style={{ position: "absolute", width: "40%", aspectRatio: "1", borderRadius: "50%", border: `1.5px solid ${meta.color}88`, animation: `revealRing ${duration * 0.82}ms 80ms ease-out forwards` }} />
+        <div style={{ position: "absolute", width: "40%", aspectRatio: "1", borderRadius: "50%", border: `1px solid ${meta.color}55`, animation: `revealRing ${duration}ms 160ms ease-out forwards` }} />
+        <div style={{ position: "absolute", bottom: "12%", left: "50%", whiteSpace: "nowrap", animation: `revealText ${duration}ms ease-out forwards` }}>
+          <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: ".28em", color: meta.color, textShadow: `0 0 20px ${meta.color}, 0 0 40px ${meta.color}88` }}>{label}</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Diamond — stronger rays, 4 rings, sparkle particles, bigger label
+  if (order === 7) {
+    const particles = Array.from({ length: 5 }, (_, i) => ({
+      x: 50 + Math.sin((i / 5) * Math.PI * 2) * 28,
+      y: 50 + Math.cos((i / 5) * Math.PI * 2) * 28,
+      delay: i * 80,
+    }));
+    return (
+      <div style={{ position: "absolute", inset: -60, zIndex: 30, pointerEvents: "none", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at 50% 50%, ${meta.color}40 0%, transparent 70%)`, animation: `revealFlash ${duration}ms ease-out forwards` }} />
+        <div style={{ position: "absolute", inset: 0, background: `conic-gradient(from 0deg, transparent 0deg, ${meta.color}22 15deg, transparent 30deg, transparent 50deg, ${meta.color}18 65deg, transparent 80deg, transparent 100deg, ${meta.color}22 115deg, transparent 130deg, transparent 150deg, ${meta.color}18 165deg, transparent 180deg, transparent 200deg, ${meta.color}22 215deg, transparent 230deg, transparent 250deg, ${meta.color}18 265deg, transparent 280deg, transparent 300deg, ${meta.color}22 315deg, transparent 330deg, transparent 350deg, ${meta.color}16 360deg)`, animation: `revealRays ${duration}ms ease-out forwards`, borderRadius: "50%" }} />
+        <div style={{ position: "absolute", width: "40%", aspectRatio: "1", borderRadius: "50%", border: `2.5px solid ${meta.color}`, animation: `revealRing ${duration * 0.58}ms ease-out forwards` }} />
+        <div style={{ position: "absolute", width: "40%", aspectRatio: "1", borderRadius: "50%", border: `2px solid ${meta.color}88`, animation: `revealRing ${duration * 0.72}ms 65ms ease-out forwards` }} />
+        <div style={{ position: "absolute", width: "40%", aspectRatio: "1", borderRadius: "50%", border: `1.5px solid ${meta.color}66`, animation: `revealRing ${duration * 0.87}ms 130ms ease-out forwards` }} />
+        <div style={{ position: "absolute", width: "40%", aspectRatio: "1", borderRadius: "50%", border: `1px solid ${meta.color}44`, animation: `revealRing ${duration}ms 195ms ease-out forwards` }} />
+        {particles.map((p, i) => (
+          <div key={i} style={{ position: "absolute", width: 4, height: 4, borderRadius: "50%", background: meta.color, boxShadow: `0 0 7px ${meta.color}`, left: `${p.x}%`, top: `${p.y}%`, animation: `revealParticle ${duration * 0.78}ms ${p.delay}ms ease-out forwards` }} />
+        ))}
+        <div style={{ position: "absolute", bottom: "12%", left: "50%", whiteSpace: "nowrap", animation: `revealText ${duration}ms ease-out forwards` }}>
+          <div style={{ fontSize: 14, fontWeight: 900, letterSpacing: ".30em", color: meta.color, textShadow: `0 0 24px ${meta.color}, 0 0 50px ${meta.color}88, 0 0 80px ${meta.color}44` }}>{label}</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Pink Diamond — edge vignette, strong rays, 4 rings, more particles, grand label
+  if (order === 8) {
+    const particles = Array.from({ length: 8 }, (_, i) => ({
+      x: 50 + Math.sin((i / 8) * Math.PI * 2) * 30,
+      y: 50 + Math.cos((i / 8) * Math.PI * 2) * 30,
+      size: i % 2 === 0 ? 5 : 3,
+      delay: i * 60,
+    }));
+    return (
+      <div style={{ position: "absolute", inset: -80, zIndex: 30, pointerEvents: "none", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at 50% 50%, ${meta.color}48 0%, transparent 75%)`, animation: `revealFlash ${duration}ms ease-out forwards` }} />
+        <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at 50% 0%, ${meta.color}20 0%, transparent 55%), radial-gradient(ellipse at 50% 100%, ${meta.color}20 0%, transparent 55%)`, animation: `revealScreenEdge ${duration * 0.75}ms 100ms ease-out forwards` }} />
+        <div style={{ position: "absolute", inset: 0, background: `conic-gradient(from 0deg, transparent 0deg, ${meta.color}26 12deg, transparent 24deg, transparent 42deg, ${meta.color}20 54deg, transparent 66deg, transparent 84deg, ${meta.color}26 96deg, transparent 108deg, transparent 126deg, ${meta.color}20 138deg, transparent 150deg, transparent 168deg, ${meta.color}26 180deg, transparent 192deg, transparent 210deg, ${meta.color}20 222deg, transparent 234deg, transparent 252deg, ${meta.color}26 264deg, transparent 276deg, transparent 294deg, ${meta.color}20 306deg, transparent 318deg, transparent 336deg, ${meta.color}22 348deg, transparent 360deg)`, animation: `revealRays ${duration}ms ease-out forwards`, borderRadius: "50%" }} />
+        <div style={{ position: "absolute", width: "40%", aspectRatio: "1", borderRadius: "50%", border: `3px solid ${meta.color}`, animation: `revealRing ${duration * 0.52}ms ease-out forwards` }} />
+        <div style={{ position: "absolute", width: "40%", aspectRatio: "1", borderRadius: "50%", border: `2.5px solid ${meta.color}99`, animation: `revealRing ${duration * 0.67}ms 60ms ease-out forwards` }} />
+        <div style={{ position: "absolute", width: "40%", aspectRatio: "1", borderRadius: "50%", border: `1.5px solid ${meta.color}77`, animation: `revealRing ${duration * 0.82}ms 120ms ease-out forwards` }} />
+        <div style={{ position: "absolute", width: "40%", aspectRatio: "1", borderRadius: "50%", border: `1px solid ${meta.color}55`, animation: `revealRing ${duration}ms 180ms ease-out forwards` }} />
+        {particles.map((p, i) => (
+          <div key={i} style={{ position: "absolute", width: p.size, height: p.size, borderRadius: "50%", background: meta.color, boxShadow: `0 0 9px ${meta.color}, 0 0 18px ${meta.color}88`, left: `${p.x}%`, top: `${p.y}%`, animation: `revealParticle ${duration * 0.73}ms ${p.delay}ms ease-out forwards` }} />
+        ))}
+        <div style={{ position: "absolute", bottom: "10%", left: "50%", whiteSpace: "nowrap", animation: `revealText ${duration}ms ease-out forwards` }}>
+          <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: ".32em", color: meta.color, textShadow: `0 0 28px ${meta.color}, 0 0 56px ${meta.color}88, 0 0 100px ${meta.color}55` }}>{label}</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Mythic — full spectacle: double flash, dual-color rays, 5 rings, 12 particles, gold label
+  const mythicParticles = Array.from({ length: 12 }, (_, i) => ({
+    x: 50 + Math.sin((i / 12) * Math.PI * 2) * 32,
+    y: 50 + Math.cos((i / 12) * Math.PI * 2) * 32,
+    size: i % 3 === 0 ? 6 : i % 3 === 1 ? 4 : 3,
+    isGold: i % 2 === 0,
+    delay: i * 50,
+  }));
+  return (
+    <div style={{ position: "absolute", inset: -100, zIndex: 30, pointerEvents: "none", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at 50% 50%, ${meta.color}55 0%, transparent 80%)`, animation: `revealFlash ${duration}ms ease-out forwards` }} />
+      <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at 50% 50%, rgba(255,215,0,0.28) 0%, transparent 60%)`, animation: `revealFlash ${duration * 0.5}ms 220ms ease-out forwards` }} />
+      <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at 0% 50%, ${meta.color}20 0%, transparent 50%), radial-gradient(ellipse at 100% 50%, rgba(255,215,0,0.15) 0%, transparent 50%)`, animation: `mythicPulse ${duration}ms ease-out forwards` }} />
+      <div style={{ position: "absolute", inset: 0, background: `conic-gradient(from 0deg, transparent 0deg, ${meta.color}28 10deg, transparent 20deg, transparent 34deg, rgba(255,215,0,0.22) 44deg, transparent 54deg, transparent 70deg, ${meta.color}28 80deg, transparent 90deg, transparent 104deg, rgba(255,215,0,0.18) 114deg, transparent 124deg, transparent 140deg, ${meta.color}28 150deg, transparent 160deg, transparent 174deg, rgba(255,215,0,0.22) 184deg, transparent 194deg, transparent 210deg, ${meta.color}28 220deg, transparent 230deg, transparent 244deg, rgba(255,215,0,0.18) 254deg, transparent 264deg, transparent 280deg, ${meta.color}28 290deg, transparent 300deg, transparent 314deg, rgba(255,215,0,0.22) 324deg, transparent 334deg, transparent 350deg, ${meta.color}24 360deg)`, animation: `revealRays ${duration}ms ease-out forwards`, borderRadius: "50%" }} />
+      <div style={{ position: "absolute", width: "40%", aspectRatio: "1", borderRadius: "50%", border: `3.5px solid ${meta.color}`, animation: `revealRing ${duration * 0.42}ms ease-out forwards` }} />
+      <div style={{ position: "absolute", width: "40%", aspectRatio: "1", borderRadius: "50%", border: `3px solid rgba(255,215,0,0.9)`, animation: `revealRing ${duration * 0.54}ms 50ms ease-out forwards` }} />
+      <div style={{ position: "absolute", width: "40%", aspectRatio: "1", borderRadius: "50%", border: `2px solid ${meta.color}99`, animation: `revealRing ${duration * 0.67}ms 100ms ease-out forwards` }} />
+      <div style={{ position: "absolute", width: "40%", aspectRatio: "1", borderRadius: "50%", border: `1.5px solid rgba(255,215,0,0.6)`, animation: `revealRing ${duration * 0.82}ms 150ms ease-out forwards` }} />
+      <div style={{ position: "absolute", width: "40%", aspectRatio: "1", borderRadius: "50%", border: `1px solid ${meta.color}55`, animation: `revealRing ${duration}ms 200ms ease-out forwards` }} />
+      {mythicParticles.map((p, i) => (
+        <div key={i} style={{ position: "absolute", width: p.size, height: p.size, borderRadius: "50%", background: p.isGold ? "rgba(255,215,0,0.95)" : meta.color, boxShadow: `0 0 10px ${p.isGold ? "rgba(255,215,0,0.9)" : meta.color}, 0 0 22px ${meta.color}88`, left: `${p.x}%`, top: `${p.y}%`, animation: `revealParticle ${duration * 0.68}ms ${p.delay}ms ease-out forwards` }} />
+      ))}
+      <div style={{ position: "absolute", bottom: "8%", left: "50%", whiteSpace: "nowrap", animation: `revealText ${duration}ms ease-out forwards` }}>
+        <div style={{ fontSize: 17, fontWeight: 900, letterSpacing: ".36em", color: "#ffd700", textShadow: `0 0 32px ${meta.color}, 0 0 64px ${meta.color}88, 0 0 120px ${meta.color}44, 0 0 22px rgba(255,215,0,0.9)` }}>{label}</div>
+      </div>
+    </div>
+  );
+}
+
 // ── Pack Open Modal ───────────────────────────────────────────────────────────
 
 function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onClose: () => void }) {
@@ -965,13 +1100,16 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
 
   const current = cards[index];
   const meta = current ? RARITY_META[current.rarity] : null;
-  const isRare = current ? RARITY_ORDER[current.rarity] >= RARITY_ORDER["amethyst"] : false;
-  const REVEAL_DURATION = current?.rarity === "mythic" ? 1600 : current?.rarity === "pinkdiamond" ? 1400 : 1100;
+  const RARITY_REVEAL_DURATIONS: Partial<Record<Rarity, number>> = {
+    sapphire: 800, ruby: 1050, amethyst: 1200, diamond: 1450, pinkdiamond: 1650, mythic: 1950,
+  };
+  const hasRevealAnim = current ? RARITY_ORDER[current.rarity] >= RARITY_ORDER["sapphire"] : false;
+  const REVEAL_DURATION = (current && RARITY_REVEAL_DURATIONS[current.rarity]) ?? 1000;
 
   const flip = () => {
     if (revealing) return;
     if (!flipped) {
-      if (isRare) {
+      if (hasRevealAnim) {
         setRevealing(true);
         setTimeout(() => { setRevealing(false); setFlipped(true); }, REVEAL_DURATION);
       } else {
@@ -1070,26 +1208,9 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
         {/* Card flip container */}
         <div style={{ position: "relative", width: "100%", maxWidth: 260, marginBottom: 28 }}>
 
-          {/* Pre-reveal animation overlay (diamond/mythic only) */}
-          {revealing && meta && (
-            <div style={{ position: "absolute", inset: -60, zIndex: 30, pointerEvents: "none", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {/* Radial glow background */}
-              <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at 50% 50%, ${meta.color}30 0%, transparent 65%)`, animation: `revealFlash ${REVEAL_DURATION}ms ease-out forwards` }} />
-              {/* Light rays */}
-              <div style={{ position: "absolute", inset: 0, background: `conic-gradient(from 0deg, transparent 0deg, ${meta.color}18 20deg, transparent 40deg, transparent 60deg, ${meta.color}12 80deg, transparent 100deg, transparent 120deg, ${meta.color}18 140deg, transparent 160deg, transparent 180deg, ${meta.color}14 200deg, transparent 220deg, transparent 240deg, ${meta.color}18 260deg, transparent 280deg, transparent 300deg, ${meta.color}12 320deg, transparent 340deg, transparent 360deg)`, animation: `revealRays ${REVEAL_DURATION}ms ease-out forwards`, borderRadius: "50%" }} />
-              {/* Ring 1 */}
-              <div style={{ position: "absolute", width: "40%", aspectRatio: "1", borderRadius: "50%", border: `2px solid ${meta.color}`, animation: `revealRing ${REVEAL_DURATION * 0.7}ms ease-out forwards` }} />
-              {/* Ring 2 */}
-              <div style={{ position: "absolute", width: "40%", aspectRatio: "1", borderRadius: "50%", border: `1.5px solid ${meta.color}88`, animation: `revealRing ${REVEAL_DURATION * 0.85}ms 80ms ease-out forwards` }} />
-              {/* Ring 3 */}
-              <div style={{ position: "absolute", width: "40%", aspectRatio: "1", borderRadius: "50%", border: `1px solid ${meta.color}55`, animation: `revealRing ${REVEAL_DURATION}ms 160ms ease-out forwards` }} />
-              {/* Rarity label */}
-              <div style={{ position: "absolute", bottom: "12%", left: "50%", transform: "translateX(-50%)", whiteSpace: "nowrap", animation: `revealText ${REVEAL_DURATION}ms ease-out forwards` }}>
-                <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: ".28em", color: meta.color, textShadow: `0 0 20px ${meta.color}, 0 0 40px ${meta.color}88` }}>
-                  {current ? `✦ ${RARITY_META[current.rarity].label.toUpperCase()} ✦` : ""}
-                </div>
-              </div>
-            </div>
+          {/* Per-rarity pre-reveal animation overlay */}
+          {revealing && current && meta && (
+            <RarityRevealOverlay rarity={current.rarity} meta={meta} duration={REVEAL_DURATION} />
           )}
 
           <div

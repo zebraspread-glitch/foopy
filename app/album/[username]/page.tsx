@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { CARD_PLAYERS } from "@/app/data/cardPlayers";
 import { getPassLevel, PLAYER_PASS_LEVELS, TEAM_PASS_LEVELS, type PlayerPass, type TeamPass } from "@/app/lib/passes";
@@ -376,12 +376,26 @@ function playerImgSrc(playerName: string, teamName: string): string {
   return `/players/${folder}/${slug}.png`;
 }
 
+type PassSortKey = "recent" | "level";
+
 function PassesView({ playerPasses, teamPass, onPlayerPassClick, onTeamPassClick }: {
   playerPasses: PlayerPass[];
   teamPass: TeamPass | null;
   onPlayerPassClick: (p: PlayerPass) => void;
   onTeamPassClick: (t: TeamPass) => void;
 }) {
+  const [sortBy, setSortBy] = useState<PassSortKey>("recent");
+
+  const sortedPlayerPasses = useMemo(() => {
+    const copy = [...playerPasses];
+    if (sortBy === "level") {
+      copy.sort((a, b) => (b.xp ?? 0) - (a.xp ?? 0));
+    } else {
+      copy.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    }
+    return copy;
+  }, [playerPasses, sortBy]);
+
   const hasAny = playerPasses.length > 0 || !!teamPass;
 
   if (!hasAny) {
@@ -430,11 +444,31 @@ function PassesView({ playerPasses, teamPass, onPlayerPassClick, onTeamPassClick
       {/* Player passes */}
       {playerPasses.length > 0 && (
         <div>
-          <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.35)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
-            Player Passes · {playerPasses.length}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.35)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+              Player Passes · {playerPasses.length}
+            </div>
+            <div style={{ display: "flex", gap: 5 }}>
+              {(["recent", "level"] as const).map((key) => (
+                <button
+                  key={key}
+                  onClick={() => setSortBy(key)}
+                  style={{
+                    appearance: "none", border: "none", cursor: "pointer",
+                    padding: "4px 10px", borderRadius: 999,
+                    fontSize: 10, fontWeight: 800, fontFamily: "inherit",
+                    background: sortBy === key ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.06)",
+                    color: sortBy === key ? "#fff" : "rgba(255,255,255,.38)",
+                    transition: "background 0.15s, color 0.15s",
+                  }}
+                >
+                  {key === "recent" ? "Recent" : "Level"}
+                </button>
+              ))}
+            </div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
-            {playerPasses.map((pass) => {
+            {sortedPlayerPasses.map((pass) => {
               const level  = getPassLevel(pass.xp ?? 0, PLAYER_PASS_LEVELS);
               const imgSrc = playerImgSrc(pass.player_name, pass.team_name);
               return (

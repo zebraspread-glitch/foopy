@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseServer } from "@/app/lib/supabase-server";
 import { calcPendingRewards } from "@/app/api/passes/route";
 import type { TeamPass, PlayerPass, PassReward } from "@/app/lib/passes";
+import { TEAM_PASS_XP_PER_WIN, PLAYER_PASS_XP_PER_GAME } from "@/app/lib/passes";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +49,9 @@ export async function POST(req: Request) {
 
   let totalAura  = 0;
   let totalCoins = 0;
+  let teamXpToAdd = 0;
+  // player_id → xp accumulated this claim
+  const playerXpMap: Record<string, number> = {};
   const claimed: typeof pending = [];
 
   for (const reward of pending) {
@@ -72,6 +76,35 @@ export async function POST(req: Request) {
     totalAura  += reward.aura_reward;
     totalCoins += reward.coin_reward;
     claimed.push(reward);
+
+    // Accumulate XP
+    if (reward.pass_type === "team") {
+      teamXpToAdd += TEAM_PASS_XP_PER_WIN;
+    } else if (reward.pass_type === "player" && reward.pass_id) {
+      playerXpMap[reward.pass_id] = (playerXpMap[reward.pass_id] ?? 0) + PLAYER_PASS_XP_PER_GAME;
+    }
+  }
+
+  // Award XP to team pass
+  if (teamXpToAdd > 0 && teamPass) {
+    const { error: teamXpErr } = await supabaseServer.rpc("add_team_pass_xp", {
+      user_id_param:   user.id,
+      team_name_param: teamPass.team_name,
+      xp_param:        teamXpToAdd,
+    });
+    if (teamXpErr) console.error("[passes/claim team xp rpc]", teamXpErr.message);
+  }
+
+  // Award XP to each player pass (keyed by pass_id, so look up player_id)
+  for (const [passId, xp] of Object.entries(playerXpMap)) {
+    const pass = playerPasses.find((p) => p.id === passId);
+    if (!pass) continue;
+    const { error: playerXpErr } = await supabaseServer.rpc("add_player_pass_xp", {
+      user_id_param:   user.id,
+      player_id_param: pass.player_id,
+      xp_param:        xp,
+    });
+    if (playerXpErr) console.error("[passes/claim player xp rpc]", playerXpErr.message);
   }
 
   // Apply rewards to the profile in a single update per currency

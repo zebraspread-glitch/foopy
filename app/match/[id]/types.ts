@@ -15,7 +15,8 @@ export type SortKey =
   | "clangers"
   | "rebound50s"
   | "freesFor"
-  | "freesAgainst";
+  | "freesAgainst"
+  | "fantasy";
 
 export type StatMode = "basic" | "advanced";
 

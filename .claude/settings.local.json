@@ -21,7 +21,9 @@
       "WebFetch(domain:api.squiggle.com.au)",
       "Bash(curl -s 'https://ogdtvdvdtxohgyrhlgfk.supabase.co/rest/v1/live_game_feed?select=api_game_id&order=api_game_id' -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nZHR2ZHZkdHhvaGd5cmhsZ2ZrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzIwNTE1NywiZXhwIjoyMDkyNzgxMTU3fQ.9EiRVsoZyrctzVHrW8-H5aaBEmgNw_LPIZISH_SO14U' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nZHR2ZHZkdHhvaGd5cmhsZ2ZrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzIwNTE1NywiZXhwIjoyMDkyNzgxMTU3fQ.9EiRVsoZyrctzVHrW8-H5aaBEmgNw_LPIZISH_SO14U')",
       "Bash(curl -s \"https://ogdtvdvdtxohgyrhlgfk.supabase.co/rest/v1/live_game_feed?select=api_game_id&order=api_game_id\" -H \"apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nZHR2ZHZkdHhvaGd5cmhsZ2ZrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzIwNTE1NywiZXhwIjoyMDkyNzgxMTU3fQ.9EiRVsoZyrctzVHrW8-H5aaBEmgNw_LPIZISH_SO14U\" -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nZHR2ZHZkdHhvaGd5cmhsZ2ZrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzIwNTE1NywiZXhwIjoyMDkyNzgxMTU3fQ.9EiRVsoZyrctzVHrW8-H5aaBEmgNw_LPIZISH_SO14U\")",
-      "Bash(node -e \"const d = require\\('./app/data/player-season-stats.json'\\); const pa = d.filter\\(p => p.team === 'Port Adelaide'\\).slice\\(0,5\\); console.log\\(JSON.stringify\\(pa.map\\(p => \\({id: p.id, name: p.name}\\)\\), null, 2\\)\\)\")"
+      "Bash(node -e \"const d = require\\('./app/data/player-season-stats.json'\\); const pa = d.filter\\(p => p.team === 'Port Adelaide'\\).slice\\(0,5\\); console.log\\(JSON.stringify\\(pa.map\\(p => \\({id: p.id, name: p.name}\\)\\), null, 2\\)\\)\")",
+      "Bash(mkdir -p \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\\\\app\\\\api\\\\group-chats\\\\[id]\\\\join\")",
+      "Bash(mkdir -p \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\\\\app\\\\api\\\\group-chats\\\\invites\\\\[id]\")"
     ]
   }
 }
