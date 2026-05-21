@@ -11,6 +11,11 @@ const AURA_AMOUNTS: Record<string, number> = {
   poll_correct:    20, // default; overridden per-poll based on option count / rarity
 };
 
+/**
+ * Insert an aura_events row for the user.
+ * The DB trigger `on_aura_event_insert` automatically increments profiles.aura.
+ * Returns { awarded: true } if the row was new, { awarded: false } if already exists (dedup).
+ */
 export async function awardAura(
   userId: string,
   eventType: string,
@@ -28,17 +33,11 @@ export async function awardAura(
   });
 
   if (error) {
-    if (error.code === "23505") return { awarded: false, amount: 0 }; // already awarded
+    if (error.code === "23505") return { awarded: false, amount: 0 }; // already awarded (dedup)
     console.error("[awardAura]", error.message);
     return { awarded: false, amount: 0 };
   }
 
-  const { error: rpcError } = await supabaseServer.rpc("increment_aura", {
-    user_id_param: userId,
-    amount_param: amount,
-  });
-
-  if (rpcError) console.error("[awardAura rpc]", rpcError.message);
-
+  // profiles.aura is updated automatically by the on_aura_event_insert DB trigger
   return { awarded: true, amount };
 }

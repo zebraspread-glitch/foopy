@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/app/lib/supabase-server";
 import { createClient } from "@supabase/supabase-js";
+import { syncPassXpFromCards } from "@/app/lib/passCardXp";
 
 export const dynamic = "force-dynamic";
 
@@ -78,6 +79,16 @@ export async function PATCH(
 
     // Notify the sender their trade was accepted
     await insertNotification(admin, trade.sender_id, "trade_accepted", user.id, { trade_id: tradeId });
+
+    const syncResults = await Promise.allSettled([
+      syncPassXpFromCards(trade.sender_id),
+      syncPassXpFromCards(trade.receiver_id),
+    ]);
+    for (const result of syncResults) {
+      if (result.status === "rejected") {
+        console.error("[trades accept sync pass xp]", result.reason);
+      }
+    }
 
     return NextResponse.json({ ok: true });
   }

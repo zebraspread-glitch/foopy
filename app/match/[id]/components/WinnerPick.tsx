@@ -126,13 +126,6 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, ho
       if (res.ok) {
         const data = await res.json();
         setVotes({ home: Number(data.home ?? 0), away: Number(data.away ?? 0), total: Number(data.total ?? 0) });
-        if (data.aura_awarded && authToken) {
-          fetch("/api/aura/award", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
-            body: JSON.stringify({ event_type: "winner_pick", related_id: matchId }),
-          }).catch(() => {});
-        }
       }
     } catch {}
     setSubmitting(false);

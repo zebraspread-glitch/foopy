@@ -13,6 +13,8 @@ import { foopyRatingFromRaw } from "@/app/lib/foopyRating";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import matchStatsRaw from "@/app/data/game-stats.json";
 import playersRaw from "@/app/data/players.json";
+import { syncPassXpFromCards } from "@/app/lib/passCardXp";
+import { syncPassRewardBalances } from "@/app/lib/passRewardCredits";
 
 export const dynamic = "force-dynamic";
 
@@ -181,6 +183,12 @@ export async function GET(req: Request) {
   const { data: { user }, error: authErr } = await supabaseServer.auth.getUser(token);
   if (authErr || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  try {
+    await syncPassXpFromCards(user.id);
+  } catch (err) {
+    console.error("[passes GET sync card xp]", err instanceof Error ? err.message : err);
+  }
+
   // Fetch team pass
   const { data: teamPassRows } = await supabaseServer
     .from("user_team_passes")
@@ -209,6 +217,14 @@ export async function GET(req: Request) {
   const teamPass     = (teamPassRows   as TeamPass | null) ?? null;
   const playerPasses = (playerPassRows as PlayerPass[]) ?? [];
   const claimedRewards = (rewardRows as PassReward[]) ?? [];
+
+  // Repair historical pass rewards that were recorded but not applied to the
+  // profile balance because an older claim path depended only on RPC success.
+  try {
+    await syncPassRewardBalances(user.id, true);
+  } catch (err) {
+    console.error("[passes GET sync balances]", err instanceof Error ? err.message : err);
+  }
 
   // Check if user has ever bought a team pass slot (for "buy vs switch" UI)
   const { count: teamPassEverCount } = await supabaseServer

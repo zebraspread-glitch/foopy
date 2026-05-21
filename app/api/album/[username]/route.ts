@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { syncPassXpFromCards } from "@/app/lib/passCardXp";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,6 +26,12 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ use
   if (!profile) {
     console.log("No profile found for username:", username);
     return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+
+  try {
+    await syncPassXpFromCards(profile.id);
+  } catch (err) {
+    console.error("[album sync pass xp]", err instanceof Error ? err.message : err);
   }
 
   const [

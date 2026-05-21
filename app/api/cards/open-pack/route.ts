@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { CARD_PLAYERS, getPlayerImage, pickRandom } from "@/app/data/cardPlayers";
+import { syncPassXpFromCards } from "@/app/lib/passCardXp";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -220,54 +221,12 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // ── 5. Grant XP to matching passes ─────────────────────────────────────
-  // player_id in user_player_passes uses players.json format ("hayden_young")
-  // but card player_id is slug format ("haydenyoung") — normalise via name
-  function nameToPassPlayerId(name: string): string {
-    return name.toLowerCase().replace(/[^a-z0-9\s-]/g, "").replace(/[\s-]+/g, "_");
+  // Keep pass XP equal to the cards currently owned by the user.
+  try {
+    await syncPassXpFromCards(user.id);
+  } catch (err) {
+    console.error("[cards/open-pack sync pass xp]", err instanceof Error ? err.message : err);
   }
-
-  const playerXp: Record<string, number> = {};
-  const teamXp:   Record<string, number> = {};
-  for (const card of results) {
-    const passPlayerId = nameToPassPlayerId(card.player_name);
-    playerXp[passPlayerId] = (playerXp[passPlayerId] ?? 0) + card.rating;
-    teamXp[card.team]      = (teamXp[card.team]      ?? 0) + card.rating;
-  }
-
-  // Update player passes directly (no RPC needed)
-  await Promise.allSettled([
-    ...Object.entries(playerXp).map(async ([pid, xp]) => {
-      const { data: pass } = await supabaseAdmin
-        .from("user_player_passes")
-        .select("id, xp")
-        .eq("user_id", user.id)
-        .eq("player_id", pid)
-        .eq("active", true)
-        .maybeSingle();
-      if (pass) {
-        await supabaseAdmin
-          .from("user_player_passes")
-          .update({ xp: (pass.xp ?? 0) + xp })
-          .eq("id", pass.id);
-      }
-    }),
-    ...Object.entries(teamXp).map(async ([team, xp]) => {
-      const { data: pass } = await supabaseAdmin
-        .from("user_team_passes")
-        .select("id, xp")
-        .eq("user_id", user.id)
-        .eq("team_name", team)
-        .eq("active", true)
-        .maybeSingle();
-      if (pass) {
-        await supabaseAdmin
-          .from("user_team_passes")
-          .update({ xp: (pass.xp ?? 0) + xp })
-          .eq("id", pass.id);
-      }
-    }),
-  ]);
 
   // ── 6. Record the pack opening ──────────────────────────────────────────
   const { data: opening } = await supabaseAdmin

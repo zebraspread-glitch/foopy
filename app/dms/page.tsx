@@ -15,6 +15,7 @@ type Msg = { id: string; sender_id: string; content: string; created_at: string;
 type GroupChat = {
   id: string; team_name: string; is_public: boolean;
   created_by: string | null; description: string | null;
+  image_url?: string | null;
   member_count: number;
   last_message: { content: string; created_at: string; sender_id: string } | null;
   unread: number; last_read_at: string | null;
@@ -149,6 +150,11 @@ function DMsPageInner() {
   const [pendingInvites,     setPendingInvites]     = useState<GroupInvite[]>([]);
   const [respondingId,       setRespondingId]       = useState<string | null>(null);
 
+  /* ── Members modal state ── */
+  const [membersModalOpen,    setMembersModalOpen]    = useState(false);
+  const [membersModalList,    setMembersModalList]    = useState<{ id: string; username: string; display_name: string; avatar_url: string | null }[]>([]);
+  const [membersModalLoading, setMembersModalLoading] = useState(false);
+
   /* ── Discover state ── */
   const [discoverOpen,    setDiscoverOpen]    = useState(false);
   const [discoverSearch,  setDiscoverSearch]  = useState("");
@@ -158,12 +164,14 @@ function DMsPageInner() {
   const [joiningId,       setJoiningId]       = useState<string | null>(null);
 
   /* ── Create chat state ── */
-  const [createOpen,   setCreateOpen]   = useState(false);
-  const [createName,   setCreateName]   = useState("");
-  const [createDesc,   setCreateDesc]   = useState("");
-  const [createPublic, setCreatePublic] = useState(false);
-  const [creating,     setCreating]     = useState(false);
-  const [createError,  setCreateError]  = useState("");
+  const [createOpen,         setCreateOpen]         = useState(false);
+  const [createName,         setCreateName]         = useState("");
+  const [createDesc,         setCreateDesc]         = useState("");
+  const [createPublic,       setCreatePublic]       = useState(false);
+  const [creating,           setCreating]           = useState(false);
+  const [createError,        setCreateError]        = useState("");
+  const [createImageDataUrl, setCreateImageDataUrl] = useState<string | null>(null);
+  const createImageInputRef = useRef<HTMLInputElement>(null);
 
   /* ── Invite modal state ── */
   const [inviteOpen,        setInviteOpen]        = useState(false);
@@ -582,11 +590,26 @@ function DMsPageInner() {
     if (!createName.trim() || creating) return;
     setCreating(true); setCreateError("");
     const token = await getToken();
-    const res = await fetch("/api/group-chats", { method: "POST", headers: { "Content-Type": "application/json", authorization: `Bearer ${token}` }, body: JSON.stringify({ name: createName.trim(), description: createDesc.trim() || undefined, is_public: createPublic }) });
+
+    // Use the already-resized data URL directly (no storage upload needed)
+    const imageUrl = createImageDataUrl ?? undefined;
+
+    const res = await fetch("/api/group-chats", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        name: createName.trim(),
+        description: createDesc.trim() || undefined,
+        is_public: createPublic,
+        image_url: imageUrl,
+      }),
+    });
     const json = await res.json();
     setCreating(false);
     if (!res.ok) { setCreateError(json.error ?? "Failed to create"); return; }
-    setCreateOpen(false); setCreateName(""); setCreateDesc(""); setCreatePublic(false);
+    setCreateOpen(false);
+    setCreateName(""); setCreateDesc(""); setCreatePublic(false);
+    setCreateImageDataUrl(null);
     await loadGroupChats();
     openGroup(json.chat);
     setTab("groups");
@@ -628,6 +651,43 @@ function DMsPageInner() {
     if (!error) setSentInviteIds(prev => new Set(prev).add(friendId));
   }
 
+  /* ── Group members modal ── */
+  async function openMembersModal() {
+    if (!activeGroup) return;
+    setMembersModalOpen(true);
+    setMembersModalLoading(true);
+    setMembersModalList([]);
+    const { data: members } = await supabase
+      .from("group_chat_members")
+      .select("user_id")
+      .eq("group_chat_id", activeGroup.id);
+    if (!members?.length) { setMembersModalLoading(false); return; }
+    const userIds = members.map((m: any) => m.user_id);
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, username, display_name, avatar_url")
+      .in("id", userIds);
+    setMembersModalList((profiles ?? []).map((p: any) => ({
+      id: p.id, username: p.username ?? "", display_name: p.display_name ?? "", avatar_url: p.avatar_url ?? null,
+    })));
+    setMembersModalLoading(false);
+  }
+
+  /* ── Delete group ── */
+  async function deleteGroup() {
+    if (!myProfile || !activeGroup) return;
+    if (!confirm(`Delete "${activeGroup.team_name}"? This will remove all messages and members permanently.`)) return;
+    const session = await supabase.auth.getSession();
+    const token = session.data.session?.access_token;
+    const res = await fetch(`/api/group-chats/${activeGroup.id}`, {
+      method: "DELETE",
+      headers: { authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) { const j = await res.json(); alert(j.error ?? "Failed to delete group"); return; }
+    setActiveGroup(null); setTab("groups");
+    await loadGroupChats();
+  }
+
   /* ── Leave group ── */
   async function leaveGroup() {
     if (!myProfile || !activeGroup || !confirm(`Leave ${activeGroup.team_name}?`)) return;
@@ -639,9 +699,7 @@ function DMsPageInner() {
   /* ── Discover groups ── */
   const allPublicGroupsRef = useRef<GroupChat[]>([]);
 
-  // Load groups whenever the modal opens (or search changes).
-  // Step 1: fetch group names instantly (no member counts) → display immediately.
-  // Step 2: fetch member counts in the background → update display quietly.
+  // Load groups whenever the modal opens.
   useEffect(() => {
     if (!discoverOpen) {
       setDiscoverLoading(false);
@@ -649,99 +707,59 @@ function DMsPageInner() {
       return;
     }
     let cancelled = false;
-    const q = discoverSearch.trim().toLowerCase();
 
     const load = async () => {
       setDiscoverLoading(true);
       setDiscoverError("");
-
       try {
-        // Step 1: get group names fast. Try the updated schema first, then fall
-        // back to the original group_chats table shape if the migration is old.
-        let chatsData: any[] = [];
-        const { data: withFlag, error } = await supabase
-          .from("group_chats")
-          .select("id, team_name, is_public, created_by, description")
-          .or("is_public.eq.true,created_by.is.null")
-          .order("team_name")
-          .limit(200);
-
-        if (!error && withFlag) {
-          chatsData = withFlag;
-        } else {
-          const fullFallback = await supabase
-            .from("group_chats")
-            .select("id, team_name, created_by, description")
-            .order("team_name")
-            .limit(200);
-
-          if (!fullFallback.error && fullFallback.data) {
-            chatsData = fullFallback.data.map((c: any) => ({ ...c, is_public: true }));
-          } else {
-            const basicFallback = await supabase
-              .from("group_chats")
-              .select("id, team_name")
-              .order("team_name")
-              .limit(200);
-
-            if (basicFallback.error) throw basicFallback.error;
-            chatsData = (basicFallback.data ?? []).map((c: any) => ({
-              ...c,
-              is_public: true,
-              created_by: null,
-              description: null,
-            }));
-          }
-        }
-
+        const token = await getToken();
+        const res = await fetch("/api/group-chats", {
+          headers: token ? { authorization: `Bearer ${token}` } : {},
+        });
+        const json = await res.json().catch(() => null);
         if (cancelled) return;
 
-        // Apply search filter client-side
-        const filtered = q
-          ? chatsData.filter((c: any) => c.team_name.toLowerCase().includes(q))
-          : chatsData;
+        if (!res.ok || json?.setupRequired) {
+          console.error("[discover groups] API error:", json?.error);
+          setDiscoverResults([]);
+          setDiscoverError(json?.error ?? "failed");
+          return;
+        }
 
-        const list: GroupChat[] = filtered.map((c: any) => ({
+        const allGroups: GroupChat[] = (json.groups ?? []).map((c: any) => ({
           id: c.id, team_name: c.team_name, is_public: c.is_public ?? true,
           created_by: c.created_by ?? null, description: c.description ?? null,
-          member_count: allPublicGroupsRef.current.find((g) => g.id === c.id)?.member_count ?? 0,
+          image_url: c.image_url ?? null,
+          member_count: c.member_count ?? 0,
           last_message: null, unread: 0, last_read_at: null,
         }));
 
-        allPublicGroupsRef.current = q ? allPublicGroupsRef.current : list;
-        if (!cancelled) setDiscoverResults(list);
-
-        // Step 2: load member counts in the background.
-        const chatIds = list.map((c) => c.id);
-        if (!chatIds.length) return;
-
-        const { data: members } = await supabase
-          .from("group_chat_members")
-          .select("group_chat_id")
-          .in("group_chat_id", chatIds);
-
-        if (cancelled) return;
-        const counts: Record<string, number> = {};
-        for (const m of members ?? []) counts[(m as any).group_chat_id] = (counts[(m as any).group_chat_id] ?? 0) + 1;
-
-        const withCounts = list.map((c) => ({ ...c, member_count: counts[c.id] ?? 0 }));
-        if (!q) allPublicGroupsRef.current = withCounts;
-        if (!cancelled) setDiscoverResults(withCounts);
-      } catch {
+        allPublicGroupsRef.current = allGroups;
+        if (!cancelled) setDiscoverResults(allGroups);
+      } catch (err) {
+        console.error("[discover groups]", err);
         if (!cancelled) {
           setDiscoverResults([]);
-          setDiscoverError("Couldn't load groups. Please try again.");
+          setDiscoverError("failed");
         }
       } finally {
         if (!cancelled) setDiscoverLoading(false);
       }
     };
 
-    // Immediate load on open; debounce only when typing a search query
-    const delay = q ? 250 : 0;
-    const timer = setTimeout(load, delay);
-    return () => { cancelled = true; clearTimeout(timer); };
-  }, [discoverOpen, discoverSearch]);
+    load();
+    return () => { cancelled = true; };
+  }, [discoverOpen]);
+
+  // Filter cached groups when search changes (no extra fetch needed)
+  useEffect(() => {
+    const q = discoverSearch.trim().toLowerCase();
+    if (!q) {
+      setDiscoverResults(allPublicGroupsRef.current);
+    } else {
+      setDiscoverResults(allPublicGroupsRef.current.filter(g => g.team_name.toLowerCase().includes(q)));
+    }
+  }, [discoverSearch]);
 
   /* ── Day grouping ── */
   const grouped: { day: string; msgs: Msg[] }[] = [];
@@ -769,6 +787,45 @@ function DMsPageInner() {
   /* ═══════════ GROUP THREAD VIEW ═══════════ */
   if (activeGroup) return (
     <main style={{ position: "fixed", inset: 0, background: "var(--bg)", display: "flex", flexDirection: "column", zIndex: 110 }}>
+
+      {/* ── Group members modal ── */}
+      {membersModalOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 300, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+          <div onClick={() => setMembersModalOpen(false)} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)" }} />
+          <div style={{ position: "relative", width: "100%", maxWidth: 480, maxHeight: "80dvh", background: "var(--surface-1)", borderRadius: "20px 20px 0 0", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 0" }}>
+              <div style={{ width: 36, height: 4, borderRadius: 2, background: "var(--surface-3)" }} />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "16px 20px 14px", borderBottom: "1px solid var(--border-2)" }}>
+              {(activeGroup.image_url || TEAM_LOGOS[activeGroup.team_name])
+                ? <img src={activeGroup.image_url || TEAM_LOGOS[activeGroup.team_name]!} alt={activeGroup.team_name} style={{ width: 64, height: 64, borderRadius: "50%", objectFit: "cover", background: TEAM_COLORS[activeGroup.team_name] ?? "#1a1a1a" }} />
+                : <div style={{ width: 64, height: 64, borderRadius: "50%", background: activeGroup.team_name === "General" ? "linear-gradient(135deg,#1e3a5f,#2563eb)" : "linear-gradient(135deg,#1a3d2e,#063d22)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32 }}>{activeGroup.team_name === "General" ? "💬" : "🏉"}</div>
+              }
+              <div style={{ fontWeight: 800, fontSize: 18, color: "var(--text-1)", textAlign: "center" }}>{activeGroup.team_name}</div>
+              <div style={{ fontSize: 13, color: "var(--text-3)" }}>{activeGroup.member_count} member{activeGroup.member_count !== 1 ? "s" : ""}</div>
+            </div>
+            <div style={{ overflowY: "auto", flex: 1 }}>
+              {membersModalLoading ? (
+                <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--text-3)", fontSize: 14 }}>Loading members…</div>
+              ) : membersModalList.length === 0 ? (
+                <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--text-3)", fontSize: 14 }}>No members found.</div>
+              ) : membersModalList.map((member, i) => (
+                <button key={member.id} onClick={() => { setMembersModalOpen(false); router.push(`/profile/${member.username}`); }}
+                  style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "11px 20px", background: "none", border: "none", borderTop: i > 0 ? "1px solid var(--border-2)" : "none", cursor: "pointer", textAlign: "left" }}>
+                  <Avatar name={member.username} url={member.avatar_url} size={40} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: "var(--text-1)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{member.display_name || member.username}</div>
+                    <div style={{ fontSize: 12, color: "var(--text-3)" }}>@{member.username}</div>
+                  </div>
+                  {member.id === activeGroup.created_by && (
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "#3b82f6", background: "rgba(59,130,246,0.12)", borderRadius: 20, padding: "3px 9px", flexShrink: 0 }}>Admin</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Invite modal */}
       {inviteOpen && (
@@ -815,26 +872,29 @@ function DMsPageInner() {
         <button onClick={() => { setActiveGroup(null); setTab("groups"); loadGroupChats(); }} style={{ background: "none", border: "none", padding: "6px 10px", cursor: "pointer", display: "flex", alignItems: "center", flexShrink: 0 }}>
           <svg width="10" height="17" viewBox="0 0 10 17" fill="none"><path d="M9 1.5L1.5 8.5L9 15.5" stroke="var(--text-1)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </button>
-        {TEAM_LOGOS[activeGroup.team_name]
-          ? <img src={TEAM_LOGOS[activeGroup.team_name]} alt={activeGroup.team_name} style={{ width: 38, height: 38, borderRadius: "50%", objectFit: "cover", background: TEAM_COLORS[activeGroup.team_name] ?? "#1a1a1a", flexShrink: 0 }} />
-          : <div style={{ width: 38, height: 38, borderRadius: "50%", background: activeGroup.team_name === "General" ? "linear-gradient(135deg,#1e3a5f,#2563eb)" : "linear-gradient(135deg,#1a3d2e,#063d22)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>{activeGroup.team_name === "General" ? "💬" : "🏉"}</div>
-        }
-        <div style={{ flex: 1, minWidth: 0, padding: "0 4px" }}>
+        <button onClick={openMembersModal} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", flexShrink: 0, lineHeight: 0 }}>
+          {(activeGroup.image_url || TEAM_LOGOS[activeGroup.team_name])
+            ? <img src={activeGroup.image_url || TEAM_LOGOS[activeGroup.team_name]!} alt={activeGroup.team_name} style={{ width: 38, height: 38, borderRadius: "50%", objectFit: "cover", background: TEAM_COLORS[activeGroup.team_name] ?? "#1a1a1a" }} />
+            : <div style={{ width: 38, height: 38, borderRadius: "50%", background: activeGroup.team_name === "General" ? "linear-gradient(135deg,#1e3a5f,#2563eb)" : "linear-gradient(135deg,#1a3d2e,#063d22)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{activeGroup.team_name === "General" ? "💬" : "🏉"}</div>
+          }
+        </button>
+        <button onClick={openMembersModal} style={{ flex: 1, minWidth: 0, padding: "0 4px", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}>
           <div style={{ fontWeight: 700, fontSize: 15, color: "var(--text-1)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{activeGroup.team_name}</div>
           <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 400 }}>{activeGroup.member_count} member{activeGroup.member_count !== 1 ? "s" : ""}</div>
-        </div>
+        </button>
         <button onClick={openInviteModal} style={{ background: "var(--surface-2)", border: "1px solid var(--border-2)", borderRadius: 20, padding: "6px 14px", color: "var(--text-2)", fontWeight: 700, fontSize: 13, cursor: "pointer", flexShrink: 0 }}>Invite</button>
-        {activeGroup.created_by !== myProfile.id && (
-          <button onClick={leaveGroup} style={{ background: "none", border: "none", color: "#f87171", fontWeight: 700, fontSize: 13, cursor: "pointer", padding: "6px 8px", flexShrink: 0 }}>Leave</button>
-        )}
+        {activeGroup.created_by === myProfile.id
+          ? <button onClick={deleteGroup} style={{ background: "none", border: "none", color: "#f87171", fontWeight: 700, fontSize: 13, cursor: "pointer", padding: "6px 8px", flexShrink: 0 }}>Delete</button>
+          : <button onClick={leaveGroup} style={{ background: "none", border: "none", color: "#f87171", fontWeight: 700, fontSize: 13, cursor: "pointer", padding: "6px 8px", flexShrink: 0 }}>Leave</button>
+        }
       </div>
 
       {/* Messages */}
       <div style={{ flex: 1, overflowY: "auto", padding: "12px 0 4px" }}>
         {groupMessages.length === 0 && (
           <div style={{ padding: "80px 24px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-            {TEAM_LOGOS[activeGroup.team_name]
-              ? <img src={TEAM_LOGOS[activeGroup.team_name]} alt={activeGroup.team_name} style={{ width: 72, height: 72, borderRadius: "50%", objectFit: "cover", background: TEAM_COLORS[activeGroup.team_name] ?? "#1a1a1a" }} />
+            {(activeGroup.image_url || TEAM_LOGOS[activeGroup.team_name])
+              ? <img src={activeGroup.image_url || TEAM_LOGOS[activeGroup.team_name]!} alt={activeGroup.team_name} style={{ width: 72, height: 72, borderRadius: "50%", objectFit: "cover", background: TEAM_COLORS[activeGroup.team_name] ?? "#1a1a1a" }} />
               : <div style={{ fontSize: 52 }}>{activeGroup.team_name === "General" ? "💬" : "🏉"}</div>
             }
             <div style={{ fontWeight: 700, fontSize: 18, color: "var(--text-1)" }}>{activeGroup.team_name}</div>
@@ -977,7 +1037,7 @@ function DMsPageInner() {
 
         // Avatar for a group — team logo image or emoji fallback
         const GroupAvatar = ({ group, size = 48 }: { group: GroupChat; size?: number }) => {
-          const logo = TEAM_LOGOS[group.team_name];
+          const logo = group.image_url || TEAM_LOGOS[group.team_name];
           const color = TEAM_COLORS[group.team_name];
           if (logo) return <img src={logo} alt={group.team_name} style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", background: color ?? "#1a1a1a", flexShrink: 0 }} />;
           const isGeneral = group.team_name === "General";
@@ -988,12 +1048,24 @@ function DMsPageInner() {
           );
         };
 
+        // Blue verified badge SVG (official foopy groups only — created_by IS NULL)
+        const VerifiedBadge = ({ size = 14 }: { size?: number }) => (
+          <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2l2.4 3.2L18 4.2l.8 3.8 3.8.8-1 3.6L24 15l-3.2 2.4.8 3.8-3.8-.8L15 24l-3-2.4L9 24l-2.8-3.6-3.8.8.8-3.8L0 15l2.4-3.4-1-3.6 3.8-.8L6 4.2l3.6 1L12 2z" fill="#3b82f6"/>
+            <path d="M8 12.5l2.5 2.5 5.5-5.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        );
+
         // Grid card (browse view)
         const renderGridCard = (group: GroupChat) => {
           const isMember = myGroupIds.has(group.id);
+          const isOfficial = group.created_by === null;
           return (
             <div key={group.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "14px 8px 12px", background: "var(--surface-2)", borderRadius: 14, minWidth: 0 }}>
-              <GroupAvatar group={group} size={52} />
+              <div style={{ position: "relative", flexShrink: 0 }}>
+                <GroupAvatar group={group} size={52} />
+                {isOfficial && <div style={{ position: "absolute", bottom: 0, right: 0, background: "var(--surface-2)", borderRadius: "50%", padding: 1, lineHeight: 0 }}><VerifiedBadge size={16} /></div>}
+              </div>
               <div style={{ fontWeight: 700, fontSize: 13, color: "var(--text-1)", textAlign: "center", lineHeight: 1.3, wordBreak: "break-word", paddingInline: 4 }}>{group.team_name}</div>
               <div style={{ fontSize: 11, color: "var(--text-3)", display: "flex", alignItems: "center", gap: 3 }}>
                 {isMember && <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
@@ -1011,11 +1083,18 @@ function DMsPageInner() {
         // List row (search results)
         const renderListRow = (group: GroupChat) => {
           const isMember = myGroupIds.has(group.id);
+          const isOfficial = group.created_by === null;
           return (
             <div key={group.id} style={{ display: "flex", alignItems: "center", gap: 13, padding: "11px 16px" }}>
-              <GroupAvatar group={group} size={46} />
+              <div style={{ position: "relative", flexShrink: 0 }}>
+                <GroupAvatar group={group} size={46} />
+                {isOfficial && <div style={{ position: "absolute", bottom: 0, right: 0, background: "var(--surface-2)", borderRadius: "50%", padding: 1, lineHeight: 0 }}><VerifiedBadge size={15} /></div>}
+              </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 700, fontSize: 15, color: "var(--text-1)", marginBottom: 1 }}>{group.team_name}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <span style={{ fontWeight: 700, fontSize: 15, color: "var(--text-1)" }}>{group.team_name}</span>
+                  {isOfficial && <VerifiedBadge size={15} />}
+                </div>
                 {group.description && <div style={{ fontSize: 12, color: "var(--text-3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{group.description}</div>}
                 <div style={{ fontSize: 12, color: "var(--text-4)", marginTop: 1 }}>{fmtCount(group.member_count)} members</div>
               </div>
@@ -1052,12 +1131,20 @@ function DMsPageInner() {
 
               {/* Body */}
               <div style={{ flex: 1, overflowY: "auto" }}>
-                {isSearching ? (
+                {discoverError ? (
+                  <div style={{ padding: "40px 20px", textAlign: "center" }}>
+                    <div style={{ fontSize: 13, color: "var(--text-3)", marginBottom: 16 }}>Couldn't load groups.</div>
+                    <button
+                      onClick={() => { setDiscoverError(""); setDiscoverOpen(false); setTimeout(() => setDiscoverOpen(true), 50); }}
+                      style={{ fontSize: 13, fontWeight: 800, color: "#60a5fa", background: "none", border: "none", cursor: "pointer" }}
+                    >
+                      Retry
+                    </button>
+                  </div>
+                ) : isSearching ? (
                   /* ── Search results list ── */
                   discoverLoading
                     ? <div style={{ padding: "48px 24px", textAlign: "center", color: "var(--text-3)", fontSize: 14 }}>Loading...</div>
-                    : discoverError
-                    ? <div style={{ padding: "48px 24px", textAlign: "center", color: "#fca5a5", fontSize: 14 }}>{discoverError}</div>
                     : discoverResults.length === 0
                     ? <div style={{ padding: "48px 24px", textAlign: "center", color: "var(--text-3)", fontSize: 14 }}>No groups matched "{discoverSearch}"</div>
                     : discoverResults.map(g => renderListRow(g))
@@ -1092,10 +1179,7 @@ function DMsPageInner() {
                     {discoverLoading && (
                       <div style={{ padding: "48px 24px", textAlign: "center", color: "var(--text-3)", fontSize: 14 }}>Loading...</div>
                     )}
-                    {!discoverLoading && discoverError && (
-                      <div style={{ padding: "48px 24px", textAlign: "center", color: "#fca5a5", fontSize: 14 }}>{discoverError}</div>
-                    )}
-                    {!discoverLoading && !discoverError && discoverResults.length === 0 && (
+                    {!discoverLoading && discoverResults.length === 0 && (
                       <div style={{ padding: "48px 24px", textAlign: "center", color: "var(--text-3)", fontSize: 14 }}>No public groups yet.</div>
                     )}
                   </div>
@@ -1109,11 +1193,71 @@ function DMsPageInner() {
       {/* Create group modal */}
       {createOpen && (
         <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px 16px" }}>
-          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.6)" }} onClick={() => { setCreateOpen(false); setCreateError(""); }} />
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.6)" }} onClick={() => { setCreateOpen(false); setCreateError(""); setCreateImageDataUrl(null); }} />
           <div style={{ position: "relative", background: "var(--surface-1)", borderRadius: 20, padding: "24px 20px", width: "100%", maxWidth: 460, display: "flex", flexDirection: "column", gap: 16 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ fontWeight: 800, fontSize: 20 }}>Create group</span>
-              <button onClick={() => { setCreateOpen(false); setCreateError(""); }} style={{ background: "none", border: "none", color: "var(--text-3)", fontSize: 20, cursor: "pointer", padding: 4, lineHeight: 1 }}>✕</button>
+              <button onClick={() => { setCreateOpen(false); setCreateError(""); setCreateImageDataUrl(null); }} style={{ background: "none", border: "none", color: "var(--text-3)", fontSize: 20, cursor: "pointer", padding: 4, lineHeight: 1 }}>✕</button>
+            </div>
+
+            {/* Icon picker */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+              <input
+                ref={createImageInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: "none" }}
+                onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = ev => {
+                    const src = ev.target?.result as string;
+                    const img = new Image();
+                    img.onload = () => {
+                      const SIZE = 200;
+                      const canvas = document.createElement("canvas");
+                      canvas.width = SIZE; canvas.height = SIZE;
+                      const ctx = canvas.getContext("2d")!;
+                      // crop to square then draw
+                      const min = Math.min(img.width, img.height);
+                      const sx = (img.width - min) / 2, sy = (img.height - min) / 2;
+                      ctx.drawImage(img, sx, sy, min, min, 0, 0, SIZE, SIZE);
+                      const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
+                      setCreateImageDataUrl(dataUrl);
+                    };
+                    img.src = src;
+                  };
+                  reader.readAsDataURL(file);
+                }}
+              />
+              <button
+                onClick={() => createImageInputRef.current?.click()}
+                style={{ position: "relative", width: 80, height: 80, borderRadius: "50%", border: "2px dashed rgba(255,255,255,.2)", background: createImageDataUrl ? "transparent" : "var(--surface-3)", cursor: "pointer", overflow: "hidden", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}
+              >
+                {createImageDataUrl ? (
+                  <img src={createImageDataUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                ) : (
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.4)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                  </svg>
+                )}
+                {/* Edit overlay */}
+                <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.35)", display: "flex", alignItems: "center", justifyContent: "center", opacity: createImageDataUrl ? 0 : 0, transition: "opacity .15s" }}
+                  onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
+                  onMouseLeave={e => (e.currentTarget.style.opacity = "0")}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/>
+                  </svg>
+                </div>
+              </button>
+              <span style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 600 }}>
+                {createImageDataUrl ? (
+                  <button onClick={() => { setCreateImageDataUrl(null); if (createImageInputRef.current) createImageInputRef.current.value = ""; }} style={{ background: "none", border: "none", color: "#f87171", fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0 }}>Remove photo</button>
+                ) : "Add group icon"}
+              </span>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -1291,7 +1435,7 @@ function InboxRow({ entry, myId, isLast, onClick }: { entry: InboxEntry; myId: s
 /* ── Group row ── */
 function GroupRow({ group, isLast, onClick }: { group: GroupChat; isLast: boolean; onClick: () => void }) {
   const hasUnread = group.unread > 0;
-  const logo = TEAM_LOGOS[group.team_name];
+  const logo = group.image_url || TEAM_LOGOS[group.team_name];
   const color = TEAM_COLORS[group.team_name];
   const isGeneral = group.team_name === "General";
   return (

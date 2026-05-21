@@ -131,11 +131,6 @@ export interface PendingReward {
   description: string;
 }
 
-// ── XP per claim ─────────────────────────────────────────────────────────────
-// Awarded each time a reward is successfully claimed.
-export const TEAM_PASS_XP_PER_WIN    = 10; // per team-pass win claim
-export const PLAYER_PASS_XP_PER_GAME = 5;  // per player-pass game claim
-
 // ── Reward calculators ────────────────────────────────────────────────────────
 
 export function teamPassReward(margin: number, xp = 0): { aura: number; coins: number } | null {

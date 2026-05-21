@@ -4412,6 +4412,22 @@ function isPollOpen(poll: Poll, status: string, currentPeriod: number): boolean 
 }
 
 function resolveWinner(poll: Poll, homeStats: PlayerStat[], awayStats: PlayerStat[], homeTeam: string, awayTeam: string): string | null {
+  // Over/Under polls: parse question to get player name, threshold, and stat
+  if (poll.poll_type === "over_under") {
+    const dashParts = poll.question.split(" — ");
+    const playerName = dashParts[0]?.trim();
+    const ouPart = dashParts[1]; // e.g. "Over/Under 31.5 Disposals"
+    const m = ouPart?.match(/Over\/Under\s+([\d.]+)\s+(\w+)/i);
+    if (!m || !playerName) return null;
+    const threshold = parseFloat(m[1]);
+    const statName = m[2].toLowerCase() as keyof PlayerStat;
+    const allStats = [...homeStats, ...awayStats];
+    const ps = allStats.find(p => (p.name || p.player || "").toLowerCase() === playerName.toLowerCase());
+    if (!ps) return null;
+    const val = num(ps[statName]);
+    return val >= threshold ? "Over" : "Under";
+  }
+
   const cat = poll.category_key ? POLL_CATEGORIES[poll.category_key] : null;
   if (!cat) return null;
   const stat = cat.stat as keyof PlayerStat;
@@ -4438,6 +4454,10 @@ function resolveWinner(poll: Poll, homeStats: PlayerStat[], awayStats: PlayerSta
 
 function pollOptionMatchesWinner(optionLabel: string, winner: string | null) {
   if (!winner) return false;
+  const wLow = winner.toLowerCase();
+  const oLow = optionLabel.toLowerCase();
+  // Over/Under: winner is "Over" or "Under"; option label is "Over 31.5" / "Under 31.5"
+  if (wLow === "over" || wLow === "under") return oLow.startsWith(wLow);
   return normaliseTeamKey(optionLabel) === normaliseTeamKey(winner);
 }
 
@@ -4472,22 +4492,24 @@ function PollLeaderboard({
   useEffect(() => {
     if (polls.length === 0 || allVotes.length === 0) { setLoading(false); return; }
 
-    // Compute XP earned per user from correct votes
-    const xpMap: Record<string, number> = {};
+    // Compute aura earned per user from correct votes
+    const auraMap: Record<string, number> = {};
     for (const poll of polls) {
       const winner = resolveWinner(poll, homeStats, awayStats, homeTeam, awayTeam);
       if (!winner) continue;
       const winOpt = poll.options.find(o => pollOptionMatchesWinner(o.label, winner));
       if (!winOpt) continue;
-      const xp = poll.options.length >= 4 ? 20 : poll.options.length === 3 ? 15 : 10;
+      // Match the same tiers used when awarding aura
+      const optCount = poll.options.length;
+      const aura = optCount >= 4 ? 40 : optCount === 3 ? 30 : 20;
       for (const v of allVotes) {
         if (v.poll_id === poll.id && v.option_id === winOpt.id) {
-          xpMap[v.user_id] = (xpMap[v.user_id] ?? 0) + xp;
+          auraMap[v.user_id] = (auraMap[v.user_id] ?? 0) + aura;
         }
       }
     }
 
-    const top10 = Object.entries(xpMap)
+    const top10 = Object.entries(auraMap)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 10);
 
@@ -4515,6 +4537,8 @@ function PollLeaderboard({
       });
   }, [polls, allVotes, homeStats, awayStats, homeTeam, awayTeam]);
 
+  const router = useRouter();
+
   if (loading) return (
     <div style={{ display: "flex", justifyContent: "center", padding: "20px 0" }}>
       <div style={{ width: 20, height: 20, border: "2px solid var(--border-2)", borderTop: "2px solid #fbbf24", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
@@ -4530,7 +4554,7 @@ function PollLeaderboard({
           <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
         </svg>
         <span style={{ fontSize: 13, fontWeight: 900, color: "#fbbf24", letterSpacing: "0.04em" }}>POLL LEADERBOARD</span>
-        <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.35)", marginLeft: "auto" }}>XP from polls</span>
+        <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.35)", marginLeft: "auto" }}>Aura from polls</span>
       </div>
 
       {/* Rows */}
@@ -4543,6 +4567,7 @@ function PollLeaderboard({
         return (
           <div
             key={e.userId}
+            onClick={() => e.username && router.push(`/album/${e.username}`)}
             style={{
               display: "flex",
               alignItems: "center",
@@ -4550,6 +4575,7 @@ function PollLeaderboard({
               padding: "10px 16px",
               borderBottom: i < entries.length - 1 ? "1px solid var(--border-1)" : "none",
               background: i === 0 ? "rgba(251,191,36,0.05)" : "transparent",
+              cursor: e.username ? "pointer" : "default",
             }}
           >
             {/* Rank */}
@@ -4579,7 +4605,7 @@ function PollLeaderboard({
             {/* XP badge */}
             <div style={{ flexShrink: 0, background: isTop3 ? `rgba(${i === 0 ? "251,191,36" : i === 1 ? "148,163,184" : "205,124,50"},0.15)` : "var(--border-1)", border: `1px solid ${isTop3 ? medalColor + "44" : "var(--border-2)"}`, borderRadius: 999, padding: "4px 10px" }}>
               <span style={{ fontSize: 13, fontWeight: 900, color: isTop3 ? (i === 0 ? "#fbbf24" : i === 1 ? "#94a3b8" : "#cd7c32") : "rgba(255,255,255,0.6)" }}>
-                +{e.xp} XP
+                +{e.xp} Aura
               </span>
             </div>
           </div>
@@ -4691,62 +4717,14 @@ function MatchPolls({
     onUnansweredCount(count);
   }, [polls, userVotes, status, currentPeriod, loading, onUnansweredCount]);
 
-  // Award aura for correct poll answers when results come in
+  // When the game goes FINAL, trigger server-side aura finalization for ALL voters.
+  // The finalize endpoint is idempotent — aura_events unique constraint prevents double-awarding.
+  const finalizeCalledRef = useRef(false);
   useEffect(() => {
-    if (status !== "FINAL" || loading || !userId || polls.length === 0 || allVotes.length === 0) return;
-
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session) return;
-
-      for (const poll of polls) {
-        const myOptionId = userVotes[poll.id];
-        if (!myOptionId) continue;
-
-        const winner = resolveWinner(poll, homeStats, awayStats, homeTeam, awayTeam);
-        if (!winner) continue;
-
-        const winOpt = poll.options.find(o => pollOptionMatchesWinner(o.label, winner));
-        if (!winOpt || winOpt.id !== myOptionId) continue;
-
-        // Calculate aura amount based on poll type and voter count
-        let auraAmount: number;
-        const isPlayerAll = poll.poll_type === "player_all";
-
-        if (isPlayerAll) {
-          // Count how many people voted for the same winning option
-          const voterCount = allVotes.filter(v => v.poll_id === poll.id && v.option_id === myOptionId).length;
-          // Scale: 1 person = 100, drops as more people chose it, floor at 20
-          if (voterCount === 1)       auraAmount = 100;
-          else if (voterCount <= 3)   auraAmount = 75;
-          else if (voterCount <= 7)   auraAmount = 50;
-          else if (voterCount <= 15)  auraAmount = 35;
-          else                        auraAmount = 20;
-        } else {
-          // Fixed tiers based on number of options
-          const optCount = poll.options.length;
-          auraAmount = optCount >= 4 ? 40 : optCount === 3 ? 30 : 20;
-        }
-
-        const res = await fetch("/api/aura/award", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            event_type: "poll_correct",
-            related_id: `poll_${poll.id}`,
-            amount: auraAmount,
-          }),
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          if (data.awarded) auraToastEmitter.emit(auraAmount, "correct poll answer");
-        }
-      }
-    });
-  }, [status, loading, userId, polls, allVotes, userVotes, homeStats, awayStats, homeTeam, awayTeam]);
+    if (status !== "FINAL" || loading || polls.length === 0 || finalizeCalledRef.current) return;
+    finalizeCalledRef.current = true;
+    fetch(`/api/polls/finalize?game_id=${gameId}`, { cache: "no-store" }).catch(() => {});
+  }, [status, loading, polls.length, gameId]);
 
   async function vote(pollId: string, optionId: string) {
     if (!userId) return;
@@ -4819,17 +4797,20 @@ function MatchPolls({
           <div style={{ fontSize: 13, color: "var(--text-3)" }}>Check back soon!</div>
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "0 16px" }}>
+        <>
           {status === "FINAL" && polls.length > 0 && (
-            <PollLeaderboard
-              polls={polls}
-              allVotes={allVotes}
-              homeStats={homeStats}
-              awayStats={awayStats}
-              homeTeam={homeTeam}
-              awayTeam={awayTeam}
-            />
+            <div style={{ padding: "0 16px 4px" }}>
+              <PollLeaderboard
+                polls={polls}
+                allVotes={allVotes}
+                homeStats={homeStats}
+                awayStats={awayStats}
+                homeTeam={homeTeam}
+                awayTeam={awayTeam}
+              />
+            </div>
           )}
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "0 16px" }}>
           {[...polls]
             .sort((a, b) => {
               // Active polls (open for current quarter) float to top
@@ -4864,7 +4845,8 @@ function MatchPolls({
                 />
               );
             })}
-        </div>
+          </div>
+        </>
       )}
     </div>
   );

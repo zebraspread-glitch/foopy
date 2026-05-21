@@ -5,6 +5,7 @@ import type { CSSProperties } from "react";
 import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
 import type { User } from "@supabase/supabase-js";
+import TradesInboxModal from "@/app/components/TradesInboxModal";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -316,6 +317,9 @@ function CardPlayerImage({
 
 export default function CardsPage() {
   const [user, setUser] = useState<User | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [showTradesInbox, setShowTradesInbox] = useState(false);
+  const [prefetchedTrades, setPrefetchedTrades] = useState<any[] | undefined>(undefined);
   const [authLoading, setAuthLoading] = useState(true);
   const [coins, setCoins] = useState(0);
   const [cards, setCards] = useState<UserCard[]>([]);
@@ -345,10 +349,19 @@ export default function CardsPage() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
+      setAccessToken(session?.access_token ?? null);
       setAuthLoading(false);
+      // Pre-fetch trades in background so inbox opens instantly
+      if (session?.access_token) {
+        fetch("/api/trades", { headers: { Authorization: `Bearer ${session.access_token}` } })
+          .then(r => r.ok ? r.json() : null)
+          .then(d => { if (d) setPrefetchedTrades(d.trades ?? []); })
+          .catch(() => {});
+      }
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       setUser(session?.user ?? null);
+      setAccessToken(session?.access_token ?? null);
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -565,13 +578,33 @@ export default function CardsPage() {
             Album
           </Link>
           {user && (
-            <div style={coinBadgeStyle}>
-              <CoinIcon />
-              <span style={{ fontWeight: 900, fontSize: 15, color: "#fbbf24" }}>{coins.toLocaleString()}</span>
-            </div>
+            <>
+              <button
+                onClick={() => setShowTradesInbox(true)}
+                style={{ appearance: "none", border: "none", background: "var(--surface-3)", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-1)", flexShrink: 0 }}
+                title="Trades"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M7 16V4m0 0L3 8m4-4l4 4"/><path d="M17 8v12m0 0l4-4m-4 4l-4-4"/>
+                </svg>
+              </button>
+              <div style={coinBadgeStyle}>
+                <CoinIcon />
+                <span style={{ fontWeight: 900, fontSize: 15, color: "#fbbf24" }}>{coins.toLocaleString()}</span>
+              </div>
+            </>
           )}
         </div>
       </header>
+
+      {showTradesInbox && user && accessToken && (
+        <TradesInboxModal
+          myUserId={user.id}
+          accessToken={accessToken}
+          initialTrades={prefetchedTrades}
+          onClose={() => { setShowTradesInbox(false); setPrefetchedTrades(undefined); }}
+        />
+      )}
 
       <div style={contentStyle}>
         {/* ── Passes entry point ── */}

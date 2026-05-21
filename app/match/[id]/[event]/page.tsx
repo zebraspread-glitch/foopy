@@ -672,7 +672,7 @@ export default function EventCommentsPage() {
         </div>
       </header>
 
-      {matchGame && (
+      {matchGame && !eventKey.startsWith("poll_") && (
         <MatchScoreBar game={matchGame} gameId={gameId} />
       )}
 

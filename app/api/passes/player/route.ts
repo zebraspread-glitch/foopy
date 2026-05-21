@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/app/lib/supabase-server";
 import { MAX_PLAYER_PASSES, PLAYER_PASS_COST } from "@/app/lib/passes";
+import { syncPassXpFromCards } from "@/app/lib/passCardXp";
 import playersRaw from "@/app/data/players.json";
 
 function auth(req: Request) {
@@ -61,7 +62,7 @@ export async function POST(req: Request) {
     if (existing.active) {
       return NextResponse.json({ error: "Already have a pass for this player" }, { status: 409 });
     }
-    // Reactivate — XP preserved, no coin charge
+    // Reactivate with current card-based XP, no coin charge.
     const { data, error: upErr } = await supabaseServer
       .from("user_player_passes")
       .update({ active: true, player_name, team_name })
@@ -69,7 +70,17 @@ export async function POST(req: Request) {
       .select()
       .single();
     if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 });
-    return NextResponse.json({ playerPass: data });
+    try {
+      await syncPassXpFromCards(user.id);
+    } catch (err) {
+      console.error("[passes/player sync existing xp]", err instanceof Error ? err.message : err);
+    }
+    const { data: synced } = await supabaseServer
+      .from("user_player_passes")
+      .select("*")
+      .eq("id", data.id)
+      .single();
+    return NextResponse.json({ playerPass: synced ?? data });
   }
 
   // New pass — fetch coin balance first
@@ -129,5 +140,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: insErr.message }, { status: 500 });
   }
 
-  return NextResponse.json({ playerPass: data });
+  try {
+    await syncPassXpFromCards(user.id);
+  } catch (err) {
+    console.error("[passes/player sync new xp]", err instanceof Error ? err.message : err);
+  }
+  const { data: synced } = await supabaseServer
+    .from("user_player_passes")
+    .select("*")
+    .eq("id", data.id)
+    .single();
+
+  return NextResponse.json({ playerPass: synced ?? data });
 }

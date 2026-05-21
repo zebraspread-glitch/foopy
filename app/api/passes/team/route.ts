@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/app/lib/supabase-server";
 import { AFL_TEAMS, teamsMatch, TEAM_PASS_COST } from "@/app/lib/passes";
+import { syncPassXpFromCards } from "@/app/lib/passCardXp";
 
 function auth(req: Request) {
   const h = req.headers.get("authorization");
@@ -97,6 +98,18 @@ export async function POST(req: Request) {
     }
     data = inserted;
   }
+
+  try {
+    await syncPassXpFromCards(user.id);
+  } catch (err) {
+    console.error("[passes/team sync xp]", err instanceof Error ? err.message : err);
+  }
+  const { data: syncedPass } = await supabaseServer
+    .from("user_team_passes")
+    .select("*")
+    .eq("id", data.id)
+    .single();
+  if (syncedPass) data = syncedPass;
 
   // Auto-join the team's group chat
   const { data: groupChat } = await supabaseServer

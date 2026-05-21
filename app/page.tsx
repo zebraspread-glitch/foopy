@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import TradesInboxModal from "./components/TradesInboxModal";
 import matchStatsRaw from "./data/game-stats.json";
 import playerStatsRaw from "./data/players.json";
 import { API_SPORTS_MATCH_IDS } from "./data/apiSportsMatchIds";
@@ -593,12 +594,26 @@ export default function HomePage() {
   const isMobile = useIsMobile();
 
   const [unreadCount, setUnreadCount] = useState(0);
+  const [myUserId, setMyUserId] = useState<string | null>(null);
+  const [myAccessToken, setMyAccessToken] = useState<string | null>(null);
+  const [showTradesInbox, setShowTradesInbox] = useState(false);
+  const [prefetchedTrades, setPrefetchedTrades] = useState<any[] | undefined>(undefined);
 
   useEffect(() => {
     let cancelled = false;
     supabase.auth.getSession().then(({ data: { session } }) => {
       const uid = session?.user?.id;
-      if (!uid || cancelled) return;
+      if (cancelled) return;
+      if (uid) setMyUserId(uid);
+      if (session?.access_token) {
+        setMyAccessToken(session.access_token);
+        // Pre-fetch trades in background so inbox opens instantly
+        fetch("/api/trades", { headers: { Authorization: `Bearer ${session.access_token}` } })
+          .then(r => r.ok ? r.json() : null)
+          .then(d => { if (d) setPrefetchedTrades(d.trades ?? []); })
+          .catch(() => {});
+      }
+      if (!uid) return;
       supabase
         .from("notifications")
         .select("id", { count: "exact", head: true })
@@ -1245,9 +1260,30 @@ free_kicks?: {
 
   return (
     <>
+      {showTradesInbox && myUserId && myAccessToken && (
+        <TradesInboxModal
+          myUserId={myUserId}
+          accessToken={myAccessToken}
+          initialTrades={prefetchedTrades}
+          onClose={() => { setShowTradesInbox(false); setPrefetchedTrades(undefined); }}
+        />
+      )}
+
       <header style={headerStyle}>
         <div style={{ ...headerTopStyle, justifyContent: "space-between", paddingLeft: 16, paddingRight: 16 }}>
-          <div style={{ width: 36 }} />
+          {myUserId ? (
+            <button
+              onClick={() => setShowTradesInbox(true)}
+              style={{ appearance: "none", border: "none", background: "var(--surface-3)", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-1)", flexShrink: 0 }}
+              title="Trades"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M7 16V4m0 0L3 8m4-4l4 4"/><path d="M17 8v12m0 0l4-4m-4 4l-4-4"/>
+              </svg>
+            </button>
+          ) : (
+            <div style={{ width: 36 }} />
+          )}
           <span style={headerTitleStyle}>Scores</span>
           <Link href="/notifications" onClick={() => setUnreadCount(0)} style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, textDecoration: "none" }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="none">

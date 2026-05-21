@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { syncPassXpFromCards } from "@/app/lib/passCardXp";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -47,6 +48,12 @@ export async function POST(req: NextRequest) {
       .eq("id", cardId);
   } else {
     await supabaseAdmin.from("user_cards").delete().eq("id", cardId);
+  }
+
+  try {
+    await syncPassXpFromCards(user.id);
+  } catch (err) {
+    console.error("[cards/sell sync pass xp]", err instanceof Error ? err.message : err);
   }
 
   // Add coins to profile
