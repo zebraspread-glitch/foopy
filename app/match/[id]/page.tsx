@@ -15,6 +15,7 @@ import { teamColors } from "./utils";
 import { supabase } from "@/app/lib/supabase";
 import { createNotification, notifyMentions } from "@/app/lib/notifications";
 import MentionTextarea from "@/app/components/MentionTextarea";
+import { auraToastEmitter } from "@/app/lib/auraToastEmitter";
 
 import type {
   TabKey,
@@ -2889,6 +2890,7 @@ export default function MatchPage() {
         homeScore: e.home_score,
         awayScore: e.away_score,
         inferred: e.inferred ?? false,
+        playerFP: e.player_fp ?? null,
       }));
 
     const chronological = [...normalised].sort((a, b) => {
@@ -3050,6 +3052,27 @@ export default function MatchPage() {
       });
     return () => { supabase.removeChannel(presenceChannel); };
   }, [id]);
+
+  // Award +10 aura once per live game viewed
+  useEffect(() => {
+    if (!id || !mounted) return;
+    if (status !== "LIVE") return;
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) return;
+      const res = await fetch("/api/aura/award", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ event_type: "live_game_view", related_id: String(id) }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.awarded) auraToastEmitter.emit(10, "viewing a live game");
+      }
+    });
+  }, [id, mounted, status]);
 
   useEffect(() => {
     if (!id) return;
@@ -3514,13 +3537,16 @@ export default function MatchPage() {
                   const ek = scoreEventKey(event, index);
                   const commentKey = commentKeyForEvent(eventCommentCounts, event, index);
                   const isFresh = freshEventKeys.has(ek);
-                  const eventPlayer = findPlayerForLiveEvent(event, safeText(game.hteam, ""), safeText(game.ateam, ""));
-                  const eventPlayerStat = eventPlayer
-                    ? [...displayHomeStats, ...displayAwayStats].find(p =>
-                        ((p as any).name || (p as any).player || "").toLowerCase() === (eventPlayer.name || "").toLowerCase()
-                      )
-                    : undefined;
-                  const eventPlayerFP = eventPlayerStat ? fantasyPoints(eventPlayerStat) : null;
+                  // Use the FP snapshot stored at event time; fall back to current live FP if not yet stored
+                  const eventPlayerFP: number | null = (() => {
+                    if ((event as any).playerFP != null) return (event as any).playerFP as number;
+                    const eventPlayer = findPlayerForLiveEvent(event, safeText(game.hteam, ""), safeText(game.ateam, ""));
+                    if (!eventPlayer) return null;
+                    const stat = [...displayHomeStats, ...displayAwayStats].find(p =>
+                      ((p as any).name || (p as any).player || "").toLowerCase() === (eventPlayer.name || "").toLowerCase()
+                    );
+                    return stat ? fantasyPoints(stat) : null;
+                  })();
 
                   return (
                     <div

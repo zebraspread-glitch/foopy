@@ -34,7 +34,6 @@ const CARD_NAME_OVERRIDES: Record<string, string> = {
   jaisaxena: "Jai Saxena",
   jakobryan: "Jakob Ryan",
   jarencarr: "Jaren Carr",
-  john: "John",
   joshkelly: "Josh Kelly",
   joshsinn: "Josh Sinn",
   joshuadraper: "Joshua Draper",
@@ -255,13 +254,13 @@ export const CARD_PLAYERS: CardPlayer[] = [
 
   // New image-backed teams
   ...makeTeamCards("Collingwood", "magpies", [
-    "angusanderson", "beaumccreery", "billyframpton", "bobbyhill", "braydenmaynard", "charliewest", "danhouston", "danielmcstay", "darcycameron", "darcymoore", "edwardallan", "harrydemattia", "harryperryman", "harveyharrison", "ilirosmit", "isaacquaynor", "jackbuller", "jackcrisp", "jaisaxena", "jakobryan", "jamieelliott", "jeremyhowe", "joelcochran", "john", "jordandegoey", "joshdaicos", "lachieschultz", "lachiesullivan", "nedlong", "nickdaicos", "noahhowes", "oscarsteene", "patricklipinski", "reefmcinnes", "roansteele", "samswadling", "scottpendlebury", "steelesidebottom", "tewjiath", "timmembrey", "tyanprindable", "williamhayes", "wilparker", "zacmccarthy",
+    "angusanderson", "beaumccreery", "billyframpton", "bobbyhill", "braydenmaynard", "charliewest", "danhouston", "danielmcstay", "darcycameron", "darcymoore", "edwardallan", "harrydemattia", "harryperryman", "harveyharrison", "ilirosmit", "isaacquaynor", "jackbuller", "jackcrisp", "jaisaxena", "jakobryan", "jamieelliott", "jeremyhowe", "joelcochran", "jordandegoey", "joshdaicos", "lachieschultz", "lachiesullivan", "nedlong", "nickdaicos", "noahhowes", "oscarsteene", "patricklipinski", "reefmcinnes", "roansteele", "samswadling", "scottpendlebury", "steelesidebottom", "tewjiath", "timmembrey", "tyanprindable", "williamhayes", "wilparker", "zacmccarthy",
   ]),
   ...makeTeamCards("Essendon", "bombers", [
     "andrewmcgrath", "angusclarke", "archerdaywicks", "archermay", "archieperkins", "archieroberts", "benmckay", "braydenfiorini", "cillianbourke", "darcyparish", "dysonsharp", "elijahtsatas", "harrisonjones", "hussienelachkar", "isaackako", "jacobfarrow", "jadegresham", "jaxonprior", "jaydennguyen", "jordanridley", "jyecaldwell", "kaylegerryn", "kylelangford", "lachlanblakiston", "lewishayes", "liammcmahon", "masonredman", "mattguelfi", "maxkondogiannis", "natecaddy", "nickbryan", "nicmartin", "nikcox", "peterwright", "rhysunwin", "saadelhawli", "samdurham", "sullivanrobey", "thomasedwards", "vigovisentini", "willsetterfield", "xavierduursma", "zachmerrett", "zachreid", "zakjohnson",
   ]),
   ...makeTeamCards("Fremantle", "dockers", [
-    "adamsweid", "aidenriddle", "alexpearce", "andrewbrayshaw", "baileybanfield", "brandonwalker", "brennancox", "calebserong", "charlienicholls", "christopherscerri", "coopersimpson", "coreywagner", "haydenyoung", "heathchapman", "hughdavies", "isaiahdudley", "jaegeromeara", "jarencarr", "jeremysharp", "john", "jordanclark", "joshtreacy", "joshuadraper", "juddmcvee", "jyeamiss", "karlworner", "leonkickett", "lukejackson", "lukeryan", "masoncox", "matthewjohnson", "michaelfrederick", "murphyreid", "nathanodriscoll", "neilerasmus", "olliemurphy", "oscarmcdonald", "patrickvoss", "rydaluke", "samsturt", "samswitkowski", "seandarcy", "shaibolton", "tobynmurray", "tobywhan",
+    "adamsweid", "aidenriddle", "alexpearce", "andrewbrayshaw", "baileybanfield", "brandonwalker", "brennancox", "calebserong", "charlienicholls", "christopherscerri", "coopersimpson", "coreywagner", "haydenyoung", "heathchapman", "hughdavies", "isaiahdudley", "jaegeromeara", "jarencarr", "jeremysharp", "jordanclark", "joshtreacy", "joshuadraper", "juddmcvee", "jyeamiss", "karlworner", "leonkickett", "lukejackson", "lukeryan", "masoncox", "matthewjohnson", "michaelfrederick", "murphyreid", "nathanodriscoll", "neilerasmus", "olliemurphy", "oscarmcdonald", "patrickvoss", "rydaluke", "samsturt", "samswitkowski", "seandarcy", "shaibolton", "tobynmurray", "tobywhan",
   ]),
   ...makeTeamCards("GWS", "giants", [
     "aaroncadman", "brentdaniels", "callumbrown", "claytonoliver", "codyangove", "connoridun", "conorstone", "darcyjones", "finncallaghan", "finnegandavis", "harrisonoliver", "harryhimmelberg", "harryrowston", "harveythomas", "jackbuckley", "jackough", "jakericcardi", "jakestringer", "jamesleake", "jaydenlaverde", "jessehogan", "joefonti", "josaiadelana", "joshkelly", "kierenbriggs", "lachieash", "lachiewhitfield", "leekaleer", "logansmith", "maxgruzewski", "nathanwardius", "nicholasmadden", "oliverhannaford", "oskartaylor", "phoenixgothard", "rileyhamilton", "ryanangwin", "samtaylor", "stephenconiglio", "tobybedford", "tobygreene", "tobymcmullin", "tomgreen", "xavierohalloran",

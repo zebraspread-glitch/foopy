@@ -95,4 +95,5 @@ export type LiveEvent = {
   label?: string;
   homeScore?: number | string;
   awayScore?: number | string;
+  playerFP?: number | null;
 };

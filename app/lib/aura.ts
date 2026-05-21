@@ -2,11 +2,12 @@
 import { supabaseServer } from "./supabase-server";
 
 const AURA_AMOUNTS: Record<string, number> = {
-  comment_post:  5,
-  like_given:    1,
-  like_received: 2,
-  winner_pick:   3,
-  daily_login:   10,
+  comment_post:    5,
+  like_given:      1,
+  like_received:   2,
+  winner_pick:     3,
+  daily_login:     10,
+  live_game_view:  10,
 };
 
 export async function awardAura(

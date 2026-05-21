@@ -15,6 +15,65 @@ function adminSupabase() {
   );
 }
 
+/** Fantasy points formula */
+function computeFP(stats: any): number {
+  const n = (v: any) => Number(v ?? 0);
+  return (
+    n(stats.kicks)        * 3 +
+    n(stats.handballs)    * 2 +
+    n(stats.marks)        * 3 +
+    n(stats.tackles)      * 4 +
+    n(stats.freesFor)     * 1 +
+    n(stats.freesAgainst) * -3 +
+    n(stats.hitouts)      * 1 +
+    n(stats.goals)        * 6 +
+    n(stats.behinds)      * 1
+  );
+}
+
+/** Fetch current player stats from API-Sports and return a map of player_id -> fp */
+async function fetchPlayerFPMap(gameId: string): Promise<Map<number, number>> {
+  const fpMap = new Map<number, number>();
+  try {
+    const res = await fetch(
+      `${API_BASE}/games/statistics/players?id=${gameId}`,
+      {
+        headers: { "x-apisports-key": process.env.API_SPORTS_AFL_KEY ?? "" },
+        cache: "no-store",
+      }
+    );
+    if (!res.ok) return fpMap;
+
+    const data = await res.json();
+    const teams: any[] = data?.response?.[0]?.teams ?? [];
+
+    for (const team of teams) {
+      for (const playerEntry of team.players ?? []) {
+        const pid = playerEntry?.player?.id;
+        if (!pid) continue;
+
+        // Stat fields may be nested under playerEntry.statistics or flat
+        const s = playerEntry.statistics ?? playerEntry;
+        const stats = {
+          kicks:        s.kicks        ?? s.Kicks        ?? 0,
+          handballs:    s.handballs    ?? s.Handballs    ?? 0,
+          marks:        s.marks        ?? s.Marks        ?? 0,
+          tackles:      s.tackles      ?? s.Tackles      ?? 0,
+          freesFor:     s.freesFor     ?? s.frees_for    ?? s.FreesFor    ?? 0,
+          freesAgainst: s.freesAgainst ?? s.frees_against ?? s.FreesAgainst ?? 0,
+          hitouts:      s.hitouts      ?? s.Hitouts      ?? 0,
+          goals:        s.goals        ?? s.Goals        ?? 0,
+          behinds:      s.behinds      ?? s.Behinds      ?? 0,
+        };
+        fpMap.set(Number(pid), computeFP(stats));
+      }
+    }
+  } catch {
+    // If the stats fetch fails, we just won't have FP — not fatal
+  }
+  return fpMap;
+}
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const gameId = searchParams.get("id");
@@ -43,13 +102,16 @@ export async function GET(req: Request) {
     return NextResponse.json({ synced: true, inserted: 0 });
   }
 
+  // Fetch player FP map in parallel with DB work below
+  const fpMapPromise = fetchPlayerFPMap(gameId);
+
   const supabase = adminSupabase();
 
   // Build deduplicated real event rows from API-Sports
   const key = (r: any) =>
     `${r.period}|${r.minute}|${r.type}|${r.team_id}|${r.player_id}|${r.home_score}|${r.away_score}`;
 
-  const apiRows = Array.from(
+  const rawRows = Array.from(
     new Map(
       rawEvents.map((e: any) => {
         const row = {
@@ -77,23 +139,29 @@ export async function GET(req: Request) {
   const realExisting = (existing ?? []).filter((r: any) => !r.inferred);
 
   // Skip if real events are already identical
-  const apiKeys = new Set(apiRows.map(key));
+  const apiKeys = new Set(rawRows.map(key));
   if (
-    realExisting.length === apiRows.length &&
+    realExisting.length === rawRows.length &&
     realExisting.every((r: any) => apiKeys.has(key(r)))
   ) {
     return NextResponse.json({ synced: true, inserted: 0 });
   }
 
+  // Wait for FP map now that we know we'll need it
+  const fpMap = await fpMapPromise;
+
+  // Attach player_fp to each row
+  const apiRows = rawRows.map((row) => ({
+    ...row,
+    player_fp: row.player_id != null ? (fpMap.get(Number(row.player_id)) ?? null) : null,
+  }));
+
   // Delete inferred events that a real event now covers.
-  // Match by (team_id, type, home_score, away_score) when scores are known,
-  // or by (team_id, type) in order (chronologically) when real event has no score.
   const inferred = (existing ?? []).filter((r: any) => r.inferred);
   const toDeleteIds: number[] = [];
 
   for (const real of apiRows) {
     if (real.home_score != null && real.away_score != null) {
-      // Exact score match
       const match = inferred.find(
         (r: any) =>
           !toDeleteIds.includes(r.id) &&
@@ -104,7 +172,6 @@ export async function GET(req: Request) {
       );
       if (match) toDeleteIds.push(match.id);
     } else {
-      // No score on real event — match the earliest unclaimed inferred event of same team+type
       const match = inferred
         .filter((r: any) => !toDeleteIds.includes(r.id) && r.team_id === real.team_id && r.type === real.type)
         .sort((a: any, b: any) => (Number(a.home_score) || 0) - (Number(b.home_score) || 0))[0];

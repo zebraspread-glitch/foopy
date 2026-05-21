@@ -592,6 +592,25 @@ export default function HomePage() {
   const touchStartX = useRef(0);
   const isMobile = useIsMobile();
 
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const uid = session?.user?.id;
+      if (!uid || cancelled) return;
+      supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", uid)
+        .eq("read", false)
+        .then(({ count }) => {
+          if (!cancelled) setUnreadCount(count ?? 0);
+        });
+    });
+    return () => { cancelled = true; };
+  }, []);
+
   const [swipeTarget, setSwipeTarget] = useState<number | null>(null);
   const swipeTargetRef = useRef<number | null>(null);
   const swipeDirRef = useRef<"left" | "right" | null>(null);
@@ -1227,8 +1246,27 @@ free_kicks?: {
   return (
     <>
       <header style={headerStyle}>
-        <div style={headerTopStyle}>
+        <div style={{ ...headerTopStyle, justifyContent: "space-between", paddingLeft: 16, paddingRight: 16 }}>
+          <div style={{ width: 36 }} />
           <span style={headerTitleStyle}>Scores</span>
+          <Link href="/notifications" onClick={() => setUnreadCount(0)} style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, textDecoration: "none" }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="none">
+              <path d="M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2zm6-6V11a6 6 0 0 0-5-5.91V4a1 1 0 0 0-2 0v1.09A6 6 0 0 0 6 11v5l-2 2v1h16v-1l-2-2z"/>
+            </svg>
+            {unreadCount > 0 && (
+              <span style={{
+                position: "absolute", top: 0, right: 0,
+                background: "#ef4444", color: "#fff",
+                fontSize: 10, fontWeight: 700, lineHeight: 1,
+                minWidth: 16, height: 16, borderRadius: 8,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                padding: "0 3px",
+                border: "1.5px solid var(--bottom-nav-bg)",
+              }}>
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </Link>
         </div>
 
         <div ref={roundRef} className="no-scrollbar" style={isMobile ? headerRoundsScroll : headerRoundsDesktop}>
