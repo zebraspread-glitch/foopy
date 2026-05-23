@@ -617,26 +617,10 @@ export default function ProfilePage() {
   const [pollsDataLoading, setPollsDataLoading] = useState(false);
 
   useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_e, session) => {
-      const u = session?.user ?? null;
-      setUser(u);
+    // Safety net: never hang on the loading screen longer than 8 seconds
+    const fallback = setTimeout(() => setLoading(false), 8000);
 
-      if (u) {
-        const { data } = await supabase.from("profiles").select("*").eq("id", u.id).single();
-        await applyPending(u.id, data as Profile | null);
-        loadFriends(u.id);
-      } else {
-        setProfile(null);
-      }
-
-      setLoading(false);
-    });
-
-    // Safety net: never hang on the loading screen longer than 6 seconds
-    const fallback = setTimeout(() => setLoading(false), 6000);
-
+    // Single source of truth for the initial load — getSession() fetches profile once
     supabase.auth.getSession()
       .then(async ({ data: { session } }) => {
         const u = session?.user ?? null;
@@ -658,6 +642,28 @@ export default function ProfilePage() {
       })
       .catch(() => {})
       .finally(() => { clearTimeout(fallback); setLoading(false); });
+
+    // Handle auth events AFTER initial load (sign in, sign out, token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // INITIAL_SESSION is already handled by getSession() above — skip to avoid double fetch
+      if (event === "INITIAL_SESSION") return;
+
+      const u = session?.user ?? null;
+      setUser(u);
+
+      if (event === "SIGNED_OUT") {
+        setProfile(null);
+        return;
+      }
+
+      // On a fresh sign-in, load the profile for the new user
+      if (event === "SIGNED_IN" && u) {
+        const { data } = await supabase.from("profiles").select("*").eq("id", u.id).single();
+        await applyPending(u.id, data as Profile | null);
+        loadFriends(u.id);
+      }
+      // TOKEN_REFRESHED — just updates the user token, no profile re-fetch needed
+    });
 
     return () => { clearTimeout(fallback); subscription.unsubscribe(); };
   }, []);
@@ -1255,7 +1261,7 @@ export default function ProfilePage() {
         {/* ── Profile header card ── */}
         <div style={profileCardStyle}>
           {/* Banner — clean, nothing on top */}
-          <div style={{ height: bannerStyle.height, backgroundColor: "#06101e", backgroundImage: profile?.banner_url ? `url(${profile.banner_url})` : bannerStyle.backgroundImage, backgroundSize: "cover", backgroundPosition: "center" }} />
+          <div style={profile?.banner_url ? { height: bannerStyle.height, backgroundImage: `url(${profile.banner_url})`, backgroundSize: "cover", backgroundPosition: "center" } : bannerStyle} />
 
           <input ref={fileInputRef} type="file" accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif" style={{ display: "none" }}
             onChange={(e) => { const file = e.target.files?.[0]; if (!file) return; setAvatarErr(""); openImagePreview(file, "avatar"); e.target.value = ""; }}
