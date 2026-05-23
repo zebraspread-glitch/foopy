@@ -3070,9 +3070,10 @@ export default function MatchPage() {
   // Award +10 aura once per live game viewed
   useEffect(() => {
     if (!id || !mounted) return;
-    if (status !== "LIVE") return;
+    if (status !== "LIVE") { console.log("[aura] skipped — status:", status); return; }
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session) return;
+      if (!session) { console.log("[aura] skipped — no session"); return; }
+      console.log("[aura] calling award for live_game_view, matchId:", id);
       const res = await fetch("/api/aura/award", {
         method: "POST",
         headers: {
@@ -3081,10 +3082,9 @@ export default function MatchPage() {
         },
         body: JSON.stringify({ event_type: "live_game_view", related_id: String(id) }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.awarded) auraToastEmitter.emit(10, "viewing a live game");
-      }
+      const data = await res.json();
+      console.log("[aura] response:", res.status, data);
+      if (res.ok && data.awarded) auraToastEmitter.emit(10, "viewing a live game");
     });
   }, [id, mounted, status]);
 
