@@ -189,7 +189,7 @@ function AuraLeaderboardInner() {
                 transition: "all 0.15s",
               }}
             >
-              {tab === "leaderboard" ? "🏆 Leaderboard" : "📋 History"}
+              {tab === "leaderboard" ? "Leaderboard" : "History"}
             </button>
           ))}
         </div>
@@ -308,38 +308,28 @@ function AuraLeaderboardInner() {
                 </span>
               </div>
 
-              {/* Event list */}
-              <div style={{ borderRadius: 16, border: "1px solid var(--border-1)", background: "var(--surface-3)", overflow: "hidden" }}>
-                {history.map((ev, i) => {
-                  const meta = getEventMeta(ev.event_type);
-                  return (
-                    <div
-                      key={ev.id}
-                      style={{ display: "flex", alignItems: "center", gap: 13, padding: "13px 16px", borderTop: i > 0 ? "1px solid var(--border-1)" : "none" }}
-                    >
-                      {/* Icon */}
-                      <div style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(139,92,246,0.15)", border: "1px solid rgba(139,92,246,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
-                        {meta.icon}
+              {/* Event list — flat, no box */}
+              {history.map((ev, i) => {
+                const meta = getEventMeta(ev.event_type);
+                return (
+                  <div
+                    key={ev.id}
+                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 4px", borderBottom: i < history.length - 1 ? "1px solid var(--border-1)" : "none" }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-1)" }}>
+                        {meta.label}
                       </div>
-
-                      {/* Label + time */}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 14, fontWeight: 800, color: "var(--text-1)", marginBottom: 2 }}>
-                          {meta.label}
-                        </div>
-                        <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 600 }}>
-                          {timeAgo(ev.created_at)}
-                        </div>
-                      </div>
-
-                      {/* Amount */}
-                      <div style={{ fontSize: 15, fontWeight: 900, background: "linear-gradient(135deg, #c084fc, #818cf8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", flexShrink: 0 }}>
-                        +{ev.amount}
+                      <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 500, marginTop: 2 }}>
+                        {timeAgo(ev.created_at)}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
+                    <div style={{ fontSize: 15, fontWeight: 900, background: "linear-gradient(135deg, #c084fc, #818cf8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", flexShrink: 0, marginLeft: 12 }}>
+                      +{ev.amount}
+                    </div>
+                  </div>
+                );
+              })}
             </>
           )}
         </div>

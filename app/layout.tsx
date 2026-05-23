@@ -4,6 +4,7 @@ import BottomNav from "./components/BottomNav";
 import GlobalSideDrawer from "./components/GlobalSideDrawer";
 import NavigationEvents from "./components/NavigationEvents";
 import ThemeModeBootstrap from "./components/ThemeModeBootstrap";
+import AuraToast from "./components/AuraToast";
 
 export const metadata: Metadata = {
   title: "Foopy | AFL Live Scores & Picks",
@@ -45,6 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </div>
         <BottomNav />
+        <AuraToast />
       </body>
     </html>
   );

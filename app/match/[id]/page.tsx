@@ -3070,7 +3070,10 @@ export default function MatchPage() {
   // Award +10 aura once per live game viewed
   useEffect(() => {
     if (!id || !mounted) return;
-    if (status !== "LIVE") { console.log("[aura] skipped — status:", status); return; }
+    // Fire when Squiggle marks LIVE, OR when the game is clearly in progress
+    // (currentPeriod > 0 means timestr shows a quarter/half) but complete=0 hasn't updated yet
+    const isGameLive = status === "LIVE" || (status !== "FINAL" && currentPeriod > 0);
+    if (!isGameLive) { console.log("[aura] skipped — status:", status, "period:", currentPeriod); return; }
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { console.log("[aura] skipped — no session"); return; }
       console.log("[aura] calling award for live_game_view, matchId:", id);
@@ -3086,7 +3089,7 @@ export default function MatchPage() {
       console.log("[aura] response:", res.status, data);
       if (res.ok && data.awarded) auraToastEmitter.emit(10, "viewing a live game");
     });
-  }, [id, mounted, status]);
+  }, [id, mounted, status, currentPeriod]);
 
   useEffect(() => {
     if (!id) return;
