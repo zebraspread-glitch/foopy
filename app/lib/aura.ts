@@ -13,9 +13,10 @@ const AURA_AMOUNTS: Record<string, number> = {
 };
 
 /**
- * Insert an aura_events row and increment profiles.aura.
- * Pass userJwt when available so the insert uses the user's own session
- * (satisfies RLS INSERT policy). Falls back to service role for the profile update.
+ * Award aura to a user via the award_aura_event SECURITY DEFINER RPC.
+ * The RPC handles insert + profile increment atomically and works from any role.
+ * Pass userJwt when available so the RPC call is authenticated.
+ * Returns { awarded: true } if new, { awarded: false } if already awarded (dedup).
  */
 export async function awardAura(
   userId: string,
@@ -27,9 +28,9 @@ export async function awardAura(
   const amount = amountOverride ?? AURA_AMOUNTS[eventType];
   if (!amount) return { awarded: false, amount: 0, reason: "no_amount" };
 
-  // Use the user's own JWT for the insert so RLS is satisfied even if
-  // SUPABASE_SERVICE_ROLE_KEY is misconfigured in the environment.
-  const insertClient = userJwt
+  // Use user JWT when available so the call runs as authenticated role.
+  // award_aura_event is SECURITY DEFINER so it can insert+update regardless of caller.
+  const client = userJwt
     ? createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -37,42 +38,19 @@ export async function awardAura(
       )
     : supabaseServer;
 
-  const { error } = await insertClient.from("aura_events").insert({
-    user_id: userId,
-    event_type: eventType,
-    related_id: relatedId,
-    amount,
+  const { data, error } = await client.rpc("award_aura_event", {
+    p_user_id:    userId,
+    p_event_type: eventType,
+    p_related_id: relatedId,
+    p_amount:     amount,
   });
 
   if (error) {
-    if (error.code === "23505") return { awarded: false, amount: 0, reason: "dedup" };
     console.error("[awardAura]", error.code, error.message);
     return { awarded: false, amount: 0, reason: error.message };
   }
 
-  // Increment profiles.aura via RPC (SECURITY DEFINER — bypasses RLS regardless of key)
-  const { error: rpcError } = await supabaseServer.rpc("increment_aura", {
-    user_id_param: userId,
-    amount_param: amount,
-  });
-  if (rpcError) {
-    console.error("[awardAura increment_aura rpc]", rpcError.message, "— trying direct update");
-    const { data: profileData, error: readErr } = await supabaseServer
-      .from("profiles")
-      .select("aura")
-      .eq("id", userId)
-      .single();
-    if (readErr) {
-      console.error("[awardAura read profile]", readErr.message);
-    } else {
-      const currentAura = Number((profileData as any)?.aura ?? 0);
-      const { error: writeErr } = await supabaseServer
-        .from("profiles")
-        .update({ aura: currentAura + amount })
-        .eq("id", userId);
-      if (writeErr) console.error("[awardAura write profile]", writeErr.message);
-    }
-  }
-
-  return { awarded: true, amount, reason: "ok" };
+  // data is true if inserted, false if deduped
+  const awarded = data === true;
+  return { awarded, amount: awarded ? amount : 0, reason: awarded ? "ok" : "dedup" };
 }
