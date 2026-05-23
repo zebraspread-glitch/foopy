@@ -1,4 +1,5 @@
 // Server-only — import ONLY from API routes
+import { createClient } from "@supabase/supabase-js";
 import { supabaseServer } from "./supabase-server";
 
 const AURA_AMOUNTS: Record<string, number> = {
@@ -12,19 +13,31 @@ const AURA_AMOUNTS: Record<string, number> = {
 };
 
 /**
- * Insert an aura_events row for the user and increment profiles.aura via RPC.
- * Returns { awarded: true } if the row was new, { awarded: false } if already exists (dedup).
+ * Insert an aura_events row and increment profiles.aura.
+ * Pass userJwt when available so the insert uses the user's own session
+ * (satisfies RLS INSERT policy). Falls back to service role for the profile update.
  */
 export async function awardAura(
   userId: string,
   eventType: string,
   relatedId: string,
-  amountOverride?: number
-): Promise<{ awarded: boolean; amount: number }> {
+  amountOverride?: number,
+  userJwt?: string
+): Promise<{ awarded: boolean; amount: number; reason?: string }> {
   const amount = amountOverride ?? AURA_AMOUNTS[eventType];
-  if (!amount) return { awarded: false, amount: 0 };
+  if (!amount) return { awarded: false, amount: 0, reason: "no_amount" };
 
-  const { error } = await supabaseServer.from("aura_events").insert({
+  // Use the user's own JWT for the insert so RLS is satisfied even if
+  // SUPABASE_SERVICE_ROLE_KEY is misconfigured in the environment.
+  const insertClient = userJwt
+    ? createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        { global: { headers: { Authorization: `Bearer ${userJwt}` } } }
+      )
+    : supabaseServer;
+
+  const { error } = await insertClient.from("aura_events").insert({
     user_id: userId,
     event_type: eventType,
     related_id: relatedId,
@@ -32,12 +45,12 @@ export async function awardAura(
   });
 
   if (error) {
-    if (error.code === "23505") return { awarded: false, amount: 0 }; // already awarded (dedup)
-    console.error("[awardAura]", error.message);
-    return { awarded: false, amount: 0 };
+    if (error.code === "23505") return { awarded: false, amount: 0, reason: "dedup" };
+    console.error("[awardAura]", error.code, error.message);
+    return { awarded: false, amount: 0, reason: error.message };
   }
 
-  // Increment profiles.aura via RPC, with read-then-write fallback
+  // Increment profiles.aura via RPC (SECURITY DEFINER — bypasses RLS regardless of key)
   const { error: rpcError } = await supabaseServer.rpc("increment_aura", {
     user_id_param: userId,
     amount_param: amount,
@@ -61,5 +74,5 @@ export async function awardAura(
     }
   }
 
-  return { awarded: true, amount };
+  return { awarded: true, amount, reason: "ok" };
 }

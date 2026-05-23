@@ -26,6 +26,6 @@ export async function POST(req: Request) {
   const targetUserId =
     event_type === "like_received" && recipient_id ? recipient_id : user.id;
 
-  const result = await awardAura(targetUserId, event_type, related_id, amount);
+  const result = await awardAura(targetUserId, event_type, related_id, amount, token);
   return NextResponse.json(result);
 }
