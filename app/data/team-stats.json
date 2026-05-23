@@ -5543,7 +5543,7 @@
         }
       }
     ],
-    "savedAt": "2026-05-23T06:13:40.222Z"
+    "savedAt": "2026-05-23T13:47:58.367Z"
   },
   "3439": {
     "gameId": 3439,
@@ -5555,23 +5555,23 @@
         },
         "statistics": {
           "disposals": {
-            "disposals": 0,
-            "kicks": 0,
-            "handballs": 0,
-            "free_kicks": 0
+            "disposals": 410,
+            "kicks": 233,
+            "handballs": 177,
+            "free_kicks": 17
           },
           "stoppages": {
-            "hitouts": 0,
-            "clearances": 0
+            "hitouts": 39,
+            "clearances": 38
           },
-          "marks": 0,
+          "marks": 105,
           "scoring": {
-            "goals": 0,
-            "assists": 0,
-            "behinds": 0
+            "goals": 15,
+            "assists": 12,
+            "behinds": 13
           },
           "defence": {
-            "tackles": 0
+            "tackles": 39
           }
         }
       },
@@ -5581,28 +5581,28 @@
         },
         "statistics": {
           "disposals": {
-            "disposals": 0,
-            "kicks": 0,
-            "handballs": 0,
-            "free_kicks": 0
+            "disposals": 365,
+            "kicks": 196,
+            "handballs": 169,
+            "free_kicks": 17
           },
           "stoppages": {
-            "hitouts": 0,
-            "clearances": 0
+            "hitouts": 33,
+            "clearances": 34
           },
-          "marks": 0,
+          "marks": 76,
           "scoring": {
-            "goals": 0,
-            "assists": 0,
-            "behinds": 0
+            "goals": 12,
+            "assists": 12,
+            "behinds": 8
           },
           "defence": {
-            "tackles": 0
+            "tackles": 73
           }
         }
       }
     ],
-    "savedAt": "2026-05-23T06:13:40.222Z"
+    "savedAt": "2026-05-23T13:47:58.367Z"
   },
   "3440": {
     "gameId": 3440,
@@ -5614,23 +5614,23 @@
         },
         "statistics": {
           "disposals": {
-            "disposals": 0,
-            "kicks": 0,
-            "handballs": 0,
-            "free_kicks": 0
+            "disposals": 357,
+            "kicks": 187,
+            "handballs": 170,
+            "free_kicks": 28
           },
           "stoppages": {
-            "hitouts": 0,
-            "clearances": 0
+            "hitouts": 30,
+            "clearances": 38
           },
-          "marks": 0,
+          "marks": 77,
           "scoring": {
-            "goals": 0,
-            "assists": 0,
-            "behinds": 0
+            "goals": 13,
+            "assists": 7,
+            "behinds": 11
           },
           "defence": {
-            "tackles": 0
+            "tackles": 77
           }
         }
       },
@@ -5640,28 +5640,28 @@
         },
         "statistics": {
           "disposals": {
-            "disposals": 0,
-            "kicks": 0,
-            "handballs": 0,
-            "free_kicks": 0
+            "disposals": 388,
+            "kicks": 222,
+            "handballs": 166,
+            "free_kicks": 18
           },
           "stoppages": {
-            "hitouts": 0,
-            "clearances": 0
+            "hitouts": 32,
+            "clearances": 42
           },
-          "marks": 0,
+          "marks": 97,
           "scoring": {
-            "goals": 0,
-            "assists": 0,
-            "behinds": 0
+            "goals": 12,
+            "assists": 8,
+            "behinds": 7
           },
           "defence": {
-            "tackles": 0
+            "tackles": 47
           }
         }
       }
     ],
-    "savedAt": "2026-05-23T06:13:40.222Z"
+    "savedAt": "2026-05-23T13:47:58.367Z"
   },
   "3441": {
     "gameId": 3441,
@@ -5673,23 +5673,23 @@
         },
         "statistics": {
           "disposals": {
-            "disposals": 0,
-            "kicks": 0,
-            "handballs": 0,
-            "free_kicks": 0
+            "disposals": 404,
+            "kicks": 222,
+            "handballs": 182,
+            "free_kicks": 16
           },
           "stoppages": {
-            "hitouts": 0,
-            "clearances": 0
+            "hitouts": 25,
+            "clearances": 27
           },
-          "marks": 0,
+          "marks": 108,
           "scoring": {
-            "goals": 0,
-            "assists": 0,
-            "behinds": 0
+            "goals": 13,
+            "assists": 12,
+            "behinds": 14
           },
           "defence": {
-            "tackles": 0
+            "tackles": 43
           }
         }
       },
@@ -5699,27 +5699,27 @@
         },
         "statistics": {
           "disposals": {
-            "disposals": 0,
-            "kicks": 0,
-            "handballs": 0,
-            "free_kicks": 0
+            "disposals": 325,
+            "kicks": 193,
+            "handballs": 132,
+            "free_kicks": 13
           },
           "stoppages": {
-            "hitouts": 0,
-            "clearances": 0
+            "hitouts": 30,
+            "clearances": 35
           },
-          "marks": 0,
+          "marks": 88,
           "scoring": {
-            "goals": 0,
-            "assists": 0,
-            "behinds": 0
+            "goals": 8,
+            "assists": 7,
+            "behinds": 9
           },
           "defence": {
-            "tackles": 0
+            "tackles": 53
           }
         }
       }
     ],
-    "savedAt": "2026-05-23T06:13:40.223Z"
+    "savedAt": "2026-05-23T13:47:58.367Z"
   }
 }
