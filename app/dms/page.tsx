@@ -29,6 +29,29 @@ type GroupInvite = {
   inviter_username: string; inviter_avatar_url: string | null; created_at: string;
 };
 
+/* ── Group initials avatar helper ── */
+function groupInitialsAvatar(name: string): { initials: string; bg: string } {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  const initials = words.length >= 2
+    ? (words[0][0] + words[1][0]).toUpperCase()
+    : name.slice(0, 2).toUpperCase();
+  // Deterministic colour from name
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  const palettes = [
+    "linear-gradient(135deg,#7c3aed,#4f46e5)",
+    "linear-gradient(135deg,#db2777,#9333ea)",
+    "linear-gradient(135deg,#0891b2,#2563eb)",
+    "linear-gradient(135deg,#059669,#0891b2)",
+    "linear-gradient(135deg,#d97706,#dc2626)",
+    "linear-gradient(135deg,#be123c,#9f1239)",
+    "linear-gradient(135deg,#0369a1,#1e40af)",
+    "linear-gradient(135deg,#15803d,#065f46)",
+  ];
+  const bg = palettes[Math.abs(hash) % palettes.length];
+  return { initials, bg };
+}
+
 /* ── Team logos & colours (mirrors passes/page.tsx) ── */
 const TEAM_LOGOS: Record<string, string> = {
   "Adelaide Crows": "/team-logos/crows.png", "Brisbane Lions": "/team-logos/lions.png",
@@ -797,9 +820,9 @@ function DMsPageInner() {
           <div onClick={() => setMembersModalOpen(false)} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)" }} />
           <div style={{ position: "relative", width: "100%", maxWidth: 420, maxHeight: "80dvh", background: "var(--surface-1)", borderRadius: 20, display: "flex", flexDirection: "column", overflow: "hidden" }}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "24px 20px 16px", borderBottom: "1px solid var(--border-2)" }}>
-              {(activeGroup.image_url || TEAM_LOGOS[activeGroup.team_name])
-                ? <img src={activeGroup.image_url || TEAM_LOGOS[activeGroup.team_name]!} alt={activeGroup.team_name} style={{ width: 64, height: 64, borderRadius: "50%", objectFit: "cover", background: TEAM_COLORS[activeGroup.team_name] ?? "#1a1a1a" }} />
-                : <div style={{ width: 64, height: 64, borderRadius: "50%", background: activeGroup.team_name === "General" ? "linear-gradient(135deg,#1e3a5f,#2563eb)" : "linear-gradient(135deg,#1a3d2e,#063d22)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32 }}>{activeGroup.team_name === "General" ? "💬" : "🏉"}</div>
+              {(TEAM_LOGOS[activeGroup.team_name] || activeGroup.image_url)
+                ? <img src={TEAM_LOGOS[activeGroup.team_name] || activeGroup.image_url!} alt={activeGroup.team_name} style={{ width: 64, height: 64, borderRadius: "50%", objectFit: "cover", background: TEAM_COLORS[activeGroup.team_name] ?? "#1a1a1a" }} />
+                : (() => { const { initials, bg } = groupInitialsAvatar(activeGroup.team_name); return <div style={{ width: 64, height: 64, borderRadius: "50%", background: activeGroup.team_name === "General" ? "linear-gradient(135deg,#1e3a5f,#2563eb)" : bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: activeGroup.team_name === "General" ? 32 : 22, fontWeight: 900, color: "#fff" }}>{activeGroup.team_name === "General" ? "💬" : initials}</div>; })()
               }
               <div style={{ fontWeight: 800, fontSize: 18, color: "var(--text-1)", textAlign: "center" }}>{activeGroup.team_name}</div>
               <div style={{ fontSize: 13, color: "var(--text-3)" }}>{activeGroup.member_count} member{activeGroup.member_count !== 1 ? "s" : ""}</div>
@@ -895,9 +918,9 @@ function DMsPageInner() {
           <svg width="10" height="17" viewBox="0 0 10 17" fill="none"><path d="M9 1.5L1.5 8.5L9 15.5" stroke="var(--text-1)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </button>
         <button onClick={openMembersModal} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", flexShrink: 0, lineHeight: 0 }}>
-          {(activeGroup.image_url || TEAM_LOGOS[activeGroup.team_name])
-            ? <img src={activeGroup.image_url || TEAM_LOGOS[activeGroup.team_name]!} alt={activeGroup.team_name} style={{ width: 38, height: 38, borderRadius: "50%", objectFit: "cover", background: TEAM_COLORS[activeGroup.team_name] ?? "#1a1a1a" }} />
-            : <div style={{ width: 38, height: 38, borderRadius: "50%", background: activeGroup.team_name === "General" ? "linear-gradient(135deg,#1e3a5f,#2563eb)" : "linear-gradient(135deg,#1a3d2e,#063d22)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{activeGroup.team_name === "General" ? "💬" : "🏉"}</div>
+          {(TEAM_LOGOS[activeGroup.team_name] || activeGroup.image_url)
+            ? <img src={TEAM_LOGOS[activeGroup.team_name] || activeGroup.image_url!} alt={activeGroup.team_name} style={{ width: 38, height: 38, borderRadius: "50%", objectFit: "cover", background: TEAM_COLORS[activeGroup.team_name] ?? "#1a1a1a" }} />
+            : (() => { const { initials, bg } = groupInitialsAvatar(activeGroup.team_name); return <div style={{ width: 38, height: 38, borderRadius: "50%", background: activeGroup.team_name === "General" ? "linear-gradient(135deg,#1e3a5f,#2563eb)" : bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: activeGroup.team_name === "General" ? 20 : 13, fontWeight: 900, color: "#fff" }}>{activeGroup.team_name === "General" ? "💬" : initials}</div>; })()
           }
         </button>
         <button onClick={openMembersModal} style={{ flex: 1, minWidth: 0, padding: "0 4px", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}>
@@ -910,9 +933,9 @@ function DMsPageInner() {
       <div style={{ flex: 1, overflowY: "auto", padding: "12px 0 4px" }}>
         {groupMessages.length === 0 && (
           <div style={{ padding: "80px 24px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-            {(activeGroup.image_url || TEAM_LOGOS[activeGroup.team_name])
-              ? <img src={activeGroup.image_url || TEAM_LOGOS[activeGroup.team_name]!} alt={activeGroup.team_name} style={{ width: 72, height: 72, borderRadius: "50%", objectFit: "cover", background: TEAM_COLORS[activeGroup.team_name] ?? "#1a1a1a" }} />
-              : <div style={{ fontSize: 52 }}>{activeGroup.team_name === "General" ? "💬" : "🏉"}</div>
+            {(TEAM_LOGOS[activeGroup.team_name] || activeGroup.image_url)
+              ? <img src={TEAM_LOGOS[activeGroup.team_name] || activeGroup.image_url!} alt={activeGroup.team_name} style={{ width: 72, height: 72, borderRadius: "50%", objectFit: "cover", background: TEAM_COLORS[activeGroup.team_name] ?? "#1a1a1a" }} />
+              : (() => { const { initials, bg } = groupInitialsAvatar(activeGroup.team_name); return <div style={{ width: 72, height: 72, borderRadius: "50%", background: activeGroup.team_name === "General" ? "linear-gradient(135deg,#1e3a5f,#2563eb)" : bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: activeGroup.team_name === "General" ? 36 : 26, fontWeight: 900, color: "#fff" }}>{activeGroup.team_name === "General" ? "💬" : initials}</div>; })()
             }
             <div style={{ fontWeight: 700, fontSize: 18, color: "var(--text-1)" }}>{activeGroup.team_name}</div>
             {activeGroup.description && <div style={{ fontSize: 13.5, color: "var(--text-3)" }}>{activeGroup.description}</div>}
@@ -1058,13 +1081,14 @@ function DMsPageInner() {
 
         // Avatar for a group — team logo image or emoji fallback
         const GroupAvatar = ({ group, size = 48 }: { group: GroupChat; size?: number }) => {
-          const logo = group.image_url || TEAM_LOGOS[group.team_name];
+          const logo = TEAM_LOGOS[group.team_name] || group.image_url;
           const color = TEAM_COLORS[group.team_name];
           if (logo) return <img src={logo} alt={group.team_name} style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", background: color ?? "#1a1a1a", flexShrink: 0 }} />;
           const isGeneral = group.team_name === "General";
+          const { initials, bg } = groupInitialsAvatar(group.team_name);
           return (
-            <div style={{ width: size, height: size, borderRadius: "50%", background: isGeneral ? "linear-gradient(135deg,#1e3a5f,#2563eb)" : "linear-gradient(135deg,#1a3d2e,#063d22)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: size * 0.44, flexShrink: 0 }}>
-              {isGeneral ? "💬" : "🏉"}
+            <div style={{ width: size, height: size, borderRadius: "50%", background: isGeneral ? "linear-gradient(135deg,#1e3a5f,#2563eb)" : bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: isGeneral ? size * 0.44 : size * 0.33, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", flexShrink: 0 }}>
+              {isGeneral ? "💬" : initials}
             </div>
           );
         };
@@ -1388,7 +1412,7 @@ function DMsPageInner() {
                 {pendingInvites.map((inv, i) => (
                   <div key={inv.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px", borderTop: i > 0 ? "1px solid rgba(34,197,94,.1)" : "none" }}>
                     {TEAM_LOGOS[inv.group_name]
-                      ? <img src={TEAM_LOGOS[inv.group_name]} alt={inv.group_name} style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", background: TEAM_COLORS[inv.group_name] ?? "#1a1a1a", flexShrink: 0 }} />
+                      ? <img src={TEAM_LOGOS[inv.group_name]!} alt={inv.group_name} style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", background: TEAM_COLORS[inv.group_name] ?? "#1a1a1a", flexShrink: 0 }} />
                       : <div style={{ width: 36, height: 36, borderRadius: "50%", background: inv.group_name === "General" ? "linear-gradient(135deg,#1e3a5f,#2563eb)" : "linear-gradient(135deg,#1a3d2e,#063d22)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>{inv.group_name === "General" ? "💬" : "🏉"}</div>
                     }
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -1457,7 +1481,8 @@ function InboxRow({ entry, myId, isLast, onClick }: { entry: InboxEntry; myId: s
 /* ── Group row ── */
 function GroupRow({ group, isLast, onClick }: { group: GroupChat; isLast: boolean; onClick: () => void }) {
   const hasUnread = group.unread > 0;
-  const logo = group.image_url || TEAM_LOGOS[group.team_name];
+  // Team logo takes priority over custom image_url so official teams always show their badge
+  const logo = TEAM_LOGOS[group.team_name] || group.image_url;
   const color = TEAM_COLORS[group.team_name];
   const isGeneral = group.team_name === "General";
   return (
@@ -1466,7 +1491,11 @@ function GroupRow({ group, isLast, onClick }: { group: GroupChat; isLast: boolea
         <div style={{ padding: hasUnread ? 2 : 0, borderRadius: "50%", background: hasUnread ? "var(--bg)" : "transparent" }}>
           {logo
             ? <img src={logo} alt={group.team_name} style={{ width: 54, height: 54, borderRadius: "50%", objectFit: "cover", background: color ?? "#1a1a1a", display: "block" }} />
-            : <div style={{ width: 54, height: 54, borderRadius: "50%", background: isGeneral ? "linear-gradient(135deg,#1e3a5f,#2563eb)" : "linear-gradient(135deg,#1a3d2e,#063d22)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 }}>{isGeneral ? "💬" : "🏉"}</div>
+            : (() => { const { initials, bg } = groupInitialsAvatar(group.team_name); return (
+                <div style={{ width: 54, height: 54, borderRadius: "50%", background: isGeneral ? "linear-gradient(135deg,#1e3a5f,#2563eb)" : bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: isGeneral ? 26 : 18, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", flexShrink: 0 }}>
+                  {isGeneral ? "💬" : initials}
+                </div>
+              ); })()
           }
         </div>
       </div>
