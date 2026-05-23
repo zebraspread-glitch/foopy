@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
@@ -68,6 +68,14 @@ function ordinal(n: number) {
 }
 
 export default function AuraLeaderboardPage() {
+  return (
+    <Suspense>
+      <AuraLeaderboardInner />
+    </Suspense>
+  );
+}
+
+function AuraLeaderboardInner() {
   const router       = useRouter();
   const searchParams = useSearchParams();
 
