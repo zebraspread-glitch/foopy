@@ -12,8 +12,7 @@ const AURA_AMOUNTS: Record<string, number> = {
 };
 
 /**
- * Insert an aura_events row for the user.
- * The DB trigger `on_aura_event_insert` automatically increments profiles.aura.
+ * Insert an aura_events row for the user and increment profiles.aura via RPC.
  * Returns { awarded: true } if the row was new, { awarded: false } if already exists (dedup).
  */
 export async function awardAura(
@@ -38,6 +37,29 @@ export async function awardAura(
     return { awarded: false, amount: 0 };
   }
 
-  // profiles.aura is updated automatically by the on_aura_event_insert DB trigger
+  // Increment profiles.aura via RPC, with read-then-write fallback
+  const { error: rpcError } = await supabaseServer.rpc("increment_aura", {
+    user_id_param: userId,
+    amount_param: amount,
+  });
+  if (rpcError) {
+    console.error("[awardAura increment_aura rpc]", rpcError.message, "— trying direct update");
+    const { data: profileData, error: readErr } = await supabaseServer
+      .from("profiles")
+      .select("aura")
+      .eq("id", userId)
+      .single();
+    if (readErr) {
+      console.error("[awardAura read profile]", readErr.message);
+    } else {
+      const currentAura = Number((profileData as any)?.aura ?? 0);
+      const { error: writeErr } = await supabaseServer
+        .from("profiles")
+        .update({ aura: currentAura + amount })
+        .eq("id", userId);
+      if (writeErr) console.error("[awardAura write profile]", writeErr.message);
+    }
+  }
+
   return { awarded: true, amount };
 }

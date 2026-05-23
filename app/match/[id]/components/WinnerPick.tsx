@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CheckCircle } from "lucide-react";
 import { getLogo, teamColor } from "../utils";
 import { supabase } from "@/app/lib/supabase";
+import { auraToastEmitter } from "@/app/lib/auraToastEmitter";
 
 type Props = {
   matchId: string;
@@ -126,6 +127,7 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, ho
       if (res.ok) {
         const data = await res.json();
         setVotes({ home: Number(data.home ?? 0), away: Number(data.away ?? 0), total: Number(data.total ?? 0) });
+        if (data.aura_awarded) auraToastEmitter.emit(3, "picking a winner");
       }
     } catch {}
     setSubmitting(false);

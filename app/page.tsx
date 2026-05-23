@@ -1686,8 +1686,10 @@ free_kicks?: {
                 </div>
                 {/* Team logo */}
                 {s.teamLogo && (
-                  <div suppressHydrationWarning style={{ width: 32, height: 32, borderRadius: "50%", flexShrink: 0, background: s.teamColor, position: "relative", overflow: "hidden" }}>
-                    <img suppressHydrationWarning src={s.teamLogo} alt={s.team} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                  <div style={{ width: 32, height: 32, borderRadius: "50%", flexShrink: 0, background: s.teamColor, position: "relative", overflow: "hidden" }}>
+                    {mounted && (
+                      <img src={s.teamLogo} alt={s.team} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                    )}
                   </div>
                 )}
               </Link>
