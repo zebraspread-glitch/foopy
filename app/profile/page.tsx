@@ -620,10 +620,13 @@ export default function ProfilePage() {
     // Safety net: never hang on the loading screen longer than 8 seconds
     const fallback = setTimeout(() => setLoading(false), 8000);
 
-    // Single source of truth for the initial load — getSession() fetches profile once
-    supabase.auth.getSession()
-      .then(async ({ data: { session } }) => {
-        const u = session?.user ?? null;
+    // onAuthStateChange is the single source of truth.
+    // INITIAL_SESSION always fires once on mount with the restored session (or null),
+    // so it's more reliable than getSession() which can return null mid-refresh.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const u = session?.user ?? null;
+
+      if (event === "INITIAL_SESSION") {
         setUser(u);
         if (u) {
           const { data } = await supabase.from("profiles").select("*").eq("id", u.id).single();
@@ -639,30 +642,29 @@ export default function ProfilePage() {
             }).catch(() => {});
           }
         }
-      })
-      .catch(() => {})
-      .finally(() => { clearTimeout(fallback); setLoading(false); });
+        clearTimeout(fallback);
+        setLoading(false);
+        return;
+      }
 
-    // Handle auth events AFTER initial load (sign in, sign out, token refresh)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // INITIAL_SESSION is already handled by getSession() above — skip to avoid double fetch
-      if (event === "INITIAL_SESSION") return;
-
-      const u = session?.user ?? null;
-      setUser(u);
+      if (event === "SIGNED_IN") {
+        setUser(u);
+        if (u) {
+          const { data } = await supabase.from("profiles").select("*").eq("id", u.id).single();
+          await applyPending(u.id, data as Profile | null);
+          loadFriends(u.id);
+        }
+        return;
+      }
 
       if (event === "SIGNED_OUT") {
+        setUser(null);
         setProfile(null);
         return;
       }
 
-      // On a fresh sign-in, load the profile for the new user
-      if (event === "SIGNED_IN" && u) {
-        const { data } = await supabase.from("profiles").select("*").eq("id", u.id).single();
-        await applyPending(u.id, data as Profile | null);
-        loadFriends(u.id);
-      }
-      // TOKEN_REFRESHED — just updates the user token, no profile re-fetch needed
+      // TOKEN_REFRESHED / USER_UPDATED — just keep user token current, no profile re-fetch
+      if (u) setUser(u);
     });
 
     return () => { clearTimeout(fallback); subscription.unsubscribe(); };
