@@ -113003,5 +113003,2335 @@
       }
     ],
     "savedAt": "2026-05-23T13:47:58.367Z"
+  },
+  "3442": {
+    "gameId": 3442,
+    "date": "2026-05-24",
+    "teams": [
+      {
+        "team": {
+          "id": 2
+        },
+        "players": [
+          {
+            "player": {
+              "id": 682,
+              "number": 9
+            },
+            "goals": {
+              "total": 1,
+              "assists": 1
+            },
+            "behinds": 0,
+            "disposals": 32,
+            "kicks": 10,
+            "handballs": 22,
+            "marks": 3,
+            "tackles": 6,
+            "hitouts": 0,
+            "clearances": 10,
+            "free_kicks": {
+              "for": 3,
+              "against": 2
+            }
+          },
+          {
+            "player": {
+              "id": 868,
+              "number": 23
+            },
+            "goals": {
+              "total": 2,
+              "assists": 0
+            },
+            "behinds": 1,
+            "disposals": 11,
+            "kicks": 8,
+            "handballs": 3,
+            "marks": 2,
+            "tackles": 4,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 1,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 869,
+              "number": 27
+            },
+            "goals": {
+              "total": 0,
+              "assists": 1
+            },
+            "behinds": 0,
+            "disposals": 15,
+            "kicks": 8,
+            "handballs": 7,
+            "marks": 6,
+            "tackles": 2,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 870,
+              "number": 31
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 13,
+            "kicks": 10,
+            "handballs": 3,
+            "marks": 7,
+            "tackles": 0,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 871,
+              "number": 26
+            },
+            "goals": {
+              "total": 2,
+              "assists": 1
+            },
+            "behinds": 2,
+            "disposals": 12,
+            "kicks": 7,
+            "handballs": 5,
+            "marks": 1,
+            "tackles": 0,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 874,
+              "number": 5
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 1,
+            "disposals": 21,
+            "kicks": 8,
+            "handballs": 13,
+            "marks": 2,
+            "tackles": 5,
+            "hitouts": 0,
+            "clearances": 3,
+            "free_kicks": {
+              "for": 1,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 875,
+              "number": 6
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 23,
+            "kicks": 15,
+            "handballs": 8,
+            "marks": 2,
+            "tackles": 2,
+            "hitouts": 0,
+            "clearances": 3,
+            "free_kicks": {
+              "for": 1,
+              "against": 1
+            }
+          },
+          {
+            "player": {
+              "id": 879,
+              "number": 16
+            },
+            "goals": {
+              "total": 3,
+              "assists": 0
+            },
+            "behinds": 1,
+            "disposals": 17,
+            "kicks": 13,
+            "handballs": 4,
+            "marks": 4,
+            "tackles": 1,
+            "hitouts": 1,
+            "clearances": 4,
+            "free_kicks": {
+              "for": 2,
+              "against": 1
+            }
+          },
+          {
+            "player": {
+              "id": 881,
+              "number": 33
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 1,
+            "disposals": 17,
+            "kicks": 11,
+            "handballs": 6,
+            "marks": 7,
+            "tackles": 6,
+            "hitouts": 0,
+            "clearances": 2,
+            "free_kicks": {
+              "for": 0,
+              "against": 1
+            }
+          },
+          {
+            "player": {
+              "id": 882,
+              "number": 32
+            },
+            "goals": {
+              "total": 0,
+              "assists": 1
+            },
+            "behinds": 0,
+            "disposals": 12,
+            "kicks": 7,
+            "handballs": 5,
+            "marks": 3,
+            "tackles": 2,
+            "hitouts": 18,
+            "clearances": 3,
+            "free_kicks": {
+              "for": 2,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 884,
+              "number": 18
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 15,
+            "kicks": 11,
+            "handballs": 4,
+            "marks": 4,
+            "tackles": 3,
+            "hitouts": 0,
+            "clearances": 1,
+            "free_kicks": {
+              "for": 1,
+              "against": 1
+            }
+          },
+          {
+            "player": {
+              "id": 886,
+              "number": 1
+            },
+            "goals": {
+              "total": 3,
+              "assists": 0
+            },
+            "behinds": 1,
+            "disposals": 14,
+            "kicks": 8,
+            "handballs": 6,
+            "marks": 6,
+            "tackles": 4,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 2
+            }
+          },
+          {
+            "player": {
+              "id": 887,
+              "number": 44
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 27,
+            "kicks": 17,
+            "handballs": 10,
+            "marks": 10,
+            "tackles": 1,
+            "hitouts": 0,
+            "clearances": 1,
+            "free_kicks": {
+              "for": 0,
+              "against": 2
+            }
+          },
+          {
+            "player": {
+              "id": 888,
+              "number": 3
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 25,
+            "kicks": 13,
+            "handballs": 12,
+            "marks": 6,
+            "tackles": 1,
+            "hitouts": 0,
+            "clearances": 3,
+            "free_kicks": {
+              "for": 0,
+              "against": 2
+            }
+          },
+          {
+            "player": {
+              "id": 1597,
+              "number": 2
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 10,
+            "kicks": 7,
+            "handballs": 3,
+            "marks": 0,
+            "tackles": 0,
+            "hitouts": 27,
+            "clearances": 8,
+            "free_kicks": {
+              "for": 2,
+              "against": 1
+            }
+          },
+          {
+            "player": {
+              "id": 1689,
+              "number": 29
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 15,
+            "kicks": 11,
+            "handballs": 4,
+            "marks": 5,
+            "tackles": 1,
+            "hitouts": 0,
+            "clearances": 1,
+            "free_kicks": {
+              "for": 1,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1769,
+              "number": 13
+            },
+            "goals": {
+              "total": 1,
+              "assists": 1
+            },
+            "behinds": 2,
+            "disposals": 11,
+            "kicks": 6,
+            "handballs": 5,
+            "marks": 2,
+            "tackles": 1,
+            "hitouts": 1,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 1,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1791,
+              "number": 38
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 11,
+            "kicks": 6,
+            "handballs": 5,
+            "marks": 5,
+            "tackles": 0,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1803,
+              "number": 34
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 0,
+            "kicks": 0,
+            "handballs": 0,
+            "marks": 0,
+            "tackles": 0,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1830,
+              "number": 8
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 21,
+            "kicks": 11,
+            "handballs": 10,
+            "marks": 2,
+            "tackles": 2,
+            "hitouts": 0,
+            "clearances": 3,
+            "free_kicks": {
+              "for": 1,
+              "against": 1
+            }
+          },
+          {
+            "player": {
+              "id": 1883,
+              "number": 28
+            },
+            "goals": {
+              "total": 1,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 4,
+            "kicks": 2,
+            "handballs": 2,
+            "marks": 1,
+            "tackles": 2,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 1,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1904,
+              "number": 10
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 24,
+            "kicks": 13,
+            "handballs": 11,
+            "marks": 2,
+            "tackles": 1,
+            "hitouts": 0,
+            "clearances": 1,
+            "free_kicks": {
+              "for": 3,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1945,
+              "number": 20
+            },
+            "goals": {
+              "total": 0,
+              "assists": 1
+            },
+            "behinds": 0,
+            "disposals": 21,
+            "kicks": 8,
+            "handballs": 13,
+            "marks": 5,
+            "tackles": 3,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 1,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1968,
+              "number": 22
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 10,
+            "kicks": 8,
+            "handballs": 2,
+            "marks": 3,
+            "tackles": 3,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 1,
+              "against": 2
+            }
+          },
+          {
+            "player": {
+              "id": 1973,
+              "number": 17
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 0,
+            "kicks": 0,
+            "handballs": 0,
+            "marks": 0,
+            "tackles": 0,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 2034,
+              "number": 21
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 0,
+            "kicks": 0,
+            "handballs": 0,
+            "marks": 0,
+            "tackles": 0,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 0
+            }
+          }
+        ]
+      },
+      {
+        "team": {
+          "id": 18
+        },
+        "players": [
+          {
+            "player": {
+              "id": 649,
+              "number": 3
+            },
+            "goals": {
+              "total": 0,
+              "assists": 2
+            },
+            "behinds": 0,
+            "disposals": 21,
+            "kicks": 11,
+            "handballs": 10,
+            "marks": 3,
+            "tackles": 9,
+            "hitouts": 0,
+            "clearances": 5,
+            "free_kicks": {
+              "for": 0,
+              "against": 1
+            }
+          },
+          {
+            "player": {
+              "id": 651,
+              "number": 4
+            },
+            "goals": {
+              "total": 5,
+              "assists": 4
+            },
+            "behinds": 0,
+            "disposals": 21,
+            "kicks": 15,
+            "handballs": 6,
+            "marks": 2,
+            "tackles": 1,
+            "hitouts": 0,
+            "clearances": 1,
+            "free_kicks": {
+              "for": 2,
+              "against": 3
+            }
+          },
+          {
+            "player": {
+              "id": 726,
+              "number": 25
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 17,
+            "kicks": 7,
+            "handballs": 10,
+            "marks": 3,
+            "tackles": 6,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 2,
+              "against": 1
+            }
+          },
+          {
+            "player": {
+              "id": 1081,
+              "number": 10
+            },
+            "goals": {
+              "total": 0,
+              "assists": 1
+            },
+            "behinds": 0,
+            "disposals": 37,
+            "kicks": 16,
+            "handballs": 21,
+            "marks": 4,
+            "tackles": 8,
+            "hitouts": 0,
+            "clearances": 11,
+            "free_kicks": {
+              "for": 1,
+              "against": 3
+            }
+          },
+          {
+            "player": {
+              "id": 1121,
+              "number": 6
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 0,
+            "kicks": 0,
+            "handballs": 0,
+            "marks": 0,
+            "tackles": 0,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1124,
+              "number": 27
+            },
+            "goals": {
+              "total": 0,
+              "assists": 1
+            },
+            "behinds": 0,
+            "disposals": 16,
+            "kicks": 7,
+            "handballs": 9,
+            "marks": 7,
+            "tackles": 2,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 1
+            }
+          },
+          {
+            "player": {
+              "id": 1129,
+              "number": 44
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 1,
+            "kicks": 0,
+            "handballs": 1,
+            "marks": 0,
+            "tackles": 0,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1130,
+              "number": 16
+            },
+            "goals": {
+              "total": 2,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 24,
+            "kicks": 16,
+            "handballs": 8,
+            "marks": 3,
+            "tackles": 5,
+            "hitouts": 0,
+            "clearances": 8,
+            "free_kicks": {
+              "for": 1,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1132,
+              "number": 32
+            },
+            "goals": {
+              "total": 0,
+              "assists": 1
+            },
+            "behinds": 0,
+            "disposals": 20,
+            "kicks": 9,
+            "handballs": 11,
+            "marks": 1,
+            "tackles": 2,
+            "hitouts": 26,
+            "clearances": 5,
+            "free_kicks": {
+              "for": 1,
+              "against": 2
+            }
+          },
+          {
+            "player": {
+              "id": 1133,
+              "number": 46
+            },
+            "goals": {
+              "total": 2,
+              "assists": 1
+            },
+            "behinds": 0,
+            "disposals": 18,
+            "kicks": 13,
+            "handballs": 5,
+            "marks": 4,
+            "tackles": 2,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 1,
+              "against": 1
+            }
+          },
+          {
+            "player": {
+              "id": 1134,
+              "number": 39
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 17,
+            "kicks": 11,
+            "handballs": 6,
+            "marks": 6,
+            "tackles": 2,
+            "hitouts": 0,
+            "clearances": 1,
+            "free_kicks": {
+              "for": 1,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1135,
+              "number": 14
+            },
+            "goals": {
+              "total": 1,
+              "assists": 1
+            },
+            "behinds": 0,
+            "disposals": 25,
+            "kicks": 11,
+            "handballs": 14,
+            "marks": 2,
+            "tackles": 8,
+            "hitouts": 0,
+            "clearances": 2,
+            "free_kicks": {
+              "for": 0,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1136,
+              "number": 7
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 28,
+            "kicks": 19,
+            "handballs": 9,
+            "marks": 4,
+            "tackles": 0,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1138,
+              "number": 26
+            },
+            "goals": {
+              "total": 2,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 6,
+            "kicks": 3,
+            "handballs": 3,
+            "marks": 0,
+            "tackles": 3,
+            "hitouts": 5,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 2
+            }
+          },
+          {
+            "player": {
+              "id": 1141,
+              "number": 31
+            },
+            "goals": {
+              "total": 0,
+              "assists": 2
+            },
+            "behinds": 0,
+            "disposals": 20,
+            "kicks": 6,
+            "handballs": 14,
+            "marks": 1,
+            "tackles": 1,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 1,
+              "against": 2
+            }
+          },
+          {
+            "player": {
+              "id": 1209,
+              "number": 20
+            },
+            "goals": {
+              "total": 5,
+              "assists": 1
+            },
+            "behinds": 4,
+            "disposals": 13,
+            "kicks": 12,
+            "handballs": 1,
+            "marks": 3,
+            "tackles": 3,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 2,
+              "against": 2
+            }
+          },
+          {
+            "player": {
+              "id": 1673,
+              "number": 17
+            },
+            "goals": {
+              "total": 1,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 31,
+            "kicks": 14,
+            "handballs": 17,
+            "marks": 5,
+            "tackles": 7,
+            "hitouts": 0,
+            "clearances": 4,
+            "free_kicks": {
+              "for": 0,
+              "against": 2
+            }
+          },
+          {
+            "player": {
+              "id": 1718,
+              "number": 5
+            },
+            "goals": {
+              "total": 3,
+              "assists": 0
+            },
+            "behinds": 1,
+            "disposals": 14,
+            "kicks": 8,
+            "handballs": 6,
+            "marks": 4,
+            "tackles": 6,
+            "hitouts": 0,
+            "clearances": 1,
+            "free_kicks": {
+              "for": 2,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1742,
+              "number": 1
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 14,
+            "kicks": 6,
+            "handballs": 8,
+            "marks": 1,
+            "tackles": 4,
+            "hitouts": 0,
+            "clearances": 2,
+            "free_kicks": {
+              "for": 0,
+              "against": 1
+            }
+          },
+          {
+            "player": {
+              "id": 1776,
+              "number": 35
+            },
+            "goals": {
+              "total": 3,
+              "assists": 1
+            },
+            "behinds": 3,
+            "disposals": 11,
+            "kicks": 9,
+            "handballs": 2,
+            "marks": 5,
+            "tackles": 0,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1800,
+              "number": 18
+            },
+            "goals": {
+              "total": 0,
+              "assists": 1
+            },
+            "behinds": 0,
+            "disposals": 22,
+            "kicks": 8,
+            "handballs": 14,
+            "marks": 1,
+            "tackles": 2,
+            "hitouts": 0,
+            "clearances": 1,
+            "free_kicks": {
+              "for": 0,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1841,
+              "number": 37
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 15,
+            "kicks": 5,
+            "handballs": 10,
+            "marks": 3,
+            "tackles": 4,
+            "hitouts": 0,
+            "clearances": 1,
+            "free_kicks": {
+              "for": 0,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1873,
+              "number": 30
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 0,
+            "kicks": 0,
+            "handballs": 0,
+            "marks": 0,
+            "tackles": 0,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1902,
+              "number": 13
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 0,
+            "kicks": 0,
+            "handballs": 0,
+            "marks": 0,
+            "tackles": 0,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 2033,
+              "number": 11
+            },
+            "goals": {
+              "total": 2,
+              "assists": 1
+            },
+            "behinds": 0,
+            "disposals": 29,
+            "kicks": 12,
+            "handballs": 17,
+            "marks": 2,
+            "tackles": 10,
+            "hitouts": 0,
+            "clearances": 2,
+            "free_kicks": {
+              "for": 2,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 2099,
+              "number": 19
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 10,
+            "kicks": 6,
+            "handballs": 4,
+            "marks": 3,
+            "tackles": 2,
+            "hitouts": 0,
+            "clearances": 1,
+            "free_kicks": {
+              "for": 0,
+              "against": 1
+            }
+          }
+        ]
+      }
+    ],
+    "savedAt": "2026-05-24T14:01:25.020Z"
+  },
+  "3443": {
+    "gameId": 3443,
+    "date": "2026-05-24",
+    "teams": [
+      {
+        "team": {
+          "id": 9
+        },
+        "players": [
+          {
+            "player": {
+              "id": 538,
+              "number": 11
+            },
+            "goals": {
+              "total": 1,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 18,
+            "kicks": 8,
+            "handballs": 10,
+            "marks": 2,
+            "tackles": 0,
+            "hitouts": 42,
+            "clearances": 2,
+            "free_kicks": {
+              "for": 1,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 885,
+              "number": 30
+            },
+            "goals": {
+              "total": 2,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 12,
+            "kicks": 9,
+            "handballs": 3,
+            "marks": 0,
+            "tackles": 6,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 2,
+              "against": 1
+            }
+          },
+          {
+            "player": {
+              "id": 896,
+              "number": 9
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 21,
+            "kicks": 9,
+            "handballs": 12,
+            "marks": 1,
+            "tackles": 10,
+            "hitouts": 0,
+            "clearances": 4,
+            "free_kicks": {
+              "for": 0,
+              "against": 1
+            }
+          },
+          {
+            "player": {
+              "id": 1078,
+              "number": 8
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 7,
+            "kicks": 5,
+            "handballs": 2,
+            "marks": 4,
+            "tackles": 2,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 3
+            }
+          },
+          {
+            "player": {
+              "id": 1080,
+              "number": 15
+            },
+            "goals": {
+              "total": 1,
+              "assists": 0
+            },
+            "behinds": 1,
+            "disposals": 22,
+            "kicks": 11,
+            "handballs": 11,
+            "marks": 7,
+            "tackles": 2,
+            "hitouts": 0,
+            "clearances": 2,
+            "free_kicks": {
+              "for": 0,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1084,
+              "number": 31
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 7,
+            "kicks": 5,
+            "handballs": 2,
+            "marks": 2,
+            "tackles": 3,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1085,
+              "number": 37
+            },
+            "goals": {
+              "total": 1,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 19,
+            "kicks": 11,
+            "handballs": 8,
+            "marks": 3,
+            "tackles": 4,
+            "hitouts": 0,
+            "clearances": 9,
+            "free_kicks": {
+              "for": 0,
+              "against": 1
+            }
+          },
+          {
+            "player": {
+              "id": 1086,
+              "number": 32
+            },
+            "goals": {
+              "total": 0,
+              "assists": 1
+            },
+            "behinds": 0,
+            "disposals": 23,
+            "kicks": 14,
+            "handballs": 9,
+            "marks": 1,
+            "tackles": 6,
+            "hitouts": 0,
+            "clearances": 7,
+            "free_kicks": {
+              "for": 2,
+              "against": 1
+            }
+          },
+          {
+            "player": {
+              "id": 1087,
+              "number": 36
+            },
+            "goals": {
+              "total": 0,
+              "assists": 2
+            },
+            "behinds": 2,
+            "disposals": 25,
+            "kicks": 16,
+            "handballs": 9,
+            "marks": 2,
+            "tackles": 9,
+            "hitouts": 0,
+            "clearances": 6,
+            "free_kicks": {
+              "for": 2,
+              "against": 2
+            }
+          },
+          {
+            "player": {
+              "id": 1088,
+              "number": 24
+            },
+            "goals": {
+              "total": 1,
+              "assists": 1
+            },
+            "behinds": 0,
+            "disposals": 16,
+            "kicks": 10,
+            "handballs": 6,
+            "marks": 3,
+            "tackles": 2,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 2,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1089,
+              "number": 17
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 1,
+            "disposals": 27,
+            "kicks": 19,
+            "handballs": 8,
+            "marks": 5,
+            "tackles": 2,
+            "hitouts": 0,
+            "clearances": 1,
+            "free_kicks": {
+              "for": 0,
+              "against": 1
+            }
+          },
+          {
+            "player": {
+              "id": 1090,
+              "number": 16
+            },
+            "goals": {
+              "total": 1,
+              "assists": 0
+            },
+            "behinds": 1,
+            "disposals": 9,
+            "kicks": 6,
+            "handballs": 3,
+            "marks": 4,
+            "tackles": 1,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1092,
+              "number": 10
+            },
+            "goals": {
+              "total": 1,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 13,
+            "kicks": 10,
+            "handballs": 3,
+            "marks": 6,
+            "tackles": 1,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 1,
+              "against": 4
+            }
+          },
+          {
+            "player": {
+              "id": 1093,
+              "number": 2
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 1,
+            "disposals": 12,
+            "kicks": 7,
+            "handballs": 5,
+            "marks": 5,
+            "tackles": 1,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 1,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1520,
+              "number": 35
+            },
+            "goals": {
+              "total": 1,
+              "assists": 3
+            },
+            "behinds": 1,
+            "disposals": 12,
+            "kicks": 3,
+            "handballs": 9,
+            "marks": 3,
+            "tackles": 8,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 2,
+              "against": 2
+            }
+          },
+          {
+            "player": {
+              "id": 1736,
+              "number": 22
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 16,
+            "kicks": 9,
+            "handballs": 7,
+            "marks": 3,
+            "tackles": 3,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1737,
+              "number": 6
+            },
+            "goals": {
+              "total": 0,
+              "assists": 1
+            },
+            "behinds": 0,
+            "disposals": 13,
+            "kicks": 8,
+            "handballs": 5,
+            "marks": 2,
+            "tackles": 0,
+            "hitouts": 0,
+            "clearances": 2,
+            "free_kicks": {
+              "for": 0,
+              "against": 2
+            }
+          },
+          {
+            "player": {
+              "id": 1755,
+              "number": 12
+            },
+            "goals": {
+              "total": 1,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 12,
+            "kicks": 9,
+            "handballs": 3,
+            "marks": 8,
+            "tackles": 1,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 1
+            }
+          },
+          {
+            "player": {
+              "id": 1811,
+              "number": 14
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 13,
+            "kicks": 8,
+            "handballs": 5,
+            "marks": 5,
+            "tackles": 2,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 2,
+              "against": 1
+            }
+          },
+          {
+            "player": {
+              "id": 1843,
+              "number": 45
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 0,
+            "kicks": 0,
+            "handballs": 0,
+            "marks": 0,
+            "tackles": 0,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1849,
+              "number": 27
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 5,
+            "kicks": 2,
+            "handballs": 3,
+            "marks": 2,
+            "tackles": 0,
+            "hitouts": 8,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 2
+            }
+          },
+          {
+            "player": {
+              "id": 1861,
+              "number": 21
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 2,
+            "disposals": 9,
+            "kicks": 5,
+            "handballs": 4,
+            "marks": 3,
+            "tackles": 4,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 1,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1891,
+              "number": 4
+            },
+            "goals": {
+              "total": 2,
+              "assists": 0
+            },
+            "behinds": 1,
+            "disposals": 16,
+            "kicks": 7,
+            "handballs": 9,
+            "marks": 3,
+            "tackles": 1,
+            "hitouts": 0,
+            "clearances": 3,
+            "free_kicks": {
+              "for": 1,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1893,
+              "number": 43
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 0,
+            "kicks": 0,
+            "handballs": 0,
+            "marks": 0,
+            "tackles": 0,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 2056,
+              "number": 33
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 0,
+            "kicks": 0,
+            "handballs": 0,
+            "marks": 0,
+            "tackles": 0,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 2088,
+              "number": 41
+            },
+            "goals": {
+              "total": 1,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 9,
+            "kicks": 7,
+            "handballs": 2,
+            "marks": 4,
+            "tackles": 4,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 1
+            }
+          }
+        ]
+      },
+      {
+        "team": {
+          "id": 16
+        },
+        "players": [
+          {
+            "player": {
+              "id": 679,
+              "number": 1
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 1,
+            "disposals": 17,
+            "kicks": 6,
+            "handballs": 11,
+            "marks": 3,
+            "tackles": 0,
+            "hitouts": 0,
+            "clearances": 4,
+            "free_kicks": {
+              "for": 0,
+              "against": 1
+            }
+          },
+          {
+            "player": {
+              "id": 808,
+              "number": 19
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 20,
+            "kicks": 13,
+            "handballs": 7,
+            "marks": 3,
+            "tackles": 4,
+            "hitouts": 0,
+            "clearances": 2,
+            "free_kicks": {
+              "for": 0,
+              "against": 1
+            }
+          },
+          {
+            "player": {
+              "id": 904,
+              "number": 17
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 17,
+            "kicks": 12,
+            "handballs": 5,
+            "marks": 2,
+            "tackles": 1,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 1,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 936,
+              "number": 7
+            },
+            "goals": {
+              "total": 0,
+              "assists": 1
+            },
+            "behinds": 0,
+            "disposals": 13,
+            "kicks": 8,
+            "handballs": 5,
+            "marks": 1,
+            "tackles": 10,
+            "hitouts": 24,
+            "clearances": 6,
+            "free_kicks": {
+              "for": 4,
+              "against": 1
+            }
+          },
+          {
+            "player": {
+              "id": 937,
+              "number": 4
+            },
+            "goals": {
+              "total": 2,
+              "assists": 1
+            },
+            "behinds": 0,
+            "disposals": 29,
+            "kicks": 11,
+            "handballs": 18,
+            "marks": 6,
+            "tackles": 2,
+            "hitouts": 0,
+            "clearances": 6,
+            "free_kicks": {
+              "for": 0,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 938,
+              "number": 31
+            },
+            "goals": {
+              "total": 0,
+              "assists": 1
+            },
+            "behinds": 1,
+            "disposals": 31,
+            "kicks": 19,
+            "handballs": 12,
+            "marks": 5,
+            "tackles": 2,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 1,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 944,
+              "number": 33
+            },
+            "goals": {
+              "total": 2,
+              "assists": 3
+            },
+            "behinds": 1,
+            "disposals": 18,
+            "kicks": 9,
+            "handballs": 9,
+            "marks": 3,
+            "tackles": 2,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 2,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 945,
+              "number": 13
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 0,
+            "kicks": 0,
+            "handballs": 0,
+            "marks": 0,
+            "tackles": 0,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 946,
+              "number": 20
+            },
+            "goals": {
+              "total": 3,
+              "assists": 2
+            },
+            "behinds": 0,
+            "disposals": 30,
+            "kicks": 22,
+            "handballs": 8,
+            "marks": 4,
+            "tackles": 3,
+            "hitouts": 0,
+            "clearances": 10,
+            "free_kicks": {
+              "for": 0,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 949,
+              "number": 14
+            },
+            "goals": {
+              "total": 2,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 12,
+            "kicks": 9,
+            "handballs": 3,
+            "marks": 4,
+            "tackles": 3,
+            "hitouts": 0,
+            "clearances": 3,
+            "free_kicks": {
+              "for": 2,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 953,
+              "number": 30
+            },
+            "goals": {
+              "total": 0,
+              "assists": 1
+            },
+            "behinds": 0,
+            "disposals": 10,
+            "kicks": 3,
+            "handballs": 7,
+            "marks": 2,
+            "tackles": 3,
+            "hitouts": 0,
+            "clearances": 1,
+            "free_kicks": {
+              "for": 1,
+              "against": 1
+            }
+          },
+          {
+            "player": {
+              "id": 957,
+              "number": 18
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 11,
+            "kicks": 8,
+            "handballs": 3,
+            "marks": 4,
+            "tackles": 1,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 1
+            }
+          },
+          {
+            "player": {
+              "id": 1408,
+              "number": 8
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 23,
+            "kicks": 14,
+            "handballs": 9,
+            "marks": 5,
+            "tackles": 8,
+            "hitouts": 0,
+            "clearances": 4,
+            "free_kicks": {
+              "for": 1,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1644,
+              "number": 24
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 11,
+            "kicks": 5,
+            "handballs": 6,
+            "marks": 4,
+            "tackles": 2,
+            "hitouts": 0,
+            "clearances": 1,
+            "free_kicks": {
+              "for": 1,
+              "against": 1
+            }
+          },
+          {
+            "player": {
+              "id": 1652,
+              "number": 29
+            },
+            "goals": {
+              "total": 0,
+              "assists": 1
+            },
+            "behinds": 0,
+            "disposals": 17,
+            "kicks": 10,
+            "handballs": 7,
+            "marks": 5,
+            "tackles": 1,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 1
+            }
+          },
+          {
+            "player": {
+              "id": 1714,
+              "number": 32
+            },
+            "goals": {
+              "total": 2,
+              "assists": 0
+            },
+            "behinds": 2,
+            "disposals": 12,
+            "kicks": 9,
+            "handballs": 3,
+            "marks": 4,
+            "tackles": 0,
+            "hitouts": 0,
+            "clearances": 1,
+            "free_kicks": {
+              "for": 1,
+              "against": 3
+            }
+          },
+          {
+            "player": {
+              "id": 1756,
+              "number": 9
+            },
+            "goals": {
+              "total": 0,
+              "assists": 1
+            },
+            "behinds": 1,
+            "disposals": 30,
+            "kicks": 14,
+            "handballs": 16,
+            "marks": 6,
+            "tackles": 3,
+            "hitouts": 0,
+            "clearances": 4,
+            "free_kicks": {
+              "for": 2,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1806,
+              "number": 36
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 3,
+            "kicks": 0,
+            "handballs": 3,
+            "marks": 0,
+            "tackles": 0,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1807,
+              "number": 27
+            },
+            "goals": {
+              "total": 1,
+              "assists": 1
+            },
+            "behinds": 0,
+            "disposals": 18,
+            "kicks": 10,
+            "handballs": 8,
+            "marks": 4,
+            "tackles": 3,
+            "hitouts": 0,
+            "clearances": 1,
+            "free_kicks": {
+              "for": 0,
+              "against": 2
+            }
+          },
+          {
+            "player": {
+              "id": 1885,
+              "number": 42
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 0,
+            "kicks": 0,
+            "handballs": 0,
+            "marks": 0,
+            "tackles": 0,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1941,
+              "number": 6
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 8,
+            "kicks": 5,
+            "handballs": 3,
+            "marks": 1,
+            "tackles": 2,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 1980,
+              "number": 11
+            },
+            "goals": {
+              "total": 0,
+              "assists": 1
+            },
+            "behinds": 0,
+            "disposals": 8,
+            "kicks": 5,
+            "handballs": 3,
+            "marks": 3,
+            "tackles": 3,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 2
+            }
+          },
+          {
+            "player": {
+              "id": 2012,
+              "number": 37
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 10,
+            "kicks": 7,
+            "handballs": 3,
+            "marks": 5,
+            "tackles": 3,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 2
+            }
+          },
+          {
+            "player": {
+              "id": 2023,
+              "number": 16
+            },
+            "goals": {
+              "total": 1,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 7,
+            "kicks": 4,
+            "handballs": 3,
+            "marks": 2,
+            "tackles": 3,
+            "hitouts": 1,
+            "clearances": 2,
+            "free_kicks": {
+              "for": 1,
+              "against": 1
+            }
+          },
+          {
+            "player": {
+              "id": 2043,
+              "number": 28
+            },
+            "goals": {
+              "total": 1,
+              "assists": 0
+            },
+            "behinds": 1,
+            "disposals": 11,
+            "kicks": 9,
+            "handballs": 2,
+            "marks": 3,
+            "tackles": 3,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 6,
+              "against": 0
+            }
+          },
+          {
+            "player": {
+              "id": 2052,
+              "number": 25
+            },
+            "goals": {
+              "total": 0,
+              "assists": 0
+            },
+            "behinds": 0,
+            "disposals": 0,
+            "kicks": 0,
+            "handballs": 0,
+            "marks": 0,
+            "tackles": 0,
+            "hitouts": 0,
+            "clearances": 0,
+            "free_kicks": {
+              "for": 0,
+              "against": 0
+            }
+          }
+        ]
+      }
+    ],
+    "savedAt": "2026-05-24T14:01:25.027Z"
   }
 }
