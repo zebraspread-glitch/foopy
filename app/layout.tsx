@@ -5,6 +5,7 @@ import GlobalSideDrawer from "./components/GlobalSideDrawer";
 import NavigationEvents from "./components/NavigationEvents";
 import ThemeModeBootstrap from "./components/ThemeModeBootstrap";
 import AuraToast from "./components/AuraToast";
+import HapticsProvider from "./components/HapticsProvider";
 
 export const metadata: Metadata = {
   title: "Foopy | AFL Live Scores & Picks",
@@ -40,6 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <ThemeModeBootstrap />
+        <HapticsProvider />
         <NavigationEvents />
         <GlobalSideDrawer />
         <div className="page-shell">

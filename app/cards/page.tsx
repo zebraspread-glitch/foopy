@@ -6,6 +6,7 @@ import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
 import type { User } from "@supabase/supabase-js";
 import TradesInboxModal from "@/app/components/TradesInboxModal";
+import { PlayerCard as SharedPlayerCard } from "@/app/components/PlayerCard";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -753,7 +754,18 @@ export default function CardsPage() {
             ) : (
               <div className="cards-grid" style={cardGridStyle}>
                 {displayCards.map((card) => (
-                  <PlayerCard key={card.id} card={card} onSell={() => setSellCard(card)} />
+                  <div key={card.id} className="card-item" style={{ cursor: "pointer" }} onClick={() => setSellCard(card)}>
+                    <SharedPlayerCard card={{
+                      playerId: card.player_id,
+                      playerName: card.player_name,
+                      playerFolder: TEAM_PLAYER_FOLDER[card.team] ?? card.team.toLowerCase().replace(/[^a-z]/g, ""),
+                      playerTeam: card.team,
+                      playerTeamLogo: card.team_logo,
+                      rarity: card.rarity,
+                      rating: card.rating,
+                      duplicateCount: card.duplicate_count,
+                    }} />
+                  </div>
                 ))}
               </div>
             )}
@@ -900,90 +912,6 @@ function PackShopPreview() {
         ))}
       </div>
     </section>
-  );
-}
-
-// ── Player Card ───────────────────────────────────────────────────────────────
-
-function PlayerCard({ card, onSell }: { card: UserCard; onSell?: () => void }) {
-  const meta = RARITY_META[card.rarity];
-
-  return (
-    <div
-      className={onSell ? "card-item" : undefined}
-      style={{
-        position: "relative",
-        width: "100%",
-        aspectRatio: "3/4.2",
-        borderRadius: 14,
-        overflow: "hidden",
-        boxShadow: `0 0 0 1.5px ${meta.color}55, 0 8px 28px rgba(0,0,0,0.55)`,
-        flexShrink: 0,
-      }}
-      onClick={onSell}
-    >
-      {/* Rarity template background */}
-      <img
-        src={`/cards/${card.rarity}.png`}
-        alt={card.rarity}
-        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-      />
-
-      {/* Dark gradient overlay for readability */}
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.15) 0%, rgba(0,0,0,.0) 40%, rgba(0,0,0,.72) 75%, rgba(0,0,0,.88) 100%)" }} />
-
-      {/* Rating badge — top right */}
-      <div style={{
-        position: "absolute", top: 8, right: 8,
-        background: "rgba(0,0,0,.72)", borderRadius: 8,
-        padding: "3px 7px", fontSize: 13, fontWeight: 1000, color: meta.color,
-        border: `1px solid ${meta.color}55`,
-        lineHeight: 1,
-      }}>
-        {card.rating}
-      </div>
-
-      {/* Duplicate badge — top left */}
-      {card.duplicate_count > 1 && (
-        <div style={{
-          position: "absolute", top: 8, left: 8,
-          background: "rgba(0,0,0,.72)", borderRadius: 8,
-          padding: "3px 7px", fontSize: 10, fontWeight: 900, color: "var(--text-2)",
-          border: "1px solid var(--border-2)",
-        }}>
-          ×{card.duplicate_count}
-        </div>
-      )}
-
-      {/* Circular player photo — centered upper area */}
-      <div style={{
-        position: "absolute",
-        top: "18%",
-        left: "50%",
-        transform: "translateX(-50%)",
-        width: "68%",
-        aspectRatio: "1/1",
-        borderRadius: "50%",
-        overflow: "hidden",
-        background: (TEAM_COLORS[card.team] ?? "#1e2438") + "33",
-      }}>
-        <CardPlayerImage card={card} imageStyle={cardPlayerImageStyle} />
-      </div>
-
-      {/* Player name — centered just below player circle */}
-      <div style={{ position: "absolute", top: "71%", left: 0, right: 0, textAlign: "center", padding: "0 5px" }}>
-        <div style={{ fontSize: 10, fontWeight: 900, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: `0 0 10px ${meta.glow}` }}>
-          {card.player_name}
-        </div>
-      </div>
-
-      {/* Team logo — bottom left */}
-      <div style={{ position: "absolute", width: 18, height: 18, bottom: 5, left: 5, borderRadius: "50%", overflow: "hidden", background: "rgba(0,0,0,.55)", border: "1.5px solid var(--border-3)" }}>
-        <img src={card.team_logo} alt={card.team} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-      </div>
-      {/* Year */}
-      <div style={{ position: "absolute", bottom: 5, right: 5, fontSize: 8, fontWeight: 900, color: "rgba(255,255,255,.55)", letterSpacing: ".05em", background: "rgba(0,0,0,.7)", borderRadius: 4, padding: "1px 4px" }}>2025</div>
-    </div>
   );
 }
 
@@ -1187,33 +1115,22 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
             gap: 6,
             marginBottom: 14,
           }}>
-            {cards.map((card, i) => {
-              const m = RARITY_META[card.rarity];
-              return (
-                <div key={i} style={{ position: "relative", aspectRatio: "3/4.2", borderRadius: 10, overflow: "hidden", boxShadow: `0 0 0 1.5px ${m.color}99, 0 6px 20px ${m.glow}` }}>
-                  <img src={`/cards/${card.rarity}.png`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.08) 0%, rgba(0,0,0,0) 38%, rgba(0,0,0,.65) 72%, rgba(0,0,0,.92) 100%)" }} />
-                  {/* Rating */}
-                  <div style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,.82)", borderRadius: 5, padding: "1px 5px", fontSize: 9, fontWeight: 1000, color: m.color, border: `1px solid ${m.color}44` }}>{card.rating}</div>
-                  {/* NEW badge */}
-                  {card.is_new && <div style={{ position: "absolute", top: 6, left: "50%", transform: "translateX(-50%)", background: "linear-gradient(90deg,#16a34a,#22c55e)", borderRadius: 99, padding: "2px 7px", fontSize: 7, fontWeight: 900, color: "var(--text-1)", letterSpacing: ".1em", boxShadow: "0 2px 8px rgba(34,197,94,.5)", whiteSpace: "nowrap" }}>✦ NEW</div>}
-                  {/* Player circle */}
-                  <div style={{ position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)", width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", background: "rgba(0,0,0,0.18)" }}>
-                    <CardPlayerImage card={card} imageStyle={cardPlayerImageStyle} />
-                  </div>
-                  {/* Player name */}
-                  <div style={{ position: "absolute", top: "71%", left: 0, right: 0, textAlign: "center", padding: "0 4px" }}>
-                    <div style={{ fontSize: 7, fontWeight: 900, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: `0 0 8px ${m.glow}` }}>{card.player_name}</div>
-                  </div>
-                  {/* Team logo */}
-                  <div style={{ position: "absolute", width: 14, height: 14, bottom: 4, left: 4, borderRadius: "50%", overflow: "hidden", background: "rgba(0,0,0,.55)", border: "1.5px solid var(--border-3)" }}>
-                    <img src={card.team_logo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  </div>
-                  {/* Year */}
-                  <div style={{ position: "absolute", bottom: 4, right: 4, fontSize: 7, fontWeight: 900, color: "rgba(255,255,255,.55)", letterSpacing: ".05em", background: "rgba(0,0,0,.7)", borderRadius: 4, padding: "1px 3px" }}>2025</div>
-                </div>
-              );
-            })}
+            {cards.map((card, i) => (
+              <div key={i} style={{ position: "relative" }}>
+                <SharedPlayerCard card={{
+                  playerId: card.player_id,
+                  playerName: card.player_name,
+                  playerFolder: TEAM_PLAYER_FOLDER[card.team] ?? card.team.toLowerCase().replace(/[^a-z]/g, ""),
+                  playerTeam: card.team,
+                  playerTeamLogo: card.team_logo,
+                  rarity: card.rarity,
+                  rating: card.rating,
+                }} />
+                {card.is_new && (
+                  <div style={{ position: "absolute", top: 6, left: "50%", transform: "translateX(-50%)", background: "linear-gradient(90deg,#16a34a,#22c55e)", borderRadius: 99, padding: "2px 7px", fontSize: 7, fontWeight: 900, color: "#fff", letterSpacing: ".1em", boxShadow: "0 2px 8px rgba(34,197,94,.5)", whiteSpace: "nowrap", zIndex: 10, pointerEvents: "none" }}>✦ NEW</div>
+                )}
+              </div>
+            ))}
           </div>
 
           <button
@@ -1261,26 +1178,30 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
                 {current && meta && (
                   <>
                     <img src={`/cards/${current.rarity}.png`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.05) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,.72) 75%, rgba(0,0,0,.92) 100%)" }} />
-                    <div style={{ position: "absolute", top: 10, right: 10, background: "rgba(0,0,0,.8)", borderRadius: 9, padding: "3px 8px", fontSize: 14, fontWeight: 1000, color: meta.color, border: `1px solid ${meta.color}44` }}>
+                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.15) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,.72) 75%, rgba(0,0,0,.88) 100%)" }} />
+                    {/* Rating — ac-rating class for consistent sizing */}
+                    <div className="ac-rating" style={{ background: "rgba(0,0,0,.82)", fontWeight: 1000, color: meta.color, border: `1px solid ${meta.color}44` }}>
                       {current.rating}
                     </div>
                     {current.is_new && (
-                      <div style={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", background: "linear-gradient(90deg,#16a34a,#22c55e)", borderRadius: 99, padding: "4px 14px", fontSize: 11, fontWeight: 900, color: "var(--text-1)", letterSpacing: ".12em", boxShadow: "0 2px 12px rgba(34,197,94,.55)", whiteSpace: "nowrap" }}>
+                      <div style={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", background: "linear-gradient(90deg,#16a34a,#22c55e)", borderRadius: 99, padding: "4px 14px", fontSize: 11, fontWeight: 900, color: "#fff", letterSpacing: ".12em", boxShadow: "0 2px 12px rgba(34,197,94,.55)", whiteSpace: "nowrap", zIndex: 5 }}>
                         ✦ NEW
                       </div>
                     )}
+                    {/* Player photo circle */}
                     <div style={{ position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)", width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", background: (TEAM_COLORS[current.team] ?? "#1e2438") + "33" }}>
                       <CardPlayerImage card={current} imageStyle={cardPlayerImageStyle} loading="eager" />
                     </div>
-                    <div style={{ position: "absolute", top: "71%", left: 0, right: 0, textAlign: "center", padding: "0 10px" }}>
-                      <div style={{ fontSize: 13, fontWeight: 900, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: `0 0 12px ${meta.glow}` }}>{current.player_name}</div>
+                    {/* Player name */}
+                    <div style={{ position: "absolute", top: "71%", left: 0, right: 0, textAlign: "center", padding: "0 5px" }}>
+                      <div className="ac-name" style={{ fontWeight: 900, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: `0 0 12px ${meta.glow}` }}>{current.player_name}</div>
                     </div>
-                    <div style={{ position: "absolute", width: 26, height: 26, bottom: 8, left: 8, borderRadius: "50%", overflow: "hidden", background: "rgba(0,0,0,.55)", border: "1.5px solid rgba(255,255,255,.2)" }}>
+                    {/* Team logo */}
+                    <div className="ac-logo" style={{ background: "rgba(0,0,0,.55)", border: "1.5px solid var(--border-3)" }}>
                       <img src={current.team_logo} alt={current.team} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     </div>
                     {/* Year */}
-                    <div style={{ position: "absolute", bottom: 8, right: 8, fontSize: 10, fontWeight: 900, color: "rgba(255,255,255,.55)", letterSpacing: ".05em", background: "rgba(0,0,0,.7)", borderRadius: 5, padding: "2px 6px" }}>2025</div>
+                    <div className="ac-pos" style={{ background: "rgba(0,0,0,.7)", fontWeight: 900, color: "rgba(255,255,255,.75)", letterSpacing: ".05em" }}>2025</div>
                   </>
                 )}
               </div>

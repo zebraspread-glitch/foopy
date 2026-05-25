@@ -7,6 +7,7 @@ import { getPassLevel, PLAYER_PASS_LEVELS, TEAM_PASS_LEVELS, type PlayerPass, ty
 import PassLeaderboard from "@/app/components/PassLeaderboard";
 import TeamPassLeaderboard from "@/app/components/TeamPassLeaderboard";
 import { supabase } from "@/app/lib/supabase";
+import { PlayerCard as SharedPlayerCard } from "@/app/components/PlayerCard";
 
 type Rarity = "bronze" | "silver" | "gold" | "emerald" | "sapphire" | "ruby" | "amethyst" | "diamond" | "pinkdiamond" | "mythic";
 
@@ -1160,76 +1161,21 @@ function AlbumSlot({ player, ownedCards, onCardClick }: {
   const unlocked = !!ownedCards && ownedCards.length > 0;
   const topCard = unlocked ? ownedCards[0] : null;
   const totalCopies = unlocked ? ownedCards.reduce((s, c) => s + c.duplicate_count, 0) : 0;
-  const meta = topCard ? RARITY_META[topCard.rarity] : null;
 
   return (
-    <div
-      style={{ position: "relative", aspectRatio: "3/4.2", cursor: unlocked ? "pointer" : "default" }}
-      onClick={() => { if (unlocked && ownedCards) onCardClick(ownedCards); }}
-    >
-      {/* Main card */}
-      <div style={{
-        position: "absolute", inset: 0, borderRadius: 9, overflow: "hidden", zIndex: 10,
-        boxShadow: unlocked && meta
-          ? `0 0 0 1.5px ${meta.color}99, 0 6px 20px ${meta.glow}`
-          : "0 0 0 1px var(--border-1)",
-        filter: unlocked ? "none" : "grayscale(1) brightness(0.18)",
-        transition: "box-shadow 0.2s ease",
-      }}>
-        <img
-          src={unlocked && topCard ? `/cards/${topCard.rarity}.png` : "/cards/bronze.png"}
-          alt=""
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-        />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.15) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,.72) 75%, rgba(0,0,0,.88) 100%)" }} />
-
-        {unlocked && topCard && meta ? (
-          <>
-            <div className="ac-rating" style={{ background: "rgba(0,0,0,.82)", fontWeight: 1000, color: meta.color, border: `1px solid ${meta.color}44` }}>
-              {topCard.rating}
-            </div>
-
-            {totalCopies > 1 && (
-              <div className="ac-dup" style={{ background: "rgba(0,0,0,.75)", fontWeight: 900, color: "rgba(255,255,255,.6)" }}>
-                ×{totalCopies}
-              </div>
-            )}
-
-            <div style={{
-              position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)",
-              width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden",
-              background: (TEAM_COLORS[player.team] ?? "#1e2438") + "33",
-            }}>
-              <img
-                src={`/players/${player.folder}/${player.id}.png`}
-                alt={player.name}
-                style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }}
-              />
-            </div>
-
-            <div style={{ position: "absolute", top: "71%", left: 0, right: 0, textAlign: "center", padding: "0 5px" }}>
-              <div className="ac-name" style={{ fontWeight: 900, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: `0 0 10px ${meta.glow}` }}>
-                {player.name}
-              </div>
-            </div>
-
-            <div className="ac-logo" style={{ background: "rgba(0,0,0,.55)", border: "1.5px solid var(--border-3)" }}>
-              <img src={player.teamLogo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            </div>
-
-            <div className="ac-pos" style={{ background: "rgba(0,0,0,.7)", fontWeight: 900, color: "rgba(255,255,255,.75)", letterSpacing: ".05em" }}>
-              2025
-            </div>
-          </>
-        ) : (
-          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4 }}>
-            <div style={{ fontSize: 14, opacity: 0.2 }}>🔒</div>
-            <div className="ac-name" style={{ fontWeight: 800, color: "rgba(255,255,255,.2)", textAlign: "center", padding: "0 4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "90%" }}>
-              {player.name}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+    <SharedPlayerCard
+      card={{
+        playerId: player.id,
+        playerName: player.name,
+        playerFolder: player.folder,
+        playerTeam: player.team,
+        playerTeamLogo: player.teamLogo,
+        rarity: topCard?.rarity ?? "bronze",
+        rating: topCard?.rating,
+        duplicateCount: totalCopies > 1 ? totalCopies : undefined,
+      }}
+      locked={!unlocked}
+      onClick={unlocked && ownedCards ? () => onCardClick(ownedCards) : undefined}
+    />
   );
 }

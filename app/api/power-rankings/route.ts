@@ -84,34 +84,84 @@ function buildSeasonRankings(seasonStats: {
       name:       p.name,
       team:       p.team ?? "",
       avgFoopy:   Number(avgFoopy.toFixed(1)),
+      // totalFoopy = accumulated season power (avg × games)
       totalFoopy: Number((avgFoopy * games).toFixed(1)),
       games,
     });
   }
+  // Season: rank by total accumulated foopy
   return result.sort((a, b) => b.totalFoopy - a.totalFoopy);
 }
 
-/* ── Period rankings: from game-stats.json with date filter ── */
-function buildPeriodRankings(
-  gameStats: Record<string, {
-    gameId: number; date: string;
-    teams: { team: { id: number }; players: {
+type GameStats = Record<string, {
+  gameId: number;
+  date: string;
+  teams: {
+    team: { id: number };
+    players: {
       player: { id: number; number: number };
       goals: { total: number; assists: number };
       behinds: number; disposals: number; kicks: number; handballs: number;
       marks: number; tackles: number; hitouts: number; clearances: number;
       free_kicks: { for: number; against: number };
-    }[] }[];
-  }>,
+    }[];
+  }[];
+}>;
+
+/**
+ * Group all game dates in game-stats.json into "rounds" by proximity.
+ * AFL games within a round are played over ~4 days (Thu–Sun).
+ * A gap > 3 days between consecutive game dates = new round.
+ *
+ * Returns a map of YYYY-MM-DD → round group number, where 1 = most recent round.
+ */
+function buildDateRoundMap(gameStats: GameStats): { map: Map<string, number>; totalRounds: number } {
+  // Collect all unique game dates and sort newest → oldest
+  const uniqueDates = [...new Set(
+    Object.values(gameStats)
+      .map(g => (g.date ?? "").slice(0, 10))
+      .filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d))
+  )].sort().reverse(); // newest first
+
+  if (!uniqueDates.length) return { map: new Map(), totalRounds: 0 };
+
+  const map = new Map<string, number>();
+  let roundGroup = 1;
+
+  for (let i = 0; i < uniqueDates.length; i++) {
+    if (i > 0) {
+      const prevMs = new Date(uniqueDates[i - 1]).getTime();
+      const currMs = new Date(uniqueDates[i]).getTime();
+      // Gap > 3 days between consecutive game dates means a new (older) round
+      if (prevMs - currMs > 3 * 86_400_000) {
+        roundGroup++;
+      }
+    }
+    map.set(uniqueDates[i], roundGroup);
+  }
+
+  return { map, totalRounds: roundGroup };
+}
+
+/**
+ * Build player rankings from the last `lastNRounds` round groups.
+ * Round group 1 = most recent round, 2 = second most recent, etc.
+ * Sorts by avgFoopy so the score stays on the familiar 0–10 scale.
+ */
+function buildRoundRankings(
+  gameStats: GameStats,
   playerLookup: Map<number, { id: string; name: string; team: string }>,
-  cutoffDays: number
+  dateRoundMap: Map<string, number>,
+  lastNRounds: number
 ): PlayerRank[] {
-  const cutoff = new Date(Date.now() - cutoffDays * 86_400_000);
   const totals = new Map<string, { id: string; name: string; team: string; totalFoopy: number; games: number }>();
 
   for (const game of Object.values(gameStats)) {
-    const gameDate = new Date(game.date);
-    if (gameDate < cutoff) continue;
+    const dateKey = (game.date ?? "").slice(0, 10);
+    const roundGroup = dateRoundMap.get(dateKey);
+
+    // Skip games outside the requested round window
+    if (roundGroup === undefined || roundGroup > lastNRounds) continue;
 
     for (const teamData of game.teams ?? []) {
       for (const ps of teamData.players ?? []) {
@@ -153,7 +203,8 @@ function buildPeriodRankings(
       avgFoopy:   Number((p.totalFoopy / p.games).toFixed(1)),
       games:      p.games,
     }))
-    .sort((a, b) => b.totalFoopy - a.totalFoopy);
+    // Sort by avgFoopy: keeps the score on 0–10 scale regardless of how many rounds
+    .sort((a, b) => b.avgFoopy - a.avgFoopy);
 }
 
 export async function GET() {
@@ -163,15 +214,21 @@ export async function GET() {
     import("@/app/data/players.json"),
   ]);
 
-  // Build player ID → {id, name, team} lookup from players.json
+  // Build player API-Sports ID → {id, name, team} lookup
   const playerLookup = new Map<number, { id: string; name: string; team: string }>();
   for (const p of playersMod.default as { id: string; name: string; team: string; apiSportsId?: number | null }[]) {
     if (p.apiSportsId) playerLookup.set(Number(p.apiSportsId), { id: p.id, name: p.name, team: p.team ?? "" });
   }
 
-  const season = buildSeasonRankings(seasonMod.default as Parameters<typeof buildSeasonRankings>[0]);
-  const sevenDay  = buildPeriodRankings(gameStatsMod.default as Parameters<typeof buildPeriodRankings>[0], playerLookup, 7);
-  const thirtyDay = buildPeriodRankings(gameStatsMod.default as Parameters<typeof buildPeriodRankings>[0], playerLookup, 30);
+  const gameStats = gameStatsMod.default as GameStats;
 
-  return NextResponse.json({ "7d": sevenDay, "30d": thirtyDay, season });
+  // Build round-group map entirely from game-stats.json (no external dependencies)
+  const { map: dateRoundMap } = buildDateRoundMap(gameStats);
+
+  const season = buildSeasonRankings(seasonMod.default as Parameters<typeof buildSeasonRankings>[0]);
+  const r1 = buildRoundRankings(gameStats, playerLookup, dateRoundMap, 1);
+  const r3 = buildRoundRankings(gameStats, playerLookup, dateRoundMap, 3);
+  const r5 = buildRoundRankings(gameStats, playerLookup, dateRoundMap, 5);
+
+  return NextResponse.json({ r1, r3, r5, season });
 }

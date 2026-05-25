@@ -48,6 +48,18 @@ type StatLeader = {
   statLine: string;
 };
 
+type PlayerStreakEntry = {
+  id: string;
+  name: string;
+  team: string;
+  image: string;
+  teamLogo: string;
+  teamColor: string;
+  streak: number;
+  label: string;
+  emoji: string;
+};
+
 type PlayerStatsPlayer = {
   id?: string;
   name?: string;
@@ -586,7 +598,7 @@ export default function HomePage() {
   const [hasLoadedSavedRound, setHasLoadedSavedRound] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [pullVisible, setPullVisible] = useState(false);
-  const [streaksExpanded, setStreaksExpanded] = useState(false);
+  const [showStreaksPopup, setShowStreaksPopup] = useState(false);
   const [mounted, setMounted] = useState(false);
   const roundRef = useRef<HTMLDivElement | null>(null);
   const touchStartY = useRef(0);
@@ -639,6 +651,23 @@ export default function HomePage() {
   };
 
   useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    if (!showStreaksPopup) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setShowStreaksPopup(false);
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [showStreaksPopup]);
 
   useEffect(() => {
     // Ref ensures round is set only once — cached load shouldn't be overridden by fresh load
@@ -1202,19 +1231,7 @@ free_kicks?: {
       if (p.apiSportsId) byApiId.set(p.apiSportsId, p);
     }
 
-    type StreakEntry = {
-      id: string;
-      name: string;
-      team: string;
-      image: string;
-      teamLogo: string;
-      teamColor: string;
-      streak: number;
-      label: string;
-      emoji: string;
-    };
-
-    const results: StreakEntry[] = [];
+    const results: PlayerStreakEntry[] = [];
 
     const STREAK_DEFS: Array<{ key: "goals" | "disposals" | "kicks" | "tackles"; threshold: number; label: string; emoji: string; min: number }> = [
       { key: "goals",     threshold: 1,  label: "game goal streak",        emoji: "🎯", min: 4 },
@@ -1660,53 +1677,110 @@ free_kicks?: {
 
         {/* ── Player Streaks ── */}
         {playerStreaks.length > 0 && selectedRound === currentRound && (
-          <div style={streakSectionStyle}>
-            <div style={streakHeaderStyle}>
-              <span style={{ fontSize: 16 }}>🔥</span>
-              <span style={streakTitleStyle}>Player Streaks</span>
+          <>
+            <div style={mobileGroupLabelStyle}>Player Streaks</div>
+            <div style={streakSectionStyle}>
+              {playerStreaks.slice(0, 5).map((streak, i) => (
+                <PlayerStreakRow key={`${streak.name}-${streak.label}`} streak={streak} index={i} mounted={mounted} />
+              ))}
+              {playerStreaks.length > 5 && (
+                <button
+                  onClick={() => setShowStreaksPopup(true)}
+                  style={{ width: "100%", padding: "12px", background: "none", border: "none", borderTop: "1px solid var(--border-1)", color: "var(--text-3)", fontSize: 13, fontWeight: 700, cursor: "pointer", letterSpacing: "0.02em" }}
+                >
+                  {`View ${playerStreaks.length - 5} more`}
+                </button>
+              )}
             </div>
-            {(streaksExpanded ? playerStreaks : playerStreaks.slice(0, 5)).map((s, i) => (
-              <Link key={`${s.name}-${s.label}`} href={`/player/${s.id}`} prefetch={false} style={{ ...streakRowStyle, borderTop: i === 0 ? "none" : "1px solid var(--border-1)", textDecoration: "none", color: "inherit" }}>
-                {/* Avatar */}
-                <div style={{ width: 40, height: 40, borderRadius: "50%", flexShrink: 0, background: s.teamColor, position: "relative", overflow: "hidden" }}>
-                  {mounted && (
-                    <PlayerPhoto
-                      candidates={playerImageCandidates(s.name, s.team)}
-                      alt={s.name}
-                      imageStyle={streakAvatarImageStyle}
-                      fallbackStyle={streakAvatarFallbackStyle}
-                      initials={getInitials(s.name)}
-                    />
-                  )}
-                </div>
-                {/* Text */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={streakNameStyle}>{s.name}</div>
-                  <div style={streakLabelStyle}>{s.label}</div>
-                </div>
-                {/* Team logo */}
-                {s.teamLogo && (
-                  <div style={{ width: 32, height: 32, borderRadius: "50%", flexShrink: 0, background: s.teamColor, position: "relative", overflow: "hidden" }}>
-                    {mounted && (
-                      <img src={s.teamLogo} alt={s.team} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-                    )}
-                  </div>
-                )}
-              </Link>
-            ))}
-            {playerStreaks.length > 5 && (
-              <button
-                onClick={() => setStreaksExpanded(e => !e)}
-                style={{ width: "100%", padding: "12px", background: "none", border: "none", borderTop: "1px solid var(--border-1)", color: "var(--text-3)", fontSize: 13, fontWeight: 700, cursor: "pointer", letterSpacing: "0.02em" }}
-              >
-                {streaksExpanded ? "Show less" : `View ${playerStreaks.length - 5} more`}
-              </button>
-            )}
-          </div>
+          </>
         )}
       </section>
     </main>
+    {showStreaksPopup && (
+      <div style={streakPopupBackdropStyle} onClick={() => setShowStreaksPopup(false)}>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="player-streaks-title"
+          style={streakPopupStyle}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div style={streakPopupHeaderStyle}>
+            <div>
+              <div id="player-streaks-title" style={{ ...mobileGroupLabelStyle, padding: 0 }}>Player Streaks</div>
+              <div style={streakPopupCountStyle}>{playerStreaks.length} active streaks</div>
+            </div>
+            <button type="button" aria-label="Close player streaks" onClick={() => setShowStreaksPopup(false)} style={streakPopupCloseStyle}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+                <path d="M18 6 6 18" />
+                <path d="m6 6 12 12" />
+              </svg>
+            </button>
+          </div>
+          <div style={streakPopupListStyle}>
+            {playerStreaks.map((streak, i) => (
+              <PlayerStreakRow
+                key={`${streak.name}-${streak.label}-popup`}
+                streak={streak}
+                index={i}
+                mounted={mounted}
+                onNavigate={() => setShowStreaksPopup(false)}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    )}
     </>
+  );
+}
+
+function PlayerStreakRow({
+  streak,
+  index,
+  mounted,
+  onNavigate,
+}: {
+  streak: PlayerStreakEntry;
+  index: number;
+  mounted: boolean;
+  onNavigate?: () => void;
+}) {
+  return (
+    <Link
+      href={`/player/${streak.id}`}
+      prefetch={false}
+      onClick={onNavigate}
+      style={{
+        ...streakRowStyle,
+        borderTop: index === 0 ? "none" : "1px solid var(--border-1)",
+        textDecoration: "none",
+        color: "inherit",
+      }}
+    >
+      <div style={{ width: 40, height: 40, borderRadius: "50%", flexShrink: 0, background: streak.teamColor, position: "relative", overflow: "hidden" }}>
+        {mounted && (
+          <PlayerPhoto
+            candidates={playerImageCandidates(streak.name, streak.team)}
+            alt={streak.name}
+            imageStyle={streakAvatarImageStyle}
+            fallbackStyle={streakAvatarFallbackStyle}
+            initials={getInitials(streak.name)}
+          />
+        )}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={streakNameStyle}>{streak.name}</div>
+        <div style={streakLabelStyle}>{streak.label}</div>
+      </div>
+      {streak.teamLogo && (
+        <div style={{ width: 32, height: 32, borderRadius: "50%", flexShrink: 0, background: streak.teamColor, position: "relative", overflow: "hidden" }}>
+          {mounted && (
+            <img src={streak.teamLogo} alt={streak.team} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+          )}
+        </div>
+      )}
+    </Link>
   );
 }
 
@@ -2713,20 +2787,62 @@ const streakSectionStyle: React.CSSProperties = {
   boxShadow: "0 2px 12px rgba(0,0,0,0.35)",
 };
 
-const streakHeaderStyle: React.CSSProperties = {
+const streakPopupBackdropStyle: React.CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  zIndex: 160,
   display: "flex",
   alignItems: "center",
-  gap: "8px",
-  padding: "14px 16px 12px",
+  justifyContent: "center",
+  padding: "18px 12px calc(18px + env(safe-area-inset-bottom))",
+  background: "rgba(0,0,0,0.72)",
+  backdropFilter: "blur(12px)",
+  WebkitBackdropFilter: "blur(12px)",
+};
+
+const streakPopupStyle: React.CSSProperties = {
+  width: "min(680px, 100%)",
+  maxHeight: "min(78dvh, 680px)",
+  borderRadius: "18px",
+  border: "1px solid var(--border-2)",
+  background: "var(--surface-3)",
+  boxShadow: "0 24px 80px rgba(0,0,0,0.72)",
+  overflow: "hidden",
+  display: "flex",
+  flexDirection: "column",
+};
+
+const streakPopupHeaderStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "16px",
+  padding: "16px 16px 12px",
   borderBottom: "1px solid var(--border-1)",
 };
 
-const streakTitleStyle: React.CSSProperties = {
-  fontSize: "13px",
-  fontWeight: 800,
-  letterSpacing: "0.08em",
-  textTransform: "uppercase",
-  color: "rgba(255,255,255,0.55)",
+const streakPopupCountStyle: React.CSSProperties = {
+  marginTop: "4px",
+  fontSize: "12px",
+  fontWeight: 700,
+  color: "var(--text-3)",
+};
+
+const streakPopupCloseStyle: React.CSSProperties = {
+  width: 36,
+  height: 36,
+  borderRadius: "50%",
+  background: "rgba(255,255,255,0.07)",
+  color: "var(--text-1)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexShrink: 0,
+};
+
+const streakPopupListStyle: React.CSSProperties = {
+  overflowY: "auto",
+  WebkitOverflowScrolling: "touch",
 };
 
 const streakRowStyle: React.CSSProperties = {

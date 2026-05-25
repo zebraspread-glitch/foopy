@@ -20,7 +20,7 @@ type Game = {
   date?: string;
 };
 
-type Period = "7d" | "30d" | "season";
+type Period = "r1" | "r3" | "r5" | "season";
 type View   = "player" | "team";
 
 type TeamRank = {
@@ -111,25 +111,20 @@ const TEAM_COLORS: Record<string, string> = {
   Sydney: "#ef4444", "West Coast": "#003087", "Western Bulldogs": "#2563eb",
 };
 
-function getPeriodCutoff(period: Period): Date | null {
-  const now = Date.now();
-  if (period === "7d")  return new Date(now - 7  * 86_400_000);
-  if (period === "30d") return new Date(now - 30 * 86_400_000);
-  return null;
-}
-
 /* ─── Team ranking computation ────────────────────────────── */
 
 function computeTeamRankings(games: Game[], period: Period): TeamRank[] {
-  const cutoff = getPeriodCutoff(period);
-  const filtered = games.filter((g) => {
-    if (!isCompleted(g) || !g.hteam || !g.ateam) return false;
-    if (cutoff && g.date) {
-      const d = new Date(g.date);
-      if (!isNaN(d.getTime()) && d < cutoff) return false;
-    }
-    return true;
-  });
+  const completedGames = games.filter((g) => isCompleted(g) && g.hteam && g.ateam);
+
+  let filtered: Game[];
+  if (period === "season") {
+    filtered = completedGames;
+  } else {
+    const latestRound = completedGames.reduce((max, g) => Math.max(max, g.round ?? 0), 0);
+    const roundCount  = period === "r1" ? 1 : period === "r3" ? 3 : 5;
+    const cutoffRound = latestRound - roundCount + 1;
+    filtered = completedGames.filter((g) => (g.round ?? 0) >= cutoffRound);
+  }
   if (!filtered.length) return [];
 
   type Rec = { wins: number; losses: number; draws: number; ptsFor: number; ptsAgainst: number };
@@ -240,10 +235,10 @@ function RankBadge({ rank }: { rank: number }) {
 
 export default function PowerRankingsPage() {
   const [view,   setView]   = useState<View>("player");
-  const [period, setPeriod] = useState<Period>("season");
+  const [period, setPeriod] = useState<Period>("r1");
   const [games,  setGames]  = useState<Game[]>([]);
   const [gamesLoading, setGamesLoading] = useState(true);
-  const [playerData, setPlayerData] = useState<Record<Period, PlayerRank[]>>({ "7d": [], "30d": [], season: [] });
+  const [playerData, setPlayerData] = useState<Record<Period, PlayerRank[]>>({ r1: [], r3: [], r5: [], season: [] });
   const [playersLoading, setPlayersLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(50);
 
@@ -267,8 +262,9 @@ export default function PowerRankingsPage() {
   const visiblePlayers = players.slice(0, visibleCount);
 
   const PERIODS: { key: Period; label: string }[] = [
-    { key: "7d", label: "7-day" },
-    { key: "30d", label: "30-day" },
+    { key: "r1", label: "1 Round" },
+    { key: "r3", label: "3 Rounds" },
+    { key: "r5", label: "5 Rounds" },
     { key: "season", label: "Season" },
   ];
 
@@ -381,7 +377,7 @@ function PlayerItem({ player, rank, period }: { player: PlayerRank; rank: number
           {player.name}
         </div>
         <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 700, marginTop: 2 }}>
-          {player.team} · {player.games}GP
+          {player.team} · {player.games}{period === "season" ? "GP" : player.games === 1 ? " game" : " games"}
         </div>
       </div>
       <div style={{ textAlign: "right", flexShrink: 0 }}>

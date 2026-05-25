@@ -13,6 +13,7 @@ function useFullWidth() {
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/app/lib/supabase";
 import { CARD_PLAYERS } from "@/app/data/cardPlayers";
+import { PlayerCard as SharedPlayerCard } from "@/app/components/PlayerCard";
 
 type Rarity = "bronze" | "silver" | "gold" | "emerald" | "sapphire" | "ruby" | "amethyst" | "diamond" | "pinkdiamond" | "mythic";
 
@@ -27,16 +28,6 @@ interface UserCard {
 const RARITY_ORDER: Record<Rarity, number> = {
   bronze: 0, silver: 1, gold: 2, emerald: 3, sapphire: 4,
   ruby: 5, amethyst: 6, diamond: 7, pinkdiamond: 8, mythic: 9,
-};
-
-const TEAM_COLORS: Record<string, string> = {
-  Adelaide: "#002b5c", "Brisbane Lions": "#a50034", Carlton: "#031a35",
-  Collingwood: "#1e1e28", Essendon: "#cc0000", Fremantle: "#4b1979",
-  "Geelong Cats": "#003b73", Geelong: "#003b73", "Gold Coast": "#c0392b",
-  GWS: "#e05a1a", "GWS Giants": "#e05a1a", "Greater Western Sydney": "#e05a1a",
-  Hawthorn: "#6b3a1f", Melbourne: "#c8102e", "North Melbourne": "#0055a4",
-  "Port Adelaide": "#008999", Richmond: "#facc15", "St Kilda": "#c8102e",
-  Sydney: "#c0392b", "West Coast": "#003087", "Western Bulldogs": "#1a4abf",
 };
 
 const RARITY_META: Record<Rarity, { color: string; glow: string }> = {
@@ -541,97 +532,22 @@ function AlbumSlot({ player, ownedCards, isFeatured, onCardClick }: {
   const unlocked = !!ownedCards && ownedCards.length > 0;
   const topCard = unlocked ? ownedCards[0] : null;
   const totalCopies = unlocked ? ownedCards.reduce((s, c) => s + c.duplicate_count, 0) : 0;
-  const meta = topCard ? RARITY_META[topCard.rarity] : null;
 
   return (
-    <div
-      style={{ position: "relative", aspectRatio: "3/4.2", cursor: unlocked ? "pointer" : "default" }}
-      onClick={() => { if (unlocked && ownedCards) onCardClick(ownedCards); }}
-    >
-      {/* Main card */}
-      <div style={{
-        position: "absolute", inset: 0, borderRadius: 9, overflow: "hidden", zIndex: 10,
-        boxShadow: unlocked && meta
-          ? `0 0 0 1.5px ${meta.color}99, 0 6px 20px ${meta.glow}`
-          : "0 0 0 1px var(--border-1)",
-        filter: unlocked ? "none" : "grayscale(1) brightness(0.18)",
-        transition: "box-shadow 0.2s ease",
-      }}>
-        <img
-          src={unlocked && topCard ? `/cards/${topCard.rarity}.png` : "/cards/bronze.png"}
-          alt=""
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-        />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.15) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,.72) 75%, rgba(0,0,0,.88) 100%)" }} />
-
-        {unlocked && topCard && meta ? (
-          <>
-            {/* Rating */}
-            <div className="ac-rating" style={{ background: "rgba(0,0,0,.82)", fontWeight: 1000, color: meta.color, border: `1px solid ${meta.color}44` }}>
-              {topCard.rating}
-            </div>
-
-            {/* Duplicate count */}
-            {totalCopies > 1 && (
-              <div className="ac-dup" style={{ background: "rgba(0,0,0,.75)", fontWeight: 900, color: "rgba(255,255,255,.6)" }}>
-                ×{totalCopies}
-              </div>
-            )}
-
-            {/* Player circle */}
-            <div style={{
-              position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)",
-              width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden",
-              background: (TEAM_COLORS[player.team] ?? "#1e2438") + "33",
-            }}>
-              <img
-                src={`/players/${player.folder}/${player.id}.png`}
-                alt={player.name}
-                style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }}
-              />
-            </div>
-
-            {/* Player name */}
-            <div style={{ position: "absolute", top: "71%", left: 0, right: 0, textAlign: "center", padding: "0 5px" }}>
-              <div className="ac-name" style={{ fontWeight: 900, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: `0 0 10px ${meta.glow}` }}>
-                {player.name}
-              </div>
-            </div>
-
-            {/* Team logo — bottom left */}
-            <div className="ac-logo" style={{ background: "rgba(0,0,0,.55)", border: "1.5px solid var(--border-3)" }}>
-              <img src={player.teamLogo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            </div>
-
-            {/* Year — bottom right */}
-            <div className="ac-pos" style={{ background: "rgba(0,0,0,.7)", fontWeight: 900, color: "rgba(255,255,255,.75)", letterSpacing: ".05em" }}>
-              2025
-            </div>
-          </>
-        ) : (
-          /* Locked */
-          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4 }}>
-            <div style={{ fontSize: 14, opacity: 0.2 }}>🔒</div>
-            <div className="ac-name" style={{ fontWeight: 800, color: "rgba(255,255,255,.2)", textAlign: "center", padding: "0 4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "90%" }}>
-              {player.name}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Featured badge — static indicator */}
-      {isFeatured && (
-        <div style={{
-          position: "absolute", top: totalCopies > 1 ? 24 : 3, left: "50%", transform: "translateX(-50%)",
-          zIndex: 20, width: 16, height: 16, borderRadius: "50%",
-          background: "#ffd700", display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: "0 0 6px rgba(255,215,0,0.8)", pointerEvents: "none",
-        }}>
-          <svg width="8" height="8" viewBox="0 0 24 24" fill="#14141e">
-            <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
-          </svg>
-        </div>
-      )}
-    </div>
+    <SharedPlayerCard
+      card={{
+        playerId: player.id,
+        playerName: player.name,
+        playerFolder: player.folder,
+        playerTeam: player.team,
+        playerTeamLogo: player.teamLogo,
+        rarity: topCard?.rarity ?? "bronze",
+        rating: topCard?.rating,
+        duplicateCount: totalCopies > 1 ? totalCopies : undefined,
+      }}
+      locked={!unlocked}
+      featured={isFeatured}
+      onClick={unlocked && ownedCards ? () => onCardClick(ownedCards) : undefined}
+    />
   );
 }

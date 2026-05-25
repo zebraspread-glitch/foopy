@@ -24,7 +24,20 @@
       "Bash(node -e \"const d = require\\('./app/data/player-season-stats.json'\\); const pa = d.filter\\(p => p.team === 'Port Adelaide'\\).slice\\(0,5\\); console.log\\(JSON.stringify\\(pa.map\\(p => \\({id: p.id, name: p.name}\\)\\), null, 2\\)\\)\")",
       "Bash(mkdir -p \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\\\\app\\\\api\\\\group-chats\\\\[id]\\\\join\")",
       "Bash(mkdir -p \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\\\\app\\\\api\\\\group-chats\\\\invites\\\\[id]\")",
-      "Bash(git diff *)"
+      "Bash(git diff *)",
+      "Bash(Get-ChildItem -Path C:\\\\Users\\\\User\\\\Downloads\\\\foopy -Recurse -Depth 2)",
+      "Bash(Select-Object FullName, PSIsContainer)",
+      "Bash(Format-List)",
+      "Bash(xargs wc -l)",
+      "WebFetch(domain:afltables.com)",
+      "WebFetch(domain:en.wikipedia.org)",
+      "Bash(mkdir -p \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\\\\app\\\\api\\\\seasons\\\\[year]\")",
+      "Bash(mkdir -p \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\\\\app\\\\seasons\\\\[year]\")",
+      "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\(p.dependencies.react, p.dependencies.next\\)\")",
+      "Bash(node scripts/fetch-seasons.mjs)",
+      "Bash(dir /b)",
+      "Bash(head -20 app/data/cardPlayers.ts)",
+      "Bash(head -20 app/data/cardPlayers.js)"
     ]
   }
 }

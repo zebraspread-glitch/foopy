@@ -1083,6 +1083,24 @@ textarea::placeholder { color: var(--text-3); }
 .nav { display: none; }
 
 /* ============================================================
+   PLAYER CARD — shared ac-* classes used by PlayerCard component
+   ============================================================ */
+
+.ac-rating { position: absolute; top: 4px; right: 4px; font-size: 8px; padding: 1px 4px; border-radius: 4px; line-height: 1.5; }
+.ac-dup    { position: absolute; top: 4px; left: 50%; transform: translateX(-50%); font-size: 7px; padding: 1px 4px; border-radius: 4px; line-height: 1.5; }
+.ac-name   { font-size: 9px; }
+.ac-logo   { position: absolute; width: 16px; height: 16px; bottom: 4px; left: 4px; border-radius: 50%; overflow: hidden; }
+.ac-pos    { position: absolute; font-size: 7px; bottom: 4px; right: 4px; padding: 1px 3px; border-radius: 4px; }
+
+@media (min-width: 768px) {
+  .ac-rating { font-size: 10px; top: 6px; right: 6px; padding: 2px 6px; }
+  .ac-dup    { font-size: 9px; top: 6px; padding: 2px 6px; }
+  .ac-name   { font-size: 12px; }
+  .ac-logo   { width: 26px; height: 26px; bottom: 7px; left: 7px; }
+  .ac-pos    { font-size: 10px; bottom: 7px; right: 7px; padding: 2px 6px; }
+}
+
+/* ============================================================
    HARDWARE ACCELERATION HELPERS
    ============================================================ */
 

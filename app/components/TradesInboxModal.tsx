@@ -2,31 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { CARD_PLAYERS } from "@/app/data/cardPlayers";
+import { PlayerCard } from "@/app/components/PlayerCard";
 
 type Rarity = "bronze" | "silver" | "gold" | "emerald" | "sapphire" | "ruby" | "amethyst" | "diamond" | "pinkdiamond" | "mythic";
-
-const TEAM_COLORS: Record<string, string> = {
-  Adelaide: "#002b5c", "Brisbane Lions": "#a50034", Carlton: "#031a35",
-  Collingwood: "#1e1e28", Essendon: "#cc0000", Fremantle: "#4b1979",
-  "Geelong Cats": "#003b73", Geelong: "#003b73", "Gold Coast": "#c0392b",
-  GWS: "#e05a1a", "GWS Giants": "#e05a1a", "Greater Western Sydney": "#e05a1a",
-  Hawthorn: "#6b3a1f", Melbourne: "#c8102e", "North Melbourne": "#0055a4",
-  "Port Adelaide": "#008999", Richmond: "#facc15", "St Kilda": "#c8102e",
-  Sydney: "#c0392b", "West Coast": "#003087", "Western Bulldogs": "#1a4abf",
-};
-
-const RARITY_META: Record<Rarity, { color: string; glow: string }> = {
-  bronze:      { color: "#cd7f32", glow: "rgba(205,127,50,0.6)" },
-  silver:      { color: "#c0c0c0", glow: "rgba(192,192,192,0.6)" },
-  gold:        { color: "#ffd700", glow: "rgba(255,215,0,0.6)" },
-  emerald:     { color: "#10b981", glow: "rgba(16,185,129,0.65)" },
-  sapphire:    { color: "#3b82f6", glow: "rgba(59,130,246,0.65)" },
-  ruby:        { color: "#ef4444", glow: "rgba(239,68,68,0.65)" },
-  amethyst:    { color: "#a78bfa", glow: "rgba(167,139,250,0.70)" },
-  diamond:     { color: "#67e8f9", glow: "rgba(103,232,249,0.70)" },
-  pinkdiamond: { color: "#f472b6", glow: "rgba(244,114,182,0.70)" },
-  mythic:      { color: "#c084fc", glow: "rgba(192,132,252,0.80)" },
-};
 
 type TradeOffer = {
   id: string;
@@ -40,20 +18,21 @@ type TradeOffer = {
 };
 
 function TradeMiniCard({ rarity, playerName, team, rating }: { rarity: Rarity; playerName: string; team: string; rating: number }) {
-  const meta = RARITY_META[rarity];
   const player = CARD_PLAYERS.find(p => p.name === playerName || p.id === playerName);
+  if (!player) return null;
   return (
-    <div style={{ width: 56, position: "relative", aspectRatio: "3/4.2", borderRadius: 8, overflow: "hidden", boxShadow: `0 0 0 1.5px ${meta.color}88, 0 3px 12px ${meta.glow}` }}>
-      <img src={`/cards/${rarity}.png`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom,rgba(0,0,0,.1) 0%,rgba(0,0,0,0) 35%,rgba(0,0,0,.75) 72%,rgba(0,0,0,.92) 100%)" }} />
-      {player && (
-        <div style={{ position: "absolute", top: "14%", left: "50%", transform: "translateX(-50%)", width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", background: (TEAM_COLORS[team] ?? "#1e2438") + "44" }}>
-          <img src={`/players/${player.folder}/${player.id}.png`} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
-        </div>
-      )}
-      <div style={{ position: "absolute", top: 3, right: 3, fontSize: 7, fontWeight: 1000, color: meta.color, background: "rgba(0,0,0,.85)", borderRadius: 4, padding: "1px 3px" }}>{rating}</div>
-      <div style={{ position: "absolute", bottom: 3, left: 0, right: 0, textAlign: "center", fontSize: 6.5, fontWeight: 900, color: meta.color, letterSpacing: ".06em" }}>{rarity.toUpperCase()}</div>
-    </div>
+    <PlayerCard
+      card={{
+        playerId: player.id,
+        playerName: player.name,
+        playerFolder: player.folder,
+        playerTeam: team,
+        playerTeamLogo: player.teamLogo,
+        rarity,
+        rating,
+      }}
+      style={{ width: 56 }}
+    />
   );
 }
 

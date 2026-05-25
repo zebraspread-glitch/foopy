@@ -14,6 +14,7 @@ import { supabase } from "@/app/lib/supabase";
 import { createNotification } from "@/app/lib/notifications";
 import playersRaw from "@/app/data/players.json";
 import { CARD_PLAYERS } from "@/app/data/cardPlayers";
+import { PlayerCard } from "@/app/components/PlayerCard";
 
 /* ─────────────────── Types ─────────────────── */
 type FeaturedCardSlot = { player_id: string; rarity: string };
@@ -101,6 +102,107 @@ const RARITY_META: Record<string, { color: string; glow: string }> = {
   pinkdiamond: { color: "#f472b6", glow: "rgba(244,114,182,0.70)" },
   mythic:      { color: "#c084fc", glow: "rgba(192,132,252,0.80)" },
 };
+
+/* ─────────────────── Featured Cards Carousel ─────────────────── */
+function teamShortName(team: string) {
+  const map: Record<string, string> = {
+    "Western Bulldogs": "Bulldogs", "Brisbane Lions": "Lions",
+    "North Melbourne": "North", "Port Adelaide": "Port",
+    "Gold Coast": "Suns", "West Coast": "Eagles",
+    "St Kilda": "Saints", "GWS": "GWS",
+  };
+  return map[team] ?? team;
+}
+
+function FeaturedCardsCarousel({ cards }: {
+  cards: Array<{ fc: FeaturedCardSlot; player: typeof CARD_PLAYERS[0]; rating?: number }>;
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [activeIdx, setActiveIdx] = useState(0);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    function update() {
+      const center = el!.scrollLeft + el!.clientWidth / 2;
+      const children = Array.from(el!.children) as HTMLElement[];
+      let closest = 0;
+      let minDist = Infinity;
+      children.forEach((child, i) => {
+        const childCenter = child.offsetLeft + child.offsetWidth / 2;
+        const dist = Math.abs(center - childCenter);
+        if (dist < minDist) { minDist = dist; closest = i; }
+      });
+      setActiveIdx(closest);
+    }
+
+    // Convert vertical wheel scroll into horizontal scroll on desktop
+    function onWheel(e: WheelEvent) {
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return; // already horizontal
+      e.preventDefault();
+      el!.scrollBy({ left: e.deltaY * 1.5, behavior: "auto" });
+    }
+
+    el.addEventListener("scroll", update, { passive: true });
+    el.addEventListener("wheel", onWheel, { passive: false });
+    update();
+    return () => {
+      el.removeEventListener("scroll", update);
+      el.removeEventListener("wheel", onWheel);
+    };
+  }, []);
+
+  const CARD_W = 148;
+
+  return (
+    <div
+      ref={scrollRef}
+      className="no-scrollbar"
+      style={{
+        display: "flex",
+        gap: 12,
+        overflowX: "auto",
+        scrollSnapType: "x mandatory" as const,
+        paddingLeft: `calc(50% - ${CARD_W / 2}px)`,
+        paddingRight: `calc(50% - ${CARD_W / 2}px)`,
+        paddingTop: 18,
+        paddingBottom: 10,
+      }}
+    >
+      {cards.map(({ fc, player, rating }, idx) => {
+        const isActive = idx === activeIdx;
+        const meta = RARITY_META[fc.rarity] ?? RARITY_META.bronze;
+        return (
+          <div
+            key={idx}
+            style={{
+              flexShrink: 0,
+              width: CARD_W,
+              scrollSnapAlign: "center" as const,
+              transform: isActive ? "scale(1.07) translateY(-10px)" : "scale(0.91) translateY(0px)",
+              opacity: isActive ? 1 : 0.6,
+              transition: "transform 0.28s cubic-bezier(0.34,1.56,0.64,1), opacity 0.28s ease",
+              filter: isActive ? `drop-shadow(0 10px 24px ${meta.glow})` : "none",
+            }}
+          >
+            <PlayerCard
+              card={{
+                playerId: player.id,
+                playerName: player.name,
+                playerFolder: player.folder,
+                playerTeam: player.team,
+                playerTeamLogo: player.teamLogo,
+                rarity: fc.rarity,
+                rating,
+              }}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 /* ─────────────────── Player helpers ─────────────────── */
 type RawPlayer = { name?: string; team?: string };
@@ -598,6 +700,7 @@ export default function ProfilePage() {
   type StatsPopup = null | "games" | "likes" | "polls";
   const [statsPopup, setStatsPopup] = useState<StatsPopup>(null);
   const [cardCount, setCardCount] = useState<number | null>(null);
+  const [featuredCardRatings, setFeaturedCardRatings] = useState<Map<string, number>>(new Map());
   const [totalLikes, setTotalLikes] = useState<number | null>(null);
 
   type TeamStat = { name: string; logo: string; count: number };
@@ -684,6 +787,30 @@ export default function ProfilePage() {
       .eq("user_id", user.id)
       .then(({ count }) => setCardCount(count ?? 0));
   }, [user]);
+
+  // Fetch ratings for featured cards so the carousel can show them
+  useEffect(() => {
+    const slots = profile?.featured_cards;
+    if (!user || !slots?.length) { setFeaturedCardRatings(new Map()); return; }
+    const playerIds = [...new Set(slots.map(fc => fc.player_id))];
+    supabase
+      .from("user_cards")
+      .select("player_id, rarity, rating")
+      .eq("user_id", user.id)
+      .in("player_id", playerIds)
+      .then(({ data }) => {
+        const map = new Map<string, number>();
+        for (const card of data ?? []) {
+          // Key by player_id::rarity — pick highest rating if duplicates
+          const key = `${card.player_id}::${card.rarity}`;
+          const existing = map.get(key);
+          if (existing === undefined || card.rating > existing) {
+            map.set(key, card.rating);
+          }
+        }
+        setFeaturedCardRatings(map);
+      });
+  }, [user, profile?.featured_cards]);
 
   async function applyPending(userId: string, p: Profile | null) {
     const pending = localStorage.getItem("foopy_pending_username");
@@ -1351,53 +1478,36 @@ export default function ProfilePage() {
         {(() => {
           const featuredSlots = (profile?.featured_cards ?? []).slice(0, 5);
           const featuredWithData = featuredSlots
-            .map(fc => ({ fc, player: CARD_PLAYERS.find(p => p.id === fc.player_id) }))
-            .filter((x): x is { fc: FeaturedCardSlot; player: typeof CARD_PLAYERS[0] } => !!x.player);
+            .map(fc => ({
+              fc,
+              player: CARD_PLAYERS.find(p => p.id === fc.player_id),
+              rating: featuredCardRatings.get(`${fc.player_id}::${fc.rarity}`),
+            }))
+            .filter((x): x is { fc: FeaturedCardSlot; player: typeof CARD_PLAYERS[0]; rating: number | undefined } => !!x.player);
           const hasFeatured = featuredWithData.length > 0;
 
           return (
-            <Link href="/album" style={{ textDecoration: "none", color: "var(--text-1)" }}>
-              <div style={sectionCardStyle}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text-3)", textTransform: "uppercase" as const, letterSpacing: "0.08em" }}>featured cards</div>
-                  {hasFeatured && <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-4)" }}>{featuredWithData.length}/5</div>}
-                </div>
-                {hasFeatured ? (
-                  <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 2, scrollbarWidth: "none" as const }}>
-                    {featuredWithData.map(({ fc, player }, idx) => {
-                      const meta = RARITY_META[fc.rarity] ?? RARITY_META.bronze;
-                      return (
-                        <div key={idx} style={{ flexShrink: 0, position: "relative", width: 110, height: 154, borderRadius: 14, overflow: "hidden", border: `1.5px solid ${meta.color}99`, boxShadow: `0 2px 16px ${meta.glow}, 0 0 0 0px ${meta.color}` }}>
-                          <img src={`/cards/${fc.rarity}.png`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-                          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.04) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,.5) 65%, rgba(0,0,0,.88) 100%)" }} />
-                          <div style={{ position: "absolute", top: "11%", left: "50%", transform: "translateX(-50%)", width: "66%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", border: `2px solid ${meta.color}`, boxShadow: `0 0 12px ${meta.glow}`, background: "var(--bg)" }}>
-                            <img src={`/players/${player.folder}/${player.id}.png`} alt={player.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
-                          </div>
-                          <div style={{ position: "absolute", top: 5, right: 5, background: "rgba(0,0,0,.85)", color: meta.color, fontSize: 7, fontWeight: 1000, padding: "2px 5px", borderRadius: 5, border: `1px solid ${meta.color}44`, letterSpacing: ".04em" }}>
-                            {fc.rarity.toUpperCase()}
-                          </div>
-                          <div style={{ position: "absolute", bottom: 10, left: 0, right: 0, textAlign: "center", padding: "0 5px" }}>
-                            <div style={{ fontSize: 9, fontWeight: 900, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: `0 0 10px ${meta.glow}` }}>
-                              {player.name}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, padding: "28px 0 16px" }}>
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="1.5">
-                      <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
-                    </svg>
-                    <div style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text-4)" }}>No featured cards yet</div>
-                      <div style={{ fontSize: 11, fontWeight: 600, color: "#1e293b", marginTop: 4 }}>Tap ⭐ on cards in your album</div>
-                    </div>
-                  </div>
-                )}
+            <div style={{ ...sectionCardStyle, padding: "16px 0 0", overflow: "hidden" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", marginBottom: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text-3)", textTransform: "uppercase" as const, letterSpacing: "0.08em" }}>featured cards</div>
+                <Link href="/album" style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", textDecoration: "none" }}>
+                  {hasFeatured ? `${featuredWithData.length}/5 · View Album` : "Go to Album"}
+                </Link>
               </div>
-            </Link>
+              {hasFeatured ? (
+                <FeaturedCardsCarousel cards={featuredWithData} />
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, padding: "28px 0 20px" }}>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="1.5">
+                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+                  </svg>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text-4)" }}>No featured cards yet</div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: "#1e293b", marginTop: 4 }}>Tap ⭐ on cards in your album</div>
+                  </div>
+                </div>
+              )}
+            </div>
           );
         })()}
 
