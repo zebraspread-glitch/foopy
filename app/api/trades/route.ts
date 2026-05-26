@@ -143,24 +143,31 @@ export async function GET(req: Request) {
   const { data: { user }, error: authErr } = await supabaseServer.auth.getUser(token);
   if (authErr || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const admin = adminSupabase();
+  // Use user-authenticated client so auth.uid() is set and RLS resolves correctly.
+  // The trades_select policy (sender_id = auth.uid() OR receiver_id = auth.uid())
+  // handles filtering automatically — no manual .or() needed.
+  const authed = userSupabase(token);
+  const admin  = adminSupabase();
 
-  const { data: trades, error } = await admin
+  const { data: trades, error } = await authed
     .from("trade_offers")
     .select("id, sender_id, receiver_id, status, message, created_at, updated_at, items:trade_offer_items(id, direction, card_id, player_id, player_name, team, team_logo, rarity, rating)")
-    .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
     .order("created_at", { ascending: false })
-    .limit(50);
+    .limit(100);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  // Fetch profiles for all involved users (admin client — no user-specific filtering needed)
   const userIds = Array.from(new Set((trades ?? []).flatMap((t: any) => [t.sender_id, t.receiver_id])));
-  const { data: profiles } = await admin.from("profiles").select("id, username, display_name, avatar_url").in("id", userIds);
+  const { data: profiles } = await admin
+    .from("profiles")
+    .select("id, username, display_name, avatar_url")
+    .in("id", userIds);
   const profileMap = Object.fromEntries((profiles ?? []).map((p: any) => [p.id, p]));
 
   const enriched = (trades ?? []).map((t: any) => ({
     ...t,
-    sender: profileMap[t.sender_id] ?? null,
+    sender:   profileMap[t.sender_id]   ?? null,
     receiver: profileMap[t.receiver_id] ?? null,
   }));
 
