@@ -203,8 +203,7 @@ function buildRoundRankings(
       avgFoopy:   Number((p.totalFoopy / p.games).toFixed(1)),
       games:      p.games,
     }))
-    // Sort by avgFoopy: keeps the score on 0–10 scale regardless of how many rounds
-    .sort((a, b) => b.avgFoopy - a.avgFoopy);
+    .sort((a, b) => b.totalFoopy - a.totalFoopy);
 }
 
 export async function GET() {

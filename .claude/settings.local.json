@@ -37,7 +37,16 @@
       "Bash(node scripts/fetch-seasons.mjs)",
       "Bash(dir /b)",
       "Bash(head -20 app/data/cardPlayers.ts)",
-      "Bash(head -20 app/data/cardPlayers.js)"
+      "Bash(head -20 app/data/cardPlayers.js)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\" -Recurse -Depth 2)",
+      "Bash(Format-Table -AutoSize)",
+      "Bash(grep -E \"\\\\.tsx$|\\\\.ts$\")",
+      "Bash(grep -n -i \"season\" /mnt/c/Users/User/Downloads/foopy/app/page.tsx | head -30)",
+      "PowerShell(Select-String -Path \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\\\\app\\\\page.tsx\" -Pattern \"season\" -CaseSensitive:$false)",
+      "WebFetch(domain:www.afltables.com)",
+      "PowerShell(cd \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\"; Get-Content \"app\\\\data\\\\seasons.json\" | ConvertFrom-Json | Where-Object { $_.year -ge 1987 -and $_.year -le 1998 } | Select-Object year, premier, runnerUp | Format-Table)",
+      "WebFetch(domain:www.reddit.com)",
+      "WebFetch(domain:www.footywire.com)"
     ]
   }
 }

@@ -377,7 +377,7 @@ function PlayerItem({ player, rank, period }: { player: PlayerRank; rank: number
           {player.name}
         </div>
         <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 700, marginTop: 2 }}>
-          {player.team} · {player.games}{period === "season" ? "GP" : player.games === 1 ? " game" : " games"}
+          {player.team} · {player.games} GP
         </div>
       </div>
       <div style={{ textAlign: "right", flexShrink: 0 }}>

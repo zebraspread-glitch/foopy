@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Users, Layers } from "lucide-react";
 import { supabase } from "@/app/lib/supabase";
 import AuraBadge from "@/app/components/AuraBadge";
+import { PlayerCard } from "@/app/components/PlayerCard";
 import { CARD_PLAYERS } from "@/app/data/cardPlayers";
 import { getPassLevel, PLAYER_PASS_LEVELS, TEAM_PASS_LEVELS, type PlayerPass, type TeamPass } from "@/app/lib/passes";
 import playersData from "@/app/data/players.json";
@@ -243,6 +244,87 @@ function CommentRow({ comment, imgSrc, teams, href }: {
           <TeamLogoImg name={teams.ateam} />
         </div>
       ) : null}
+    </div>
+  );
+}
+
+// ── Featured Cards Carousel ───────────────────────────────────────────────────
+
+function FeaturedCardsCarousel({ cards }: {
+  cards: Array<{ fc: FeaturedCardSlot; player: typeof CARD_PLAYERS[0] }>;
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [activeIdx, setActiveIdx] = useState(0);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    function update() {
+      const center = el!.scrollLeft + el!.clientWidth / 2;
+      const children = Array.from(el!.children) as HTMLElement[];
+      let closest = 0, minDist = Infinity;
+      children.forEach((child, i) => {
+        const dist = Math.abs(child.offsetLeft + child.offsetWidth / 2 - center);
+        if (dist < minDist) { minDist = dist; closest = i; }
+      });
+      setActiveIdx(closest);
+    }
+    function onWheel(e: WheelEvent) {
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+      e.preventDefault();
+      el!.scrollBy({ left: e.deltaY * 1.5, behavior: "auto" });
+    }
+    el.addEventListener("scroll", update, { passive: true });
+    el.addEventListener("wheel", onWheel, { passive: false });
+    update();
+    return () => { el.removeEventListener("scroll", update); el.removeEventListener("wheel", onWheel); };
+  }, []);
+
+  const CARD_W = 148;
+  return (
+    <div
+      ref={scrollRef}
+      className="no-scrollbar"
+      style={{
+        display: "flex",
+        gap: 12,
+        overflowX: "auto",
+        scrollSnapType: "x mandatory" as const,
+        paddingLeft: `calc(50% - ${CARD_W / 2}px)`,
+        paddingRight: `calc(50% - ${CARD_W / 2}px)`,
+        paddingTop: 18,
+        paddingBottom: 10,
+      }}
+    >
+      {cards.map(({ fc, player }, idx) => {
+        const isActive = idx === activeIdx;
+        const meta = RARITY_META[fc.rarity] ?? RARITY_META.bronze;
+        return (
+          <div
+            key={idx}
+            style={{
+              flexShrink: 0,
+              width: CARD_W,
+              scrollSnapAlign: "center" as const,
+              transform: isActive ? "scale(1.07) translateY(-10px)" : "scale(0.91) translateY(0px)",
+              opacity: isActive ? 1 : 0.6,
+              transition: "transform 0.28s cubic-bezier(0.34,1.56,0.64,1), opacity 0.28s ease",
+              filter: isActive ? `drop-shadow(0 10px 24px ${meta.glow})` : "none",
+            }}
+          >
+            <PlayerCard
+              card={{
+                playerId: player.id,
+                playerName: player.name,
+                playerFolder: player.folder,
+                playerTeam: player.team,
+                playerTeamLogo: player.teamLogo,
+                rarity: fc.rarity,
+              }}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -632,19 +714,6 @@ export default function PublicProfilePage() {
 
         {/* ── Featured Cards ── */}
         {(() => {
-          const RARITY_GRADIENT: Record<string, string> = {
-            bronze:      "linear-gradient(155deg,#3b1a08,#6b3010)",
-            silver:      "linear-gradient(155deg,#1c1c2a,#2e2e42)",
-            gold:        "linear-gradient(155deg,#2e2600,#4a3c00)",
-            emerald:     "linear-gradient(155deg,#031f13,#063d22)",
-            sapphire:    "linear-gradient(155deg,#06183b,#0a2d6b)",
-            ruby:        "linear-gradient(155deg,#3b0606,#6b0a0a)",
-            amethyst:    "linear-gradient(155deg,#1a0a33,#2d1060)",
-            diamond:     "linear-gradient(155deg,#00103d,#002966)",
-            pinkdiamond: "linear-gradient(155deg,#2d0a1a,#5a1030)",
-            mythic:      "linear-gradient(155deg,#1a0033,#36006b)",
-          };
-
           const featuredSlots = (profile.featured_cards ?? []).slice(0, 5);
           const featuredWithData = featuredSlots
             .map(fc => ({ fc, player: CARD_PLAYERS.find(p => p.id === fc.player_id) }))
@@ -652,69 +721,24 @@ export default function PublicProfilePage() {
           const hasFeatured = featuredWithData.length > 0;
 
           return (
-            <Link href={`/album/${profile.username}`} style={{ textDecoration: "none", color: "var(--text-1)" }}>
-              <section style={{ background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18, padding: "16px 16px 20px", overflow: "hidden" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-                  <div style={{ fontSize: 12, fontWeight: 900, color: "var(--text-3)", textTransform: "uppercase" as const, letterSpacing: "0.1em" }}>Featured Cards</div>
-                  {hasFeatured && <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-4)" }}>{featuredWithData.length}/5</div>}
+            <section style={{ background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18, padding: "16px 0 0", overflow: "hidden" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px" }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text-3)", textTransform: "uppercase" as const, letterSpacing: "0.08em" }}>featured cards</div>
+                <Link href={`/album/${profile.username}`} style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", textDecoration: "none" }}>
+                  {hasFeatured ? `${featuredWithData.length}/5 · View Album` : "View Album"}
+                </Link>
+              </div>
+              {hasFeatured ? (
+                <FeaturedCardsCarousel cards={featuredWithData} />
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, padding: "28px 0 20px" }}>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="1.5">
+                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+                  </svg>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text-4)" }}>No featured cards yet</div>
                 </div>
-                {hasFeatured ? (
-                  <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4, scrollbarWidth: "none" as const, scrollSnapType: "x mandatory" }}>
-                    {featuredWithData.map(({ fc, player }, idx) => {
-                      const meta = RARITY_META[fc.rarity] ?? RARITY_META.bronze;
-                      const gradient = RARITY_GRADIENT[fc.rarity] ?? RARITY_GRADIENT.bronze;
-                      const label = fc.rarity === "pinkdiamond" ? "Pink Diamond" : fc.rarity.charAt(0).toUpperCase() + fc.rarity.slice(1);
-                      return (
-                        <div key={idx} style={{
-                          flex: "0 0 calc((100% - 20px) / 3)",
-                          scrollSnapAlign: "start",
-                          borderRadius: 16, overflow: "hidden",
-                          background: gradient,
-                          border: `1.5px solid ${meta.color}55`,
-                          boxShadow: `0 4px 20px ${meta.glow}, 0 0 0 0.5px rgba(255,255,255,0.05)`,
-                          display: "flex", flexDirection: "column", position: "relative",
-                        }}>
-                          {/* shimmer top edge */}
-                          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1.5, background: `linear-gradient(90deg,transparent,${meta.color}cc,transparent)`, zIndex: 3 }} />
-
-                          {/* rarity badge */}
-                          <div style={{ position: "absolute", top: 8, left: 8, zIndex: 4, background: meta.color, color: "#000", fontSize: 7, fontWeight: 900, letterSpacing: "0.08em", padding: "2px 6px", borderRadius: 999 }}>
-                            {label.toUpperCase()}
-                          </div>
-
-                          {/* year */}
-                          <div style={{ position: "absolute", top: 8, right: 8, zIndex: 4, fontSize: 7, fontWeight: 900, color: "rgba(255,255,255,0.3)", letterSpacing: "0.06em" }}>2026</div>
-
-                          {/* photo */}
-                          <div style={{ height: 150, overflow: "hidden", position: "relative", background: "rgba(0,0,0,0.2)" }}>
-                            <img
-                              src={`/players/${player.folder}/${player.id}.png`}
-                              alt={player.name}
-                              style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", display: "block" }}
-                              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                            />
-                            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 40, background: `linear-gradient(to bottom, transparent, ${gradient.match(/#[0-9a-f]{6}/i)?.[0] ?? "#1a0a00"})` }} />
-                          </div>
-
-                          {/* footer */}
-                          <div style={{ padding: "7px 8px 10px", background: "rgba(0,0,0,0.2)", flexShrink: 0 }}>
-                            <div style={{ fontWeight: 900, fontSize: 11, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{player.name}</div>
-                            <div style={{ fontSize: 9, color: meta.color, fontWeight: 800, marginTop: 2, letterSpacing: "0.03em" }}>{player.team}</div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, padding: "28px 0 16px" }}>
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="1.5">
-                      <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
-                    </svg>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text-4)" }}>No featured cards yet</div>
-                  </div>
-                )}
-              </section>
-            </Link>
+              )}
+            </section>
           );
         })()}
 

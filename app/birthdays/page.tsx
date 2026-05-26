@@ -220,7 +220,7 @@ export default function BirthdaysPage() {
 
   return (
     <main style={pageStyle} className="page-enter">
-      <PageHeader title="Birthdays" subtitle={todayLabel} />
+      <PageHeader title="Birthdays" subtitle={todayLabel} sidebarPad />
 
       <div style={{ padding: "0 16px", display: "flex", flexDirection: "column", gap: 24 }}>
 

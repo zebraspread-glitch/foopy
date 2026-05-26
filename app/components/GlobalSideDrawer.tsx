@@ -7,6 +7,38 @@ import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
   {
+    label: "Notifications",
+    href: "/notifications",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+      </svg>
+    ),
+  },
+  {
+    label: "Ladder",
+    href: "/ladder",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="6"  y1="2"  x2="6"  y2="22" />
+        <line x1="18" y1="2"  x2="18" y2="22" />
+        <line x1="6"  y1="7"  x2="18" y2="7"  />
+        <line x1="6"  y1="12" x2="18" y2="12" />
+        <line x1="6"  y1="17" x2="18" y2="17" />
+      </svg>
+    ),
+  },
+  {
+    label: "Power Rankings",
+    href: "/power-rankings",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+      </svg>
+    ),
+  },
+  {
     label: "Player Stats",
     href: "/stats",
     icon: (
@@ -30,29 +62,6 @@ const NAV_ITEMS = [
     ),
   },
   {
-    label: "Ladder",
-    href: "/ladder",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="6"  y1="2"  x2="6"  y2="22" />
-        <line x1="18" y1="2"  x2="18" y2="22" />
-        <line x1="6"  y1="7"  x2="18" y2="7"  />
-        <line x1="6"  y1="12" x2="18" y2="12" />
-        <line x1="6"  y1="17" x2="18" y2="17" />
-      </svg>
-    ),
-  },
-  {
-    label: "Notifications",
-    href: "/notifications",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-      </svg>
-    ),
-  },
-  {
     label: "Seasons",
     href: "/seasons",
     icon: (
@@ -66,11 +75,12 @@ const NAV_ITEMS = [
     ),
   },
   {
-    label: "Power Rankings",
-    href: "/power-rankings",
+    label: "Records",
+    href: "/records",
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+        <circle cx="12" cy="8" r="6" />
+        <path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32" />
       </svg>
     ),
   },
@@ -102,7 +112,10 @@ const NAV_ITEMS = [
   },
 ];
 
-const AVATAR_BUTTON_PATHS = new Set(["/", "/cards", "/dms", "/search"]);
+const AVATAR_BUTTON_PATHS = new Set([
+  "/", "/cards", "/dms", "/search",
+  ...NAV_ITEMS.map(i => i.href),
+]);
 
 export default function GlobalSideDrawer() {
   const pathname = usePathname();

@@ -17,14 +17,17 @@ export default function PageHeader({
   subtitle,
   right,
   noBorder = false,
+  sidebarPad = false,
 }: {
   title: string;
   subtitle?: string;
   right?: ReactNode;
   noBorder?: boolean;
+  /** Add 58px left padding to clear the fixed sidebar avatar button */
+  sidebarPad?: boolean;
 }) {
   return (
-    <header style={{ ...headerStyle, borderBottom: noBorder ? "none" : "1px solid var(--border-1)" }}>
+    <header style={{ ...headerStyle, paddingLeft: sidebarPad ? 58 : 16, borderBottom: noBorder ? "none" : "1px solid var(--border-1)" }}>
       <div style={leftStyle}>
         <span style={titleStyle}>{title}</span>
         {subtitle && <span style={subtitleStyle}>{subtitle}</span>}

@@ -84,6 +84,7 @@ const TEAM_LOGOS: Record<string, string> = {
 const TEAM_NICKNAMES: Record<string, string> = {
   Adelaide: "Crows",
   "Brisbane Lions": "Lions",
+  "Brisbane Bears": "Bears",
   Brisbane: "Lions",
   Carlton: "Blues",
   Collingwood: "Magpies",
@@ -112,6 +113,7 @@ const TEAM_NICKNAMES: Record<string, string> = {
 const TEAM_ABBR: Record<string, string> = {
   Adelaide: "ADE",
   "Brisbane Lions": "BRI",
+  "Brisbane Bears": "BB",
   Brisbane: "BRI",
   Carlton: "CAR",
   Collingwood: "COL",
@@ -140,6 +142,7 @@ const TEAM_ABBR: Record<string, string> = {
 const TEAM_COLORS: Record<string, string> = {
   Adelaide: "#002b5c",
   "Brisbane Lions": "#a50034",
+  "Brisbane Bears": "#7b1a1f",
   Brisbane: "#a50034",
   Carlton: "#031a35",
   Collingwood: "#111217",
@@ -174,6 +177,7 @@ function parseHeroScore(score: string | null): { total: string; breakdown: strin
 
 function normalizeTeamName(name: string, year: number): string {
   if (name === "Sydney" && year <= 1981) return "South Melbourne";
+  if (name === "Brisbane Lions" && year >= 1987 && year <= 1996) return "Brisbane Bears";
   return name;
 }
 
@@ -181,6 +185,7 @@ function teamLogo(name: string, year?: number) {
   if (name === "Brisbane" && year !== undefined) {
     return year <= 1996 ? BRISBANE_BEARS_LOGO : "/team-logos/lions.png";
   }
+  if (name === "Brisbane Bears") return BRISBANE_BEARS_LOGO;
   return TEAM_LOGOS[name] ?? null;
 }
 
