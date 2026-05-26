@@ -15,9 +15,12 @@ import { createNotification } from "@/app/lib/notifications";
 import playersRaw from "@/app/data/players.json";
 import { CARD_PLAYERS } from "@/app/data/cardPlayers";
 import { PlayerCard } from "@/app/components/PlayerCard";
+import { PlayerPassCard, TeamPassCard } from "@/app/components/PassCard";
+import { type PlayerPass, type TeamPass, PLAYER_PASS_LEVELS, TEAM_PASS_LEVELS, getPassLevel } from "@/app/lib/passes";
 
 /* ─────────────────── Types ─────────────────── */
 type FeaturedCardSlot = { player_id: string; rarity: string };
+type FeaturedPassSlot = { type: "player" | "team"; id: string };
 
 type Profile = {
   id: string;
@@ -29,6 +32,7 @@ type Profile = {
   banner_url: string | null;
   favourites: FavSlot[] | null;
   featured_cards: FeaturedCardSlot[] | null;
+  featured_passes: FeaturedPassSlot[] | null;
   coins: number | null;
   matches_viewed: number | null;
   total_likes: number | null;
@@ -197,6 +201,89 @@ function FeaturedCardsCarousel({ cards }: {
                 rating,
               }}
             />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─────────────────── Featured Passes Carousel ───────────────────────────── */
+function FeaturedPassesCarousel({ passes }: {
+  passes: Array<{ slot: FeaturedPassSlot; pass: TeamPass | PlayerPass; passType: "player" | "team" }>;
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [activeIdx, setActiveIdx] = useState(0);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    function update() {
+      const center = el!.scrollLeft + el!.clientWidth / 2;
+      const children = Array.from(el!.children) as HTMLElement[];
+      let closest = 0;
+      let minDist = Infinity;
+      children.forEach((child, i) => {
+        const childCenter = child.offsetLeft + child.offsetWidth / 2;
+        const dist = Math.abs(center - childCenter);
+        if (dist < minDist) { minDist = dist; closest = i; }
+      });
+      setActiveIdx(closest);
+    }
+
+    function onWheel(e: WheelEvent) {
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+      e.preventDefault();
+      el!.scrollBy({ left: e.deltaY * 1.5, behavior: "auto" });
+    }
+
+    el.addEventListener("scroll", update, { passive: true });
+    el.addEventListener("wheel", onWheel, { passive: false });
+    update();
+    return () => {
+      el.removeEventListener("scroll", update);
+      el.removeEventListener("wheel", onWheel);
+    };
+  }, []);
+
+  const CARD_W = 148;
+
+  return (
+    <div
+      ref={scrollRef}
+      className="no-scrollbar"
+      style={{
+        display: "flex",
+        gap: 12,
+        overflowX: "auto",
+        scrollSnapType: "x mandatory" as const,
+        paddingLeft: `calc(50% - ${CARD_W / 2}px)`,
+        paddingRight: `calc(50% - ${CARD_W / 2}px)`,
+        paddingTop: 18,
+        paddingBottom: 10,
+      }}
+    >
+      {passes.map(({ slot, pass, passType }, idx) => {
+        const isActive = idx === activeIdx;
+        const level = getPassLevel(pass.xp ?? 0, passType === "player" ? PLAYER_PASS_LEVELS : TEAM_PASS_LEVELS);
+        return (
+          <div
+            key={slot.id}
+            style={{
+              flexShrink: 0,
+              width: CARD_W,
+              scrollSnapAlign: "center" as const,
+              transform: isActive ? "scale(1.07) translateY(-10px)" : "scale(0.91) translateY(0px)",
+              opacity: isActive ? 1 : 0.6,
+              transition: "transform 0.28s cubic-bezier(0.34,1.56,0.64,1), opacity 0.28s ease",
+              filter: isActive ? `drop-shadow(0 10px 24px ${level.color}66)` : "none",
+            }}
+          >
+            {passType === "player"
+              ? <PlayerPassCard pass={pass as PlayerPass} />
+              : <TeamPassCard   pass={pass as TeamPass} />
+            }
           </div>
         );
       })}
@@ -657,6 +744,7 @@ export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const accessTokenRef = useRef<string | null>(null);
 
   const [favs, setFavs] = useState<FavSlot[]>(Array(8).fill(null));
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -696,6 +784,88 @@ export default function ProfilePage() {
   const [friendsLoading, setFriendsLoading] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ── Featured card picker ──
+  const [showFeaturedPicker, setShowFeaturedPicker] = useState(false);
+  const [pickerCards, setPickerCards] = useState<{ player_id: string; rarity: string }[]>([]);
+  const [pickerLoading, setPickerLoading] = useState(true);
+  const [pickerSearch, setPickerSearch] = useState("");
+
+  function openFeaturedPicker() {
+    if (!user) return;
+    setShowFeaturedPicker(true);
+    setPickerSearch("");
+  }
+
+  // ── Featured passes picker ──
+  const [showPassesPicker, setShowPassesPicker]       = useState(false);
+  const [pickerPlayerPasses, setPickerPlayerPasses]   = useState<PlayerPass[]>([]);
+  const [pickerTeamPasses, setPickerTeamPasses]       = useState<TeamPass[]>([]);
+  const [passesPickerLoading, setPassesPickerLoading] = useState(true);
+  const [passesPickerSearch, setPassesPickerSearch]   = useState("");
+
+  function openPassesPicker() {
+    if (!user) return;
+    setShowPassesPicker(true);
+    setPassesPickerSearch("");
+  }
+
+  async function toggleFeaturedPass(type: "player" | "team", id: string) {
+    if (!user || !profile) return;
+    const current = profile.featured_passes ?? [];
+    const isFeatured = current.some(f => f.id === id);
+    let newFeatured: FeaturedPassSlot[];
+    if (isFeatured) {
+      newFeatured = current.filter(f => f.id !== id);
+    } else {
+      if (current.length >= 10) return;
+      newFeatured = [...current, { type, id }];
+    }
+    setProfile(prev => prev ? { ...prev, featured_passes: newFeatured } : prev);
+    const token = accessTokenRef.current;
+    if (!token) return;
+    const res = await fetch("/api/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ featured_passes: newFeatured }),
+    });
+    if (!res.ok) {
+      console.error("Failed to save featured passes:", await res.text());
+      setProfile(prev => prev ? { ...prev, featured_passes: current } : prev);
+    }
+  }
+
+  async function toggleFeaturedCard(playerId: string, rarity: string) {
+    if (!user || !profile) return;
+    const current = profile.featured_cards ?? [];
+    const isFeatured = current.some(f => f.player_id === playerId && f.rarity === rarity);
+    let newFeatured: FeaturedCardSlot[];
+    if (isFeatured) {
+      newFeatured = current.filter(f => !(f.player_id === playerId && f.rarity === rarity));
+    } else {
+      if (current.length >= 15) return;
+      newFeatured = [...current, { player_id: playerId, rarity }];
+    }
+    // Optimistic update
+    setProfile(prev => prev ? { ...prev, featured_cards: newFeatured } : prev);
+    // Save via API route (service role — bypasses RLS)
+    const token = accessTokenRef.current;
+    if (!token) {
+      console.error("No access token available — cannot save featured cards");
+      setProfile(prev => prev ? { ...prev, featured_cards: current } : prev);
+      return;
+    }
+    const res = await fetch("/api/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ featured_cards: newFeatured }),
+    });
+    if (!res.ok) {
+      console.error("Failed to save featured cards:", await res.text());
+      // Revert on failure
+      setProfile(prev => prev ? { ...prev, featured_cards: current } : prev);
+    }
+  }
+
   // ── Stats section ──
   type StatsPopup = null | "games" | "likes" | "polls";
   const [statsPopup, setStatsPopup] = useState<StatsPopup>(null);
@@ -728,6 +898,8 @@ export default function ProfilePage() {
     // so it's more reliable than getSession() which can return null mid-refresh.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       const u = session?.user ?? null;
+      // Always keep the latest access token cached for API calls
+      if (session?.access_token) accessTokenRef.current = session.access_token;
 
       if (event === "INITIAL_SESSION") {
         setUser(u);
@@ -781,11 +953,32 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!user) return;
+    // Card count (for stats row)
     supabase
       .from("user_cards")
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id)
       .then(({ count }) => setCardCount(count ?? 0));
+    // Prefetch picker cards so the modal opens instantly
+    setPickerLoading(true);
+    supabase
+      .from("user_cards")
+      .select("player_id, rarity")
+      .eq("user_id", user.id)
+      .then(({ data }) => {
+        setPickerCards(data ?? []);
+        setPickerLoading(false);
+      });
+    // Prefetch passes for the passes picker
+    setPassesPickerLoading(true);
+    Promise.all([
+      supabase.from("user_player_passes").select("*").eq("user_id", user.id),
+      supabase.from("user_team_passes").select("*").eq("user_id", user.id).eq("active", true).order("created_at", { ascending: true }),
+    ]).then(([playerRes, teamRes]) => {
+      setPickerPlayerPasses((playerRes.data ?? []) as PlayerPass[]);
+      setPickerTeamPasses((teamRes.data ?? []) as TeamPass[]);
+      setPassesPickerLoading(false);
+    });
   }, [user]);
 
   // Fetch ratings for featured cards so the carousel can show them
@@ -1476,7 +1669,7 @@ export default function ProfilePage() {
 
         {/* ── Featured Cards ── */}
         {(() => {
-          const featuredSlots = (profile?.featured_cards ?? []).slice(0, 5);
+          const featuredSlots = (profile?.featured_cards ?? []).slice(0, 15);
           const featuredWithData = featuredSlots
             .map(fc => ({
               fc,
@@ -1489,10 +1682,24 @@ export default function ProfilePage() {
           return (
             <div style={{ ...sectionCardStyle, padding: "16px 0 0", overflow: "hidden" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", marginBottom: 0 }}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text-3)", textTransform: "uppercase" as const, letterSpacing: "0.08em" }}>featured cards</div>
-                <Link href="/album" style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", textDecoration: "none" }}>
-                  {hasFeatured ? `${featuredWithData.length}/5 · View Album` : "Go to Album"}
-                </Link>
+                <button
+                  onClick={openFeaturedPicker}
+                  style={{
+                    background: "none", border: "none", padding: 0, cursor: "pointer",
+                    fontSize: 12, fontWeight: 800, color: "var(--text-3)",
+                    textTransform: "uppercase", letterSpacing: "0.08em",
+                    display: "flex", alignItems: "center", gap: 5,
+                  }}
+                >
+                  featured cards
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                <button
+                  onClick={openFeaturedPicker}
+                  style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: 11, fontWeight: 700, color: "var(--text-3)" }}
+                >
+                  {hasFeatured ? `${featuredWithData.length}/15 · Edit` : "Add Cards"}
+                </button>
               </div>
               {hasFeatured ? (
                 <FeaturedCardsCarousel cards={featuredWithData} />
@@ -1503,7 +1710,52 @@ export default function ProfilePage() {
                   </svg>
                   <div style={{ textAlign: "center" }}>
                     <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text-4)" }}>No featured cards yet</div>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: "#1e293b", marginTop: 4 }}>Tap ⭐ on cards in your album</div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: "#1e293b", marginTop: 4 }}>Tap "featured cards" to pick some</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* ── Featured Passes ── */}
+        {(() => {
+          const featuredPassSlots = profile?.featured_passes ?? [];
+          const featuredPasses = featuredPassSlots
+            .map(slot => {
+              if (slot.type === "team") {
+                const pass = pickerTeamPasses.find(p => p.id === slot.id) ?? null;
+                return pass ? { slot, pass: pass as TeamPass | PlayerPass, passType: "team" as const } : null;
+              } else {
+                const pass = pickerPlayerPasses.find(p => p.id === slot.id);
+                return pass ? { slot, pass: pass as TeamPass | PlayerPass, passType: "player" as const } : null;
+              }
+            })
+            .filter((x): x is { slot: FeaturedPassSlot; pass: TeamPass | PlayerPass; passType: "player" | "team" } => x !== null);
+
+          const hasPasses = featuredPasses.length > 0;
+          return (
+            <div style={{ ...sectionCardStyle, padding: "16px 0 0", overflow: "hidden" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", marginBottom: 0 }}>
+                <button
+                  onClick={openPassesPicker}
+                  style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: 12, fontWeight: 800, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.08em", display: "flex", alignItems: "center", gap: 5 }}
+                >
+                  featured passes
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                <button onClick={openPassesPicker} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: 11, fontWeight: 700, color: "var(--text-3)" }}>
+                  {hasPasses ? `${featuredPasses.length}/10 · Edit` : "Add Passes"}
+                </button>
+              </div>
+              {hasPasses ? (
+                <FeaturedPassesCarousel passes={featuredPasses} />
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, padding: "28px 0 20px" }}>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2"/></svg>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text-4)" }}>No featured passes yet</div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: "#1e293b", marginTop: 4 }}>Tap "featured passes" to pick some</div>
                   </div>
                 </div>
               )}
@@ -2019,6 +2271,253 @@ export default function ProfilePage() {
         </>,
         document.body
       )}
+
+      {/* ── Featured Card Picker Modal ── */}
+      {showFeaturedPicker && (() => {
+        const currentFeatured = profile?.featured_cards ?? [];
+        const query = pickerSearch.toLowerCase();
+        const RARITY_ORDER = ["pinkdiamond","mythic","diamond","amethyst","ruby","sapphire","emerald","gold","silver","bronze"];
+        const filtered = pickerCards
+          .map(pc => ({ pc, player: CARD_PLAYERS.find(p => p.id === pc.player_id) }))
+          .filter((x): x is { pc: typeof pickerCards[0]; player: typeof CARD_PLAYERS[0] } => !!x.player)
+          .filter(({ player }) =>
+            !query ||
+            player.name.toLowerCase().includes(query) ||
+            player.team.toLowerCase().includes(query)
+          );
+        // Selected cards first, then by rarity
+        filtered.sort((a, b) => {
+          const aFeat = currentFeatured.some(f => f.player_id === a.pc.player_id && f.rarity === a.pc.rarity) ? 0 : 1;
+          const bFeat = currentFeatured.some(f => f.player_id === b.pc.player_id && f.rarity === b.pc.rarity) ? 0 : 1;
+          if (aFeat !== bFeat) return aFeat - bFeat;
+          const ai = RARITY_ORDER.indexOf(a.pc.rarity);
+          const bi = RARITY_ORDER.indexOf(b.pc.rarity);
+          return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+        });
+        return createPortal(
+          <>
+            {/* Backdrop */}
+            <div
+              onClick={() => setShowFeaturedPicker(false)}
+              style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)" }}
+            />
+            {/* Sheet */}
+            <div style={{
+              position: "fixed", left: "50%", top: "50%",
+              transform: "translate(-50%,-50%)",
+              zIndex: 201,
+              width: "min(520px, 96vw)", maxHeight: "82dvh",
+              background: "var(--surface-1)",
+              border: "1px solid var(--border-2)",
+              borderRadius: 22,
+              display: "flex", flexDirection: "column",
+              boxShadow: "0 32px 80px rgba(0,0,0,0.8)",
+              overflow: "hidden",
+            }}>
+              {/* Header */}
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "16px 18px 12px",
+                borderBottom: "1px solid var(--border-1)", flexShrink: 0,
+              }}>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: "var(--text-1)", letterSpacing: "-0.02em" }}>Featured Cards</div>
+                  <div style={{ fontSize: 11, color: "var(--text-3)", marginTop: 2, fontWeight: 600 }}>
+                    {currentFeatured.length}/15 selected
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowFeaturedPicker(false)}
+                  style={{ background: "var(--surface-3)", border: "none", borderRadius: "50%", width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-2)", flexShrink: 0 }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                </button>
+              </div>
+
+              {/* Search */}
+              <div style={{ padding: "10px 14px 8px", flexShrink: 0, borderBottom: "1px solid var(--border-1)" }}>
+                <div style={{ position: "relative" }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2.5" strokeLinecap="round" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }}>
+                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                  </svg>
+                  <input
+                    value={pickerSearch}
+                    onChange={e => setPickerSearch(e.target.value)}
+                    placeholder="Search by player or team…"
+                    style={{
+                      width: "100%", boxSizing: "border-box",
+                      background: "var(--surface-3)", border: "1px solid var(--border-2)",
+                      borderRadius: 10, padding: "8px 10px 8px 30px",
+                      color: "var(--text-1)", fontSize: 13, fontWeight: 500,
+                      outline: "none",
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Card grid */}
+              <div style={{ overflowY: "auto", flex: 1, padding: "12px 10px 16px" }}>
+                {pickerLoading ? (
+                  <div style={{ textAlign: "center", padding: 40, color: "var(--text-3)", fontSize: 13 }}>Loading your cards…</div>
+                ) : filtered.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: 40, color: "var(--text-3)", fontSize: 13 }}>
+                    {pickerCards.length === 0 ? "You have no cards yet" : "No cards match your search"}
+                  </div>
+                ) : (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+                    {filtered.map(({ pc, player }) => {
+                      const isFeat = currentFeatured.some(f => f.player_id === pc.player_id && f.rarity === pc.rarity);
+                      const meta = RARITY_META[pc.rarity] ?? RARITY_META.bronze;
+                      const canAdd = isFeat || currentFeatured.length < 15;
+                      return (
+                        <div
+                          key={`${pc.player_id}-${pc.rarity}`}
+                          onClick={() => canAdd && toggleFeaturedCard(pc.player_id, pc.rarity)}
+                          style={{
+                            position: "relative",
+                            cursor: canAdd ? "pointer" : "not-allowed",
+                            opacity: !canAdd ? 0.4 : 1,
+                            borderRadius: 11,
+                            outline: isFeat ? `3px solid ${meta.color}` : "3px solid transparent",
+                            outlineOffset: 2,
+                            transition: "outline-color 0.15s, opacity 0.15s",
+                          }}
+                        >
+                          <PlayerCard
+                            card={{
+                              playerId: player.id,
+                              playerName: player.name,
+                              playerFolder: player.folder,
+                              playerTeam: player.team,
+                              playerTeamLogo: player.teamLogo,
+                              rarity: pc.rarity,
+                            }}
+                          />
+                          {/* Selected checkmark overlay */}
+                          {isFeat && (
+                            <div style={{
+                              position: "absolute", top: 7, right: 7,
+                              width: 20, height: 20, borderRadius: "50%",
+                              background: meta.color, zIndex: 10,
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              boxShadow: `0 0 8px ${meta.glow}`,
+                            }}>
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div style={{ borderTop: "1px solid var(--border-1)", padding: "12px 18px", flexShrink: 0, display: "flex", justifyContent: "flex-end" }}>
+                <button
+                  onClick={() => setShowFeaturedPicker(false)}
+                  style={{ background: "#3b82f6", border: "none", borderRadius: 10, padding: "9px 22px", color: "#fff", fontWeight: 800, fontSize: 13, cursor: "pointer" }}
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </>,
+          document.body
+        );
+      })()}
+
+      {/* ── Featured Passes Picker Modal ── */}
+      {showPassesPicker && (() => {
+        const currentFeatured = profile?.featured_passes ?? [];
+        const query = passesPickerSearch.toLowerCase();
+        const allPasses: { type: "player" | "team"; pass: PlayerPass | TeamPass }[] = [
+          ...pickerTeamPasses.map(p => ({ type: "team" as const, pass: p as TeamPass | PlayerPass })),
+          ...pickerPlayerPasses.map(p => ({ type: "player" as const, pass: p as TeamPass | PlayerPass })),
+        ].filter(({ pass }) => {
+          if (!query) return true;
+          const name = (pass as PlayerPass).player_name ?? (pass as TeamPass).team_name ?? "";
+          const team = (pass as PlayerPass).team_name ?? "";
+          return name.toLowerCase().includes(query) || team.toLowerCase().includes(query);
+        });
+        // Featured first
+        allPasses.sort((a, b) => {
+          const aFeat = currentFeatured.some(f => f.id === a.pass.id) ? 0 : 1;
+          const bFeat = currentFeatured.some(f => f.id === b.pass.id) ? 0 : 1;
+          if (aFeat !== bFeat) return aFeat - bFeat;
+          // team passes first
+          if (a.type !== b.type) return a.type === "team" ? -1 : 1;
+          // then by xp desc
+          return (b.pass.xp ?? 0) - (a.pass.xp ?? 0);
+        });
+
+        return createPortal(
+          <>
+            <div onClick={() => setShowPassesPicker(false)} style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)" }} />
+            <div style={{ position: "fixed", left: "50%", top: "50%", transform: "translate(-50%,-50%)", zIndex: 201, width: "min(520px, 96vw)", maxHeight: "82dvh", background: "var(--surface-1)", border: "1px solid var(--border-2)", borderRadius: 22, display: "flex", flexDirection: "column", boxShadow: "0 32px 80px rgba(0,0,0,0.8)", overflow: "hidden" }}>
+              {/* Header */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px 12px", borderBottom: "1px solid var(--border-1)", flexShrink: 0 }}>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: "var(--text-1)", letterSpacing: "-0.02em" }}>Featured Passes</div>
+                  <div style={{ fontSize: 11, color: "var(--text-3)", marginTop: 2, fontWeight: 600 }}>{currentFeatured.length}/10 selected</div>
+                </div>
+                <button onClick={() => setShowPassesPicker(false)} style={{ background: "var(--surface-3)", border: "none", borderRadius: "50%", width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-2)", flexShrink: 0 }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                </button>
+              </div>
+              {/* Search */}
+              <div style={{ padding: "10px 14px 8px", flexShrink: 0, borderBottom: "1px solid var(--border-1)" }}>
+                <div style={{ position: "relative" }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2.5" strokeLinecap="round" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                  <input value={passesPickerSearch} onChange={e => setPassesPickerSearch(e.target.value)} placeholder="Search by player or team…" style={{ width: "100%", boxSizing: "border-box", background: "var(--surface-3)", border: "1px solid var(--border-2)", borderRadius: 10, padding: "8px 10px 8px 30px", color: "var(--text-1)", fontSize: 13, fontWeight: 500, outline: "none" }} />
+                </div>
+              </div>
+              {/* Grid */}
+              <div style={{ overflowY: "auto", flex: 1, padding: "12px 10px 16px" }}>
+                {passesPickerLoading ? (
+                  <div style={{ textAlign: "center", padding: 40, color: "var(--text-3)", fontSize: 13 }}>Loading your passes…</div>
+                ) : allPasses.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: 40, color: "var(--text-3)", fontSize: 13 }}>
+                    {(pickerPlayerPasses.length + pickerTeamPasses.length) === 0 ? "You have no passes yet" : "No passes match your search"}
+                  </div>
+                ) : (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+                    {allPasses.map(({ type, pass }) => {
+                      const isFeat = currentFeatured.some(f => f.id === pass.id);
+                      const canAdd = isFeat || currentFeatured.length < 10;
+                      const levelColor = getPassLevel(pass.xp ?? 0, type === "player" ? PLAYER_PASS_LEVELS : TEAM_PASS_LEVELS).color;
+                      return (
+                        <div
+                          key={pass.id}
+                          onClick={() => canAdd && toggleFeaturedPass(type, pass.id)}
+                          style={{ position: "relative", cursor: canAdd ? "pointer" : "not-allowed", opacity: !canAdd ? 0.4 : 1, borderRadius: 11, outline: isFeat ? `3px solid ${levelColor}` : "3px solid transparent", outlineOffset: 2, transition: "outline-color 0.15s" }}
+                        >
+                          {type === "player"
+                            ? <PlayerPassCard pass={pass as PlayerPass} />
+                            : <TeamPassCard   pass={pass as TeamPass} />
+                          }
+                          {isFeat && (
+                            <div style={{ position: "absolute", top: 7, right: 7, width: 20, height: 20, borderRadius: "50%", background: levelColor, zIndex: 10, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 0 8px ${levelColor}88` }}>
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+              {/* Footer */}
+              <div style={{ borderTop: "1px solid var(--border-1)", padding: "12px 18px", flexShrink: 0, display: "flex", justifyContent: "flex-end" }}>
+                <button onClick={() => setShowPassesPicker(false)} style={{ background: "#3b82f6", border: "none", borderRadius: 10, padding: "9px 22px", color: "#fff", fontWeight: 800, fontSize: 13, cursor: "pointer" }}>
+                  Done
+                </button>
+              </div>
+            </div>
+          </>,
+          document.body
+        );
+      })()}
     </main>
   );
 }

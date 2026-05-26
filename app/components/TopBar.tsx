@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { Activity } from "lucide-react";
 import { supabase } from "@/app/lib/supabase";
 
+export const NOTIF_LAST_SEEN_KEY = "foopy_notif_last_seen";
+
 export default function TopBar() {
   const [unread, setUnread] = useState(0);
 
@@ -12,33 +14,30 @@ export default function TopBar() {
     let userId: string | null = null;
     let channel: ReturnType<typeof supabase.channel> | null = null;
 
+    async function countNew(uid: string) {
+      const lastSeen = localStorage.getItem(NOTIF_LAST_SEEN_KEY) ?? new Date(0).toISOString();
+      const { count } = await supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", uid)
+        .gt("created_at", lastSeen);
+      setUnread(count ?? 0);
+    }
+
     async function init() {
       const { data } = await supabase.auth.getSession();
       userId = data?.session?.user?.id ?? null;
       if (!userId) return;
 
-      // Initial count
-      const { count } = await supabase
-        .from("notifications")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", userId)
-        .eq("read", false);
-      setUnread(count ?? 0);
+      await countNew(userId);
 
-      // Realtime subscription
+      // Only re-count when new notifications are inserted
       channel = supabase
         .channel("notif-badge")
         .on(
           "postgres_changes",
-          { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
-          async () => {
-            const { count: c } = await supabase
-              .from("notifications")
-              .select("id", { count: "exact", head: true })
-              .eq("user_id", userId!)
-              .eq("read", false);
-            setUnread(c ?? 0);
-          }
+          { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
+          () => countNew(userId!)
         )
         .subscribe();
     }
@@ -46,6 +45,12 @@ export default function TopBar() {
     init();
     return () => { channel?.unsubscribe(); };
   }, []);
+
+  function handleBellClick() {
+    // Instantly clear the badge and record when the user last checked
+    localStorage.setItem(NOTIF_LAST_SEEN_KEY, new Date().toISOString());
+    setUnread(0);
+  }
 
   return (
     <header className="app-header">
@@ -56,7 +61,11 @@ export default function TopBar() {
         <span className="app-logo-text">Foopy</span>
       </Link>
 
-      <Link href="/notifications" style={{ position: "relative", color: "inherit", display: "flex", alignItems: "center", padding: "4px 6px" }}>
+      <Link
+        href="/notifications"
+        onClick={handleBellClick}
+        style={{ position: "relative", color: "inherit", display: "flex", alignItems: "center", padding: "4px 6px" }}
+      >
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--text-3)" }}>
           <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
           <path d="M13.73 21a2 2 0 0 1-3.46 0" />

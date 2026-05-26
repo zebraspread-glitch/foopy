@@ -7,6 +7,7 @@ import { supabase } from "@/app/lib/supabase";
 import {
   AFL_TEAMS,
   MAX_PLAYER_PASSES,
+  MAX_TEAM_PASSES,
   PLAYER_PASS_COST,
   TEAM_PASS_COST,
   PLAYER_PASS_LEVELS,
@@ -19,62 +20,13 @@ import {
 } from "@/app/lib/passes";
 import { auraToastEmitter } from "@/app/lib/auraToastEmitter";
 import playersRaw from "@/app/data/players.json";
+import { PlayerPassCard, TeamPassCard, PASS_TEAM_LOGOS, PASS_TEAM_COLORS, playerPassImgSrc } from "@/app/components/PassCard";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const TEAM_LOGOS: Record<string, string> = {
-  "Adelaide Crows": "/team-logos/crows.png", "Brisbane Lions": "/team-logos/lions.png",
-  Carlton: "/team-logos/blues.png", Collingwood: "/team-logos/magpies.png",
-  Essendon: "/team-logos/bombers.png", Fremantle: "/team-logos/dockers.png",
-  "Geelong Cats": "/team-logos/cats.png", "Gold Coast Suns": "/team-logos/suns.png",
-  "GWS Giants": "/team-logos/giants.png", Hawthorn: "/team-logos/hawks.png",
-  Melbourne: "/team-logos/demons.png", "North Melbourne": "/team-logos/kangaroos.png",
-  "Port Adelaide": "/team-logos/power.png", Richmond: "/team-logos/tigers.png",
-  "St Kilda": "/team-logos/saints.png", "Sydney Swans": "/team-logos/swans.png",
-  "West Coast Eagles": "/team-logos/eagles.png", "Western Bulldogs": "/team-logos/bulldogs.png",
-};
+const teamLogo  = (n: string) => PASS_TEAM_LOGOS[n]  ?? "/team-logos/default.png";
+const teamColor = (n: string) => PASS_TEAM_COLORS[n] ?? "#6d28d9";
 
-const TEAM_COLORS: Record<string, string> = {
-  "Adelaide Crows": "#002b5c", "Brisbane Lions": "#a50034", Carlton: "#031a35",
-  Collingwood: "#1a1a1a", Essendon: "#ef4444", Fremantle: "#7c3aed",
-  "Geelong Cats": "#1e3a8a", "Gold Coast Suns": "#ef4444", "GWS Giants": "#f97316",
-  Hawthorn: "#78350f", Melbourne: "#1e40af", "North Melbourne": "#1e3a8a",
-  "Port Adelaide": "#1e293b", Richmond: "#f59e0b", "St Kilda": "#dc2626",
-  "Sydney Swans": "#dc2626", "West Coast Eagles": "#1d4ed8", "Western Bulldogs": "#1e40af",
-};
-
-const teamLogo  = (n: string) => TEAM_LOGOS[n]  ?? "/team-logos/default.png";
-const teamColor = (n: string) => TEAM_COLORS[n] ?? "#6d28d9";
-
-// Maps short team names (from players.json) and full names to public folder names
-const TEAM_FOLDER: Record<string, string> = {
-  Adelaide: "crows",          "Adelaide Crows": "crows",
-  Brisbane: "lions",          "Brisbane Lions": "lions",
-  Carlton: "blues",
-  Collingwood: "magpies",
-  Essendon: "bombers",
-  Fremantle: "dockers",
-  GWS: "giants",              "GWS Giants": "giants",
-  Geelong: "cats",            "Geelong Cats": "cats",
-  "Gold Coast": "suns",       "Gold Coast Suns": "suns",
-  Hawthorn: "hawks",
-  Melbourne: "demons",
-  "North Melbourne": "kangaroos",
-  "Port Adelaide": "power",
-  Richmond: "tigers",
-  "St Kilda": "saints",
-  Sydney: "swans",            "Sydney Swans": "swans",
-  "West Coast": "eagles",     "West Coast Eagles": "eagles",
-  "Western Bulldogs": "bulldogs",
-};
-
-// Build image src from name + team — images live at /players/{folder}/{slugname}.png
-function playerImgSrc(playerName: string, teamName: string): string {
-  const folder = TEAM_FOLDER[teamName] ?? teamName.toLowerCase().replace(/[^a-z]/g, "");
-  const slug   = playerName.toLowerCase().replace(/[^a-z]/g, "");
-  if (!folder || !slug) return "";
-  return `/players/${folder}/${slug}.png`;
-}
 
 function fmtCoins(n: number) {
   return n >= 1000 ? `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k` : String(n);
@@ -89,7 +41,7 @@ function CoinImg({ size = 14 }: { size?: number }) {
 type Tab = "player" | "team";
 
 type PassesData = {
-  teamPass: TeamPass | null;
+  teamPasses: TeamPass[];
   playerPasses: PlayerPass[];
   pendingRewards: unknown[];
   recentRewards: PassReward[];
@@ -98,139 +50,15 @@ type PassesData = {
   coins: number;
 };
 
-// ── XP Bar ────────────────────────────────────────────────────────────────────
-
-function XpBar({ level }: { level: PassLevelInfo }) {
-  return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-        <span style={{ fontSize: 9, fontWeight: 900, color: level.color, letterSpacing: "0.06em" }}>
-          {level.name.toUpperCase()} · {level.multiplier}×
-        </span>
-        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>
-          {level.isMaxed ? "MAX" : `${level.xp}/${level.nextXp}`}
-        </span>
-      </div>
-      <div style={{ background: "rgba(0,0,0,0.45)", borderRadius: 999, height: 4, overflow: "hidden" }}>
-        <div style={{
-          width: `${Math.round(level.progress * 100)}%`, height: "100%", borderRadius: 999,
-          background: `linear-gradient(90deg,${level.darkColor},${level.color})`,
-          boxShadow: `0 0 6px ${level.color}80`,
-        }} />
-      </div>
+// Local aliases so all the existing call sites keep working unchanged
+const PlayerCard = PlayerPassCard;
+const TeamCard   = ({ pass }: { pass: TeamPass }) => (
+  <div style={{ display: "flex", justifyContent: "center" }}>
+    <div style={{ width: "100%", maxWidth: 280 }}>
+      <TeamPassCard pass={pass} />
     </div>
-  );
-}
-
-// ── Player pass card ──────────────────────────────────────────────────────────
-
-function PlayerCard({ pass }: { pass: PlayerPass }) {
-  const level = getPassLevel(pass.xp ?? 0, PLAYER_PASS_LEVELS);
-  const img   = playerImgSrc(pass.player_name, pass.team_name);
-  return (
-    <div style={{
-      borderRadius: 16, overflow: "hidden", position: "relative",
-      background: level.gradient,
-      border: `1.5px solid ${level.color}55`,
-      boxShadow: `0 4px 24px ${level.color}22, 0 0 0 0.5px rgba(255,255,255,0.06)`,
-      aspectRatio: "3/4",
-      display: "flex", flexDirection: "column",
-    }}>
-      {/* shimmer edge */}
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1.5, background: `linear-gradient(90deg,transparent,${level.color}cc,transparent)`, zIndex: 3 }} />
-
-      {/* level badge */}
-      <div style={{ position: "absolute", top: 8, left: 8, zIndex: 4, background: level.color, color: "#000", fontSize: 7.5, fontWeight: 900, letterSpacing: "0.1em", padding: "2px 7px", borderRadius: 999 }}>
-        {level.name.toUpperCase()}
-      </div>
-
-      {/* season year */}
-      <div style={{ position: "absolute", top: 8, right: 8, zIndex: 4, fontSize: 8, fontWeight: 900, color: "rgba(255,255,255,0.35)", letterSpacing: "0.06em" }}>
-        2026
-      </div>
-
-      {/* photo — fills ~70% of card */}
-      <div style={{ flex: 1, overflow: "hidden", position: "relative", background: "rgba(0,0,0,0.2)" }}>
-        {img
-          ? <img src={img} alt={pass.player_name} suppressHydrationWarning
-              style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", display: "block" }}
-              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-          : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 44 }}>👤</div>
-        }
-        {/* fade into footer */}
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 40, background: `linear-gradient(to bottom, transparent, ${level.gradient.match(/#[0-9a-f]{6}/i)?.[0] ?? "#1a0a00"})` }} />
-      </div>
-
-      {/* footer info */}
-      <div style={{ padding: "8px 10px 10px", background: "rgba(0,0,0,0.25)", flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 1 }}>
-          <div style={{ fontWeight: 900, fontSize: 12, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>{pass.player_name}</div>
-          {pass.serial_number != null && (
-            <div style={{ fontSize: 9, fontWeight: 900, color: level.color, letterSpacing: "0.04em", flexShrink: 0, marginLeft: 5 }}>#{pass.serial_number}</div>
-          )}
-        </div>
-        <div style={{ fontSize: 9.5, color: "rgba(255,255,255,0.45)", marginBottom: 6 }}>{pass.team_name}</div>
-        <XpBar level={level} />
-      </div>
-    </div>
-  );
-}
-
-// ── Team pass card ────────────────────────────────────────────────────────────
-
-function TeamCard({ pass }: { pass: TeamPass }) {
-  const level  = getPassLevel(pass.xp ?? 0, TEAM_PASS_LEVELS);
-  const color  = teamColor(pass.team_name);
-  return (
-    <div style={{ display: "flex", justifyContent: "center" }}>
-      <div style={{
-        width: "100%", maxWidth: 280,
-        borderRadius: 20, overflow: "hidden", position: "relative",
-        background: level.gradient,
-        border: `1.5px solid ${level.color}55`,
-        boxShadow: `0 6px 32px ${level.color}28, 0 0 0 0.5px rgba(255,255,255,0.06)`,
-        aspectRatio: "3/4",
-        display: "flex", flexDirection: "column",
-      }}>
-        {/* shimmer top */}
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1.5, background: `linear-gradient(90deg,transparent,${level.color}cc,transparent)`, zIndex: 3 }} />
-
-        {/* level badge */}
-        <div style={{ position: "absolute", top: 10, left: 10, zIndex: 4, background: level.color, color: "#000", fontSize: 7.5, fontWeight: 900, letterSpacing: "0.1em", padding: "2px 8px", borderRadius: 999 }}>
-          {level.name.toUpperCase()}
-        </div>
-        {/* year */}
-        <div style={{ position: "absolute", top: 10, right: 10, zIndex: 4, fontSize: 8, fontWeight: 900, color: "rgba(255,255,255,0.35)", letterSpacing: "0.06em" }}>
-          2026
-        </div>
-
-        {/* logo area */}
-        <div style={{ flex: 1, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-          {/* glow behind logo */}
-          <div style={{ position: "absolute", width: "70%", height: "70%", borderRadius: "50%", background: `${color}40`, filter: "blur(32px)" }} />
-          <div style={{ width: 150, height: 150, borderRadius: "50%", overflow: "hidden", flexShrink: 0, position: "relative", zIndex: 1 }}>
-            <img src={teamLogo(pass.team_name)} alt={pass.team_name}
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-          </div>
-          {/* fade into footer */}
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 48, background: `linear-gradient(to bottom, transparent, ${level.gradient.match(/#[0-9a-f]{6}/i)?.[0] ?? "#1a0a00"})` }} />
-        </div>
-
-        {/* footer */}
-        <div style={{ padding: "10px 12px 14px", background: "rgba(0,0,0,0.25)", flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 1 }}>
-            <div style={{ fontWeight: 900, fontSize: 16, color: "#fff", letterSpacing: "-0.01em" }}>{pass.team_name}</div>
-            {pass.serial_number != null && (
-              <div style={{ fontSize: 11, fontWeight: 900, color: level.color, letterSpacing: "0.04em" }}>#{pass.serial_number}</div>
-            )}
-          </div>
-          <div style={{ fontSize: 10, color: level.color, fontWeight: 800, marginBottom: 8, letterSpacing: "0.04em" }}>TEAM PASS · 2026 SEASON</div>
-          <XpBar level={level} />
-        </div>
-      </div>
-    </div>
-  );
-}
+  </div>
+);
 
 // ── Empty state card ──────────────────────────────────────────────────────────
 
@@ -298,7 +126,7 @@ function PassLeaderboard({ pass, onClose }: { pass: PlayerPass; onClose: () => v
 
   const myRank = sorted.findIndex(e => e.user_id === myId) + 1;
   const total  = sorted.length;
-  const imgSrc = playerImgSrc(pass.player_name, pass.team_name);
+  const imgSrc = playerPassImgSrc(pass.player_name, pass.team_name);
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 11000, background: "var(--bg)", display: "flex", flexDirection: "column", overflowY: "auto" }}>
@@ -350,8 +178,8 @@ function PassLeaderboard({ pass, onClose }: { pass: PlayerPass; onClose: () => v
               const level  = getPassLevel(entry.xp ?? 0, PLAYER_PASS_LEVELS);
               const isMe   = entry.user_id === myId;
               const serial = entry.serial_number;
-              const rankLabel = sort === "first" && serial != null ? `#${serial}` : `#${idx + 1}`;
-              const rankColor = idx === 0 ? "#ffd700" : idx === 1 ? "#c0c0c0" : idx === 2 ? "#cd7f32" : "rgba(255,255,255,0.55)";
+              const rankLabel = serial != null ? `#${serial}` : `#${idx + 1}`;
+              const rankColor = "#ffffff";
 
               return (
                 <div key={entry.id} style={{
@@ -373,7 +201,7 @@ function PassLeaderboard({ pass, onClose }: { pass: PlayerPass; onClose: () => v
                   </div>
 
                   {/* rank / serial — top right */}
-                  <div style={{ position: "absolute", top: 8, right: 8, zIndex: 5, fontSize: 8, fontWeight: 900, color: isMe ? level.color : rankColor, letterSpacing: "0.06em" }}>
+                  <div style={{ position: "absolute", top: 8, right: 8, zIndex: 5, fontSize: 8, fontWeight: 900, color: rankColor, letterSpacing: "0.06em" }}>
                     {rankLabel}
                   </div>
 
@@ -508,8 +336,8 @@ function TeamPassLeaderboard({ pass, onClose }: { pass: TeamPass; onClose: () =>
               const level  = getPassLevel(entry.xp ?? 0, TEAM_PASS_LEVELS);
               const isMe   = entry.user_id === myId;
               const serial = entry.serial_number;
-              const rankLabel = sort === "first" && serial != null ? `#${serial}` : `#${idx + 1}`;
-              const rankColor = idx === 0 ? "#ffd700" : idx === 1 ? "#c0c0c0" : idx === 2 ? "#cd7f32" : "rgba(255,255,255,0.55)";
+              const rankLabel = serial != null ? `#${serial}` : `#${idx + 1}`;
+              const rankColor = "#ffffff";
               const color = teamColor(entry.team_name);
 
               return (
@@ -528,7 +356,7 @@ function TeamPassLeaderboard({ pass, onClose }: { pass: TeamPass; onClose: () =>
                     {level.name.toUpperCase()}
                   </div>
                   {/* rank */}
-                  <div style={{ position: "absolute", top: 10, right: 10, zIndex: 4, fontSize: 8, fontWeight: 900, color: isMe ? level.color : rankColor, letterSpacing: "0.06em" }}>
+                  <div style={{ position: "absolute", top: 10, right: 10, zIndex: 4, fontSize: 8, fontWeight: 900, color: rankColor, letterSpacing: "0.06em" }}>
                     {rankLabel}
                   </div>
                   {/* logo area */}
@@ -580,7 +408,7 @@ export default function PassesPage() {
   const [playerPickerOpen, setPlayerPickerOpen] = useState(false);
   const [earningsOpen, setEarningsOpen]         = useState(false);
   const [playerSearch, setPlayerSearch]         = useState("");
-  const [pendingPlayer, setPendingPlayer]       = useState<{ pid: string; name: string; team: string; imgSrc: string } | null>(null);
+  const [pendingPlayer, setPendingPlayer]       = useState<{ pid: string; name: string; team: string; imgSrc: string; xp: number } | null>(null);
   const [purchaseErr, setPurchaseErr]           = useState<string | null>(null);
   const [selectedPass, setSelectedPass]         = useState<PlayerPass | null>(null);
   const [playerSortBy, setPlayerSortBy]         = useState<"recent" | "level">("recent");
@@ -623,6 +451,17 @@ export default function PassesPage() {
       })
       .catch(() => {});
   }, [data, token, fetchData]);
+
+  async function removeTeamPass(teamName: string) {
+    if (!token) return;
+    setSelectedTeamPass(null);
+    await fetch("/api/passes/team", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ team_name: teamName }),
+    });
+    fetchData(token);
+  }
 
   async function handleSetTeam(teamName: string) {
     if (!token) return;
@@ -675,7 +514,7 @@ export default function PassesPage() {
   const passcost   = tab === "player" ? PLAYER_PASS_COST : TEAM_PASS_COST;
   const canGetMore = tab === "player"
     ? (data?.playerPassCount ?? 0) < MAX_PLAYER_PASSES
-    : !data?.teamPass;
+    : (data?.teamPasses?.length ?? 0) < MAX_TEAM_PASSES;
 
   if (authed === false) {
     return (
@@ -752,12 +591,17 @@ export default function PassesPage() {
         </div>
       ) : tab === "team" ? (
         <div style={{ padding: "16px 16px 100px" }}>
-          {data?.teamPass
-            ? <div onClick={() => setSelectedTeamPass(data.teamPass!)} style={{ cursor: "pointer" }}>
-                <TeamCard pass={data.teamPass} />
-              </div>
-            : <EmptyCard tab="team" coins={coins} />
-          }
+          {(data?.teamPasses?.length ?? 0) === 0 ? (
+            <EmptyCard tab="team" coins={coins} />
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: (data?.teamPasses?.length ?? 0) === 1 ? "1fr" : "1fr 1fr", gap: 10, maxWidth: (data?.teamPasses?.length ?? 0) === 1 ? 280 : undefined, margin: "0 auto" }}>
+              {data!.teamPasses.map((pass) => (
+                <div key={pass.id} onClick={() => setSelectedTeamPass(pass)} style={{ cursor: "pointer" }}>
+                  <TeamCard pass={pass} />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       ) : (
         <div style={{ padding: "16px 16px 100px" }}>
@@ -882,6 +726,12 @@ export default function PassesPage() {
             >
               🏆 Leaderboard
             </button>
+            <button
+              onClick={() => removeTeamPass(selectedTeamPass.team_name)}
+              style={{ width: "100%", padding: "11px 0", borderRadius: 999, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.08)", color: "#f87171", fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}
+            >
+              Remove Pass
+            </button>
           </div>
         </Modal>
       )}
@@ -896,22 +746,22 @@ export default function PassesPage() {
         <EarningsModal
           rewards={data.recentRewards}
           playerPasses={data.playerPasses}
-          teamPass={data.teamPass}
+          teamPasses={data.teamPasses}
           onClose={() => setEarningsOpen(false)}
         />
       )}
 
       {/* Team Picker */}
       {teamPickerOpen && (
-        <Modal title={`Buy Team Pass · ${fmtCoins(TEAM_PASS_COST)} coins`} onClose={() => setTeamPickerOpen(false)} centered>
+        <Modal title={`Buy Team Pass · ${fmtCoins(TEAM_PASS_COST)} coins · ${data?.teamPasses?.length ?? 0}/${MAX_TEAM_PASSES}`} onClose={() => setTeamPickerOpen(false)} centered>
           <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
             {AFL_TEAMS.map((team) => {
-              const active = data?.teamPass?.team_name === team;
+              const active = (data?.teamPasses ?? []).some(p => p.team_name === team);
               return (
-                <button key={team} onClick={() => handleSetTeam(team)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 12, border: `1px solid ${active ? teamColor(team) + "70" : "var(--border-2)"}`, background: active ? `${teamColor(team)}18` : "rgba(255,255,255,0.03)", cursor: "pointer", width: "100%", textAlign: "left" }}>
+                <button key={team} onClick={() => !active && handleSetTeam(team)} disabled={active} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 12, border: `1px solid ${active ? teamColor(team) + "70" : "var(--border-2)"}`, background: active ? `${teamColor(team)}18` : "rgba(255,255,255,0.03)", cursor: active ? "default" : "pointer", width: "100%", textAlign: "left", opacity: active ? 0.7 : 1 }}>
                   <img src={teamLogo(team)} alt={team} style={{ width: 32, height: 32, objectFit: "cover", borderRadius: "50%", flexShrink: 0 }} />
                   <span style={{ fontWeight: 700, fontSize: 14, color: "var(--text-1)", flex: 1 }}>{team}</span>
-                  {active && <span style={{ fontSize: 11, color: "#a78bfa", fontWeight: 800 }}>Active</span>}
+                  {active && <span style={{ fontSize: 11, color: "#a78bfa", fontWeight: 800 }}>Active ✓</span>}
                 </button>
               );
             })}
@@ -939,7 +789,7 @@ export default function PassesPage() {
                   player_name: pendingPlayer.name,
                   team_name: pendingPlayer.team,
                   active: true,
-                  xp: 0,
+                  xp: pendingPlayer.xp,
                   serial_number: null,
                   created_at: "",
                 };
@@ -1025,9 +875,31 @@ export default function PassesPage() {
                     const pname = String(p.name ?? p.player ?? "");
                     const team  = String(p.club ?? p.team ?? "");
                     const owned  = ownedIds.has(pid);
-                    const imgSrc = playerImgSrc(pname, team);
+                    const imgSrc = playerPassImgSrc(pname, team);
                     return (
-                      <button key={`${pid}_${i}`} onClick={() => !owned && setPendingPlayer({ pid, name: pname, team, imgSrc })} disabled={owned} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 12, border: "1px solid var(--border-2)", background: owned ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.04)", cursor: owned ? "default" : "pointer", opacity: owned ? 0.45 : 1, width: "100%", textAlign: "left" }}>
+                      <button key={`${pid}_${i}`} onClick={async () => {
+                          if (owned) return;
+                          // Fetch XP from user's existing cards for this player.
+                          // Try matching by player_name (case-insensitive) — most reliable since
+                          // user_cards.player_id format may differ from playersRaw id format.
+                          const { data: byName } = await supabase
+                            .from("user_cards")
+                            .select("rating, duplicate_count")
+                            .ilike("player_name", pname.trim());
+                          // Fallback: also try by the cardIdForName format of the player id
+                          const cardPlayerId = pname.toLowerCase().replace(/'/g, "").replace(/[^a-z0-9]+/g, "");
+                          const { data: byId } = await supabase
+                            .from("user_cards")
+                            .select("rating, duplicate_count")
+                            .eq("player_id", cardPlayerId);
+                          // Merge and deduplicate — pick whichever query returned rows
+                          const cardRows = (byName?.length ? byName : byId) ?? [];
+                          const xp = cardRows.reduce(
+                            (sum: number, c: any) => sum + (Number(c.rating) || 0) * Math.max(Number(c.duplicate_count) || 1, 1),
+                            0
+                          );
+                          setPendingPlayer({ pid, name: pname, team, imgSrc, xp });
+                        }} disabled={owned} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 12, border: "1px solid var(--border-2)", background: owned ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.04)", cursor: owned ? "default" : "pointer", opacity: owned ? 0.45 : 1, width: "100%", textAlign: "left" }}>
                         <div style={{ width: 44, height: 44, borderRadius: 10, overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.07)" }}>
                           {imgSrc
                             ? <img src={imgSrc} alt={pname} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
@@ -1056,14 +928,14 @@ export default function PassesPage() {
 
 // ── Earnings Modal ────────────────────────────────────────────────────────────
 
-function EarningsModal({ rewards, playerPasses, teamPass, onClose }: {
+function EarningsModal({ rewards, playerPasses, teamPasses, onClose }: {
   rewards: PassReward[];
   playerPasses: PlayerPass[];
-  teamPass: TeamPass | null;
+  teamPasses: TeamPass[];
   onClose: () => void;
 }) {
   const passName = (r: PassReward): string => {
-    if (r.pass_type === "team") return teamPass?.team_name ?? "Team Pass";
+    if (r.pass_type === "team") return teamPasses.find(p => p.id === r.pass_id)?.team_name ?? "Team Pass";
     return playerPasses.find((p) => p.id === r.pass_id)?.player_name ?? "Player Pass";
   };
 

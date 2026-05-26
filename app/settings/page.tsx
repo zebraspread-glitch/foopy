@@ -202,6 +202,13 @@ export default function SettingsPage() {
   const [showJerseyNum, setShowJerseyNum] = useState(true);
   const [themeMode, setThemeMode]       = useState<FoopyThemeMode>("default");
 
+  // My Team features
+  const [teamFeaturedMatch, setTeamFeaturedMatch] = useState(true);
+  const [teamBorderColor, setTeamBorderColor]     = useState("#c9962a");
+  const [teamNotifStart, setTeamNotifStart]       = useState(true);
+  const [teamNotifFinal, setTeamNotifFinal]       = useState(true);
+  const [teamNotifLive, setTeamNotifLive]         = useState(false);
+
   // UI
   const [showTeamPicker, setShowTeamPicker] = useState(false);
   const [signOutConfirm, setSignOutConfirm] = useState(false);
@@ -231,6 +238,11 @@ export default function SettingsPage() {
     setNotifTrades(localStorage.getItem("foopy_notif_trades") === "true");
     setNotifNews(localStorage.getItem("foopy_notif_news") !== "false");
     setShowJerseyNum(localStorage.getItem("foopy_show_jersey") !== "false");
+    setTeamFeaturedMatch(localStorage.getItem("foopy_team_featured") !== "false");
+    setTeamBorderColor(localStorage.getItem("foopy_team_border_color") ?? "#c9962a");
+    setTeamNotifStart(localStorage.getItem("foopy_team_notif_start") !== "false");
+    setTeamNotifFinal(localStorage.getItem("foopy_team_notif_final") !== "false");
+    setTeamNotifLive(localStorage.getItem("foopy_team_notif_live") === "true");
 
     const storedThemeMode = normalizeThemeMode(localStorage.getItem(FOOPY_THEME_KEY));
     setThemeMode(storedThemeMode);
@@ -362,14 +374,97 @@ export default function SettingsPage() {
               label="Favourite Team"
               sub={favTeam || "Not selected"}
               onPress={() => setShowTeamPicker(true)}
-              last
             >
               {favTeam && (
-                <div style={{
-                  width: 8, height: 8, borderRadius: "50%",
-                  background: favTeamColor, marginRight: 4,
-                }} />
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: favTeamColor, marginRight: 4 }} />
               )}
+            </Row>
+
+            <Row
+              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>}
+              label="Featured Match Box"
+              sub="Gold outline on your team's game"
+            >
+              <Toggle on={teamFeaturedMatch} onToggle={() => toggle("foopy_team_featured", teamFeaturedMatch, setTeamFeaturedMatch)} />
+            </Row>
+
+            {teamFeaturedMatch && <Row
+              icon={
+                <div style={{
+                  width: 18, height: 18, borderRadius: "50%",
+                  background: teamBorderColor,
+                  border: "2px solid rgba(255,255,255,0.15)",
+                  flexShrink: 0,
+                }} />
+              }
+              label="Border Colour"
+              sub="Match card highlight colour"
+            >
+              <div style={{ display: "flex", gap: 7, alignItems: "center" }}>
+                {["#c9962a", "#ef4444", "#3b82f6", "#22c55e", "#a855f7", "#ffffff"].map(color => (
+                  <button
+                    key={color}
+                    onClick={() => { setTeamBorderColor(color); savePref("foopy_team_border_color", color); }}
+                    style={{
+                      width: 22, height: 22, borderRadius: "50%",
+                      background: color, cursor: "pointer", padding: 0,
+                      border: teamBorderColor === color
+                        ? "2.5px solid var(--text-1)"
+                        : "2px solid rgba(255,255,255,0.1)",
+                      outline: "none", flexShrink: 0,
+                    }}
+                  />
+                ))}
+                {/* Custom colour picker */}
+                <label style={{ cursor: "pointer", position: "relative", flexShrink: 0 }}>
+                  <input
+                    type="color"
+                    value={teamBorderColor}
+                    onChange={e => { setTeamBorderColor(e.target.value); savePref("foopy_team_border_color", e.target.value); }}
+                    style={{
+                      position: "absolute", opacity: 0,
+                      width: 22, height: 22, top: 0, left: 0,
+                      cursor: "pointer", padding: 0, border: "none",
+                    }}
+                  />
+                  <div style={{
+                    width: 22, height: 22, borderRadius: "50%",
+                    background: "var(--surface-3)",
+                    border: "2px solid var(--border-2)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    color: "var(--text-2)",
+                  }}>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="13.5" cy="6.5" r="3.5"/><path d="M20 14c0 3.31-4 6-8 6s-8-2.69-8-6"/><path d="M2 20h20"/>
+                    </svg>
+                  </div>
+                </label>
+              </div>
+            </Row>}
+
+            <Row
+              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
+              label="Game Start Alert"
+              sub="Notify when your team's game begins"
+            >
+              <Toggle on={teamNotifStart} onToggle={() => toggle("foopy_team_notif_start", teamNotifStart, setTeamNotifStart)} />
+            </Row>
+
+            <Row
+              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4a2 2 0 0 1-2-2V5h4"/><path d="M18 9h2a2 2 0 0 0 2-2V5h-4"/><path d="M12 17v4"/><path d="M8 21h8"/><path d="M6 5h12v8a6 6 0 0 1-12 0V5z"/></svg>}
+              label="Final Score Alert"
+              sub="Notify when your team's game ends"
+            >
+              <Toggle on={teamNotifFinal} onToggle={() => toggle("foopy_team_notif_final", teamNotifFinal, setTeamNotifFinal)} />
+            </Row>
+
+            <Row
+              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" fill="currentColor"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>}
+              label="Live Score Updates"
+              sub="Quarter-by-quarter score alerts"
+              last
+            >
+              <Toggle on={teamNotifLive} onToggle={() => toggle("foopy_team_notif_live", teamNotifLive, setTeamNotifLive)} />
             </Row>
           </Section>
 

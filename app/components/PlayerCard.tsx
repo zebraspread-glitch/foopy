@@ -142,7 +142,7 @@ export function PlayerCard({
 
             {/* Year — bottom right */}
             <div className="ac-pos" style={{ background: "rgba(0,0,0,.7)", fontWeight: 900, color: "rgba(255,255,255,.75)", letterSpacing: ".05em" }}>
-              {card.year ?? "2025"}
+              {card.year ?? "2026"}
             </div>
           </>
         ) : (

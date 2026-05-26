@@ -70,7 +70,7 @@ function getPlayerStatsForFixture(
 // ── Calculate all pending rewards for a user ─────────────────────────────────
 export async function calcPendingRewards(
   userId: string,
-  teamPass: TeamPass | null,
+  teamPasses: TeamPass[],
   playerPasses: PlayerPass[],
   claimedRewards: PassReward[]
 ): Promise<PendingReward[]> {
@@ -97,8 +97,8 @@ export async function calcPendingRewards(
 
   const pending: PendingReward[] = [];
 
-  // ── Team pass ──────────────────────────────────────────────────────────────
-  if (teamPass) {
+  // ── Team passes (up to MAX_TEAM_PASSES active simultaneously) ─────────────
+  for (const teamPass of teamPasses) {
     for (const game of finalGames) {
       const key = `team:${teamPass.id}:${String(game.id)}`;
       if (claimedKeys.has(key)) continue;
@@ -189,13 +189,13 @@ export async function GET(req: Request) {
     console.error("[passes GET sync card xp]", err instanceof Error ? err.message : err);
   }
 
-  // Fetch team pass
+  // Fetch all active team passes (up to MAX_TEAM_PASSES)
   const { data: teamPassRows } = await supabaseServer
     .from("user_team_passes")
     .select("*")
     .eq("user_id", user.id)
     .eq("active", true)
-    .maybeSingle();
+    .order("created_at", { ascending: true });
 
   // Fetch player passes
   const { data: playerPassRows } = await supabaseServer
@@ -214,7 +214,7 @@ export async function GET(req: Request) {
     .gte("claimed_at", since)
     .order("claimed_at", { ascending: false });
 
-  const teamPass     = (teamPassRows   as TeamPass | null) ?? null;
+  const teamPasses   = (teamPassRows   as TeamPass[]) ?? [];
   const playerPasses = (playerPassRows as PlayerPass[]) ?? [];
   const claimedRewards = (rewardRows as PassReward[]) ?? [];
 
@@ -241,13 +241,13 @@ export async function GET(req: Request) {
 
   const pending = await calcPendingRewards(
     user.id,
-    teamPass,
+    teamPasses,
     playerPasses,
     claimedRewards
   );
 
   return NextResponse.json({
-    teamPass,
+    teamPasses,
     playerPasses,
     pendingRewards:    pending,
     recentRewards:     claimedRewards.slice(0, 20),

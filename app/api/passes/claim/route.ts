@@ -24,14 +24,14 @@ export async function POST(req: Request) {
   }
 
   // Load current passes
-  const [{ data: teamPassRow }, { data: playerPassRows }, { data: rewardRows }] =
+  const [{ data: teamPassRows }, { data: playerPassRows }, { data: rewardRows }] =
     await Promise.all([
       supabaseServer
         .from("user_team_passes")
         .select("*")
         .eq("user_id", user.id)
         .eq("active", true)
-        .maybeSingle(),
+        .order("created_at", { ascending: true }),
       supabaseServer
         .from("user_player_passes")
         .select("*")
@@ -44,12 +44,12 @@ export async function POST(req: Request) {
         .gte("claimed_at", new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString()),
     ]);
 
-  const teamPass      = (teamPassRow   as TeamPass   | null) ?? null;
+  const teamPasses    = (teamPassRows   as TeamPass[]) ?? [];
   const playerPasses  = (playerPassRows as PlayerPass[]) ?? [];
-  const claimedSoFar  = (rewardRows    as PassReward[]) ?? [];
+  const claimedSoFar  = (rewardRows     as PassReward[]) ?? [];
 
   // Calculate what's still pending
-  const pending = await calcPendingRewards(user.id, teamPass, playerPasses, claimedSoFar);
+  const pending = await calcPendingRewards(user.id, teamPasses, playerPasses, claimedSoFar);
 
   if (pending.length === 0) {
     return NextResponse.json({ claimed: 0, totalAura: 0, totalCoins: 0, rewards: [] });

@@ -10,7 +10,15 @@ import HapticsProvider from "./components/HapticsProvider";
 export const metadata: Metadata = {
   title: "Foopy | AFL Live Scores & Picks",
   description: "Live AFL scores, fixtures, ladders, player ratings and winner picks.",
-  icons: { icon: "/favicon.ico", apple: "/apple-touch-icon.png" },
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/android-chrome-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/android-chrome-512x512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+    shortcut: "/favicon.ico",
+  },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

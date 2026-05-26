@@ -496,7 +496,7 @@ export default function CardsPage() {
     if (isFeatured) {
       newFeatured = featuredCards.filter(f => f.player_id !== playerId);
     } else {
-      if (featuredCards.length >= 5) return;
+      if (featuredCards.length >= 15) return;
       newFeatured = [...featuredCards, { player_id: playerId, rarity }];
     }
     setFeaturedCards(newFeatured);
@@ -586,12 +586,28 @@ export default function CardsPage() {
             <>
               <button
                 onClick={() => setShowTradesInbox(true)}
-                style={{ appearance: "none", border: "none", background: "var(--surface-3)", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-1)", flexShrink: 0 }}
+                style={{ appearance: "none", border: "none", background: "var(--surface-3)", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-1)", flexShrink: 0, position: "relative" }}
                 title="Trades"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M7 16V4m0 0L3 8m4-4l4 4"/><path d="M17 8v12m0 0l4-4m-4 4l-4-4"/>
                 </svg>
+                {(() => {
+                  const count = (prefetchedTrades ?? []).filter(
+                    (t: any) => t.receiver_id === user.id && t.status === "pending"
+                  ).length;
+                  return count > 0 ? (
+                    <span style={{
+                      position: "absolute", top: -3, right: -3,
+                      minWidth: 16, height: 16, borderRadius: 99,
+                      background: "#ef4444", color: "#fff",
+                      fontSize: 10, fontWeight: 900, lineHeight: "16px",
+                      textAlign: "center", padding: "0 4px",
+                      border: "1.5px solid var(--bg)",
+                      pointerEvents: "none",
+                    }}>{count}</span>
+                  ) : null;
+                })()}
               </button>
               <div style={coinBadgeStyle}>
                 <CoinIcon />
@@ -1314,7 +1330,7 @@ function SellConfirmModal({ card, selling, sellError, isFeatured, featuredCount,
               <div>
                 <div style={{ fontSize: 15, fontWeight: 900 }}>{isFeatured ? "Remove from Featured" : "Add to Featured"}</div>
                 <div style={{ fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>
-                  {isFeatured ? "Currently in your featured cards" : featuredCount >= 5 ? "Featured slots full (5/5)" : `${featuredCount}/5 slots used`}
+                  {isFeatured ? "Currently in your featured cards" : featuredCount >= 15 ? "Featured slots full (15/15)" : `${featuredCount}/15 slots used`}
                 </div>
               </div>
             </button>

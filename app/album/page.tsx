@@ -127,7 +127,7 @@ export default function AlbumPage() {
     if (isCurrentlyFeatured) {
       newFeatured = featuredCards.filter(f => f.player_id !== playerId);
     } else {
-      if (featuredCards.length >= 5) return;
+      if (featuredCards.length >= 15) return;
       newFeatured = [...featuredCards, { player_id: playerId, rarity }];
     }
     setFeaturedCards(newFeatured);
@@ -459,7 +459,7 @@ function AlbumCardModal({ player, cards, isFeatured, featuredCount, selling, onT
               <div>
                 <div style={{ fontSize: 15, fontWeight: 900 }}>{isFeatured ? "Remove from Featured" : "Add to Featured"}</div>
                 <div style={{ fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>
-                  {isFeatured ? "Currently in your featured cards" : featuredCount >= 5 ? "Featured slots full (5/5)" : `${featuredCount}/5 slots used`}
+                  {isFeatured ? "Currently in your featured cards" : featuredCount >= 15 ? "Featured slots full (15/15)" : `${featuredCount}/15 slots used`}
                 </div>
               </div>
             </button>

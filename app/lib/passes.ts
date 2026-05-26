@@ -1,8 +1,9 @@
 // Shared types and pure helpers for the Passes system.
 
 export const MAX_PLAYER_PASSES = 100;
+export const MAX_TEAM_PASSES   = 3;
 export const PLAYER_PASS_COST  = 500;   // coins to buy
-export const TEAM_PASS_COST    = 1500;  // coins to buy (one-time slot)
+export const TEAM_PASS_COST    = 1500;  // coins per new team pass slot
 
 // ── Pass level definitions ────────────────────────────────────────────────────
 

@@ -271,11 +271,6 @@ const TradeRow = memo(function TradeRow({
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <UserChip profile={other} label={isSender ? "TO" : "FROM"} />
         <div style={{ display: "flex", alignItems: "center", gap: 7, flexShrink: 0 }}>
-          {isPending && !isSender && (
-            <div style={{ fontSize: 9, fontWeight: 900, color: "#fbbf24", background: "rgba(251,191,36,.12)", border: "1px solid rgba(251,191,36,.28)", borderRadius: 99, padding: "2px 8px", letterSpacing: ".05em" }}>
-              RESPOND
-            </div>
-          )}
           {!isPending && statusMeta && (
             <div style={{ fontSize: 9, fontWeight: 900, color: statusMeta.color, background: statusMeta.bg, border: `1px solid ${statusMeta.border}`, borderRadius: 99, padding: "2px 8px", letterSpacing: ".05em" }}>
               {statusMeta.label.toUpperCase()}

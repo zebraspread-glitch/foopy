@@ -611,6 +611,29 @@ export default function HomePage() {
   const [showTradesInbox, setShowTradesInbox] = useState(false);
   const [prefetchedTrades, setPrefetchedTrades] = useState<any[] | undefined>(undefined);
 
+  // My Team feature
+  const [favTeamId, setFavTeamId]                 = useState<number | null>(null);
+  const [teamFeaturedMatch, setTeamFeaturedMatch]  = useState(true);
+  const [teamBorderColor, setTeamBorderColor]      = useState("#c9962a");
+  useEffect(() => {
+    const FAV_TEAM_TO_ID: Record<string, number> = {
+      Adelaide: 1, Brisbane: 2, Carlton: 3, Collingwood: 4,
+      Essendon: 5, Fremantle: 6, Geelong: 7, "Gold Coast": 8,
+      GWS: 9, Hawthorn: 10, Melbourne: 11, "North Melbourne": 12,
+      "Port Adelaide": 13, Richmond: 14, "St Kilda": 15,
+      Sydney: 16, "West Coast": 17, "Western Bulldogs": 18,
+    };
+    const load = () => {
+      const name = localStorage.getItem("foopy_fav_team") ?? "";
+      setFavTeamId(name ? (FAV_TEAM_TO_ID[name] ?? null) : null);
+      setTeamFeaturedMatch(localStorage.getItem("foopy_team_featured") !== "false");
+      setTeamBorderColor(localStorage.getItem("foopy_team_border_color") ?? "#c9962a");
+    };
+    load();
+    window.addEventListener("foopy-settings-changed", load);
+    return () => window.removeEventListener("foopy-settings-changed", load);
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -1420,6 +1443,8 @@ free_kicks?: {
 
                   const homeLost = status === "COMPLETED" && homeScore < awayScore;
                   const awayLost = status === "COMPLETED" && awayScore < homeScore;
+                  const isFavGame = teamFeaturedMatch && favTeamId !== null &&
+                    (homeId === favTeamId || awayId === favTeamId);
 
                   return (
                     <Link
@@ -1430,6 +1455,10 @@ free_kicks?: {
                       style={{
                         ...cardStyle,
                         gridColumn: group.games.length === 1 ? "1 / -1" : undefined,
+                        ...(isFavGame ? {
+                          border: `3px solid ${teamBorderColor}`,
+                          boxShadow: "none",
+                        } : {}),
                       }}
                     >
                       <section style={teamsStyle}>
@@ -1875,6 +1904,9 @@ function MobileRoundPanel({
               ? TEAM_NICKNAMES[awayId] ?? displayTeamName(game.ateam || TEAM_NAMES[awayId])
               : TEAM_ABBR[awayId] ?? displayTeamName(game.ateam || TEAM_NAMES[awayId]);
 
+            const isFavGame = teamFeaturedMatch && favTeamId !== null &&
+              (homeId === favTeamId || awayId === favTeamId);
+
             return (
               <Link
                 key={game.id}
@@ -1884,6 +1916,10 @@ function MobileRoundPanel({
                 style={{
                   ...mobileMatchStyle,
                   gridColumn: group.games.length === 1 ? "1 / -1" : undefined,
+                  ...(isFavGame ? {
+                    border: `3px solid ${teamBorderColor}`,
+                    boxShadow: "none",
+                  } : {}),
                 }}
               >
                 <MobileMatchRow

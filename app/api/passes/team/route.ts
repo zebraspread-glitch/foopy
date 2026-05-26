@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/app/lib/supabase-server";
-import { AFL_TEAMS, teamsMatch, TEAM_PASS_COST } from "@/app/lib/passes";
+import { AFL_TEAMS, teamsMatch, TEAM_PASS_COST, MAX_TEAM_PASSES } from "@/app/lib/passes";
 import { syncPassXpFromCards } from "@/app/lib/passCardXp";
 
 function auth(req: Request) {
@@ -8,7 +8,7 @@ function auth(req: Request) {
   return h?.startsWith("Bearer ") ? h.slice(7) : null;
 }
 
-// POST /api/passes/team — buy/switch the user's team pass
+// POST /api/passes/team — buy a team pass (up to MAX_TEAM_PASSES active at once)
 export async function POST(req: Request) {
   const token = auth(req);
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -26,14 +26,40 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unknown AFL team" }, { status: 400 });
   }
 
-  // Check if user has ever bought a team pass (any row, active or not)
-  const { count: everBought } = await supabaseServer
+  // Check if user already has an ACTIVE pass for this team
+  const { data: alreadyActive } = await supabaseServer
+    .from("user_team_passes")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("team_name", canonical)
+    .eq("active", true)
+    .maybeSingle();
+
+  if (alreadyActive) {
+    return NextResponse.json({ error: "Already have an active pass for this team" }, { status: 400 });
+  }
+
+  // Check current active count against the maximum
+  const { count: activeCount } = await supabaseServer
     .from("user_team_passes")
     .select("id", { count: "exact", head: true })
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .eq("active", true);
 
-  if ((everBought ?? 0) === 0) {
-    // First purchase — fetch and deduct coins
+  if ((activeCount ?? 0) >= MAX_TEAM_PASSES) {
+    return NextResponse.json({ error: `Maximum ${MAX_TEAM_PASSES} team passes reached` }, { status: 400 });
+  }
+
+  // Check if user already owns an inactive pass for this team (reactivate for free, XP preserved)
+  const { data: existingForTeam } = await supabaseServer
+    .from("user_team_passes")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("team_name", canonical)
+    .maybeSingle();
+
+  // Only charge coins when creating a brand-new pass slot
+  if (!existingForTeam) {
     const { data: profile, error: profileErr } = await supabaseServer
       .from("profiles")
       .select("coins")
@@ -62,21 +88,7 @@ export async function POST(req: Request) {
     }
   }
 
-  // Deactivate any currently active team pass
-  await supabaseServer
-    .from("user_team_passes")
-    .update({ active: false })
-    .eq("user_id", user.id)
-    .eq("active", true);
-
-  // Restore existing pass for this team (preserves XP), or create fresh
-  const { data: existingForTeam } = await supabaseServer
-    .from("user_team_passes")
-    .select("id")
-    .eq("user_id", user.id)
-    .eq("team_name", canonical)
-    .maybeSingle();
-
+  // Reactivate existing (inactive) pass or insert fresh one
   let data;
   if (existingForTeam) {
     const { data: restored } = await supabaseServer
@@ -130,7 +142,7 @@ export async function POST(req: Request) {
   return NextResponse.json({ teamPass: data });
 }
 
-// DELETE /api/passes/team — deactivate team pass
+// DELETE /api/passes/team — deactivate a specific team pass by team_name
 export async function DELETE(req: Request) {
   const token = auth(req);
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -138,11 +150,29 @@ export async function DELETE(req: Request) {
   const { data: { user }, error } = await supabaseServer.auth.getUser(token);
   if (error || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  await supabaseServer
-    .from("user_team_passes")
-    .update({ active: false })
-    .eq("user_id", user.id)
-    .eq("active", true);
+  let teamNameToRemove: string | undefined;
+  try {
+    const body = await req.json();
+    teamNameToRemove = body?.team_name;
+  } catch {}
+
+  if (teamNameToRemove) {
+    const canonical = AFL_TEAMS.find((t) => teamsMatch(t, teamNameToRemove!));
+    if (canonical) {
+      await supabaseServer
+        .from("user_team_passes")
+        .update({ active: false })
+        .eq("user_id", user.id)
+        .eq("team_name", canonical);
+    }
+  } else {
+    // Fallback: deactivate all
+    await supabaseServer
+      .from("user_team_passes")
+      .update({ active: false })
+      .eq("user_id", user.id)
+      .eq("active", true);
+  }
 
   return NextResponse.json({ ok: true });
 }
