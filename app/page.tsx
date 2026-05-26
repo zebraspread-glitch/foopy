@@ -1514,6 +1514,9 @@ free_kicks?: {
                   <MobileRoundPanel
                     groups={swipeTarget !== null && swipeTarget < selectedRound ? targetGroups : mobileGroups}
                     games={games}
+                    teamFeaturedMatch={teamFeaturedMatch}
+                    favTeamId={favTeamId}
+                    teamBorderColor={teamBorderColor}
                   />
                   {(swipeTarget !== null && swipeTarget < selectedRound ? targetGroups : mobileGroups).length === 0 && (
                     <div style={emptyBoxStyle}>
@@ -1527,6 +1530,9 @@ free_kicks?: {
                     <MobileRoundPanel
                       groups={swipeTarget > selectedRound ? targetGroups : mobileGroups}
                       games={games}
+                      teamFeaturedMatch={teamFeaturedMatch}
+                      favTeamId={favTeamId}
+                      teamBorderColor={teamBorderColor}
                     />
                     {(swipeTarget > selectedRound ? targetGroups : mobileGroups).length === 0 && (
                       <div style={emptyBoxStyle}>
@@ -1867,9 +1873,15 @@ function PlayerPhoto({
 function MobileRoundPanel({
   groups,
   games,
+  teamFeaturedMatch,
+  favTeamId,
+  teamBorderColor,
 }: {
   groups: Array<{ label: string; games: Game[] }>;
   games: Game[];
+  teamFeaturedMatch: boolean;
+  favTeamId: number | null;
+  teamBorderColor: string;
 }) {
   return (
     <>
