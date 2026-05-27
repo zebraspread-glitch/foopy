@@ -11,7 +11,7 @@ import { PlayerCard as SharedPlayerCard } from "@/app/components/PlayerCard";
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type Rarity = "bronze" | "silver" | "gold" | "emerald" | "sapphire" | "ruby" | "amethyst" | "diamond" | "pinkdiamond" | "mythic";
-type PackType = "starter" | "general" | "mythical";
+type PackType = "starter" | "general" | "mythical" | "daily";
 type SortKey = "newest" | "rating_desc" | "rating_asc" | "rarity";
 
 interface UserCard {
@@ -100,6 +100,15 @@ const TEAM_PLAYER_FOLDER: Record<string, string> = {
 
 const PACKS: { type: PackType; label: string; cost: number; cards: string; image: string; accent: string; description: string }[] = [
   {
+    type: "daily",
+    label: "Daily Pack",
+    cost: 0,
+    cards: "3 cards",
+    image: "/packs/daily.png",
+    accent: "#22c55e",
+    description: "Free daily · up to Ruby rarity",
+  },
+  {
     type: "starter",
     label: "Starter Pack",
     cost: 100,
@@ -129,6 +138,11 @@ const PACKS: { type: PackType; label: string; cost: number; cards: string; image
 ];
 
 const RARITY_ODDS: Record<PackType, { rarity: Rarity; pct: string }[]> = {
+  daily: [
+    { rarity: "bronze", pct: "45%" }, { rarity: "silver", pct: "30%" },
+    { rarity: "gold", pct: "15%" },   { rarity: "emerald", pct: "7%" },
+    { rarity: "sapphire", pct: "2%" }, { rarity: "ruby", pct: "1%" },
+  ],
   starter: [
     { rarity: "bronze", pct: "55%" }, { rarity: "silver", pct: "30%" },
     { rarity: "gold", pct: "12%" },   { rarity: "emerald", pct: "3%" },
@@ -331,6 +345,8 @@ export default function CardsPage() {
   // pendingPackType: set immediately when user taps "Open Pack", cleared when cards arrive.
   // Drives the instant loading overlay so the UI responds without waiting for the API.
   const [pendingPackType, setPendingPackType] = useState<PackType | null>(null);
+  // lastDailyPackAt: timestamp of last daily pack claim (null = never claimed).
+  const [lastDailyPackAt, setLastDailyPackAt] = useState<string | null>(null);
 
   // filters
   const [rarityFilter, setRarityFilter] = useState<Rarity | "all">("all");
@@ -375,11 +391,12 @@ export default function CardsPage() {
     if (!user) return;
     // Fire all three fetches in parallel — no sequential waiting
     Promise.all([
-      supabase.from("profiles").select("coins, featured_cards").eq("id", user.id).single(),
+      supabase.from("profiles").select("coins, featured_cards, last_daily_pack_at").eq("id", user.id).single(),
       supabase.from("user_cards").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
     ]).then(([profileRes, cardsRes]) => {
       if (profileRes.data) {
         setCoins(profileRes.data.coins ?? 0);
+        setLastDailyPackAt(profileRes.data.last_daily_pack_at ?? null);
         if (Array.isArray(profileRes.data.featured_cards)) {
           setFeaturedCards(profileRes.data.featured_cards as { player_id: string; rarity: Rarity }[]);
         }
@@ -442,6 +459,44 @@ export default function CardsPage() {
       setPendingPackType(null);
     } catch {
       setCoins(prev => prev + packCost);
+      setPendingPackType(null);
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setOpening(null);
+    }
+  }
+
+  // ── Daily pack ────────────────────────────────────────────────────────────
+
+  async function handleClaimDailyPack() {
+    if (opening || !accessToken) return;
+    if (!isDailyAvailable(lastDailyPackAt)) return;
+
+    // Instant feedback: show loading overlay + optimistically mark as claimed
+    setOpening("daily");
+    setShopPack(null);
+    setPendingPackType("daily");
+    setLastDailyPackAt(new Date().toISOString()); // optimistic — prevents double-tap
+
+    try {
+      const res = await fetch("/api/cards/open-daily-pack", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        // 429 = already claimed (race) — keep optimistic claimed state, no alert needed
+        if (res.status !== 429) {
+          setLastDailyPackAt(null); // rollback on real errors only
+          alert(data.error ?? "Failed to claim daily pack");
+        }
+        setPendingPackType(null);
+        return;
+      }
+      setOpenedCards(data.cards as OpenedCard[]);
+      setPendingPackType(null);
+    } catch {
+      setLastDailyPackAt(null); // rollback
       setPendingPackType(null);
       alert("Something went wrong. Please try again.");
     } finally {
@@ -688,6 +743,7 @@ export default function CardsPage() {
             <PackShop
               coins={coins}
               opening={opening}
+              lastDailyPackAt={lastDailyPackAt}
               onSelectPack={setShopPack}
             />
 
@@ -828,6 +884,8 @@ export default function CardsPage() {
           opening={opening}
           onOpenPack={handleOpenPack}
           onClose={() => setShopPack(null)}
+          onClaimDaily={handleClaimDailyPack}
+          dailyAvailable={isDailyAvailable(lastDailyPackAt)}
         />
       ); })()}
 
@@ -870,16 +928,41 @@ export default function CardsPage() {
   );
 }
 
+// ── Daily pack helpers ────────────────────────────────────────────────────────
+
+/** Returns true if the user has not yet claimed their daily pack today (UTC). */
+function isDailyAvailable(lastDailyPackAt: string | null): boolean {
+  if (!lastDailyPackAt) return true;
+  const todayStart = new Date();
+  todayStart.setUTCHours(0, 0, 0, 0);
+  return new Date(lastDailyPackAt) < todayStart;
+}
+
+/** Returns a human-readable "Xh Ym" string until the next UTC midnight reset. */
+function getTimeUntilReset(): string {
+  const now = new Date();
+  const midnight = new Date();
+  midnight.setUTCDate(midnight.getUTCDate() + 1);
+  midnight.setUTCHours(0, 0, 0, 0);
+  const diff = midnight.getTime() - now.getTime();
+  const h = Math.floor(diff / 3_600_000);
+  const m = Math.floor((diff % 3_600_000) / 60_000);
+  return `${h}h ${m}m`;
+}
+
 // ── Pack Shop ─────────────────────────────────────────────────────────────────
 
-function PackDetailModal({ pack, coins, opening, onOpenPack, onClose }: {
+function PackDetailModal({ pack, coins, opening, onOpenPack, onClose, onClaimDaily, dailyAvailable = true }: {
   pack: typeof PACKS[number];
   coins: number;
   opening: PackType | null;
   onOpenPack: (p: PackType) => void;
   onClose: () => void;
+  onClaimDaily?: () => void;
+  dailyAvailable?: boolean;
 }) {
-  const canAfford = coins >= pack.cost;
+  const isDaily = pack.type === "daily";
+  const canAfford = isDaily ? dailyAvailable : coins >= pack.cost;
   const isOpening = opening === pack.type;
 
   // Close on backdrop click
@@ -933,13 +1016,20 @@ function PackDetailModal({ pack, coins, opening, onOpenPack, onClose }: {
         {/* Price + odds + button */}
         <div style={{ padding: "0 20px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
           {/* Price */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
-            <CoinIcon size={20} />
-            <span style={{ fontWeight: 900, fontSize: 28, color: canAfford ? "#fbbf24" : "#475569", letterSpacing: "-0.02em" }}>
-              {pack.cost.toLocaleString()}
-            </span>
-            {!canAfford && <span style={{ fontSize: 11, color: "#ef4444", fontWeight: 700 }}>Not enough</span>}
-          </div>
+          {isDaily ? (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
+              <span style={{ fontWeight: 900, fontSize: 28, color: "#22c55e", letterSpacing: "-0.02em" }}>FREE</span>
+              {!dailyAvailable && <span style={{ fontSize: 11, color: "rgba(255,255,255,.35)", fontWeight: 700 }}>· Already claimed</span>}
+            </div>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
+              <CoinIcon size={20} />
+              <span style={{ fontWeight: 900, fontSize: 28, color: canAfford ? "#fbbf24" : "#475569", letterSpacing: "-0.02em" }}>
+                {pack.cost.toLocaleString()}
+              </span>
+              {!canAfford && <span style={{ fontSize: 11, color: "#ef4444", fontWeight: 700 }}>Not enough</span>}
+            </div>
+          )}
 
           {/* Odds */}
           <div style={{ borderRadius: 14, overflow: "hidden", border: "1px solid rgba(255,255,255,.07)" }}>
@@ -969,20 +1059,37 @@ function PackDetailModal({ pack, coins, opening, onOpenPack, onClose }: {
           </div>
 
           {/* Open button */}
-          <button
-            className="pack-open-btn"
-            onClick={() => onOpenPack(pack.type)}
-            disabled={!canAfford || !!opening}
-            style={{
-              background: canAfford ? pack.accent : "var(--border-1)",
-              color: canAfford ? "#14141e" : "var(--text-4)",
-              opacity: canAfford && !opening ? 1 : 0.45,
-              boxShadow: canAfford ? `0 4px 20px ${pack.accent}55` : "none",
-              fontSize: 15, padding: "14px 0", borderRadius: 13,
-            }}
-          >
-            {isOpening ? <Spinner /> : "Open Pack"}
-          </button>
+          {isDaily ? (
+            <button
+              className="pack-open-btn"
+              onClick={() => { if (dailyAvailable) onClaimDaily?.(); }}
+              disabled={!dailyAvailable || !!opening}
+              style={{
+                background: dailyAvailable ? "#22c55e" : "var(--border-1)",
+                color: dailyAvailable ? "#14141e" : "var(--text-4)",
+                opacity: dailyAvailable && !opening ? 1 : 0.45,
+                boxShadow: dailyAvailable ? "0 4px 20px rgba(34,197,94,0.55)" : "none",
+                fontSize: 15, padding: "14px 0", borderRadius: 13,
+              }}
+            >
+              {isOpening ? <Spinner /> : dailyAvailable ? "Claim Daily Pack" : `Come back in ${getTimeUntilReset()}`}
+            </button>
+          ) : (
+            <button
+              className="pack-open-btn"
+              onClick={() => onOpenPack(pack.type)}
+              disabled={!canAfford || !!opening}
+              style={{
+                background: canAfford ? pack.accent : "var(--border-1)",
+                color: canAfford ? "#14141e" : "var(--text-4)",
+                opacity: canAfford && !opening ? 1 : 0.45,
+                boxShadow: canAfford ? `0 4px 20px ${pack.accent}55` : "none",
+                fontSize: 15, padding: "14px 0", borderRadius: 13,
+              }}
+            >
+              {isOpening ? <Spinner /> : "Open Pack"}
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -990,13 +1097,15 @@ function PackDetailModal({ pack, coins, opening, onOpenPack, onClose }: {
 }
 
 function PackShop({
-  coins, opening, onSelectPack,
+  coins, opening, lastDailyPackAt, onSelectPack,
 }: {
   coins: number;
   opening: PackType | null;
+  lastDailyPackAt: string | null;
   onSelectPack: (p: PackType) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const dailyAvailable = isDailyAvailable(lastDailyPackAt);
 
   // On desktop, remap vertical wheel scroll to horizontal
   useEffect(() => {
@@ -1019,11 +1128,14 @@ function PackShop({
       </div>
 
       <div ref={scrollRef} className="pack-scroll">
-        {PACKS.map((pack, i) => {
-          const isMiddle = i === 1;
+        {PACKS.map((pack) => {
+          const isMiddle = pack.type === "general"; // General Pack is always the elevated centre card
+          const isDaily = pack.type === "daily";
+          const dailyClaimed = isDaily && !dailyAvailable;
+
           return (
             <div key={pack.type} className="pack-item">
-              {/* Static glow shadow under the elevated middle pack */}
+              {/* Glow shadow under the elevated middle pack */}
               {isMiddle && (
                 <div style={{
                   position: "absolute", bottom: -6, left: "8%", width: "84%", height: 24,
@@ -1032,14 +1144,37 @@ function PackShop({
                 }} />
               )}
 
-              {/* Pack image — click to open detail modal */}
               <div
-                className={`pack-img-wrap${isMiddle ? " pack-float" : ""}`}
+                className="pack-img-wrap pack-float"
                 suppressHydrationWarning
-                style={{ boxShadow: "0 16px 48px rgba(0,0,0,.45)", cursor: "pointer" }}
+                style={{
+                  position: "relative",
+                  boxShadow: "0 16px 48px rgba(0,0,0,.45)",
+                  cursor: "pointer",
+                }}
                 onClick={() => onSelectPack(pack.type)}
               >
-                <img src={pack.image} alt={pack.label} />
+                <img
+                  src={pack.image}
+                  alt={pack.label}
+                  style={{
+                    filter: dailyClaimed ? "grayscale(1) brightness(0.38)" : "none",
+                    transition: "filter 0.3s ease",
+                  }}
+                />
+
+                {/* Claimed overlay + label */}
+                {dailyClaimed && (
+                  <div style={{
+                    position: "absolute", inset: 0, borderRadius: 18,
+                    display: "flex", alignItems: "flex-end", justifyContent: "center",
+                    paddingBottom: 12, pointerEvents: "none",
+                  }}>
+                    <div className="pack-tap-hint" style={{ position: "static", transform: "none" }}>
+                      ✓ Come back tomorrow
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -1058,9 +1193,9 @@ function PackShopPreview() {
         <span style={{ fontWeight: 900, fontSize: 16, color: "var(--text-1)" }}>Pack Shop</span>
       </div>
       <div className="pack-scroll">
-        {PACKS.map((pack, i) => (
+        {PACKS.map((pack) => (
           <div key={pack.type} className="pack-item">
-            <div className={`pack-img-wrap${i === 1 ? " pack-float" : ""}`} style={{ boxShadow: "0 16px 48px rgba(0,0,0,.45)" }}>
+            <div className="pack-img-wrap pack-float" style={{ boxShadow: "0 16px 48px rgba(0,0,0,.45)" }}>
               <img src={pack.image} alt={pack.label} />
             </div>
           </div>
@@ -1218,20 +1353,13 @@ function PackOpenLoadingOverlay({ packType }: { packType: PackType }) {
     }}>
       {/* Glowing pack image, pulsing to show activity */}
       <div style={{ position: "relative", width: 170, aspectRatio: "3/4" }}>
-        {/* Glow behind pack */}
-        <div style={{
-          position: "absolute", inset: -20,
-          background: `radial-gradient(ellipse at 50% 60%, ${pack.accent}55 0%, transparent 70%)`,
-          animation: "packPulse 1.4s ease-in-out infinite",
-          filter: "blur(16px)",
-        }} />
         <img
           src={pack.image}
           alt={pack.label}
           style={{
             position: "relative", width: "100%", height: "100%", objectFit: "cover",
             borderRadius: 18,
-            boxShadow: `0 0 48px ${pack.accent}55, 0 20px 60px rgba(0,0,0,.7)`,
+            boxShadow: "0 20px 60px rgba(0,0,0,.7)",
             animation: "packPulse 1.4s ease-in-out infinite",
           }}
         />
