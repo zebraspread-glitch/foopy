@@ -47,7 +47,8 @@
       "PowerShell(cd \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\"; Get-Content \"app\\\\data\\\\seasons.json\" | ConvertFrom-Json | Where-Object { $_.year -ge 1987 -and $_.year -le 1998 } | Select-Object year, premier, runnerUp | Format-Table)",
       "WebFetch(domain:www.reddit.com)",
       "WebFetch(domain:www.footywire.com)",
-      "Bash(ls \"C:\\\\Users\\\\User\\\\AppData\\\\Local\\\\Temp\\\\\"*.png 2>/dev/null | head -10)"
+      "Bash(ls \"C:\\\\Users\\\\User\\\\AppData\\\\Local\\\\Temp\\\\\"*.png 2>/dev/null | head -10)",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('next:', p.dependencies.next\\)\")"
     ]
   }
 }

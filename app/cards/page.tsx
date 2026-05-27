@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
@@ -327,6 +327,12 @@ export default function CardsPage() {
   const [cardsLoading, setCardsLoading] = useState(false);
   const [opening, setOpening] = useState<PackType | null>(null);
   const [openedCards, setOpenedCards] = useState<OpenedCard[] | null>(null);
+  const [shopPack, setShopPack] = useState<PackType | null>(null);
+
+  // Auto-close the pack detail modal the moment cards are ready to reveal
+  useEffect(() => {
+    if (openedCards) setShopPack(null);
+  }, [openedCards]);
 
   // filters
   const [rarityFilter, setRarityFilter] = useState<Rarity | "all">("all");
@@ -335,8 +341,6 @@ export default function CardsPage() {
   const teamMenuRef = useRef<HTMLDivElement | null>(null);
   const [sortBy, setSortBy] = useState<SortKey>("newest");
 
-  // pack odds tooltip
-  const [oddsFor, setOddsFor] = useState<PackType | null>(null);
 
   // sell
   const [sellCard, setSellCard] = useState<UserCard | null>(null);
@@ -369,44 +373,26 @@ export default function CardsPage() {
 
   // ── Data fetching ─────────────────────────────────────────────────────────
 
-  const fetchBalance = useCallback(async (uid: string) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("coins")
-      .eq("id", uid)
-      .single();
-    setCoins(data?.coins ?? 0);
-  }, []);
-
-  const fetchCards = useCallback(async (uid: string) => {
-    setCardsLoading(true);
-    // Ensure the session is loaded so RLS auth.uid() resolves correctly
-    await supabase.auth.getSession();
-    const { data, error } = await supabase
-      .from("user_cards")
-      .select("*")
-      .eq("user_id", uid)
-      .order("created_at", { ascending: false });
-    if (!error && data) setCards(data as UserCard[]);
-    setCardsLoading(false);
-  }, []);
-
   useEffect(() => {
-    if (user) {
-      fetchBalance(user.id);
-      fetchCards(user.id);
-      supabase
-        .from("profiles")
-        .select("featured_cards")
-        .eq("id", user.id)
-        .single()
-        .then(({ data }) => {
-          if (data?.featured_cards && Array.isArray(data.featured_cards)) {
-            setFeaturedCards(data.featured_cards as { player_id: string; rarity: Rarity }[]);
-          }
-        });
-    }
-  }, [user, fetchBalance, fetchCards]);
+    if (!user) return;
+    // Fire all three fetches in parallel — no sequential waiting
+    Promise.all([
+      supabase.from("profiles").select("coins, featured_cards").eq("id", user.id).single(),
+      supabase.from("user_cards").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+    ]).then(([profileRes, cardsRes]) => {
+      if (profileRes.data) {
+        setCoins(profileRes.data.coins ?? 0);
+        if (Array.isArray(profileRes.data.featured_cards)) {
+          setFeaturedCards(profileRes.data.featured_cards as { player_id: string; rarity: Rarity }[]);
+        }
+      }
+      if (!cardsRes.error && cardsRes.data) {
+        setCards(cardsRes.data as UserCard[]);
+      }
+      setCardsLoading(false);
+    });
+    setCardsLoading(true);
+  }, [user]);
 
   useEffect(() => {
     if (!teamMenuOpen) return;
@@ -423,16 +409,14 @@ export default function CardsPage() {
   // ── Pack opening ──────────────────────────────────────────────────────────
 
   async function handleOpenPack(packType: PackType) {
-    if (opening) return;
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) return;
-    setOpening(packType);
+    if (opening || !accessToken) return;
+    setOpening(packType); // show loading state immediately
     try {
       const res = await fetch("/api/cards/open-pack", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({ packType }),
       });
@@ -443,7 +427,6 @@ export default function CardsPage() {
       }
       setCoins(data.newCoins);
       setOpenedCards(data.cards as OpenedCard[]);
-      if (user) { fetchCards(user.id); fetchBalance(user.id); }
     } catch {
       alert("Something went wrong. Please try again.");
     } finally {
@@ -456,18 +439,13 @@ export default function CardsPage() {
   const [sellError, setSellError] = useState<string | null>(null);
 
   async function handleSell(card: UserCard) {
-    if (selling) return;
+    if (selling || !accessToken) return;
     setSellError(null);
     setSelling(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        setSellError("You must be logged in to sell cards.");
-        return;
-      }
       const res = await fetch("/api/cards/sell", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify({ cardId: card.id }),
       });
       const data = await res.json();
@@ -478,7 +456,10 @@ export default function CardsPage() {
       setCoins(data.newCoins);
       setSellCard(null);
       setSellError(null);
-      if (user) fetchCards(user.id);
+      if (user) {
+        supabase.from("user_cards").select("*").eq("user_id", user.id).order("created_at", { ascending: false })
+          .then(({ data: cardData, error }) => { if (!error && cardData) setCards(cardData as UserCard[]); });
+      }
     } catch (err) {
       console.error("Sell error:", err);
       setSellError("Something went wrong. Please try again.");
@@ -546,11 +527,25 @@ export default function CardsPage() {
         @keyframes revealParticle { 0% { opacity: 0; transform: scale(0) translateY(0); } 15% { opacity: 1; transform: scale(1) translateY(0); } 100% { opacity: 0; transform: scale(0.4) translateY(-50px); } }
         @keyframes revealScreenEdge { 0% { opacity: 0; } 20% { opacity: 1; } 100% { opacity: 0; } }
         @keyframes mythicPulse { 0%,100% { opacity: 0; } 15% { opacity: 0.55; } 45% { opacity: 0.3; } 75% { opacity: 0.45; } }
+        @keyframes packPop { 0% { transform: scale(0.93) translateY(6px); } 65% { transform: scale(1.07) translateY(-10px); } 100% { transform: scale(1.05) translateY(-8px); } }
+        @keyframes packPanelIn { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes packModalIn { from { opacity: 0; transform: scale(0.92) translateY(12px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        @keyframes cardRevealEnter { from { transform: translateX(55px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .card-reveal-enter { animation: cardRevealEnter 0.35s cubic-bezier(0.25,0.46,0.45,0.94) forwards; }
         .cards-grid { animation: fadeIn 0.22s ease; }
         .card-item { transition: transform 0.12s ease; cursor: pointer; }
         .card-item:active { transform: scale(0.95); }
-        .pack-card-wrap { transition: transform 0.15s ease; }
-        .pack-card-wrap:active { transform: scale(0.97); }
+        .pack-scroll { display: flex; overflow-x: auto; overflow-y: visible; scroll-snap-type: x mandatory; scrollbar-width: none; padding: 8px 4px 20px; gap: 16px; align-items: flex-start; }
+        .pack-scroll::-webkit-scrollbar { display: none; }
+        .pack-item { scroll-snap-align: center; flex-shrink: 0; width: min(240px, 72vw); display: flex; flex-direction: column; position: relative; }
+        .pack-img-wrap { border-radius: 18px; overflow: visible; aspect-ratio: 3/4; cursor: pointer; transition: box-shadow 0.2s ease; flex-shrink: 0; }
+        .pack-img-wrap img { width: 100%; height: 100%; object-fit: cover; border-radius: 18px; display: block; }
+        .pack-img-wrap:active { transform: scale(0.97); }
+        .pack-float { animation: packPop 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+.pack-open-btn { width: 100%; border: none; border-radius: 11px; padding: 11px 0; font-weight: 900; font-size: 14px; cursor: pointer; transition: opacity 0.15s ease; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .pack-open-btn:active:not(:disabled) { transform: scale(0.97); opacity: 0.85; }
+        .pack-open-btn:disabled { cursor: not-allowed; }
+        .pack-tap-hint { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.65); backdrop-filter: blur(8px); border-radius: 99px; padding: 4px 12px; font-size: 10px; font-weight: 700; color: rgba(255,255,255,.85); white-space: nowrap; pointer-events: none; }
         .open-btn:active:not(:disabled) { opacity: 0.8 !important; transform: scale(0.97); }
         .pill-scroll { scrollbar-width: none; }
         .pill-scroll::-webkit-scrollbar { display: none; }
@@ -676,9 +671,7 @@ export default function CardsPage() {
             <PackShop
               coins={coins}
               opening={opening}
-              oddsFor={oddsFor}
-              onOpenPack={handleOpenPack}
-              onShowOdds={setOddsFor}
+              onSelectPack={setShopPack}
             />
 
             <div style={collectionHeaderStyle}>
@@ -810,11 +803,34 @@ export default function CardsPage() {
         )}
       </div>
 
+      {/* Pack detail modal */}
+      {shopPack && (() => { const p = PACKS.find(pk => pk.type === shopPack)!; return (
+        <PackDetailModal
+          pack={p}
+          coins={coins}
+          opening={opening}
+          onOpenPack={handleOpenPack}
+          onClose={() => setShopPack(null)}
+        />
+      ); })()}
+
       {/* Pack opening result modal */}
       {openedCards && (
         <PackOpenModal
           cards={openedCards}
-          onClose={() => setOpenedCards(null)}
+          onClose={() => {
+            setOpenedCards(null);
+            if (user) {
+              // Refresh balance and cards in parallel
+              Promise.all([
+                supabase.from("profiles").select("coins").eq("id", user.id).single(),
+                supabase.from("user_cards").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+              ]).then(([profileRes, cardsRes]) => {
+                if (profileRes.data) setCoins(profileRes.data.coins ?? 0);
+                if (!cardsRes.error && cardsRes.data) setCards(cardsRes.data as UserCard[]);
+              });
+            }
+          }}
         />
       )}
 
@@ -837,87 +853,175 @@ export default function CardsPage() {
 
 // ── Pack Shop ─────────────────────────────────────────────────────────────────
 
+function PackDetailModal({ pack, coins, opening, onOpenPack, onClose }: {
+  pack: typeof PACKS[number];
+  coins: number;
+  opening: PackType | null;
+  onOpenPack: (p: PackType) => void;
+  onClose: () => void;
+}) {
+  const canAfford = coins >= pack.cost;
+  const isOpening = opening === pack.type;
+
+  // Close on backdrop click
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed", inset: 0, zIndex: 90,
+        background: "var(--bg)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: "24px 16px",
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: "100%", maxWidth: 360,
+          background: "var(--bg)",
+          border: `1px solid ${pack.accent}33`,
+          borderRadius: 24,
+          overflow: "hidden",
+          animation: "packModalIn 0.28s cubic-bezier(0.34,1.56,0.64,1)",
+        }}
+      >
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px 0" }}>
+          <span style={{ fontWeight: 900, fontSize: 17, color: "var(--text-1)" }}>{pack.label}</span>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-3)", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: "4px 8px" }}>
+            Cancel
+          </button>
+        </div>
+
+        {/* Pack image */}
+        <div style={{ padding: "16px 40px 8px", display: "flex", justifyContent: "center" }}>
+          <img
+            src={pack.image}
+            alt={pack.label}
+            style={{
+              width: "100%", maxWidth: 200,
+              aspectRatio: "3/4", objectFit: "cover", borderRadius: 14,
+              boxShadow: `0 16px 48px rgba(0,0,0,.6), 0 0 40px ${pack.accent}33`,
+            }}
+          />
+        </div>
+
+        {/* Description */}
+        <div style={{ textAlign: "center", fontSize: 12, color: "var(--text-3)", fontWeight: 700, marginBottom: 16 }}>
+          {pack.description} · {pack.cards}
+        </div>
+
+        {/* Price + odds + button */}
+        <div style={{ padding: "0 20px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+          {/* Price */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
+            <CoinIcon size={20} />
+            <span style={{ fontWeight: 900, fontSize: 28, color: canAfford ? "#fbbf24" : "#475569", letterSpacing: "-0.02em" }}>
+              {pack.cost.toLocaleString()}
+            </span>
+            {!canAfford && <span style={{ fontSize: 11, color: "#ef4444", fontWeight: 700 }}>Not enough</span>}
+          </div>
+
+          {/* Odds */}
+          <div style={{ borderRadius: 14, overflow: "hidden", border: "1px solid rgba(255,255,255,.07)" }}>
+            {/* Header */}
+            <div style={{ background: "rgba(255,255,255,.05)", padding: "9px 14px", borderBottom: "1px solid rgba(255,255,255,.06)" }}>
+              <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: ".18em", color: "rgba(255,255,255,.4)", textTransform: "uppercase" }}>Odds</span>
+            </div>
+            {/* Rows */}
+            {RARITY_ODDS[pack.type].map(({ rarity, pct }, idx, arr) => {
+              const meta = RARITY_META[rarity];
+              const isLast = idx === arr.length - 1;
+              return (
+                <div
+                  key={rarity}
+                  style={{
+                    display: "flex", justifyContent: "space-between", alignItems: "center",
+                    padding: "8px 14px",
+                    borderBottom: isLast ? "none" : "1px solid rgba(255,255,255,.04)",
+                    background: idx % 2 === 0 ? "rgba(255,255,255,.02)" : "transparent",
+                  }}
+                >
+                  <span style={{ fontSize: 13, fontWeight: 900, color: meta.color, letterSpacing: "0.01em" }}>{meta.label}</span>
+                  <span style={{ fontSize: 13, fontWeight: 900, color: "rgba(255,255,255,.75)", fontVariantNumeric: "tabular-nums" }}>{pct}</span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Open button */}
+          <button
+            className="pack-open-btn"
+            onClick={() => onOpenPack(pack.type)}
+            disabled={!canAfford || !!opening}
+            style={{
+              background: canAfford ? pack.accent : "var(--border-1)",
+              color: canAfford ? "#14141e" : "var(--text-4)",
+              opacity: canAfford && !opening ? 1 : 0.45,
+              boxShadow: canAfford ? `0 4px 20px ${pack.accent}55` : "none",
+              fontSize: 15, padding: "14px 0", borderRadius: 13,
+            }}
+          >
+            {isOpening ? <Spinner /> : "Open Pack"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PackShop({
-  coins, opening, oddsFor, onOpenPack, onShowOdds,
+  coins, opening, onSelectPack,
 }: {
   coins: number;
   opening: PackType | null;
-  oddsFor: PackType | null;
-  onOpenPack: (p: PackType) => void;
-  onShowOdds: (p: PackType | null) => void;
+  onSelectPack: (p: PackType) => void;
 }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // On desktop, remap vertical wheel scroll to horizontal
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        e.preventDefault();
+        el.scrollLeft += e.deltaY * 1.2;
+      }
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, []);
+
   return (
     <section style={{ marginBottom: 8 }}>
       <div style={shopHeaderStyle}>
         <span style={{ fontWeight: 900, fontSize: 16, color: "var(--text-1)" }}>Pack Shop</span>
       </div>
-      <div style={packRowStyle}>
-        {PACKS.map((pack) => {
-          const canAfford = coins >= pack.cost;
-          const isOpening = opening === pack.type;
-          const showOdds = oddsFor === pack.type;
+
+      <div ref={scrollRef} className="pack-scroll">
+        {PACKS.map((pack, i) => {
+          const isMiddle = i === 1;
           return (
-            <div key={pack.type} className="pack-card-wrap" style={{ ...packCardStyle, outline: showOdds ? `1.5px solid ${pack.accent}` : "none" }}>
-              {/* Pack image */}
-              <div style={{ position: "relative", width: "100%", aspectRatio: "3/4", overflow: "hidden", borderRadius: 12, marginBottom: 10 }}>
-                <img
-                  src={pack.image}
-                  alt={pack.label}
-                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                />
-              </div>
-
-              {/* Pack info */}
-              <div style={{ fontWeight: 900, fontSize: 14, color: "var(--text-1)", marginBottom: 2 }}>{pack.label}</div>
-              <div style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 700, marginBottom: 6 }}>{pack.description}</div>
-              <div style={{ fontSize: 11, color: "var(--text-3)", marginBottom: 10 }}>{pack.cards}</div>
-
-              {/* Cost */}
-              <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 10 }}>
-                <CoinIcon size={14} />
-                <span style={{ fontWeight: 900, fontSize: 15, color: canAfford ? "#fbbf24" : "#475569" }}>
-                  {pack.cost.toLocaleString()}
-                </span>
-                {!canAfford && (
-                  <span style={{ fontSize: 10, color: "#ef4444", fontWeight: 700, marginLeft: 2 }}>Not enough</span>
-                )}
-              </div>
-
-              {/* Open button */}
-              <button
-                onClick={() => onOpenPack(pack.type)}
-                disabled={!canAfford || !!opening}
-                className="open-btn"
-                style={{
-                  ...openBtnBase,
-                  background: canAfford ? pack.accent : "var(--border-1)",
-                  color: canAfford ? "#14141e" : "var(--text-4)",
-                  opacity: canAfford && !opening ? 1 : 0.5,
-                  cursor: canAfford && !opening ? "pointer" : "not-allowed",
-                  boxShadow: canAfford ? `0 4px 18px ${pack.accent}44` : "none",
-                }}
-              >
-                {isOpening ? <Spinner /> : "Open"}
-              </button>
-
-              {/* Odds toggle */}
-              <button
-                onClick={() => onShowOdds(showOdds ? null : pack.type)}
-                style={oddsBtnStyle}
-              >
-                {showOdds ? "Hide odds ▲" : "Odds ▼"}
-              </button>
-
-              {showOdds && (
-                <div style={oddsBoxStyle}>
-                  {RARITY_ODDS[pack.type].map(({ rarity, pct }) => (
-                    <div key={rarity} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "3px 0" }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: RARITY_META[rarity].color }}>{RARITY_META[rarity].label}</span>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-2)" }}>{pct}</span>
-                    </div>
-                  ))}
-                </div>
+            <div key={pack.type} className="pack-item">
+              {/* Static glow shadow under the elevated middle pack */}
+              {isMiddle && (
+                <div style={{
+                  position: "absolute", bottom: -6, left: "8%", width: "84%", height: 24,
+                  borderRadius: "50%", background: `radial-gradient(ellipse, ${pack.accent}50 0%, transparent 70%)`,
+                  filter: "blur(8px)", pointerEvents: "none",
+                }} />
               )}
+
+              {/* Pack image — click to open detail modal */}
+              <div
+                className={`pack-img-wrap${isMiddle ? " pack-float" : ""}`}
+                suppressHydrationWarning
+                style={{ boxShadow: "0 16px 48px rgba(0,0,0,.45)", cursor: "pointer" }}
+                onClick={() => onSelectPack(pack.type)}
+              >
+                <img src={pack.image} alt={pack.label} />
+              </div>
             </div>
           );
         })}
@@ -934,16 +1038,11 @@ function PackShopPreview() {
       <div style={shopHeaderStyle}>
         <span style={{ fontWeight: 900, fontSize: 16, color: "var(--text-1)" }}>Pack Shop</span>
       </div>
-      <div style={packRowStyle}>
-        {PACKS.map((pack) => (
-          <div key={pack.type} style={packCardStyle}>
-            <div style={{ width: "100%", aspectRatio: "3/4", overflow: "hidden", borderRadius: 12, marginBottom: 10 }}>
-              <img src={pack.image} alt={pack.label} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            </div>
-            <div style={{ fontWeight: 900, fontSize: 14, color: "var(--text-1)", marginBottom: 2 }}>{pack.label}</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 6 }}>
-              <CoinIcon size={14} />
-              <span style={{ fontWeight: 900, fontSize: 15, color: "#fbbf24" }}>{pack.cost.toLocaleString()}</span>
+      <div className="pack-scroll">
+        {PACKS.map((pack, i) => (
+          <div key={pack.type} className="pack-item">
+            <div className={`pack-img-wrap${i === 1 ? " pack-float" : ""}`} style={{ boxShadow: "0 16px 48px rgba(0,0,0,.45)" }}>
+              <img src={pack.image} alt={pack.label} />
             </div>
           </div>
         ))}
@@ -1092,9 +1191,26 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
     [rawCards],
   );
   const [index, setIndex] = useState(0);
-  const [flipped, setFlipped] = useState(false);
   const [done, setDone] = useState(false);
-  const [revealing, setRevealing] = useState(false);
+
+  // Phase: false = card back (rarity tease), true = card front (player revealed)
+  const [flipped, setFlipped] = useState(false);
+  const [flipAnimating, setFlipAnimating] = useState(false);
+  const [revealingRarity, setRevealingRarity] = useState(false);
+
+  // Swipe/drag state
+  const [dragX, setDragX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [flyingOut, setFlyingOut] = useState(false);
+  const [snappingBack, setSnappingBack] = useState(false);
+  const [enterAnim, setEnterAnim] = useState(true);
+  const touchStart = useRef({ x: 0, y: 0 });
+  const axisLocked = useRef<"h" | "v" | null>(null);
+  // Refs mirror state for event handlers — avoids stale closure issues on mobile
+  // where pointermove fires before React re-renders with new state
+  const isDraggingRef = useRef(false);
+  const dragXRef = useRef(0);
+  const flippedRef = useRef(false);
 
   const current = cards[index];
   const meta = current ? RARITY_META[current.rarity] : null;
@@ -1104,76 +1220,159 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
   const hasRevealAnim = current ? RARITY_ORDER[current.rarity] >= RARITY_ORDER["sapphire"] : false;
   const REVEAL_DURATION = (current && RARITY_REVEAL_DURATIONS[current.rarity]) ?? 1000;
 
-  const flip = () => {
-    if (revealing) return;
-    if (!flipped) {
-      if (hasRevealAnim) {
-        setRevealing(true);
-        setTimeout(() => { setRevealing(false); setFlipped(true); }, REVEAL_DURATION);
-      } else {
-        setFlipped(true);
-      }
-      return;
-    }
+  // Reset all card state when moving to a new card
+  useEffect(() => {
+    flippedRef.current = false;
+    dragXRef.current = 0;
     setFlipped(false);
-    if (index < cards.length - 1) {
-      setTimeout(() => setIndex((i) => i + 1), 180);
-    } else {
-      setDone(true);
-    }
-  };
+    setFlipAnimating(false);
+    setRevealingRarity(false);
+    setDragX(0);
+    setEnterAnim(true);
+  }, [index]);
 
-  const skipAll = () => { setRevealing(false); setDone(true); };
+  function triggerReveal() {
+    if (hasRevealAnim) {
+      setRevealingRarity(true);
+      setTimeout(() => setRevealingRarity(false), REVEAL_DURATION);
+    }
+  }
+
+  // Complete the flip from current drag position to fully revealed
+  function completeFlip() {
+    flippedRef.current = true;
+    dragXRef.current = 0;
+    setFlipAnimating(true);
+    setFlipped(true);
+    setDragX(0);
+    // After CSS transition completes, fire rarity reveal
+    setTimeout(() => {
+      setFlipAnimating(false);
+      triggerReveal();
+    }, 300);
+  }
+
+  function advance() {
+    if (flyingOut || revealingRarity) return;
+    setFlyingOut(true);
+    setTimeout(() => {
+      setFlyingOut(false);
+      setDragX(0);
+      setEnterAnim(false);
+      if (index < cards.length - 1) {
+        setIndex(i => i + 1);
+      } else {
+        setDone(true);
+      }
+    }, 260);
+  }
+
+  function onPointerDown(e: React.PointerEvent) {
+    if (revealingRarity || flipAnimating) return;
+    touchStart.current = { x: e.clientX, y: e.clientY };
+    axisLocked.current = null;
+    isDraggingRef.current = true;
+    setIsDragging(true);
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  }
+
+  function onPointerMove(e: React.PointerEvent) {
+    if (!isDraggingRef.current || revealingRarity || flipAnimating) return;
+    const dx = e.clientX - touchStart.current.x;
+    const dy = e.clientY - touchStart.current.y;
+    // Slightly larger threshold on mobile to avoid false axis detection
+    if (!axisLocked.current && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+      axisLocked.current = Math.abs(dx) > Math.abs(dy) ? "h" : "v";
+    }
+    if (axisLocked.current === "h") {
+      const newDx = Math.min(30, dx);
+      dragXRef.current = newDx;
+      setDragX(newDx);
+    }
+  }
+
+  function onPointerUp() {
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
+    setIsDragging(false);
+    axisLocked.current = null;
+    // Read from refs — not state — to get the latest values
+    const currentDragX = dragXRef.current;
+    dragXRef.current = 0;
+    if (!flippedRef.current) {
+      // First swipe: flip card to reveal player
+      if (currentDragX < -55) {
+        completeFlip();
+      } else {
+        setSnappingBack(true);
+        setDragX(0);
+        setTimeout(() => setSnappingBack(false), 400);
+      }
+    } else {
+      // Second swipe: advance to next card
+      if (currentDragX < -70) {
+        advance();
+      } else {
+        setSnappingBack(true);
+        setDragX(0);
+        setTimeout(() => setSnappingBack(false), 400);
+      }
+    }
+  }
+
+  // ── Visual computations ──────────────────────────────────────────────────────
+
+  // Flip progress: 0 = fully back (tease), 1 = fully front (revealed)
+  const FLIP_ZONE = 110;
+  const flipProgress = flipped ? 1 : Math.max(0, Math.min(1, -dragX / FLIP_ZONE));
+
+  // Pancake/envelope flip: scaleX 1→0 (first half), then 0→1 (second half)
+  const flipScaleX = flipProgress < 0.5
+    ? 1 - flipProgress * 2        // 1 at 0%, 0 at 50%
+    : (flipProgress - 0.5) * 2;  // 0 at 50%, 1 at 100%
+
+  // Which face to show (switch at midpoint of flip)
+  const showFront = flipProgress >= 0.5;
+
+  // Fly-out only applies when already flipped
+  const cardTx = flyingOut ? -500 : (flipped ? dragX : 0);
+  const cardRot = flyingOut ? -18 : (flipped ? dragX * 0.05 : 0);
+
+  // Outer wrapper transition (translateX for fly-out)
+  const outerTransition = isDragging
+    ? "none"
+    : flyingOut
+      ? "transform 0.26s ease, opacity 0.22s ease"
+      : snappingBack && flipped
+        ? "transform 0.4s cubic-bezier(0.34,1.56,0.64,1)"
+        : "none";
+
+  // Flip container transition (scaleX for pancake flip)
+  const flipTransition = flipAnimating
+    ? "transform 0.3s ease"
+    : snappingBack && !flipped
+      ? "transform 0.4s cubic-bezier(0.34,1.56,0.64,1)"
+      : "none";
+
+  // ── Done screen ──────────────────────────────────────────────────────────────
 
   if (done) {
     return (
       <div style={{ ...modalOverlayStyle, alignItems: "center", justifyContent: "center", padding: "20px 16px" }}>
-        <div style={{
-          background: "var(--bg)",
-          border: "1px solid var(--border-2)",
-          borderRadius: 24,
-          padding: "20px 16px 16px",
-          width: "100%",
-          maxWidth: 480,
-          animation: "slideUp 0.28s cubic-bezier(0.34,1.56,0.64,1)",
-        }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 24, padding: "20px 16px 16px", width: "100%", maxWidth: 480, animation: "slideUp 0.28s cubic-bezier(0.34,1.56,0.64,1)" }} onClick={e => e.stopPropagation()}>
           <div style={{ textAlign: "center", marginBottom: 14 }}>
-            <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: ".18em", color: "rgba(255,255,255,.38)", marginBottom: 4 }}>
-              PACK OPENED
-            </div>
-            <div style={{ fontSize: 18, fontWeight: 1000, color: "var(--text-1)" }}>
-              {cards.length} Card{cards.length !== 1 ? "s" : ""}
-            </div>
+            <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: ".18em", color: "rgba(255,255,255,.38)", marginBottom: 4 }}>PACK OPENED</div>
+            <div style={{ fontSize: 18, fontWeight: 1000, color: "var(--text-1)" }}>{cards.length} Card{cards.length !== 1 ? "s" : ""}</div>
           </div>
-
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: `repeat(${Math.min(cards.length, 4)}, 1fr)`,
-            gap: 6,
-            marginBottom: 14,
-          }}>
+          <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(cards.length, 4)}, 1fr)`, gap: 6, marginBottom: 14 }}>
             {cards.map((card, i) => (
               <div key={i} style={{ position: "relative" }}>
-                <SharedPlayerCard card={{
-                  playerId: card.player_id,
-                  playerName: card.player_name,
-                  playerFolder: TEAM_PLAYER_FOLDER[card.team] ?? card.team.toLowerCase().replace(/[^a-z]/g, ""),
-                  playerTeam: card.team,
-                  playerTeamLogo: card.team_logo,
-                  rarity: card.rarity,
-                  rating: card.rating,
-                }} />
-                {card.is_new && (
-                  <div style={{ position: "absolute", top: 6, left: "50%", transform: "translateX(-50%)", background: "linear-gradient(90deg,#16a34a,#22c55e)", borderRadius: 99, padding: "2px 7px", fontSize: 7, fontWeight: 900, color: "#fff", letterSpacing: ".1em", boxShadow: "0 2px 8px rgba(34,197,94,.5)", whiteSpace: "nowrap", zIndex: 10, pointerEvents: "none" }}>✦ NEW</div>
-                )}
+                <SharedPlayerCard card={{ playerId: card.player_id, playerName: card.player_name, playerFolder: TEAM_PLAYER_FOLDER[card.team] ?? card.team.toLowerCase().replace(/[^a-z]/g, ""), playerTeam: card.team, playerTeamLogo: card.team_logo, rarity: card.rarity, rating: card.rating }} />
+                {card.is_new && <div style={{ position: "absolute", top: 6, left: "50%", transform: "translateX(-50%)", background: "linear-gradient(90deg,#16a34a,#22c55e)", borderRadius: 99, padding: "2px 7px", fontSize: 7, fontWeight: 900, color: "#fff", letterSpacing: ".1em", boxShadow: "0 2px 8px rgba(34,197,94,.5)", whiteSpace: "nowrap", zIndex: 10, pointerEvents: "none" }}>✦ NEW</div>}
               </div>
             ))}
           </div>
-
-          <button
-            onClick={onClose}
-            style={{ display: "block", width: "100%", padding: "13px", borderRadius: 14, border: "none", background: "var(--border-3)", color: "var(--text-1)", fontWeight: 900, fontSize: 15, cursor: "pointer" }}
-          >
+          <button onClick={onClose} style={{ display: "block", width: "100%", padding: "13px", borderRadius: 14, border: "none", background: "var(--border-3)", color: "var(--text-1)", fontWeight: 900, fontSize: 15, cursor: "pointer" }}>
             Add to Collection
           </button>
         </div>
@@ -1181,98 +1380,175 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
     );
   }
 
+  // ── Card reveal screen ───────────────────────────────────────────────────────
+
   return (
     <div style={{ ...modalOverlayStyle, alignItems: "center", justifyContent: "center" }}>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", maxWidth: 340, padding: "0 20px" }} onClick={(e) => e.stopPropagation()}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", maxWidth: 340, padding: "0 20px", userSelect: "none" }} onClick={e => e.stopPropagation()}>
 
-        {/* Counter */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 24 }}>
+        {/* Progress dots */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 28 }}>
           {cards.map((_, i) => (
             <div key={i} style={{ width: i === index ? 20 : 6, height: 6, borderRadius: 99, background: i < index ? "rgba(255,255,255,.5)" : i === index ? "#fff" : "var(--border-3)", transition: "all 0.25s ease" }} />
           ))}
         </div>
 
-        {/* Card flip container */}
-        <div style={{ position: "relative", width: "100%", maxWidth: 260, marginBottom: 28 }}>
-
-          {/* Per-rarity pre-reveal animation overlay */}
-          {revealing && current && meta && (
+        {/* Swipeable card area */}
+        <div
+          style={{ position: "relative", width: "100%", maxWidth: 260, marginBottom: 28, touchAction: "none" }}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+        >
+          {/* Rarity reveal overlay — fires after the flip */}
+          {revealingRarity && current && meta && (
             <RarityRevealOverlay rarity={current.rarity} meta={meta} duration={REVEAL_DURATION} />
           )}
 
+          {/* Outer wrapper: handles translateX fly-out + rotate + slide-in enter anim */}
           <div
-            onClick={flip}
-            style={{ width: "100%", aspectRatio: "3/4.2", cursor: revealing ? "default" : "pointer", perspective: 800 }}
+            className={enterAnim && !flipped ? "card-reveal-enter" : ""}
+            style={{
+              transform: `translateX(${cardTx}px) rotate(${cardRot}deg)`,
+              transition: outerTransition,
+              opacity: flyingOut ? 0 : 1,
+              cursor: revealingRarity || flipAnimating ? "default" : isDragging ? "grabbing" : "grab",
+            }}
           >
-            <div style={{
-              position: "relative", width: "100%", height: "100%",
-              transformStyle: "preserve-3d",
-              transform: flipped ? "rotateY(0deg)" : "rotateY(180deg)",
-              transition: "transform 0.42s cubic-bezier(0.4,0,0.2,1)",
-            }}>
-              {/* Front (card face) */}
-              <div style={{ position: "absolute", inset: 0, borderRadius: 18, overflow: "hidden", backfaceVisibility: "hidden", boxShadow: flipped && meta ? `0 0 0 2px ${meta.color}88, 0 16px 48px ${meta.glow}, 0 0 80px ${meta.glow}44` : "none" }}>
-                {current && meta && (
-                  <>
-                    <img src={`/cards/${current.rarity}.png`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.15) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,.72) 75%, rgba(0,0,0,.88) 100%)" }} />
-                    {/* Rating — ac-rating class for consistent sizing */}
-                    <div className="ac-rating" style={{ background: "rgba(0,0,0,.82)", fontWeight: 1000, color: meta.color, border: `1px solid ${meta.color}44` }}>
-                      {current.rating}
-                    </div>
-                    {current.is_new && (
-                      <div style={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", background: "linear-gradient(90deg,#16a34a,#22c55e)", borderRadius: 99, padding: "4px 14px", fontSize: 11, fontWeight: 900, color: "#fff", letterSpacing: ".12em", boxShadow: "0 2px 12px rgba(34,197,94,.55)", whiteSpace: "nowrap", zIndex: 5 }}>
-                        ✦ NEW
-                      </div>
-                    )}
-                    {/* Player photo circle */}
-                    <div style={{ position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)", width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", background: (TEAM_COLORS[current.team] ?? "#1e2438") + "33" }}>
-                      <CardPlayerImage card={current} imageStyle={cardPlayerImageStyle} loading="eager" />
-                    </div>
-                    {/* Player name */}
-                    <div style={{ position: "absolute", top: "71%", left: 0, right: 0, textAlign: "center", padding: "0 5px" }}>
-                      <div className="ac-name" style={{ fontWeight: 900, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: `0 0 12px ${meta.glow}` }}>{current.player_name}</div>
-                    </div>
-                    {/* Team logo */}
-                    <div className="ac-logo" style={{ background: "rgba(0,0,0,.55)", border: "1.5px solid var(--border-3)" }}>
-                      <img src={current.team_logo} alt={current.team} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    </div>
-                    {/* Year */}
-                    <div className="ac-pos" style={{ background: "rgba(0,0,0,.7)", fontWeight: 900, color: "rgba(255,255,255,.75)", letterSpacing: ".05em" }}>2025</div>
-                  </>
-                )}
-              </div>
+            {/* Flip container: scaleX pancake-flip effect */}
+            <div style={{ transform: `scaleX(${flipScaleX})`, transition: flipTransition }}>
 
-              {/* Back (card back / mystery) */}
-              <div style={{
-                position: "absolute", inset: 0, borderRadius: 18, overflow: "hidden",
-                backfaceVisibility: "hidden", transform: "rotateY(180deg)",
-                background: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
-                boxShadow: "0 0 0 1.5px var(--border-2), 0 12px 40px rgba(0,0,0,.6)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 48, marginBottom: 10 }}>🃏</div>
-                  <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: ".18em", color: "rgba(255,255,255,.28)" }}>TAP TO REVEAL</div>
+              {showFront ? (
+                /* ── Front face: player card ── */
+                <div style={{
+                  width: "100%", aspectRatio: "3/4.2", borderRadius: 18, overflow: "hidden", position: "relative",
+                  boxShadow: meta ? `0 0 0 2px ${meta.color}88, 0 16px 48px ${meta.glow}, 0 0 60px ${meta.glow}33` : "0 16px 48px rgba(0,0,0,.6)",
+                }}>
+                  {current && meta && (
+                    <>
+                      <img src={`/cards/${current.rarity}.png`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.15) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,.72) 75%, rgba(0,0,0,.88) 100%)" }} />
+                      <div className="ac-rating" style={{ background: "rgba(0,0,0,.82)", fontWeight: 1000, color: meta.color, border: `1px solid ${meta.color}44` }}>{current.rating}</div>
+                      {current.is_new && (
+                        <div style={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", background: "linear-gradient(90deg,#16a34a,#22c55e)", borderRadius: 99, padding: "4px 14px", fontSize: 11, fontWeight: 900, color: "#fff", letterSpacing: ".12em", boxShadow: "0 2px 12px rgba(34,197,94,.55)", whiteSpace: "nowrap", zIndex: 5 }}>✦ NEW</div>
+                      )}
+                      <div style={{ position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)", width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", background: (TEAM_COLORS[current.team] ?? "#1e2438") + "33" }}>
+                        <CardPlayerImage card={current} imageStyle={cardPlayerImageStyle} loading="eager" />
+                      </div>
+                      <div style={{ position: "absolute", top: "71%", left: 0, right: 0, textAlign: "center", padding: "0 5px" }}>
+                        <div className="ac-name" style={{ fontWeight: 900, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: `0 0 12px ${meta.glow}` }}>{current.player_name}</div>
+                      </div>
+                      <div style={{
+                        position: "absolute",
+                        left: "clamp(4px,4.75%,7px)", bottom: "clamp(4px,4.75%,7px)",
+                        top: "auto", right: "auto",
+                        width: "clamp(16px,17.5%,26px)", height: "clamp(16px,17.5%,26px)",
+                        borderRadius: "50%", overflow: "hidden", zIndex: 4,
+                        background: "rgba(0,0,0,.55)", border: "1.5px solid var(--border-3)",
+                      }}>
+                        <img src={current.team_logo} alt={current.team} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      </div>
+                      <div className="ac-pos" style={{ background: "rgba(0,0,0,.7)", fontWeight: 900, color: "rgba(255,255,255,.75)", letterSpacing: ".05em" }}>2025</div>
+                    </>
+                  )}
                 </div>
-              </div>
+              ) : (
+                /* ── Back face: card template with identity hidden ── */
+                <div style={{
+                  width: "100%", aspectRatio: "3/4.2", borderRadius: 18, overflow: "hidden", position: "relative",
+                  boxShadow: meta
+                    ? `0 0 0 2px ${meta.color}88, 0 16px 48px ${meta.glow}, 0 0 60px ${meta.glow}33`
+                    : "0 16px 48px rgba(0,0,0,.6)",
+                }}>
+                  {current && meta && (
+                    <>
+                      {/* Same card template as front */}
+                      <img src={`/cards/${current.rarity}.png`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.15) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,.72) 75%, rgba(0,0,0,.88) 100%)" }} />
+
+                      {/* Rating badge — show "?" */}
+                      <div className="ac-rating" style={{ background: "rgba(0,0,0,.82)", fontWeight: 1000, color: meta.color, border: `1px solid ${meta.color}44` }}>?</div>
+
+                      {/* Player circle — team logo, smaller */}
+                      <div style={{ position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)", width: "48%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", background: (TEAM_COLORS[current.team] ?? "#1e2438") + "88" }}>
+                        <img
+                          src={current.team_logo}
+                          alt={current.team}
+                          style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.85 }}
+                        />
+                      </div>
+
+                      {/* Player name — hidden */}
+                      <div style={{ position: "absolute", top: "71%", left: 0, right: 0, textAlign: "center", padding: "0 5px" }}>
+                        <div className="ac-name" style={{ fontWeight: 900, color: "rgba(255,255,255,.18)", letterSpacing: ".2em" }}>• • • • •</div>
+                      </div>
+
+                      {/* Year badge */}
+                      <div className="ac-pos" style={{ background: "rgba(0,0,0,.7)", fontWeight: 900, color: "rgba(255,255,255,.75)", letterSpacing: ".05em" }}>2025</div>
+
+                      {/* Swipe hint */}
+                      <div style={{
+                        position: "absolute", bottom: "4%", left: "50%", transform: "translateX(-50%)",
+                        display: "flex", alignItems: "center", gap: 5,
+                        color: "rgba(255,255,255,.32)", fontSize: 9.5, fontWeight: 800,
+                        letterSpacing: ".14em", whiteSpace: "nowrap", textTransform: "uppercase" as const,
+                      }}>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
+                        Swipe to reveal
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
             </div>
           </div>
+
+          {/* Arrow hint when dragging past threshold (fly-out phase) */}
+          {flipped && dragX < -20 && (
+            <div style={{ position: "absolute", right: -36, top: "50%", transform: "translateY(-50%)", fontSize: 22, opacity: Math.min(1, Math.abs(dragX) / 80), transition: "opacity 0.1s", pointerEvents: "none" }}>→</div>
+          )}
         </div>
 
-        {/* Buttons */}
-        <button
-          onClick={flip}
-          disabled={revealing}
-          style={{ width: "100%", padding: "15px", borderRadius: 16, border: "none", background: flipped ? "var(--border-3)" : "var(--border-2)", color: "var(--text-1)", fontWeight: 900, fontSize: 15, cursor: revealing ? "default" : "pointer", marginBottom: 10, backdropFilter: "blur(12px)", transition: "background 0.15s ease", opacity: revealing ? 0.4 : 1 }}
-        >
-          {revealing ? "…" : !flipped ? "Reveal Card" : index < cards.length - 1 ? `Next Card  ·  ${cards.length - index - 1} left` : "View All"}
-        </button>
+        {/* Action button — changes based on phase */}
+        {!flipped ? (
+          <button
+            onClick={() => { if (!flipAnimating && !revealingRarity) completeFlip(); }}
+            disabled={flipAnimating}
+            style={{
+              width: "100%", padding: "15px", borderRadius: 16,
+              border: `1px solid ${meta ? meta.color + "44" : "var(--border-2)"}`,
+              background: meta ? `${meta.color}1a` : "var(--border-2)",
+              color: meta ? meta.color : "var(--text-1)",
+              fontWeight: 900, fontSize: 15,
+              cursor: flipAnimating ? "default" : "pointer",
+              marginBottom: 8, backdropFilter: "blur(12px)",
+              opacity: flipAnimating ? 0.5 : 1,
+            }}
+          >
+            Flip Card
+          </button>
+        ) : (
+          <button
+            onClick={advance}
+            disabled={revealingRarity || flyingOut}
+            style={{
+              width: "100%", padding: "15px", borderRadius: 16, border: "none",
+              background: "var(--border-2)", color: "var(--text-1)",
+              fontWeight: 900, fontSize: 15,
+              cursor: revealingRarity || flyingOut ? "default" : "pointer",
+              marginBottom: 8, backdropFilter: "blur(12px)",
+              opacity: revealingRarity ? 0.4 : 1,
+            }}
+          >
+            {revealingRarity ? "…" : index < cards.length - 1 ? `Next  ·  ${cards.length - index - 1} left` : "View All"}
+          </button>
+        )}
 
-        <button
-          onClick={skipAll}
-          style={{ background: "none", border: "none", color: "rgba(255,255,255,.3)", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: "6px 12px" }}
-        >
+        <button onClick={() => setDone(true)} style={{ background: "none", border: "none", color: "rgba(255,255,255,.3)", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: "6px 12px" }}>
           Skip to end
         </button>
       </div>
@@ -1536,58 +1812,8 @@ const loginBtnStyle: React.CSSProperties = {
 };
 
 const shopHeaderStyle: React.CSSProperties = {
-  marginBottom: 12,
+  marginBottom: 10,
   paddingLeft: 2,
-};
-
-const packRowStyle: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(3, 1fr)",
-  gap: 10,
-  marginBottom: 28,
-};
-
-const packCardStyle: React.CSSProperties = {
-  background: "var(--surface-2)",
-  border: "1px solid var(--border-2)",
-  borderRadius: 18,
-  padding: 12,
-  display: "flex",
-  flexDirection: "column",
-};
-
-const openBtnBase: React.CSSProperties = {
-  border: "none",
-  borderRadius: 10,
-  padding: "9px 0",
-  fontWeight: 900,
-  fontSize: 13,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: 6,
-  transition: "opacity 0.15s ease, box-shadow 0.15s ease",
-  marginBottom: 6,
-};
-
-const oddsBtnStyle: React.CSSProperties = {
-  appearance: "none",
-  border: "none",
-  background: "transparent",
-  color: "var(--text-3)",
-  fontSize: 10,
-  fontWeight: 700,
-  cursor: "pointer",
-  padding: "2px 0",
-  textAlign: "left" as const,
-};
-
-const oddsBoxStyle: React.CSSProperties = {
-  marginTop: 6,
-  padding: "8px 10px",
-  background: "rgba(0,0,0,.4)",
-  borderRadius: 10,
-  border: "1px solid var(--border-1)",
 };
 
 const collectionHeaderStyle: React.CSSProperties = {

@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { after } from "next/server";
 import { CARD_PLAYERS, getPlayerImage, pickRandom } from "@/app/data/cardPlayers";
 import { syncPassXpFromCards } from "@/app/lib/passCardXp";
 
@@ -100,7 +101,7 @@ export async function POST(req: NextRequest) {
 
   const config = PACK_CONFIGS[packType];
 
-  // ── 1. Fetch user's coin balance from profiles ──────────────────────────
+  // ── 1. Fetch balance ──────────────────────────────────────────────────────
   const { data: profile, error: profileError } = await supabaseAdmin
     .from("profiles")
     .select("coins")
@@ -112,104 +113,95 @@ export async function POST(req: NextRequest) {
   }
 
   const currentCoins = profile?.coins ?? 0;
-
   if (currentCoins < config.cost) {
     return NextResponse.json({ error: "Not enough coins" }, { status: 402 });
   }
 
-  // ── 2. Deduct coins ──────────────────────────────────────────────────────
+  // ── 2. Deduct coins (optimistic concurrency) ──────────────────────────────
   const { error: deductError } = await supabaseAdmin
     .from("profiles")
     .update({ coins: currentCoins - config.cost })
     .eq("id", user.id)
-    .eq("coins", currentCoins); // optimistic concurrency check
+    .eq("coins", currentCoins);
 
   if (deductError) {
     return NextResponse.json({ error: "Failed to deduct coins — try again" }, { status: 500 });
   }
 
-  // ── 3. Generate card rarities ────────────────────────────────────────────
-  const rarities: Rarity[] = Array.from({ length: config.normalCount }, () =>
-    rollRarity(config.normalOdds)
-  );
-  if (config.guaranteedMythic) rarities.push("mythic");
+  // ── 3. Generate all card assignments (pure JS, zero DB calls) ─────────────
+  const assignments = Array.from({ length: config.normalCount }, () => {
+    const rarity = rollRarity(config.normalOdds);
+    return { player: pickRandom(CARD_PLAYERS), rarity, rating: generateRating(rarity) };
+  });
+  if (config.guaranteedMythic) {
+    assignments.push({ player: pickRandom(CARD_PLAYERS), rarity: "mythic" as Rarity, rating: 100 });
+  }
 
-  // ── 4. Assign players to each rarity slot ───────────────────────────────
-  type CardData = {
-    player_id: string;
-    player_name: string;
-    team: string;
-    team_logo: string;
-    player_image: string;
-    rarity: Rarity;
-    rating: number;
-    is_new: boolean;
-  };
+  // ── 4. ONE query to fetch all potentially matching existing cards ──────────
+  const uniquePlayerIds = [...new Set(assignments.map(a => a.player.id))];
+  const { data: existingCards } = await supabaseAdmin
+    .from("user_cards")
+    .select("id, player_id, rarity, duplicate_count")
+    .eq("user_id", user.id)
+    .in("player_id", uniquePlayerIds);
 
-  const results: CardData[] = [];
+  type ExistingCard = { id: string; player_id: string; rarity: Rarity; duplicate_count: number };
+  const existingMap = new Map<string, ExistingCard>();
+  for (const c of (existingCards ?? []) as ExistingCard[]) {
+    existingMap.set(`${c.player_id}:${c.rarity}`, c);
+  }
 
-  for (const rarity of rarities) {
-    const player = pickRandom(CARD_PLAYERS);
-    const rating = generateRating(rarity);
+  // ── 5. Categorise into inserts vs updates ─────────────────────────────────
+  // Track how many times each player+rarity appears in THIS pack
+  const packCountMap = new Map<string, number>();
+  for (const { player, rarity } of assignments) {
+    const key = `${player.id}:${rarity}`;
+    packCountMap.set(key, (packCountMap.get(key) ?? 0) + 1);
+  }
 
-    // Upsert: if card already exists, increment duplicate_count
-    const { data: existing } = await supabaseAdmin
-      .from("user_cards")
-      .select("id, duplicate_count")
-      .eq("user_id", user.id)
-      .eq("player_id", player.id)
-      .eq("rarity", rarity)
-      .single();
+  // Which unique keys need a fresh insert vs an update to existing row
+  const toInsert: object[] = [];
+  const toUpdate: { id: string; newCount: number }[] = [];
 
-    let cardId: string;
-    let isNew = false;
-
+  for (const [key, packCount] of packCountMap) {
+    const existing = existingMap.get(key);
     if (existing) {
-      await supabaseAdmin
-        .from("user_cards")
-        .update({ duplicate_count: existing.duplicate_count + 1 })
-        .eq("id", existing.id);
-      cardId = existing.id;
+      toUpdate.push({ id: existing.id, newCount: existing.duplicate_count + packCount });
     } else {
-      const { data: inserted, error: insertCardError } = await supabaseAdmin
-        .from("user_cards")
-        .insert({
-          user_id: user.id,
-          player_id: player.id,
-          player_name: player.name,
-          team: player.team,
-          team_logo: player.teamLogo,
-          rarity,
-          rating,
-          duplicate_count: 1,
-          pack_type: packType,
-        })
-        .select("id")
-        .single();
-
-      if (insertCardError || !inserted) {
-        // Unlikely duplicate race — just re-fetch
-        const { data: reFetched } = await supabaseAdmin
-          .from("user_cards")
-          .select("id, duplicate_count")
-          .eq("user_id", user.id)
-          .eq("player_id", player.id)
-          .eq("rarity", rarity)
-          .single();
-        cardId = reFetched?.id ?? "";
-        if (reFetched) {
-          await supabaseAdmin
-            .from("user_cards")
-            .update({ duplicate_count: reFetched.duplicate_count + 1 })
-            .eq("id", reFetched.id);
-        }
-      } else {
-        cardId = inserted.id;
-        isNew = true;
-      }
+      // Find one assignment for this key to get player/rarity/rating details
+      const [playerId, rarity] = key.split(":") as [string, Rarity];
+      const sample = assignments.find(a => a.player.id === playerId && a.rarity === rarity)!;
+      toInsert.push({
+        user_id: user.id,
+        player_id: sample.player.id,
+        player_name: sample.player.name,
+        team: sample.player.team,
+        team_logo: sample.player.teamLogo,
+        rarity: sample.rarity,
+        rating: sample.rating,
+        duplicate_count: packCount,
+        pack_type: packType,
+      });
     }
+  }
 
-    results.push({
+  // ── 6. Batch insert + parallel updates (replaces N serial queries) ─────────
+  await Promise.all([
+    toInsert.length > 0
+      ? supabaseAdmin.from("user_cards").insert(toInsert)
+      : Promise.resolve(),
+    ...toUpdate.map(({ id, newCount }) =>
+      supabaseAdmin.from("user_cards").update({ duplicate_count: newCount }).eq("id", id)
+    ),
+  ]);
+
+  // ── 7. Build result payload ───────────────────────────────────────────────
+  const seenNewKeys = new Set<string>();
+  const results = assignments.map(({ player, rarity, rating }) => {
+    const key = `${player.id}:${rarity}`;
+    const isNew = !existingMap.has(key) && !seenNewKeys.has(key);
+    if (isNew) seenNewKeys.add(key);
+    return {
       player_id: player.id,
       player_name: player.name,
       team: player.team,
@@ -218,41 +210,43 @@ export async function POST(req: NextRequest) {
       rarity,
       rating,
       is_new: isNew,
-    });
-  }
+    };
+  });
 
-  // Keep pass XP equal to the cards currently owned by the user.
-  try {
-    await syncPassXpFromCards(user.id);
-  } catch (err) {
-    console.error("[cards/open-pack sync pass xp]", err instanceof Error ? err.message : err);
-  }
-
-  // ── 6. Record the pack opening ──────────────────────────────────────────
-  const { data: opening } = await supabaseAdmin
-    .from("pack_openings")
-    .insert({
-      user_id: user.id,
-      pack_type: packType,
-      cost: config.cost,
-      cards_received: rarities.length,
-    })
-    .select("id")
-    .single();
-
-  if (opening) {
-    await supabaseAdmin.from("pack_opening_cards").insert(
-      results.map((r) => ({
-        pack_opening_id: opening.id,
-        card_id: r.player_id, // we don't store the uuid here for brevity
-        rarity: r.rarity,
-        player_name: r.player_name,
-        is_new: r.is_new,
-      }))
-    );
-  }
-
-  // ── 7. Return result ─────────────────────────────────────────────────────
   const newCoins = currentCoins - config.cost;
+
+  // ── 8. Defer non-critical work until AFTER the response is sent ───────────
+  // Pass XP sync and analytics logging don't affect what the user sees —
+  // run them after responding so they don't add to the user-facing latency.
+  after(async () => {
+    try {
+      await syncPassXpFromCards(user.id);
+    } catch (err) {
+      console.error("[cards/open-pack] syncPassXpFromCards failed:", err instanceof Error ? err.message : err);
+    }
+
+    try {
+      const { data: opening } = await supabaseAdmin
+        .from("pack_openings")
+        .insert({ user_id: user.id, pack_type: packType, cost: config.cost, cards_received: results.length })
+        .select("id")
+        .single();
+
+      if (opening) {
+        await supabaseAdmin.from("pack_opening_cards").insert(
+          results.map(r => ({
+            pack_opening_id: opening.id,
+            card_id: r.player_id,
+            rarity: r.rarity,
+            player_name: r.player_name,
+            is_new: r.is_new,
+          }))
+        );
+      }
+    } catch (err) {
+      console.error("[cards/open-pack] pack logging failed:", err instanceof Error ? err.message : err);
+    }
+  });
+
   return NextResponse.json({ cards: results, newCoins });
 }
