@@ -328,11 +328,9 @@ export default function CardsPage() {
   const [opening, setOpening] = useState<PackType | null>(null);
   const [openedCards, setOpenedCards] = useState<OpenedCard[] | null>(null);
   const [shopPack, setShopPack] = useState<PackType | null>(null);
-
-  // Auto-close the pack detail modal the moment cards are ready to reveal
-  useEffect(() => {
-    if (openedCards) setShopPack(null);
-  }, [openedCards]);
+  // pendingPackType: set immediately when user taps "Open Pack", cleared when cards arrive.
+  // Drives the instant loading overlay so the UI responds without waiting for the API.
+  const [pendingPackType, setPendingPackType] = useState<PackType | null>(null);
 
   // filters
   const [rarityFilter, setRarityFilter] = useState<Rarity | "all">("all");
@@ -410,7 +408,17 @@ export default function CardsPage() {
 
   async function handleOpenPack(packType: PackType) {
     if (opening || !accessToken) return;
-    setOpening(packType); // show loading state immediately
+
+    // ── Instant feedback — don't wait for the API ──────────────────────────
+    // 1. Close the pack detail modal immediately.
+    // 2. Show the full-screen loading overlay right away.
+    // 3. Optimistically deduct coins so the balance updates without delay.
+    const packCost = PACKS.find(p => p.type === packType)?.cost ?? 0;
+    setOpening(packType);
+    setShopPack(null);
+    setPendingPackType(packType);
+    setCoins(prev => Math.max(0, prev - packCost));
+
     try {
       const res = await fetch("/api/cards/open-pack", {
         method: "POST",
@@ -422,12 +430,19 @@ export default function CardsPage() {
       });
       const data = await res.json();
       if (!res.ok) {
+        // Roll back the optimistic deduction on failure.
+        setCoins(prev => prev + packCost);
+        setPendingPackType(null);
         alert(data.error ?? "Failed to open pack");
         return;
       }
+      // Server confirms exact balance (handles any race conditions).
       setCoins(data.newCoins);
       setOpenedCards(data.cards as OpenedCard[]);
+      setPendingPackType(null);
     } catch {
+      setCoins(prev => prev + packCost);
+      setPendingPackType(null);
       alert("Something went wrong. Please try again.");
     } finally {
       setOpening(null);
@@ -528,6 +543,8 @@ export default function CardsPage() {
         @keyframes revealScreenEdge { 0% { opacity: 0; } 20% { opacity: 1; } 100% { opacity: 0; } }
         @keyframes mythicPulse { 0%,100% { opacity: 0; } 15% { opacity: 0.55; } 45% { opacity: 0.3; } 75% { opacity: 0.45; } }
         @keyframes packPop { 0% { transform: scale(0.93) translateY(6px); } 65% { transform: scale(1.07) translateY(-10px); } 100% { transform: scale(1.05) translateY(-8px); } }
+        @keyframes packPulse { 0%,100% { transform: scale(1) translateY(0); filter: brightness(1); } 50% { transform: scale(1.06) translateY(-8px); filter: brightness(1.12); } }
+        @keyframes packLoadingDots { 0%,80%,100% { opacity: 0.2; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1); } }
         @keyframes packPanelIn { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
         @keyframes packModalIn { from { opacity: 0; transform: scale(0.92) translateY(12px); } to { opacity: 1; transform: scale(1) translateY(0); } }
         @keyframes cardRevealEnter { from { transform: translateX(55px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
@@ -814,21 +831,23 @@ export default function CardsPage() {
         />
       ); })()}
 
+      {/* Instant loading overlay — shown the moment user taps "Open Pack" */}
+      {pendingPackType && !openedCards && (
+        <PackOpenLoadingOverlay packType={pendingPackType} />
+      )}
+
       {/* Pack opening result modal */}
       {openedCards && (
         <PackOpenModal
           cards={openedCards}
           onClose={() => {
             setOpenedCards(null);
+            // Coins are already correct (set from API response / optimistic update).
+            // Only refetch the card collection so the grid stays up-to-date.
             if (user) {
-              // Refresh balance and cards in parallel
-              Promise.all([
-                supabase.from("profiles").select("coins").eq("id", user.id).single(),
-                supabase.from("user_cards").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
-              ]).then(([profileRes, cardsRes]) => {
-                if (profileRes.data) setCoins(profileRes.data.coins ?? 0);
-                if (!cardsRes.error && cardsRes.data) setCards(cardsRes.data as UserCard[]);
-              });
+              supabase.from("user_cards").select("*").eq("user_id", user.id)
+                .order("created_at", { ascending: false })
+                .then(({ data, error }) => { if (!error && data) setCards(data as UserCard[]); });
             }
           }}
         />
@@ -1183,6 +1202,56 @@ function RarityRevealOverlay({ rarity, meta, duration }: { rarity: Rarity; meta:
   );
 }
 
+// ── Pack Open Loading Overlay ─────────────────────────────────────────────────
+// Shown instantly when the user taps "Open Pack" — before the API responds.
+// Removes all perceived delay by giving immediate visual feedback.
+
+function PackOpenLoadingOverlay({ packType }: { packType: PackType }) {
+  const pack = PACKS.find(p => p.type === packType)!;
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 100,
+      background: "var(--bg)",
+      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+      gap: 32,
+      animation: "packModalIn 0.22s cubic-bezier(0.34,1.56,0.64,1)",
+    }}>
+      {/* Glowing pack image, pulsing to show activity */}
+      <div style={{ position: "relative", width: 170, aspectRatio: "3/4" }}>
+        {/* Glow behind pack */}
+        <div style={{
+          position: "absolute", inset: -20,
+          background: `radial-gradient(ellipse at 50% 60%, ${pack.accent}55 0%, transparent 70%)`,
+          animation: "packPulse 1.4s ease-in-out infinite",
+          filter: "blur(16px)",
+        }} />
+        <img
+          src={pack.image}
+          alt={pack.label}
+          style={{
+            position: "relative", width: "100%", height: "100%", objectFit: "cover",
+            borderRadius: 18,
+            boxShadow: `0 0 48px ${pack.accent}55, 0 20px 60px rgba(0,0,0,.7)`,
+            animation: "packPulse 1.4s ease-in-out infinite",
+          }}
+        />
+      </div>
+
+      {/* Animated dots */}
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        {[0, 1, 2].map(i => (
+          <div key={i} style={{
+            width: 7, height: 7, borderRadius: "50%",
+            background: pack.accent,
+            opacity: 0.2,
+            animation: `packLoadingDots 1.2s ${i * 0.2}s ease-in-out infinite`,
+          }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Pack Open Modal ───────────────────────────────────────────────────────────
 
 function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onClose: () => void }) {
@@ -1192,6 +1261,20 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
   );
   const [index, setIndex] = useState(0);
   const [done, setDone] = useState(false);
+
+  // ── Preload all images eagerly on mount ───────────────────────────────────
+  // By the time the user flips their first card the photos are already cached.
+  useEffect(() => {
+    rawCards.forEach(card => {
+      // Card template background (e.g. /cards/gold.png)
+      new window.Image().src = `/cards/${card.rarity}.png`;
+      // Player photo — primary path supplied by API
+      if (card.player_image) new window.Image().src = card.player_image;
+      // Player photo — folder-based path (fallback used by CardPlayerImage)
+      const folder = TEAM_PLAYER_FOLDER[card.team] ?? card.team.toLowerCase().replace(/[^a-z]/g, "");
+      new window.Image().src = `/players/${folder}/${card.player_id}.png`;
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Phase: false = card back (rarity tease), true = card front (player revealed)
   const [flipped, setFlipped] = useState(false);

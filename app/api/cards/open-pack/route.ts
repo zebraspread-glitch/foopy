@@ -101,23 +101,39 @@ export async function POST(req: NextRequest) {
 
   const config = PACK_CONFIGS[packType];
 
-  // ── 1. Fetch balance ──────────────────────────────────────────────────────
-  const { data: profile, error: profileError } = await supabaseAdmin
-    .from("profiles")
-    .select("coins")
-    .eq("id", user.id)
-    .single();
+  // ── 1. Generate assignments first (pure JS, zero DB) ─────────────────────
+  // Doing this before any DB call lets us query existing cards in parallel
+  // with the balance check, saving one full serial round trip.
+  const assignments = Array.from({ length: config.normalCount }, () => {
+    const rarity = rollRarity(config.normalOdds);
+    return { player: pickRandom(CARD_PLAYERS), rarity, rating: generateRating(rarity) };
+  });
+  if (config.guaranteedMythic) {
+    assignments.push({ player: pickRandom(CARD_PLAYERS), rarity: "mythic" as Rarity, rating: 100 });
+  }
+  const uniquePlayerIds = [...new Set(assignments.map(a => a.player.id))];
 
-  if (profileError) {
-    return NextResponse.json({ error: profileError.message }, { status: 500 });
+  // ── 2. Fetch balance + existing cards in PARALLEL ─────────────────────────
+  // Previously these were sequential (SELECT coins → UPDATE → SELECT existing).
+  // Now both SELECTs run simultaneously — one fewer serial DB round trip.
+  const [profileResult, existingCardsResult] = await Promise.all([
+    supabaseAdmin.from("profiles").select("coins").eq("id", user.id).single(),
+    supabaseAdmin.from("user_cards")
+      .select("id, player_id, rarity, duplicate_count")
+      .eq("user_id", user.id)
+      .in("player_id", uniquePlayerIds),
+  ]);
+
+  if (profileResult.error) {
+    return NextResponse.json({ error: profileResult.error.message }, { status: 500 });
   }
 
-  const currentCoins = profile?.coins ?? 0;
+  const currentCoins = profileResult.data?.coins ?? 0;
   if (currentCoins < config.cost) {
     return NextResponse.json({ error: "Not enough coins" }, { status: 402 });
   }
 
-  // ── 2. Deduct coins (optimistic concurrency) ──────────────────────────────
+  // ── 3. Deduct coins (optimistic concurrency) ──────────────────────────────
   const { error: deductError } = await supabaseAdmin
     .from("profiles")
     .update({ coins: currentCoins - config.cost })
@@ -128,26 +144,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Failed to deduct coins — try again" }, { status: 500 });
   }
 
-  // ── 3. Generate all card assignments (pure JS, zero DB calls) ─────────────
-  const assignments = Array.from({ length: config.normalCount }, () => {
-    const rarity = rollRarity(config.normalOdds);
-    return { player: pickRandom(CARD_PLAYERS), rarity, rating: generateRating(rarity) };
-  });
-  if (config.guaranteedMythic) {
-    assignments.push({ player: pickRandom(CARD_PLAYERS), rarity: "mythic" as Rarity, rating: 100 });
-  }
-
-  // ── 4. ONE query to fetch all potentially matching existing cards ──────────
-  const uniquePlayerIds = [...new Set(assignments.map(a => a.player.id))];
-  const { data: existingCards } = await supabaseAdmin
-    .from("user_cards")
-    .select("id, player_id, rarity, duplicate_count")
-    .eq("user_id", user.id)
-    .in("player_id", uniquePlayerIds);
-
   type ExistingCard = { id: string; player_id: string; rarity: Rarity; duplicate_count: number };
   const existingMap = new Map<string, ExistingCard>();
-  for (const c of (existingCards ?? []) as ExistingCard[]) {
+  for (const c of (existingCardsResult.data ?? []) as ExistingCard[]) {
     existingMap.set(`${c.player_id}:${c.rarity}`, c);
   }
 
