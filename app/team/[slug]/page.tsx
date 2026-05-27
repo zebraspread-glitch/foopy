@@ -163,13 +163,18 @@ const LOGO_MAP: Record<string, string> = {
 const TEAM_FOLDER: Record<string, string> = {
   Adelaide: "crows",
   "Brisbane Lions": "lions",
+  Brisbane: "lions",
   Carlton: "blues",
   Collingwood: "magpies",
   Essendon: "bombers",
   Fremantle: "dockers",
   Geelong: "cats",
+  "Geelong Cats": "cats",
   "Gold Coast": "suns",
+  "Gold Coast Suns": "suns",
   GWS: "giants",
+  "GWS Giants": "giants",
+  "Greater Western Sydney": "giants",
   Hawthorn: "hawks",
   Melbourne: "demons",
   "North Melbourne": "kangaroos",
@@ -181,13 +186,6 @@ const TEAM_FOLDER: Record<string, string> = {
   "Western Bulldogs": "bulldogs",
 };
 
-const PLAYER_IMAGE_ID_OVERRIDES: Record<string, string> = {
-  joshuarachele: "joshrachele",
-  lachlanschultz: "lachieschultz",
-  lachlansullivan: "lachiesullivan",
-  samuelwicks: "samwicks",
-  zacharywilliams: "zacwilliams",
-};
 
 function num(value: unknown) {
   const n = Number(value ?? 0);
@@ -277,9 +275,10 @@ function formatDate(date: string) {
 function playerImagePath(player: PlayerInfo) {
   const folder = TEAM_FOLDER[player.team];
   if (!folder) return "";
-  const rawId = player.id.replace(/_/g, "");
-  const imageId = PLAYER_IMAGE_ID_OVERRIDES[rawId] ?? rawId;
-  return `/players/${folder}/${imageId}.png`;
+  // Use the player's display name (e.g. "Cam Rayner") rather than their id
+  // ("cameron_rayner") so nicknames like Cam, Brad, Lachie etc. resolve correctly.
+  const nameId = player.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+  return `/players/${folder}/${nameId}.png`;
 }
 
 function normalizeTeamName(name: string) {
@@ -367,7 +366,7 @@ export default async function TeamProfilePage({ params }: { params: Promise<{ sl
   }
 
   const roster = players
-    .filter((player) => player.team === teamName)
+    .filter((player) => teamMatches(player.team, teamName))
     .map((player) => {
       const season = seasonData.find((stats) => stats.id === player.id);
       const avgFoopy = playerAverageFoopy(player);
@@ -383,7 +382,7 @@ export default async function TeamProfilePage({ params }: { params: Promise<{ sl
   const teamAverageRankings = Object.values(TEAM_SLUG_MAP)
     .map((teamInfo) => {
       const rated = players
-        .filter((player) => player.team === teamInfo.name)
+        .filter((player) => teamMatches(player.team, teamInfo.name))
         .map((player) => playerAverageFoopy(player))
         .filter((rating): rating is number => rating !== null);
       const average = rated.length ? rated.reduce((sum, rating) => sum + rating, 0) / rated.length : null;

@@ -409,6 +409,7 @@ export default function PassesPage() {
   const [earningsOpen, setEarningsOpen]         = useState(false);
   const [playerSearch, setPlayerSearch]         = useState("");
   const [pendingPlayer, setPendingPlayer]       = useState<{ pid: string; name: string; team: string; imgSrc: string; xp: number } | null>(null);
+  const [pendingTeam, setPendingTeam]           = useState<string | null>(null);
   const [purchaseErr, setPurchaseErr]           = useState<string | null>(null);
   const [selectedPass, setSelectedPass]         = useState<PlayerPass | null>(null);
   const [playerSortBy, setPlayerSortBy]         = useState<"recent" | "level">("recent");
@@ -466,6 +467,7 @@ export default function PassesPage() {
   async function handleSetTeam(teamName: string) {
     if (!token) return;
     setTeamPickerOpen(false);
+    setPendingTeam(null);
     setPurchaseErr(null);
     const res = await fetch("/api/passes/team", {
       method: "POST",
@@ -564,7 +566,7 @@ export default function PassesPage() {
 
         {/* Get Passes button */}
         <button suppressHydrationWarning onClick={canGetMore ? openGetPasses : undefined} style={{
-            visibility: canGetMore ? "visible" : "hidden",
+            visibility: !loading && canGetMore ? "visible" : "hidden",
             padding: "10px 18px", borderRadius: 999,
             background: "linear-gradient(135deg,#854d0e,#ca8a04)",
             border: "none", color: "#fff", fontWeight: 900, fontSize: 13,
@@ -753,19 +755,107 @@ export default function PassesPage() {
 
       {/* Team Picker */}
       {teamPickerOpen && (
-        <Modal title={`Buy Team Pass · ${fmtCoins(TEAM_PASS_COST)} coins · ${data?.teamPasses?.length ?? 0}/${MAX_TEAM_PASSES}`} onClose={() => setTeamPickerOpen(false)} centered>
-          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-            {AFL_TEAMS.map((team) => {
-              const active = (data?.teamPasses ?? []).some(p => p.team_name === team);
-              return (
-                <button key={team} onClick={() => !active && handleSetTeam(team)} disabled={active} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 12, border: `1px solid ${active ? teamColor(team) + "70" : "var(--border-2)"}`, background: active ? `${teamColor(team)}18` : "rgba(255,255,255,0.03)", cursor: active ? "default" : "pointer", width: "100%", textAlign: "left", opacity: active ? 0.7 : 1 }}>
-                  <img src={teamLogo(team)} alt={team} style={{ width: 32, height: 32, objectFit: "cover", borderRadius: "50%", flexShrink: 0 }} />
-                  <span style={{ fontWeight: 700, fontSize: 14, color: "var(--text-1)", flex: 1 }}>{team}</span>
-                  {active && <span style={{ fontSize: 11, color: "#a78bfa", fontWeight: 800 }}>Active ✓</span>}
+        <Modal
+          title={pendingTeam ? "Team Pass" : `Buy Team Pass · ${fmtCoins(TEAM_PASS_COST)} coins · ${data?.teamPasses?.length ?? 0}/${MAX_TEAM_PASSES}`}
+          onClose={() => { setTeamPickerOpen(false); setPendingTeam(null); }}
+          centered
+        >
+          {pendingTeam ? (
+            /* ── Confirmation screen ── */
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {/* Card preview */}
+              {(() => {
+                const previewPass: TeamPass = {
+                  id: "",
+                  user_id: "",
+                  team_name: pendingTeam,
+                  active: true,
+                  xp: 0,
+                  serial_number: null,
+                  created_at: "",
+                };
+                return (
+                  <div style={{ display: "flex", justifyContent: "center" }}>
+                    <div style={{ width: 200 }}>
+                      <TeamCard pass={previewPass} />
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Pass info */}
+              <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={{ fontWeight: 900, fontSize: 16, color: "var(--text-1)", display: "flex", alignItems: "center", gap: 10 }}>
+                  <img src={teamLogo(pendingTeam)} alt={pendingTeam} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+                  {pendingTeam}
+                </div>
+                <div style={{ height: 1, background: "var(--border-1)" }} />
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.55 }}>
+                  Earn <span style={{ color: "#a78bfa", fontWeight: 800 }}>Aura</span> &amp; <span style={{ color: "#fbbf24", fontWeight: 800 }}>Coins</span> every time {pendingTeam} wins. The pass levels up as you earn XP, increasing your reward multiplier up to <span style={{ color: "#c084fc", fontWeight: 800 }}>7×</span>.
+                </div>
+                <div style={{ height: 1, background: "var(--border-1)" }} />
+                {/* Multipliers preview */}
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {TEAM_PASS_LEVELS.map((lvl, i) => (
+                    <div key={lvl.name} style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 999, background: `${lvl.color}18`, border: `1px solid ${lvl.color}40` }}>
+                      <span style={{ fontSize: 10, fontWeight: 900, color: lvl.color }}>{lvl.name}</span>
+                      <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: 700 }}>{[1,1.25,1.5,1.75,2,2.5,3,4,5,7][i]}×</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Price row */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", background: "rgba(255,255,255,0.04)", borderRadius: 14, border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div>
+                  <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 700, marginBottom: 2 }}>COST</div>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: "#fbbf24", display: "flex", alignItems: "center", gap: 5 }}>
+                    <CoinImg size={18} />{fmtCoins(TEAM_PASS_COST)}
+                  </div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 700, marginBottom: 2 }}>YOUR BALANCE</div>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: coins >= TEAM_PASS_COST ? "#fbbf24" : "#f87171", display: "flex", alignItems: "center", gap: 5, justifyContent: "flex-end" }}>
+                    <CoinImg size={18} />{fmtCoins(coins)}
+                  </div>
+                </div>
+              </div>
+
+              {coins < TEAM_PASS_COST && (
+                <div style={{ padding: "10px 14px", borderRadius: 12, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", fontSize: 13, fontWeight: 700, color: "#f87171", textAlign: "center" }}>
+                  Need <CoinImg size={13} /> {fmtCoins(TEAM_PASS_COST - coins)} more — open packs to earn coins
+                </div>
+              )}
+
+              {/* Buttons */}
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={() => setPendingTeam(null)} style={{ flex: 1, padding: "13px 0", borderRadius: 999, border: "1px solid var(--border-2)", background: "rgba(255,255,255,0.05)", color: "var(--text-2)", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
+                  ← Back
                 </button>
-              );
-            })}
-          </div>
+                <button
+                  onClick={() => coins >= TEAM_PASS_COST && handleSetTeam(pendingTeam)}
+                  disabled={coins < TEAM_PASS_COST}
+                  style={{ flex: 2, padding: "13px 0", borderRadius: 999, border: "none", background: coins >= TEAM_PASS_COST ? "linear-gradient(135deg,#854d0e,#ca8a04)" : "rgba(255,255,255,0.08)", color: coins >= TEAM_PASS_COST ? "#fff" : "rgba(255,255,255,0.3)", fontWeight: 900, fontSize: 15, cursor: coins >= TEAM_PASS_COST ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+                >
+                  Get Pass · <CoinImg size={14} /> {fmtCoins(TEAM_PASS_COST)}
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* ── Team list screen ── */
+            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+              {AFL_TEAMS.map((team) => {
+                const active = (data?.teamPasses ?? []).some(p => p.team_name === team);
+                return (
+                  <button key={team} onClick={() => !active && setPendingTeam(team)} disabled={active} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 12, border: `1px solid ${active ? teamColor(team) + "70" : "var(--border-2)"}`, background: active ? `${teamColor(team)}18` : "rgba(255,255,255,0.03)", cursor: active ? "default" : "pointer", width: "100%", textAlign: "left", opacity: active ? 0.7 : 1 }}>
+                    <img src={teamLogo(team)} alt={team} style={{ width: 32, height: 32, objectFit: "cover", borderRadius: "50%", flexShrink: 0 }} />
+                    <span style={{ fontWeight: 700, fontSize: 14, color: "var(--text-1)", flex: 1 }}>{team}</span>
+                    {active && <span style={{ fontSize: 11, color: "#a78bfa", fontWeight: 800 }}>Active ✓</span>}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </Modal>
       )}
 

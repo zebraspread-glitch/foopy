@@ -9,6 +9,7 @@ import AuraBadge from "@/app/components/AuraBadge";
 import { PlayerCard } from "@/app/components/PlayerCard";
 import { CARD_PLAYERS } from "@/app/data/cardPlayers";
 import { getPassLevel, PLAYER_PASS_LEVELS, TEAM_PASS_LEVELS, type PlayerPass, type TeamPass } from "@/app/lib/passes";
+import { PlayerPassCard, TeamPassCard } from "@/app/components/PassCard";
 import playersData from "@/app/data/players.json";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import { foopyRating } from "@/app/match/[id]/utils";
@@ -20,6 +21,7 @@ type FavSlot =
   | null;
 
 type FeaturedCardSlot = { player_id: string; rarity: string };
+type FeaturedPassSlot = { type: "player" | "team"; id: string };
 
 type Profile = {
   id: string;
@@ -31,6 +33,7 @@ type Profile = {
   created_at: string | null;
   favourites: FavSlot[] | null;
   featured_cards: FeaturedCardSlot[] | null;
+  featured_passes: FeaturedPassSlot[] | null;
   aura: number | null;
   coins: number | null;
 };
@@ -329,6 +332,77 @@ function FeaturedCardsCarousel({ cards }: {
   );
 }
 
+// ── Featured Passes Carousel ─────────────────────────────────────────────────
+
+function FeaturedPassesCarousel({ passes }: {
+  passes: Array<{ slot: FeaturedPassSlot; pass: TeamPass | PlayerPass; passType: "player" | "team" }>;
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [activeIdx, setActiveIdx] = useState(0);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    function update() {
+      const center = el!.scrollLeft + el!.clientWidth / 2;
+      const children = Array.from(el!.children) as HTMLElement[];
+      let closest = 0, minDist = Infinity;
+      children.forEach((child, i) => {
+        const dist = Math.abs(child.offsetLeft + child.offsetWidth / 2 - center);
+        if (dist < minDist) { minDist = dist; closest = i; }
+      });
+      setActiveIdx(closest);
+    }
+    function onWheel(e: WheelEvent) {
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+      e.preventDefault();
+      el!.scrollBy({ left: e.deltaY * 1.5, behavior: "auto" });
+    }
+    el.addEventListener("scroll", update, { passive: true });
+    el.addEventListener("wheel", onWheel, { passive: false });
+    update();
+    return () => { el.removeEventListener("scroll", update); el.removeEventListener("wheel", onWheel); };
+  }, []);
+
+  const CARD_W = 148;
+  return (
+    <div
+      ref={scrollRef}
+      className="no-scrollbar"
+      style={{
+        display: "flex", gap: 12, overflowX: "auto",
+        scrollSnapType: "x mandatory" as const,
+        paddingLeft: `calc(50% - ${CARD_W / 2}px)`,
+        paddingRight: `calc(50% - ${CARD_W / 2}px)`,
+        paddingTop: 18, paddingBottom: 10,
+      }}
+    >
+      {passes.map(({ slot, pass, passType }, idx) => {
+        const isActive = idx === activeIdx;
+        const level = getPassLevel(pass.xp ?? 0, passType === "player" ? PLAYER_PASS_LEVELS : TEAM_PASS_LEVELS);
+        return (
+          <div
+            key={slot.id}
+            style={{
+              flexShrink: 0, width: CARD_W,
+              scrollSnapAlign: "center" as const,
+              transform: isActive ? "scale(1.07) translateY(-10px)" : "scale(0.91) translateY(0px)",
+              opacity: isActive ? 1 : 0.6,
+              transition: "transform 0.28s cubic-bezier(0.34,1.56,0.64,1), opacity 0.28s ease",
+              filter: isActive ? `drop-shadow(0 10px 24px ${level.color}66)` : "none",
+            }}
+          >
+            {passType === "player"
+              ? <PlayerPassCard pass={pass as PlayerPass} />
+              : <TeamPassCard   pass={pass as TeamPass} />
+            }
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function PublicProfilePage() {
@@ -348,7 +422,7 @@ export default function PublicProfilePage() {
   const [friendLoading, setFriendLoading] = useState(false);
   const [playerStatsMap, setPlayerStatsMap] = useState<Map<string, { rating: string; gb: string; d: string; k: string; h: string; m: string; t: string; ho: string }>>(new Map());
   const [playerPasses,   setPlayerPasses]   = useState<PlayerPass[]>([]);
-  const [teamPass,       setTeamPass]       = useState<TeamPass | null>(null);
+  const [teamPasses,     setTeamPasses]     = useState<TeamPass[]>([]);
 
   // Fetch player stats for all player_ event key comments so we can embed them in the URL
   useEffect(() => {
@@ -456,7 +530,7 @@ export default function PublicProfilePage() {
 
       const { data: p } = await supabase
         .from("profiles")
-        .select("id, username, display_name, avatar_url, banner_url, bio, created_at, favourites, featured_cards, aura, coins")
+        .select("id, username, display_name, avatar_url, banner_url, bio, created_at, favourites, featured_cards, featured_passes, aura, coins")
         .eq("username", username)
         .maybeSingle();
 
@@ -496,10 +570,10 @@ export default function PublicProfilePage() {
       // Fetch passes
       const [{ data: ppData }, { data: tpData }] = await Promise.all([
         supabase.from("user_player_passes").select("*").eq("user_id", p.id).eq("active", true).order("created_at", { ascending: true }),
-        supabase.from("user_team_passes").select("*").eq("user_id", p.id).eq("active", true).maybeSingle(),
+        supabase.from("user_team_passes").select("*").eq("user_id", p.id).eq("active", true).order("created_at", { ascending: true }),
       ]);
       setPlayerPasses((ppData ?? []) as PlayerPass[]);
-      setTeamPass((tpData ?? null) as TeamPass | null);
+      setTeamPasses((tpData ?? []) as TeamPass[]);
 
       setLoading(false);
     }
@@ -718,118 +792,118 @@ export default function PublicProfilePage() {
           const featuredWithData = featuredSlots
             .map(fc => ({ fc, player: CARD_PLAYERS.find(p => p.id === fc.player_id) }))
             .filter((x): x is { fc: FeaturedCardSlot; player: typeof CARD_PLAYERS[0] } => !!x.player);
-          const hasFeatured = featuredWithData.length > 0;
+          if (featuredWithData.length === 0) return null;
 
           return (
             <section style={{ background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18, padding: "16px 0 0", overflow: "hidden" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px" }}>
                 <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text-3)", textTransform: "uppercase" as const, letterSpacing: "0.08em" }}>featured cards</div>
                 <Link href={`/album/${profile.username}`} style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", textDecoration: "none" }}>
-                  {hasFeatured ? `${featuredWithData.length}/5 · View Album` : "View Album"}
+                  {featuredWithData.length}/5 · View Album
                 </Link>
               </div>
-              {hasFeatured ? (
-                <FeaturedCardsCarousel cards={featuredWithData} />
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, padding: "28px 0 20px" }}>
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="1.5">
-                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
-                  </svg>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text-4)" }}>No featured cards yet</div>
-                </div>
-              )}
+              <FeaturedCardsCarousel cards={featuredWithData} />
             </section>
           );
         })()}
 
         {/* ── Passes ── */}
-        {(teamPass || playerPasses.length > 0) && (
-          <section style={{ background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18, padding: "16px 16px 20px", overflow: "hidden" }}>
-            <div style={{ fontSize: 12, fontWeight: 900, color: "var(--text-3)", textTransform: "uppercase" as const, letterSpacing: "0.1em", marginBottom: 16 }}>Passes</div>
+        {(() => {
+          const featuredPassSlots = profile.featured_passes ?? [];
+          if (featuredPassSlots.length === 0) return null;
 
-            {/* Team pass */}
-            {teamPass && (() => {
-              const level = getPassLevel(teamPass.xp ?? 0, TEAM_PASS_LEVELS);
-              const team  = TEAMS.find(t => t.name === teamPass.team_name || slugName(t.name) === slugName(teamPass.team_name));
-              return (
-                <div style={{ marginBottom: playerPasses.length > 0 ? 14 : 0 }}>
-                  <div style={{ fontSize: 10, fontWeight: 800, color: "var(--text-3)", letterSpacing: "0.06em", textTransform: "uppercase" as const, marginBottom: 8 }}>Team</div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 14, background: level.gradient, border: `1.5px solid ${level.color}44`, position: "relative", overflow: "hidden" }}>
-                    <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1.5, background: `linear-gradient(90deg,transparent,${level.color}cc,transparent)` }} />
-                    <div style={{ width: 44, height: 44, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(0,0,0,0.3)" }}>
-                      <img src={team?.logo ?? "/team-logos/default.png"} alt={teamPass.team_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <div style={{ fontWeight: 900, fontSize: 14, color: "#fff" }}>{teamPass.team_name}</div>
-                        {teamPass.serial_number != null && <div style={{ fontSize: 11, fontWeight: 900, color: level.color }}>#{teamPass.serial_number}</div>}
-                      </div>
-                      <div style={{ fontSize: 10, color: level.color, fontWeight: 800, letterSpacing: "0.06em", marginBottom: 5 }}>{level.name.toUpperCase()} · {level.multiplier}×</div>
-                      <div style={{ background: "rgba(0,0,0,0.35)", borderRadius: 999, height: 3, overflow: "hidden" }}>
-                        <div style={{ width: `${Math.round(level.progress * 100)}%`, height: "100%", borderRadius: 999, background: `linear-gradient(90deg,${level.darkColor},${level.color})` }} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
+          const featuredPasses = featuredPassSlots
+            .map(slot => {
+              if (slot.type === "team") {
+                const pass = teamPasses.find(p => p.id === slot.id);
+                return pass ? { slot, pass: pass as TeamPass | PlayerPass, passType: "team" as const } : null;
+              } else {
+                const pass = playerPasses.find(p => p.id === slot.id);
+                return pass ? { slot, pass: pass as TeamPass | PlayerPass, passType: "player" as const } : null;
+              }
+            })
+            .filter((x): x is { slot: FeaturedPassSlot; pass: TeamPass | PlayerPass; passType: "player" | "team" } => x !== null);
 
-            {/* Player passes */}
-            {playerPasses.length > 0 && (
-              <>
-                <div style={{ fontSize: 10, fontWeight: 800, color: "var(--text-3)", letterSpacing: "0.06em", textTransform: "uppercase" as const, marginBottom: 8 }}>
-                  Players · {playerPasses.length}
-                </div>
-                <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4, scrollbarWidth: "none" as const, scrollSnapType: "x mandatory" }}>
-                  {playerPasses.map((pass) => {
-                    const level  = getPassLevel(pass.xp ?? 0, PLAYER_PASS_LEVELS);
-                    const imgSrc = playerImagePath(pass.player_name, pass.team_name);
-                    return (
-                      <div key={pass.id} style={{
-                        flex: "0 0 calc((100% - 20px) / 3)", scrollSnapAlign: "start",
-                        borderRadius: 14, overflow: "hidden", background: level.gradient,
-                        border: `1.5px solid ${level.color}44`,
-                        boxShadow: `0 2px 12px ${level.color}22`,
-                        display: "flex", flexDirection: "column", position: "relative",
-                      }}>
-                        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1.5, background: `linear-gradient(90deg,transparent,${level.color}cc,transparent)`, zIndex: 3 }} />
-                        <div style={{ position: "absolute", top: 6, left: 6, zIndex: 4, background: level.color, color: "#000", fontSize: 6.5, fontWeight: 900, letterSpacing: "0.08em", padding: "1px 5px", borderRadius: 999 }}>
-                          {level.name.toUpperCase()}
-                        </div>
-                        <div style={{ height: 100, overflow: "hidden", position: "relative", background: "rgba(0,0,0,0.2)" }}>
-                          {imgSrc
-                            ? <img src={imgSrc} alt={pass.player_name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", display: "block" }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                            : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>👤</div>
-                          }
-                          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 30, background: `linear-gradient(to bottom,transparent,${level.gradient.match(/#[0-9a-f]{6}/i)?.[0] ?? "#0a0a14"})` }} />
-                        </div>
-                        <div style={{ padding: "6px 8px 8px", background: "rgba(0,0,0,0.2)", flexShrink: 0 }}>
-                          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-                            <div style={{ fontWeight: 900, fontSize: 10, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>{pass.player_name}</div>
-                            {pass.serial_number != null && <div style={{ fontSize: 8, fontWeight: 900, color: level.color, marginLeft: 4, flexShrink: 0 }}>#{pass.serial_number}</div>}
-                          </div>
-                          <div style={{ fontSize: 8, color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>{pass.team_name}</div>
-                          <div style={{ background: "rgba(0,0,0,0.35)", borderRadius: 999, height: 2.5, overflow: "hidden" }}>
-                            <div style={{ width: `${Math.round(level.progress * 100)}%`, height: "100%", borderRadius: 999, background: `linear-gradient(90deg,${level.darkColor},${level.color})` }} />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </section>
-        )}
+          if (featuredPasses.length === 0) return null;
+
+          return (
+            <section style={{ background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18, padding: "16px 0 0", overflow: "hidden" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px" }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text-3)", textTransform: "uppercase" as const, letterSpacing: "0.08em" }}>featured passes</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)" }}>{featuredPasses.length}/10</div>
+              </div>
+              <FeaturedPassesCarousel passes={featuredPasses} />
+            </section>
+          );
+        })()}
 
         {/* ── Album ── */}
-        <Link href={`/album/${profile.username}`} style={{
-          display: "flex", alignItems: "center", justifyContent: "center",
-          background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18,
-          padding: "22px 20px", textDecoration: "none", color: "var(--text-1)",
-        }}>
-          <span style={{ fontSize: 26, fontWeight: 950, letterSpacing: "-0.04em" }}>Album</span>
-        </Link>
+        {(() => {
+          // Pick up to 3 featured card rarities for the card fan, fall back to generic
+          const previewRarities = (profile.featured_cards ?? [])
+            .slice(0, 3)
+            .map(fc => fc.rarity as string);
+          while (previewRarities.length < 3) previewRarities.push(["gold", "silver", "bronze"][previewRarities.length]);
+
+          const RARITY_COLORS: Record<string, string> = {
+            bronze: "#cd7f32", silver: "#c0c0c0", gold: "#ffd700",
+            emerald: "#10b981", sapphire: "#3b82f6", ruby: "#ef4444",
+            amethyst: "#a78bfa", diamond: "#67e8f9", pinkdiamond: "#f472b6", mythic: "#c084fc",
+          };
+
+          const cardAngles = [-14, 0, 14];
+
+          return (
+            <Link href={`/album/${profile.username}`} style={{
+              display: "flex", alignItems: "center", gap: 20,
+              background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18,
+              padding: "20px 22px", textDecoration: "none", color: "var(--text-1)",
+              position: "relative", overflow: "hidden",
+            }}>
+              {/* Subtle background glow */}
+              <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 20% 50%, rgba(99,102,241,.07) 0%, transparent 60%)", pointerEvents: "none" }} />
+
+              {/* Fanned card stack */}
+              <div style={{ position: "relative", width: 72, height: 90, flexShrink: 0 }}>
+                {previewRarities.map((rarity, i) => (
+                  <div key={i} style={{
+                    position: "absolute",
+                    width: 52, height: 72,
+                    borderRadius: 7,
+                    overflow: "hidden",
+                    border: `1.5px solid ${RARITY_COLORS[rarity] ?? "#ffd700"}55`,
+                    boxShadow: `0 4px 14px rgba(0,0,0,.55), 0 0 0 1px rgba(0,0,0,.3)`,
+                    transform: `rotate(${cardAngles[i]}deg)`,
+                    transformOrigin: "bottom center",
+                    bottom: 0,
+                    left: "50%",
+                    marginLeft: -26,
+                    zIndex: i,
+                  }}>
+                    <img
+                      src={`/cards/${rarity}.png`}
+                      alt=""
+                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* Text */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 20, fontWeight: 950, letterSpacing: "-0.03em", color: "var(--text-1)", lineHeight: 1 }}>Album</div>
+                <div style={{ fontSize: 13, color: "var(--text-3)", fontWeight: 700, marginTop: 5 }}>
+                  {cardCount > 0 ? `${cardCount.toLocaleString()} card${cardCount !== 1 ? "s" : ""}` : "View collection"}
+                </div>
+              </div>
+
+              {/* Arrow */}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.25)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </Link>
+          );
+        })()}
 
         {/* ── Stats row ── */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>

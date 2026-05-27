@@ -48,7 +48,10 @@
       "WebFetch(domain:www.reddit.com)",
       "WebFetch(domain:www.footywire.com)",
       "Bash(ls \"C:\\\\Users\\\\User\\\\AppData\\\\Local\\\\Temp\\\\\"*.png 2>/dev/null | head -10)",
-      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('next:', p.dependencies.next\\)\")"
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('next:', p.dependencies.next\\)\")",
+      "Bash(node -e \"const p = require\\('./app/data/players.json'\\); const brisbane = p.filter\\(x => x.team && x.team.toLowerCase\\(\\).includes\\('brisban'\\)\\); console.log\\([...new Set\\(brisbane.map\\(x => x.team\\)\\)], brisbane.length + ' players'\\)\")",
+      "Bash(node -e \"const p = require\\('./app/data/players.json'\\); const b = p.filter\\(x => x.team && x.team.toLowerCase\\(\\).includes\\('brisban'\\)\\); console.log\\([...new Set\\(b.map\\(x=>x.team\\)\\)], b.length\\)\")",
+      "Bash(node -e \"const p = require\\('./app/data/players.json'\\); const b = p.filter\\(x => x.team && \\(x.team.includes\\('Brisbane'\\) || x.team === 'Brisbane'\\)\\); b.forEach\\(x => console.log\\(x.id, '|', x.name\\)\\)\")"
     ]
   }
 }

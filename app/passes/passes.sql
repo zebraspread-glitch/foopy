@@ -11,9 +11,9 @@ CREATE TABLE IF NOT EXISTS user_team_passes (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
--- Only one active team pass per user at a time
-CREATE UNIQUE INDEX IF NOT EXISTS user_team_passes_one_active
-  ON user_team_passes (user_id)
+-- One active pass per team per user (allows up to MAX_TEAM_PASSES different teams)
+CREATE UNIQUE INDEX IF NOT EXISTS user_team_passes_one_active_per_team
+  ON user_team_passes (user_id, team_name)
   WHERE active = true;
 
 ALTER TABLE user_team_passes ENABLE ROW LEVEL SECURITY;
