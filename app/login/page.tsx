@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Activity, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/app/lib/supabase";
@@ -8,6 +8,32 @@ import { supabase } from "@/app/lib/supabase";
 type Mode = "login" | "signup";
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginFallback />}>
+      <LoginPageInner />
+    </Suspense>
+  );
+}
+
+function LoginFallback() {
+  return (
+    <main style={page}>
+      <div style={wrap}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, paddingBottom: 8 }}>
+          <div style={appIcon}>
+            <Activity size={24} color="white" strokeWidth={2.5} />
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <div style={h1}>Foopy</div>
+            <div style={sub}>AFL live scores, picks &amp; stats</div>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function LoginPageInner() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const [mode, setMode]                 = useState<Mode>(() => searchParams.get("mode") === "signup" ? "signup" : "login");
