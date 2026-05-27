@@ -194,10 +194,6 @@ const ALL_TEAMS = [
   "West Coast",
 ];
 
-const RARITY_SELL_VALUE: Record<Rarity, number> = {
-  bronze: 1, silver: 3, gold: 10, emerald: 25, sapphire: 60,
-  ruby: 150, amethyst: 300, diamond: 600, pinkdiamond: 1200, mythic: 2500,
-};
 
 type CardImageSource = Pick<UserCard, "player_id" | "player_name" | "team"> & {
   player_image?: string;
@@ -356,9 +352,8 @@ export default function CardsPage() {
   const [sortBy, setSortBy] = useState<SortKey>("newest");
 
 
-  // sell
+  // card options modal
   const [sellCard, setSellCard] = useState<UserCard | null>(null);
-  const [selling, setSelling] = useState(false);
 
   // featured cards
   const [featuredCards, setFeaturedCards] = useState<{ player_id: string; rarity: Rarity }[]>([]);
@@ -501,40 +496,6 @@ export default function CardsPage() {
       alert("Something went wrong. Please try again.");
     } finally {
       setOpening(null);
-    }
-  }
-
-  // ── Sell card ─────────────────────────────────────────────────────────────
-
-  const [sellError, setSellError] = useState<string | null>(null);
-
-  async function handleSell(card: UserCard) {
-    if (selling || !accessToken) return;
-    setSellError(null);
-    setSelling(true);
-    try {
-      const res = await fetch("/api/cards/sell", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({ cardId: card.id }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setSellError(data.error ?? "Failed to sell card. Please try again.");
-        return;
-      }
-      setCoins(data.newCoins);
-      setSellCard(null);
-      setSellError(null);
-      if (user) {
-        supabase.from("user_cards").select("*").eq("user_id", user.id).order("created_at", { ascending: false })
-          .then(({ data: cardData, error }) => { if (!error && cardData) setCards(cardData as UserCard[]); });
-      }
-    } catch (err) {
-      console.error("Sell error:", err);
-      setSellError("Something went wrong. Please try again.");
-    } finally {
-      setSelling(false);
     }
   }
 
@@ -706,10 +667,10 @@ export default function CardsPage() {
             {/* Icon */}
             <div style={{ width: 38, height: 38, borderRadius: 10, background: "linear-gradient(135deg, rgba(251,191,36,.25) 0%, rgba(245,158,11,.1) 100%)", border: "1px solid rgba(251,191,36,.25)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="7" width="20" height="14" rx="2" />
-                <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
-                <line x1="12" y1="12" x2="12" y2="16" />
-                <line x1="10" y1="14" x2="14" y2="14" />
+                {/* Ticket outline with semicircle notches on left & right */}
+                <path d="M2 9V7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z" />
+                {/* Dashed tear-line */}
+                <line x1="15" y1="5" x2="15" y2="19" strokeDasharray="2.5 2" strokeOpacity="0.6" />
               </svg>
             </div>
 
@@ -911,17 +872,14 @@ export default function CardsPage() {
         />
       )}
 
-      {/* Sell confirm modal */}
+      {/* Card options modal */}
       {sellCard && (
-        <SellConfirmModal
+        <CardOptionsModal
           card={sellCard}
-          selling={selling}
-          sellError={sellError}
           isFeatured={featuredCards.some(f => f.player_id === sellCard.player_id)}
           featuredCount={featuredCards.length}
           onToggleFeatured={() => toggleFeaturedCard(sellCard.player_id, sellCard.rarity)}
-          onConfirm={() => handleSell(sellCard)}
-          onCancel={() => { setSellCard(null); setSellError(null); }}
+          onCancel={() => setSellCard(null)}
         />
       )}
     </main>
@@ -973,7 +931,7 @@ function PackDetailModal({ pack, coins, opening, onOpenPack, onClose, onClaimDai
         position: "fixed", inset: 0, zIndex: 90,
         background: "var(--bg)",
         display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "24px 16px",
+        padding: "calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 16px)",
       }}
     >
       <div
@@ -983,7 +941,8 @@ function PackDetailModal({ pack, coins, opening, onOpenPack, onClose, onClaimDai
           background: "var(--bg)",
           border: `1px solid ${pack.accent}33`,
           borderRadius: 24,
-          overflow: "hidden",
+          overflowY: "auto",
+          maxHeight: "calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px)",
           animation: "packModalIn 0.28s cubic-bezier(0.34,1.56,0.64,1)",
         }}
       >
@@ -1767,151 +1726,85 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
   );
 }
 
-// ── Sell Confirm Modal ────────────────────────────────────────────────────────
+// ── Card Options Modal ────────────────────────────────────────────────────────
 
-function SellConfirmModal({ card, selling, sellError, isFeatured, featuredCount, onToggleFeatured, onConfirm, onCancel }: {
+function CardOptionsModal({ card, isFeatured, featuredCount, onToggleFeatured, onCancel }: {
   card: UserCard;
-  selling: boolean;
-  sellError: string | null;
   isFeatured: boolean;
   featuredCount: number;
   onToggleFeatured: () => void;
-  onConfirm: () => void;
   onCancel: () => void;
 }) {
-  const [step, setStep] = useState<"options" | "confirm">("options");
   const [showTradeHint, setShowTradeHint] = useState(false);
   const meta = RARITY_META[card.rarity];
-  const value = RARITY_SELL_VALUE[card.rarity];
 
   return (
     <div style={{ ...modalOverlayStyle, alignItems: "center", justifyContent: "center", padding: "20px 16px" }} onClick={onCancel}>
       <div style={{ ...modalPanelStyle, maxWidth: 400, borderRadius: 24, animation: "slideUp 0.28s cubic-bezier(0.34,1.56,0.64,1)" }} onClick={(e) => e.stopPropagation()}>
 
         {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: 20 }}>
-          <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: ".14em", color: "rgba(255,255,255,.38)", marginBottom: 8 }}>
-            {step === "confirm" ? "ARE YOU SURE?" : "CARD OPTIONS"}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+          <div>
+            <div style={{ fontSize: 17, fontWeight: 900, color: "var(--text-1)", letterSpacing: "-0.02em" }}>{card.player_name}</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: meta.color, marginTop: 2 }}>{meta.label}</div>
           </div>
-          <div style={{ fontSize: 18, fontWeight: 1000, color: "var(--text-1)" }}>{card.player_name}</div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: meta.color, marginTop: 3 }}>{meta.label}</div>
+          <button onClick={onCancel} style={{ background: "rgba(255,255,255,0.08)", border: "none", color: "rgba(255,255,255,0.5)", width: 28, height: 28, borderRadius: "50%", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>✕</button>
         </div>
 
-        {step === "options" ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {/* Feature / Unfeature */}
-            <button
-              onClick={onToggleFeatured}
-              style={{
-                display: "flex", alignItems: "center", gap: 12, width: "100%",
-                padding: "16px 18px", borderRadius: 16,
-                border: `1px solid ${isFeatured ? "rgba(255,215,0,.35)" : "var(--border-2)"}`,
-                background: isFeatured ? "rgba(255,215,0,.08)" : "var(--border-1)",
-                color: isFeatured ? "#ffd700" : "#f1f5f9",
-                cursor: "pointer", fontFamily: "inherit", textAlign: "left" as const,
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill={isFeatured ? "#ffd700" : "none"} stroke={isFeatured ? "#ffd700" : "#94a3b8"} strokeWidth="2" style={{ flexShrink: 0 }}>
-                <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
-              </svg>
-              <div>
-                <div style={{ fontSize: 15, fontWeight: 900 }}>{isFeatured ? "Remove from Featured" : "Add to Featured"}</div>
-                <div style={{ fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>
-                  {isFeatured ? "Currently in your featured cards" : featuredCount >= 15 ? "Featured slots full (15/15)" : `${featuredCount}/15 slots used`}
-                </div>
+        {/* Action list */}
+        <div style={{ borderRadius: 14, overflow: "hidden", border: "1px solid rgba(255,255,255,0.07)", marginBottom: 10 }}>
+          {/* Feature / Unfeature */}
+          <button
+            onClick={onToggleFeatured}
+            style={{ display: "flex", alignItems: "center", gap: 13, width: "100%", padding: "14px 16px", border: "none", borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.03)", color: isFeatured ? "#fbbf24" : "var(--text-1)", cursor: "pointer", fontFamily: "inherit", textAlign: "left" as const }}
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill={isFeatured ? "#fbbf24" : "none"} stroke={isFeatured ? "#fbbf24" : "rgba(255,255,255,0.4)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+            </svg>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 14, fontWeight: 800 }}>{isFeatured ? "Remove from Featured" : "Add to Featured"}</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 1, fontWeight: 500 }}>
+                {isFeatured ? "Currently featured" : featuredCount >= 15 ? "Slots full (15/15)" : `${featuredCount} / 15 slots used`}
               </div>
-            </button>
+            </div>
+          </button>
 
-            {/* Trade Card */}
-            <button
-              onClick={() => setShowTradeHint(v => !v)}
-              style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 18px", borderRadius: 16, border: "1px solid rgba(96,165,250,.2)", background: "rgba(96,165,250,.06)", color: "#60a5fa", cursor: "pointer", fontFamily: "inherit", textAlign: "left" as const }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                <path d="M7 16V4m0 0L3 8m4-4l4 4"/><path d="M17 8v12m0 0l4-4m-4 4l-4-4"/>
-              </svg>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 15, fontWeight: 900 }}>Trade Card</div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,.4)", marginTop: 2 }}>Offer this card to another player</div>
-              </div>
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,.3)" }}>{showTradeHint ? "▲" : "▼"}</span>
-            </button>
+          {/* Trade Card */}
+          <button
+            onClick={() => setShowTradeHint(v => !v)}
+            style={{ display: "flex", alignItems: "center", gap: 13, width: "100%", padding: "14px 16px", border: "none", background: "rgba(255,255,255,0.03)", color: "#60a5fa", cursor: "pointer", fontFamily: "inherit", textAlign: "left" as const }}
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <path d="M7 16V4m0 0L3 8m4-4l4 4"/><path d="M17 8v12m0 0l4-4m-4 4l-4-4"/>
+            </svg>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 14, fontWeight: 800 }}>Trade Card</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 1, fontWeight: 500 }}>Offer to another player</div>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, transform: showTradeHint ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+        </div>
 
-            {showTradeHint && (
-              <div style={{ background: "rgba(96,165,250,.07)", border: "1px solid rgba(96,165,250,.18)", borderRadius: 14, padding: "12px 14px", fontSize: 12, color: "rgba(255,255,255,.55)", lineHeight: 1.6, fontWeight: 600 }}>
-                To trade this card:<br />
-                1. Go to another user's <strong style={{ color: "#60a5fa" }}>Album</strong><br />
-                2. Tap any card they own<br />
-                3. Select "<strong style={{ color: "#60a5fa" }}>{card.player_name}</strong>" as your offer
-                <div style={{ marginTop: 10 }}>
-                  <Link
-                    href="/search"
-                    onClick={onCancel}
-                    style={{ display: "inline-block", background: "rgba(96,165,250,.18)", border: "1px solid rgba(96,165,250,.3)", color: "#60a5fa", borderRadius: 10, padding: "7px 14px", fontSize: 12, fontWeight: 800, textDecoration: "none" }}
-                  >
-                    Find a player →
-                  </Link>
-                </div>
-              </div>
-            )}
-
-            {/* Sell Card */}
-            <button
-              onClick={() => setStep("confirm")}
-              style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 18px", borderRadius: 16, border: "1px solid rgba(239,68,68,.25)", background: "rgba(239,68,68,.06)", color: "#f87171", cursor: "pointer", fontFamily: "inherit", textAlign: "left" as const }}
-            >
-              <div>
-                <div style={{ fontSize: 15, fontWeight: 900 }}>Sell Card</div>
-                <div style={{ fontSize: 11, color: "var(--text-2)", marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
-                  <CoinIcon size={12} />
-                  {value} coins
-                </div>
-              </div>
-            </button>
-
-            {/* Cancel */}
-            <button
-              onClick={onCancel}
-              style={{ padding: "14px", borderRadius: 16, border: "1px solid var(--border-2)", background: "transparent", color: "var(--text-3)", fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}
-            >
-              Cancel
-            </button>
+        {showTradeHint && (
+          <div style={{ borderRadius: 12, padding: "12px 14px", fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.65, fontWeight: 500, background: "rgba(96,165,250,0.06)", border: "1px solid rgba(96,165,250,0.15)", marginBottom: 10 }}>
+            Go to any user's <strong style={{ color: "#93c5fd", fontWeight: 700 }}>Album</strong> → tap a card they own → pick <strong style={{ color: "#93c5fd", fontWeight: 700 }}>{card.player_name}</strong> as your offer.
+            <div style={{ marginTop: 10 }}>
+              <Link href="/search" onClick={onCancel} style={{ color: "#60a5fa", fontWeight: 700, fontSize: 12, textDecoration: "none" }}>
+                Find a player →
+              </Link>
+            </div>
           </div>
-        ) : (
-          <>
-            <div style={{ background: "var(--surface-2)", borderRadius: 14, padding: "14px 16px", marginBottom: 16, textAlign: "center" }}>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,.45)", marginBottom: 6 }}>You will receive</div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                <CoinIcon size={18} />
-                <span style={{ fontSize: 24, fontWeight: 1000, color: "#fbbf24" }}>{value.toLocaleString()}</span>
-                <span style={{ fontSize: 13, color: "rgba(255,255,255,.45)", fontWeight: 700 }}>coin{value !== 1 ? "s" : ""}</span>
-              </div>
-            </div>
-            <p style={{ textAlign: "center", color: "rgba(255,255,255,.45)", fontSize: 13, fontWeight: 700, margin: "0 0 16px" }}>
-              This cannot be undone.
-            </p>
-            {sellError && (
-              <div style={{ background: "rgba(239,68,68,.12)", border: "1px solid rgba(239,68,68,.35)", borderRadius: 10, padding: "10px 14px", marginBottom: 14, textAlign: "center", fontSize: 13, fontWeight: 700, color: "#f87171" }}>
-                {sellError}
-              </div>
-            )}
-            <div style={{ display: "flex", gap: 10 }}>
-              <button
-                onClick={() => setStep("options")}
-                style={{ flex: 1, padding: "13px", borderRadius: 14, border: "1px solid var(--border-2)", background: "transparent", color: "rgba(255,255,255,.6)", fontWeight: 900, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}
-              >
-                Go Back
-              </button>
-              <button
-                onClick={onConfirm}
-                disabled={selling}
-                style={{ flex: 1, padding: "13px", borderRadius: 14, border: "none", background: selling ? "rgba(239,68,68,.4)" : "#ef4444", color: "var(--text-1)", fontWeight: 900, fontSize: 14, cursor: selling ? "default" : "pointer", fontFamily: "inherit" }}
-              >
-                {selling ? "Selling…" : "Yes, Sell"}
-              </button>
-            </div>
-          </>
         )}
+
+        {/* Cancel */}
+        <button
+          onClick={onCancel}
+          style={{ width: "100%", padding: "13px", borderRadius: 12, border: "none", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.45)", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}
+        >
+          Cancel
+        </button>
       </div>
     </div>
   );

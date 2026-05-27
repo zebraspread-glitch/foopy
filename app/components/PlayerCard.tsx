@@ -106,7 +106,7 @@ export function PlayerCard({
               background: (TEAM_BG_COLORS[card.playerTeam] ?? "#1e2438") + "33",
             }}>
               <img
-                src={`/players/${card.playerFolder}/${card.playerId}.png`}
+                src={`/players/${card.playerFolder}/${card.playerId.replace(/[^a-z0-9]/gi, "").toLowerCase()}.png`}
                 alt={card.playerName}
                 style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }}
               />

@@ -81,8 +81,6 @@ export default function AlbumPage() {
   const [featuredCards, setFeaturedCards] = useState<FeaturedCard[]>([]);
 
   const [selectedCard, setSelectedCard] = useState<SelectedCard | null>(null);
-  const [selling, setSelling] = useState(false);
-
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -132,35 +130,6 @@ export default function AlbumPage() {
     }
     setFeaturedCards(newFeatured);
     await supabase.from("profiles").update({ featured_cards: newFeatured }).eq("id", user.id);
-  }
-
-  async function handleSell(card: UserCard) {
-    if (selling || !user) return;
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) return;
-    setSelling(true);
-    try {
-      const res = await fetch("/api/cards/sell", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({ cardId: card.id }),
-      });
-      const data = await res.json();
-      if (!res.ok) { alert(data.error ?? "Failed to sell card"); return; }
-      setSelectedCard(null);
-      fetchCards(user.id);
-      // Also remove from featured if it was featured
-      const wasFeatured = featuredCards.some(f => f.player_id === card.player_id);
-      if (wasFeatured) {
-        const newFeatured = featuredCards.filter(f => f.player_id !== card.player_id);
-        setFeaturedCards(newFeatured);
-        await supabase.from("profiles").update({ featured_cards: newFeatured }).eq("id", user.id);
-      }
-    } catch {
-      alert("Something went wrong. Please try again.");
-    } finally {
-      setSelling(false);
-    }
   }
 
   const cardsByPlayer = useMemo(() => {
@@ -333,9 +302,7 @@ export default function AlbumPage() {
           cards={selectedCard.cards}
           isFeatured={featuredCards.some(f => f.player_id === selectedCard.player.id)}
           featuredCount={featuredCards.length}
-          selling={selling}
           onToggleFeatured={(card) => toggleFeatured(selectedCard.player.id, card.rarity)}
-          onSell={handleSell}
           onClose={() => setSelectedCard(null)}
         />
       )}
@@ -345,17 +312,14 @@ export default function AlbumPage() {
 
 // ── Album Card Modal ──────────────────────────────────────────────────────────
 
-function AlbumCardModal({ player, cards, isFeatured, featuredCount, selling, onToggleFeatured, onSell, onClose }: {
+function AlbumCardModal({ player, cards, isFeatured, featuredCount, onToggleFeatured, onClose }: {
   player: typeof CARD_PLAYERS[0];
   cards: UserCard[];
   isFeatured: boolean;
   featuredCount: number;
-  selling: boolean;
   onToggleFeatured: (card: UserCard) => void;
-  onSell: (card: UserCard) => void;
   onClose: () => void;
 }) {
-  const [step, setStep] = useState<"options" | "confirm">("options");
   const sortedCards = useMemo(
     () => [...cards].sort((a, b) => RARITY_ORDER[b.rarity] - RARITY_ORDER[a.rarity]),
     [cards],
@@ -365,17 +329,11 @@ function AlbumCardModal({ player, cards, isFeatured, featuredCount, selling, onT
 
   useEffect(() => {
     setSelectedCardId(sortedCards[0]?.id ?? "");
-    setStep("options");
   }, [sortedCards]);
 
   if (!card) return null;
 
   const meta = RARITY_META[card.rarity];
-  const SELL_VALUES: Record<Rarity, number> = {
-    bronze: 1, silver: 3, gold: 10, emerald: 25, sapphire: 60,
-    ruby: 150, amethyst: 300, diamond: 600, pinkdiamond: 1200, mythic: 2500,
-  };
-  const sellValue = SELL_VALUES[card.rarity];
   const totalCopies = sortedCards.reduce((sum, ownedCard) => sum + ownedCard.duplicate_count, 0);
   const showOwnedCards = sortedCards.length > 1 || totalCopies > 1;
 
@@ -389,18 +347,17 @@ function AlbumCardModal({ player, cards, isFeatured, featuredCount, selling, onT
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: 20 }}>
-          <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: ".14em", color: "rgba(255,255,255,.35)", marginBottom: 8 }}>
-            {step === "confirm" ? "ARE YOU SURE?" : "CARD OPTIONS"}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+          <div>
+            <div style={{ fontSize: 17, fontWeight: 900, color: "var(--text-1)", letterSpacing: "-0.02em" }}>{player.name}</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: meta.color, marginTop: 2 }}>
+              {card.rarity.charAt(0).toUpperCase() + card.rarity.slice(1)}
+            </div>
           </div>
-          <div style={{ fontSize: 20, fontWeight: 1000, color: "var(--text-1)" }}>{player.name}</div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: meta.color, marginTop: 3 }}>
-            {card.rarity.charAt(0).toUpperCase() + card.rarity.slice(1)}
-          </div>
+          <button onClick={onClose} style={{ background: "rgba(255,255,255,0.08)", border: "none", color: "rgba(255,255,255,0.5)", width: 28, height: 28, borderRadius: "50%", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>✕</button>
         </div>
 
-        {step === "options" ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {showOwnedCards && (
               <div style={{ display: "grid", gap: 8 }}>
                 <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: ".14em", color: "rgba(255,255,255,.35)", textAlign: "center" }}>
@@ -413,7 +370,7 @@ function AlbumCardModal({ player, cards, isFeatured, featuredCount, selling, onT
                     return (
                       <button
                         key={ownedCard.id}
-                        onClick={() => { setSelectedCardId(ownedCard.id); setStep("options"); }}
+                        onClick={() => { setSelectedCardId(ownedCard.id); }}
                         style={{
                           appearance: "none",
                           border: active ? `2px solid ${ownedMeta.color}` : "1px solid var(--border-2)",
@@ -448,74 +405,32 @@ function AlbumCardModal({ player, cards, isFeatured, featuredCount, selling, onT
               </div>
             )}
 
-            {/* Feature / Unfeature */}
-            <button
-              onClick={() => { onToggleFeatured(card); onClose(); }}
-              style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 18px", borderRadius: 16, border: `1px solid ${isFeatured ? "rgba(255,215,0,.35)" : "var(--border-2)"}`, background: isFeatured ? "rgba(255,215,0,.08)" : "var(--border-1)", color: isFeatured ? "#ffd700" : "#f1f5f9", cursor: "pointer", fontFamily: "inherit", textAlign: "left" as const }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill={isFeatured ? "#ffd700" : "none"} stroke={isFeatured ? "#ffd700" : "#94a3b8"} strokeWidth="2" style={{ flexShrink: 0 }}>
-                <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
-              </svg>
-              <div>
-                <div style={{ fontSize: 15, fontWeight: 900 }}>{isFeatured ? "Remove from Featured" : "Add to Featured"}</div>
-                <div style={{ fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>
-                  {isFeatured ? "Currently in your featured cards" : featuredCount >= 15 ? "Featured slots full (15/15)" : `${featuredCount}/15 slots used`}
+            {/* Action list */}
+            <div style={{ borderRadius: 14, overflow: "hidden", border: "1px solid rgba(255,255,255,0.07)", marginBottom: 10 }}>
+              <button
+                onClick={() => { onToggleFeatured(card); onClose(); }}
+                style={{ display: "flex", alignItems: "center", gap: 13, width: "100%", padding: "14px 16px", border: "none", background: "rgba(255,255,255,0.03)", color: isFeatured ? "#fbbf24" : "var(--text-1)", cursor: "pointer", fontFamily: "inherit", textAlign: "left" as const }}
+              >
+                <svg width="17" height="17" viewBox="0 0 24 24" fill={isFeatured ? "#fbbf24" : "none"} stroke={isFeatured ? "#fbbf24" : "rgba(255,255,255,0.4)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+                </svg>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 800 }}>{isFeatured ? "Remove from Featured" : "Add to Featured"}</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 1, fontWeight: 500 }}>
+                    {isFeatured ? "Currently featured" : featuredCount >= 15 ? "Slots full (15/15)" : `${featuredCount} / 15 slots used`}
+                  </div>
                 </div>
-              </div>
-            </button>
-
-            {/* Sell Card */}
-            <button
-              onClick={() => setStep("confirm")}
-              style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 18px", borderRadius: 16, border: "1px solid rgba(239,68,68,.25)", background: "rgba(239,68,68,.06)", color: "#f87171", cursor: "pointer", fontFamily: "inherit", textAlign: "left" as const }}
-            >
-              <div>
-                <div style={{ fontSize: 15, fontWeight: 900 }}>Sell Card</div>
-                <div style={{ fontSize: 11, color: "var(--text-2)", marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
-                  <img src="/coin/coin.png" alt="" style={{ width: 12, height: 12, objectFit: "contain" }} />
-                  {sellValue} coins
-                </div>
-              </div>
-            </button>
+              </button>
+            </div>
 
             {/* Cancel */}
             <button
               onClick={onClose}
-              style={{ padding: "14px", borderRadius: 16, border: "1px solid var(--border-2)", background: "transparent", color: "var(--text-3)", fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}
+              style={{ width: "100%", padding: "13px", borderRadius: 12, border: "none", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.45)", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}
             >
               Cancel
             </button>
           </div>
-        ) : (
-          <>
-            <div style={{ background: "rgba(239,68,68,.07)", borderRadius: 14, padding: "14px 16px", marginBottom: 16, textAlign: "center" }}>
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,.45)", marginBottom: 4 }}>You will receive</div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                <img src="/coin/coin.png" alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />
-                <span style={{ fontSize: 22, fontWeight: 1000, color: "#fbbf24" }}>{sellValue.toLocaleString()}</span>
-                <span style={{ fontSize: 13, color: "rgba(255,255,255,.45)", fontWeight: 700 }}>coins</span>
-              </div>
-            </div>
-            <p style={{ textAlign: "center", color: "rgba(255,255,255,.4)", fontSize: 13, fontWeight: 700, margin: "0 0 16px" }}>
-              This cannot be undone.
-            </p>
-            <div style={{ display: "flex", gap: 10 }}>
-              <button
-                onClick={() => setStep("options")}
-                style={{ flex: 1, padding: "13px", borderRadius: 14, border: "1px solid var(--border-2)", background: "transparent", color: "rgba(255,255,255,.6)", fontWeight: 900, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}
-              >
-                Go Back
-              </button>
-              <button
-                onClick={() => onSell(card)}
-                disabled={selling}
-                style={{ flex: 1, padding: "13px", borderRadius: 14, border: "none", background: selling ? "rgba(239,68,68,.4)" : "#ef4444", color: "var(--text-1)", fontWeight: 900, fontSize: 14, cursor: selling ? "default" : "pointer", fontFamily: "inherit" }}
-              >
-                {selling ? "Selling…" : "Yes, Sell"}
-              </button>
-            </div>
-          </>
-        )}
       </div>
     </div>
   );

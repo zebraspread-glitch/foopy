@@ -1526,45 +1526,30 @@ export default function ProfilePage() {
   if (!user) {
     return (
       <main style={pageStyle} className="page-enter">
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            minHeight: "60vh",
-            gap: 20,
-            padding: "0 24px",
-            textAlign: "center",
-          }}
-        >
-          <div style={{ fontSize: 52 }}>👤</div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "80dvh", gap: 20, padding: "0 28px", textAlign: "center" }}>
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: "#5865f2", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+
           <div>
-            <h2 style={{ margin: "0 0 8px", fontSize: 22, fontWeight: 950 }}>Sign in to see your profile</h2>
-            <p style={{ margin: 0, color: "var(--text-3)", fontSize: 14 }}>
-              Create an account to track your picks and connect with friends.
+            <h2 style={{ margin: "0 0 8px", fontSize: 22, fontWeight: 900, letterSpacing: "-0.03em", color: "var(--text-1)" }}>Your Profile</h2>
+            <p style={{ margin: 0, color: "var(--text-3)", fontSize: 14, fontWeight: 500, lineHeight: 1.6, maxWidth: 260 }}>
+              Sign in to track your cards, passes, and connect with other fans.
             </p>
           </div>
-          <button
-            onClick={() => router.push("/login")}
-            style={{
-              display: "block",
-              width: "100%",
-              maxWidth: 300,
-              padding: 16,
-              borderRadius: 16,
-              background: "linear-gradient(135deg,#3b82f6,#6366f1)",
-              color: "var(--text-1)",
-              fontWeight: 900,
-              fontSize: 16,
-              textAlign: "center",
-              border: "none",
-              cursor: "pointer",
-              boxShadow: "0 4px 20px rgba(59,130,246,0.4)",
-            }}
-          >
-            Sign In / Sign Up
-          </button>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%", maxWidth: 320 }}>
+            <button onClick={() => router.push("/login")}
+              style={{ width: "100%", padding: "14px", borderRadius: 10, border: "none", background: "#5865f2", color: "#fff", fontWeight: 700, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>
+              Sign In
+            </button>
+            <button onClick={() => router.push("/login?mode=signup")}
+              style={{ width: "100%", padding: "14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "rgba(255,255,255,0.5)", fontWeight: 600, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>
+              Create Account
+            </button>
+          </div>
         </div>
       </main>
     );
