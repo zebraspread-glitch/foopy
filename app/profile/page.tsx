@@ -16,7 +16,7 @@ import playersRaw from "@/app/data/players.json";
 import { CARD_PLAYERS } from "@/app/data/cardPlayers";
 import { PlayerCard } from "@/app/components/PlayerCard";
 import { PlayerPassCard, TeamPassCard } from "@/app/components/PassCard";
-import { type PlayerPass, type TeamPass, PLAYER_PASS_LEVELS, TEAM_PASS_LEVELS, getPassLevel } from "@/app/lib/passes";
+import { type PlayerPass, type TeamPass, PLAYER_PASS_LEVELS, TEAM_PASS_LEVELS, getPassLevel, dedupePlayerPasses } from "@/app/lib/passes";
 
 /* ─────────────────── Types ─────────────────── */
 type FeaturedCardSlot = { player_id: string; rarity: string };
@@ -975,7 +975,7 @@ export default function ProfilePage() {
       supabase.from("user_player_passes").select("*").eq("user_id", user.id),
       supabase.from("user_team_passes").select("*").eq("user_id", user.id).eq("active", true).order("created_at", { ascending: true }),
     ]).then(([playerRes, teamRes]) => {
-      setPickerPlayerPasses((playerRes.data ?? []) as PlayerPass[]);
+      setPickerPlayerPasses(dedupePlayerPasses((playerRes.data ?? []) as PlayerPass[]));
       setPickerTeamPasses((teamRes.data ?? []) as TeamPass[]);
       setPassesPickerLoading(false);
     });

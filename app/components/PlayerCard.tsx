@@ -59,6 +59,10 @@ export function PlayerCard({
   const dupeCount = card.duplicateCount ?? 1;
   const logoOffset = "clamp(4px, 4.75%, 7px)";
   const logoSize = "clamp(16px, 17.5%, 26px)";
+  const teamColor = TEAM_BG_COLORS[card.playerTeam] ?? "#1e2438";
+  const cardOverlay = locked
+    ? "linear-gradient(to bottom, rgba(0,0,0,.62) 0%, rgba(0,0,0,.78) 48%, rgba(0,0,0,.96) 100%)"
+    : "linear-gradient(to bottom, rgba(0,0,0,.15) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,.72) 75%, rgba(0,0,0,.88) 100%)";
 
   return (
     <div
@@ -68,20 +72,27 @@ export function PlayerCard({
       <div style={{
         position: "absolute", inset: 0, borderRadius: 9, overflow: "hidden",
         boxShadow: locked
-          ? "0 0 0 1px var(--border-1)"
+          ? "0 0 0 1px rgba(255,255,255,.1)"
           : `0 0 0 1.5px ${meta.color}99, 0 6px 20px ${meta.glow}`,
-        filter: locked ? "grayscale(1) brightness(0.18)" : "none",
         transition: "box-shadow 0.2s ease",
       }}>
         {/* Card art */}
         <img
           src={locked ? "/cards/bronze.png" : `/cards/${card.rarity}.png`}
           alt=""
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            opacity: locked ? 0.28 : 1,
+            filter: locked ? "grayscale(1) brightness(0.12) contrast(1.05)" : "none",
+          }}
         />
 
         {/* Gradient overlay */}
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.15) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,.72) 75%, rgba(0,0,0,.88) 100%)" }} />
+        <div style={{ position: "absolute", inset: 0, background: cardOverlay }} />
 
         {!locked ? (
           <>
@@ -103,7 +114,7 @@ export function PlayerCard({
             <div style={{
               position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)",
               width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden",
-              background: (TEAM_BG_COLORS[card.playerTeam] ?? "#1e2438") + "33",
+              background: teamColor + "33",
             }}>
               <img
                 src={`/players/${card.playerFolder}/${card.playerId.replace(/[^a-z0-9]/gi, "").toLowerCase()}.png`}
@@ -146,10 +157,12 @@ export function PlayerCard({
             </div>
           </>
         ) : (
-          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4 }}>
-            <div style={{ fontSize: 14, opacity: 0.2 }}>🔒</div>
-            <div className="ac-name" style={{ fontWeight: 800, color: "rgba(255,255,255,.2)", textAlign: "center", padding: "0 4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "90%" }}>
-              {card.playerName}
+          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 34, height: 34, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.1)" }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ color: "rgba(255,255,255,.5)" }}>
+                <rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="2" />
+                <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
             </div>
           </div>
         )}

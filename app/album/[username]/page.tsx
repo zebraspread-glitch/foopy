@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { CARD_PLAYERS } from "@/app/data/cardPlayers";
-import { getPassLevel, PLAYER_PASS_LEVELS, TEAM_PASS_LEVELS, type PlayerPass, type TeamPass } from "@/app/lib/passes";
+import { CARD_PLAYERS, canonicalCardPlayerIdForCard, findCardPlayerForCard } from "@/app/data/cardPlayers";
+import { getPassLevel, PLAYER_PASS_LEVELS, TEAM_PASS_LEVELS, dedupePlayerPasses, type PlayerPass, type TeamPass } from "@/app/lib/passes";
 import PassLeaderboard from "@/app/components/PassLeaderboard";
 import TeamPassLeaderboard from "@/app/components/TeamPassLeaderboard";
 import { supabase } from "@/app/lib/supabase";
@@ -14,6 +14,9 @@ type Rarity = "bronze" | "silver" | "gold" | "emerald" | "sapphire" | "ruby" | "
 interface UserCard {
   id: string;
   player_id: string;
+  player_name?: string | null;
+  team?: string | null;
+  team_logo?: string | null;
   rarity: Rarity;
   rating: number;
   duplicate_count: number;
@@ -24,6 +27,30 @@ interface ProfileInfo {
   username: string | null;
   display_name: string | null;
   avatar_url: string | null;
+}
+
+const USER_CARDS_SELECT = "id, player_id, player_name, team, team_logo, rarity, rating, duplicate_count";
+const USER_CARDS_PAGE_SIZE = 1000;
+
+async function fetchAllAlbumCards(userId: string) {
+  const cards: UserCard[] = [];
+
+  for (let from = 0; ; from += USER_CARDS_PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("user_cards")
+      .select(USER_CARDS_SELECT)
+      .eq("user_id", userId)
+      .order("player_id", { ascending: true })
+      .order("rarity", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, from + USER_CARDS_PAGE_SIZE - 1);
+
+    if (error) throw error;
+    cards.push(...((data ?? []) as UserCard[]));
+    if (!data || data.length < USER_CARDS_PAGE_SIZE) break;
+  }
+
+  return cards;
 }
 
 const RARITY_ORDER: Record<Rarity, number> = {
@@ -117,7 +144,7 @@ export default function UserAlbumPage() {
         if (!data) return;
         setProfile(data.profile);
         setUserCards(data.cards);
-        setPlayerPasses(data.playerPasses ?? []);
+        setPlayerPasses(dedupePlayerPasses((data.playerPasses ?? []) as PlayerPass[]));
         setTeamPasses(data.teamPasses ?? []);
         setLoading(false);
       })
@@ -127,9 +154,10 @@ export default function UserAlbumPage() {
   const cardsByPlayer = useMemo(() => {
     const map = new Map<string, UserCard[]>();
     for (const card of userCards) {
-      const existing = map.get(card.player_id) ?? [];
+      const playerKey = canonicalCardPlayerIdForCard(card);
+      const existing = map.get(playerKey) ?? [];
       existing.push(card);
-      map.set(card.player_id, existing);
+      map.set(playerKey, existing);
     }
     for (const [pid, cards] of map) {
       map.set(pid, cards.sort((a, b) => RARITY_ORDER[b.rarity] - RARITY_ORDER[a.rarity]));
@@ -771,7 +799,7 @@ function LazyCardGrid({ cards, selectedIds, onSelect }: {
     <>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 7 }}>
         {cards.slice(0, visible).map(card => {
-          const player = CARD_PLAYERS.find(p => p.id === card.player_id);
+          const player = findCardPlayerForCard(card);
           return (
             <MiniCard
               key={card.id}
@@ -792,7 +820,7 @@ function LazyCardGrid({ cards, selectedIds, onSelect }: {
 
 function MiniCard({ card, player, selected, onToggle }: {
   card: MyCard;
-  player: typeof CARD_PLAYERS[0] | undefined;
+  player: typeof CARD_PLAYERS[0] | null | undefined;
   selected: boolean;
   onToggle: () => void;
 }) {
@@ -869,7 +897,7 @@ function MiniCard({ card, player, selected, onToggle }: {
   );
 }
 
-function TradeCardSlot({ card, player, onRemove }: { card: UserCard | MyCard; player: typeof CARD_PLAYERS[0] | undefined; onRemove: () => void }) {
+function TradeCardSlot({ card, player, onRemove }: { card: UserCard | MyCard; player: typeof CARD_PLAYERS[0] | null | undefined; onRemove: () => void }) {
   const meta = RARITY_META[card.rarity];
   return (
     <div style={{ position: "relative", width: "100%" }}>
@@ -943,17 +971,17 @@ function TradeOfferModal({
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { setLoadingMine(false); setLoadingTheirs(false); return; }
       // Fetch independently so each picker shows up as soon as its data arrives
-      supabase.from("user_cards").select("id,player_id,player_name,team,team_logo,rarity,rating,duplicate_count")
-        .eq("user_id", myUserId).order("rating", { ascending: false })
-        .then(({ data }) => { setMyCards((data ?? []) as MyCard[]); setLoadingMine(false); });
-      supabase.from("user_cards").select("id,player_id,player_name,team,team_logo,rarity,rating,duplicate_count")
-        .eq("user_id", receiverId).order("rating", { ascending: false })
-        .then(({ data }) => { setReceiverAllCards((data ?? []) as UserCard[]); setLoadingTheirs(false); });
+      fetchAllAlbumCards(myUserId)
+        .then((data) => { setMyCards([...data].sort((a, b) => b.rating - a.rating) as MyCard[]); })
+        .finally(() => { setLoadingMine(false); });
+      fetchAllAlbumCards(receiverId)
+        .then((data) => { setReceiverAllCards([...data].sort((a, b) => b.rating - a.rating)); })
+        .finally(() => { setLoadingTheirs(false); });
     });
   }, [myUserId, receiverId]);
 
   function addWant(card: UserCard) {
-    const player = CARD_PLAYERS.find(p => p.id === card.player_id);
+    const player = findCardPlayerForCard(card);
     if (!player) return;
     setWantCards(prev => [...prev, card]);
     setWantPlayers(prev => [...prev, player]);
@@ -1013,8 +1041,8 @@ function TradeOfferModal({
     const pool = receiverAllCards.filter(c => !wantedIds.has(c.id));
     if (!q) return pool;
     return pool.filter(c => {
-      const p = CARD_PLAYERS.find(pl => pl.id === c.player_id);
-      return (p?.name ?? "").toLowerCase().includes(q) || c.rarity.toLowerCase().includes(q) || (p?.team ?? "").toLowerCase().includes(q);
+      const p = findCardPlayerForCard(c);
+      return (p?.name ?? c.player_name ?? "").toLowerCase().includes(q) || c.rarity.toLowerCase().includes(q) || (p?.team ?? c.team ?? "").toLowerCase().includes(q);
     });
   })();
 
@@ -1069,7 +1097,7 @@ function TradeOfferModal({
               <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.4)", letterSpacing: ".1em", marginBottom: 10 }}>YOU OFFER</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
                 {offeredCards.map(card => {
-                  const player = CARD_PLAYERS.find(p => p.id === card.player_id);
+                  const player = findCardPlayerForCard(card);
                   return <TradeCardSlot key={card.id} card={card} player={player} onRemove={() => toggleOffer(card.id)} />;
                 })}
                 {offerIds.size < 3 && (

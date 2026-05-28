@@ -25,7 +25,7 @@ export const PLAYER_PASS_LEVELS: LevelDef[] = [
   { name: "Sapphire",     color: "#3b82f6", darkColor: "#1e40af", gradient: "linear-gradient(155deg,#06183b,#0a2d6b)",  xpRequired: 375  },
   { name: "Ruby",         color: "#ef4444", darkColor: "#991b1b", gradient: "linear-gradient(155deg,#3b0606,#6b0a0a)",  xpRequired: 575  },
   { name: "Amethyst",     color: "#a78bfa", darkColor: "#5b21b6", gradient: "linear-gradient(155deg,#1a0a33,#2d1060)",  xpRequired: 825  },
-  { name: "Diamond",      color: "#67e8f9", darkColor: "#0050a0", gradient: "linear-gradient(155deg,#00103d,#002966)",  xpRequired: 1125 },
+  { name: "Diamond",      color: "#7ff7ee", darkColor: "#008b8f", gradient: "radial-gradient(ellipse at 18% 12%,rgba(190,255,250,.34),transparent 34%),radial-gradient(ellipse at 88% 18%,rgba(45,212,191,.32),transparent 38%),linear-gradient(155deg,#032f35,#075e66 48%,#0a3f48)",  xpRequired: 1125 },
   { name: "Pink Diamond", color: "#f472b6", darkColor: "#be185d", gradient: "linear-gradient(155deg,#2d0a1a,#5a1030)",  xpRequired: 1625 },
   { name: "Mythic",       color: "#c084fc", darkColor: "#5b1ea8", gradient: "linear-gradient(155deg,#1a0033,#36006b)",  xpRequired: 2625 },
 ];
@@ -103,6 +103,69 @@ export interface PlayerPass {
   xp: number;
   serial_number: number | null;
   created_at: string;
+}
+
+export type PlayerPassIdentityInput = {
+  id?: string | null;
+  player_id?: string | null;
+  player_name?: string | null;
+  team_name?: string | null;
+  active?: boolean | null;
+  xp?: number | null;
+  serial_number?: number | null;
+  created_at?: string | null;
+};
+
+export function normalizePassPlayerIdentity(value?: string | null): string {
+  return String(value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+export function playerPassIdentityKey(pass: PlayerPassIdentityInput): string {
+  return normalizePassPlayerIdentity(pass.player_name) || normalizePassPlayerIdentity(pass.player_id);
+}
+
+function isBetterPlayerPass<T extends PlayerPassIdentityInput>(candidate: T, current: T): boolean {
+  const candidateActive = Boolean(candidate.active);
+  const currentActive = Boolean(current.active);
+  if (candidateActive !== currentActive) return candidateActive;
+
+  const candidateXp = Number(candidate.xp ?? 0);
+  const currentXp = Number(current.xp ?? 0);
+  if (candidateXp !== currentXp) return candidateXp > currentXp;
+
+  const candidateSerial = candidate.serial_number ?? Number.POSITIVE_INFINITY;
+  const currentSerial = current.serial_number ?? Number.POSITIVE_INFINITY;
+  if (candidateSerial !== currentSerial) return candidateSerial < currentSerial;
+
+  const candidateTime = Date.parse(String(candidate.created_at ?? ""));
+  const currentTime = Date.parse(String(current.created_at ?? ""));
+  if (!Number.isNaN(candidateTime) && !Number.isNaN(currentTime) && candidateTime !== currentTime) {
+    return candidateTime < currentTime;
+  }
+
+  return String(candidate.id ?? "") < String(current.id ?? "");
+}
+
+export function dedupePlayerPasses<T extends PlayerPassIdentityInput>(passes: T[]): T[] {
+  const byKey = new Map<string, T>();
+  const keyOrder: string[] = [];
+
+  for (const pass of passes) {
+    const key = playerPassIdentityKey(pass) || `pass:${pass.id ?? keyOrder.length}`;
+    const current = byKey.get(key);
+
+    if (!current) {
+      byKey.set(key, pass);
+      keyOrder.push(key);
+      continue;
+    }
+
+    if (isBetterPlayerPass(pass, current)) {
+      byKey.set(key, pass);
+    }
+  }
+
+  return keyOrder.map((key) => byKey.get(key)).filter((pass): pass is T => Boolean(pass));
 }
 
 export interface PassReward {

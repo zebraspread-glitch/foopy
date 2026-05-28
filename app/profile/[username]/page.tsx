@@ -8,7 +8,7 @@ import { supabase } from "@/app/lib/supabase";
 import AuraBadge from "@/app/components/AuraBadge";
 import { PlayerCard } from "@/app/components/PlayerCard";
 import { CARD_PLAYERS } from "@/app/data/cardPlayers";
-import { getPassLevel, PLAYER_PASS_LEVELS, TEAM_PASS_LEVELS, type PlayerPass, type TeamPass } from "@/app/lib/passes";
+import { getPassLevel, PLAYER_PASS_LEVELS, TEAM_PASS_LEVELS, dedupePlayerPasses, type PlayerPass, type TeamPass } from "@/app/lib/passes";
 import { PlayerPassCard, TeamPassCard } from "@/app/components/PassCard";
 import playersData from "@/app/data/players.json";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
@@ -572,7 +572,7 @@ export default function PublicProfilePage() {
         supabase.from("user_player_passes").select("*").eq("user_id", p.id).eq("active", true).order("created_at", { ascending: true }),
         supabase.from("user_team_passes").select("*").eq("user_id", p.id).eq("active", true).order("created_at", { ascending: true }),
       ]);
-      setPlayerPasses((ppData ?? []) as PlayerPass[]);
+      setPlayerPasses(dedupePlayerPasses((ppData ?? []) as PlayerPass[]));
       setTeamPasses((tpData ?? []) as TeamPass[]);
 
       setLoading(false);

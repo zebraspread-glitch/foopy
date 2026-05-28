@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/app/lib/supabase-server";
 import { calcPendingRewards } from "@/app/api/passes/route";
+import { dedupePlayerPasses } from "@/app/lib/passes";
 import type { TeamPass, PlayerPass, PassReward } from "@/app/lib/passes";
 import { incrementProfileCurrency } from "@/app/lib/passRewardCredits";
 import { awardAura } from "@/app/lib/aura";
@@ -45,7 +46,7 @@ export async function POST(req: Request) {
     ]);
 
   const teamPasses    = (teamPassRows   as TeamPass[]) ?? [];
-  const playerPasses  = (playerPassRows as PlayerPass[]) ?? [];
+  const playerPasses  = dedupePlayerPasses((playerPassRows as PlayerPass[]) ?? []);
   const claimedSoFar  = (rewardRows     as PassReward[]) ?? [];
 
   // Calculate what's still pending

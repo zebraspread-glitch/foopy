@@ -4,6 +4,8 @@ import {
   teamPassReward,
   playerPassReward,
   teamsMatch,
+  dedupePlayerPasses,
+  normalizePassPlayerIdentity,
   type PendingReward,
   type TeamPass,
   type PlayerPass,
@@ -53,11 +55,20 @@ function getFixtureId(squiggleId: number): string | null {
 }
 
 // ── Find player API-Sports ID from our players.json slug ────────────────────
-function getPlayerApiSportsId(playerSlug: string): number | null {
-  const player = (playersRaw as any[]).find(
+function getPlayerApiSportsId(playerSlug: string, playerName?: string | null): number | null {
+  const players = playersRaw as any[];
+  const player = players.find(
     (p) => String(p.id ?? "") === playerSlug
   );
-  return player?.apiSportsId ?? null;
+  if (player?.apiSportsId) return player.apiSportsId;
+
+  const nameKey = normalizePassPlayerIdentity(playerName);
+  if (!nameKey) return null;
+
+  const byName = players.find((p) => (
+    normalizePassPlayerIdentity(String(p.name ?? p.player ?? "")) === nameKey
+  ));
+  return byName?.apiSportsId ?? null;
 }
 
 // ── Look up a player's raw stats for a fixture ───────────────────────────────
@@ -187,7 +198,7 @@ export async function calcPendingRewards(
 
   // ── Player passes ──────────────────────────────────────────────────────────
   for (const pass of playerPasses) {
-    const apiId = getPlayerApiSportsId(pass.player_id);
+    const apiId = getPlayerApiSportsId(pass.player_id, pass.player_name);
     if (!apiId) continue;
 
     for (const game of finalGames) {
@@ -260,7 +271,7 @@ export async function GET(req: Request) {
   ]);
 
   const teamPasses     = (teamPassRows   as TeamPass[]) ?? [];
-  const playerPasses   = (playerPassRows as PlayerPass[]) ?? [];
+  const playerPasses   = dedupePlayerPasses((playerPassRows as PlayerPass[]) ?? []);
   const claimedRewards = (rewardRows     as PassReward[]) ?? [];
 
   const pending = await calcPendingRewards(

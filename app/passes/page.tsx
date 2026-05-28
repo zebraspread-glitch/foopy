@@ -13,6 +13,7 @@ import {
   PLAYER_PASS_LEVELS,
   TEAM_PASS_LEVELS,
   getPassLevel,
+  playerPassIdentityKey,
   type TeamPass,
   type PlayerPass,
   type PassReward,
@@ -508,7 +509,7 @@ export default function PassesPage() {
     else setPlayerPickerOpen(true);
   }
 
-  const ownedIds = new Set((data?.playerPasses ?? []).map((p) => p.player_id));
+  const ownedPlayerKeys = new Set((data?.playerPasses ?? []).map((p) => playerPassIdentityKey(p)));
   const filtered = playerSearch.trim().length < 2 ? [] :
     (playersRaw as any[]).filter((p) => String(p.name ?? p.player ?? "").toLowerCase().includes(playerSearch.toLowerCase())).slice(0, 30);
 
@@ -871,7 +872,12 @@ export default function PassesPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               {/* Card preview */}
               {(() => {
-                const existingPass = data?.playerPasses?.find((p) => p.player_id === pendingPlayer.pid);
+                const pendingPlayerKey = playerPassIdentityKey({
+                  player_id: pendingPlayer.pid,
+                  player_name: pendingPlayer.name,
+                  team_name: pendingPlayer.team,
+                });
+                const existingPass = data?.playerPasses?.find((p) => playerPassIdentityKey(p) === pendingPlayerKey);
                 const previewPass: PlayerPass = existingPass ?? {
                   id: "",
                   user_id: "",
@@ -964,7 +970,7 @@ export default function PassesPage() {
                     const pid   = String(p.id ?? "");
                     const pname = String(p.name ?? p.player ?? "");
                     const team  = String(p.club ?? p.team ?? "");
-                    const owned  = ownedIds.has(pid);
+                    const owned  = ownedPlayerKeys.has(playerPassIdentityKey({ player_id: pid, player_name: pname, team_name: team }));
                     const imgSrc = playerPassImgSrc(pname, team);
                     return (
                       <button key={`${pid}_${i}`} onClick={async () => {

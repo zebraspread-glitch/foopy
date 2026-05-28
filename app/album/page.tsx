@@ -12,7 +12,7 @@ function useFullWidth() {
 }
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/app/lib/supabase";
-import { CARD_PLAYERS } from "@/app/data/cardPlayers";
+import { CARD_PLAYERS, canonicalCardPlayerIdForCard, resolveCardPlayerId } from "@/app/data/cardPlayers";
 import { PlayerCard as SharedPlayerCard } from "@/app/components/PlayerCard";
 
 type Rarity = "bronze" | "silver" | "gold" | "emerald" | "sapphire" | "ruby" | "amethyst" | "diamond" | "pinkdiamond" | "mythic";
@@ -20,9 +20,36 @@ type Rarity = "bronze" | "silver" | "gold" | "emerald" | "sapphire" | "ruby" | "
 interface UserCard {
   id: string;
   player_id: string;
+  player_name?: string | null;
+  team?: string | null;
+  team_logo?: string | null;
   rarity: Rarity;
   rating: number;
   duplicate_count: number;
+}
+
+const USER_CARDS_SELECT = "id, player_id, player_name, team, team_logo, rarity, rating, duplicate_count";
+const USER_CARDS_PAGE_SIZE = 1000;
+
+async function fetchAllUserCardsForAlbum(userId: string) {
+  const cards: UserCard[] = [];
+
+  for (let from = 0; ; from += USER_CARDS_PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("user_cards")
+      .select(USER_CARDS_SELECT)
+      .eq("user_id", userId)
+      .order("player_id", { ascending: true })
+      .order("rarity", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, from + USER_CARDS_PAGE_SIZE - 1);
+
+    if (error) throw error;
+    cards.push(...((data ?? []) as UserCard[]));
+    if (!data || data.length < USER_CARDS_PAGE_SIZE) break;
+  }
+
+  return cards;
 }
 
 const RARITY_ORDER: Record<Rarity, number> = {
@@ -95,12 +122,11 @@ export default function AlbumPage() {
   const fetchCards = useCallback(async (uid: string) => {
     setLoading(true);
     await supabase.auth.getSession();
-    const { data, error } = await supabase
-      .from("user_cards")
-      .select("id, player_id, rarity, rating, duplicate_count")
-      .eq("user_id", uid);
-    if (!error && data) setUserCards(data as UserCard[]);
-    setLoading(false);
+    try {
+      setUserCards(await fetchAllUserCardsForAlbum(uid));
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -120,10 +146,10 @@ export default function AlbumPage() {
 
   async function toggleFeatured(playerId: string, rarity: Rarity) {
     if (!user) return;
-    const isCurrentlyFeatured = featuredCards.some(f => f.player_id === playerId);
+    const isCurrentlyFeatured = featuredCards.some(f => resolveCardPlayerId(f.player_id) === playerId);
     let newFeatured: FeaturedCard[];
     if (isCurrentlyFeatured) {
-      newFeatured = featuredCards.filter(f => f.player_id !== playerId);
+      newFeatured = featuredCards.filter(f => resolveCardPlayerId(f.player_id) !== playerId);
     } else {
       if (featuredCards.length >= 15) return;
       newFeatured = [...featuredCards, { player_id: playerId, rarity }];
@@ -135,9 +161,10 @@ export default function AlbumPage() {
   const cardsByPlayer = useMemo(() => {
     const map = new Map<string, UserCard[]>();
     for (const card of userCards) {
-      const existing = map.get(card.player_id) ?? [];
+      const playerKey = canonicalCardPlayerIdForCard(card);
+      const existing = map.get(playerKey) ?? [];
       existing.push(card);
-      map.set(card.player_id, existing);
+      map.set(playerKey, existing);
     }
     for (const [pid, cards] of map) {
       map.set(pid, cards.sort((a, b) => RARITY_ORDER[b.rarity] - RARITY_ORDER[a.rarity]));
@@ -149,6 +176,7 @@ export default function AlbumPage() {
   const unlockedCount = teamPlayers.filter((p) => cardsByPlayer.has(p.id)).length;
   const totalCount = teamPlayers.length;
   const pct = totalCount > 0 ? Math.round((unlockedCount / totalCount) * 100) : 0;
+  const featuredPlayerIds = useMemo(() => new Set(featuredCards.map((card) => resolveCardPlayerId(card.player_id))), [featuredCards]);
 
   if (authLoading) return null;
 
@@ -285,7 +313,7 @@ export default function AlbumPage() {
                     key={player.id}
                     player={player}
                     ownedCards={ownedCards}
-                    isFeatured={featuredCards.some(f => f.player_id === player.id)}
+                    isFeatured={featuredPlayerIds.has(player.id)}
                     onCardClick={(cards) => setSelectedCard({ player, cards })}
                   />
                 );
@@ -300,7 +328,7 @@ export default function AlbumPage() {
         <AlbumCardModal
           player={selectedCard.player}
           cards={selectedCard.cards}
-          isFeatured={featuredCards.some(f => f.player_id === selectedCard.player.id)}
+          isFeatured={featuredPlayerIds.has(selectedCard.player.id)}
           featuredCount={featuredCards.length}
           onToggleFeatured={(card) => toggleFeatured(selectedCard.player.id, card.rarity)}
           onClose={() => setSelectedCard(null)}

@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/app/lib/supabase-server";
-import { MAX_PLAYER_PASSES, PLAYER_PASS_COST } from "@/app/lib/passes";
+import {
+  MAX_PLAYER_PASSES,
+  PLAYER_PASS_COST,
+  dedupePlayerPasses,
+  playerPassIdentityKey,
+  type PlayerPass,
+} from "@/app/lib/passes";
 import { syncPassXpFromCards } from "@/app/lib/passCardXp";
 import playersRaw from "@/app/data/players.json";
 
@@ -28,40 +34,40 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Player not found" }, { status: 404 });
   }
 
-  // Check active pass count
-  const { data: activePasses, error: countErr } = await supabaseServer
-    .from("user_player_passes")
-    .select("id")
-    .eq("user_id", user.id)
-    .eq("active", true);
+  const player_name = String(playerData.name ?? playerData.player ?? player_id);
+  const team_name   = String(playerData.club ?? playerData.team ?? "");
+  const requestedPlayerKey = playerPassIdentityKey({ player_id, player_name, team_name });
 
-  if (countErr) {
-    console.error("[passes/player count]", countErr.code, countErr.message);
-    return NextResponse.json({ error: countErr.message }, { status: 500 });
+  const { data: existingRows, error: existingErr } = await supabaseServer
+    .from("user_player_passes")
+    .select("id, user_id, player_id, player_name, team_name, active, xp, serial_number, created_at")
+    .eq("user_id", user.id);
+
+  if (existingErr) {
+    console.error("[passes/player existing]", existingErr.code, existingErr.message);
+    return NextResponse.json({ error: existingErr.message }, { status: 500 });
   }
 
-  if ((activePasses?.length ?? 0) >= MAX_PLAYER_PASSES) {
+  const existingPasses = ((existingRows ?? []) as PlayerPass[]);
+  const existing = dedupePlayerPasses(
+    existingPasses.filter((pass) => playerPassIdentityKey(pass) === requestedPlayerKey)
+  )[0];
+
+  if (existing) {
+    if (existing.active) {
+      return NextResponse.json({ error: "Already have a pass for this player" }, { status: 409 });
+    }
+  }
+
+  const activePasses = dedupePlayerPasses(existingPasses.filter((pass) => pass.active));
+  if (activePasses.length >= MAX_PLAYER_PASSES) {
     return NextResponse.json(
       { error: `Maximum ${MAX_PLAYER_PASSES} player passes reached` },
       { status: 409 }
     );
   }
 
-  const player_name = String(playerData.name ?? playerData.player ?? player_id);
-  const team_name   = String(playerData.club ?? playerData.team ?? "");
-
-  // Check if a pass for this player already exists (active or inactive)
-  const { data: existing } = await supabaseServer
-    .from("user_player_passes")
-    .select("id, active")
-    .eq("user_id", user.id)
-    .eq("player_id", player_id)
-    .maybeSingle();
-
   if (existing) {
-    if (existing.active) {
-      return NextResponse.json({ error: "Already have a pass for this player" }, { status: 409 });
-    }
     // Reactivate with current card-based XP, no coin charge.
     const { data, error: upErr } = await supabaseServer
       .from("user_player_passes")

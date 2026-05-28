@@ -70,6 +70,35 @@ const CARD_NAME_OVERRIDES: Record<string, string> = {
   zacmccarthy: "Zac McCarthy",
 };
 
+export const CARD_PLAYER_ID_ALIASES: Record<string, string> = {
+  archiemay: "archermay",
+  bodieryan: "brodieryan",
+  bradleyclose: "bradclose",
+  chrisscerri: "christopherscerri",
+  connornash: "conornash",
+  danielbutler: "danbutler",
+  josephfonti: "joefonti",
+  joshdraper: "joshuadraper",
+  joshuagibcus: "joshgibcus",
+  joshuakelly: "joshkelly",
+  kaylegerreyn: "kaylegerryn",
+  lennoxhoffman: "lennoxhofmann",
+  leolombard: "leonardolombard",
+  matthewroberts: "mattyroberts",
+  mitchellknevitt: "mitchknevitt",
+  mitchellewis: "mitchlewis",
+  mitchitoowens: "mitchowens",
+  nickdriscoll: "nicholasdriscoll",
+  nikolascox: "nikcox",
+  noahrobertsthomson: "noahrobertsthompson",
+  olliedempsey: "oliverdempsey",
+  olliegreeves: "olivergreeves",
+  roberthansenjr: "roberthansen",
+  thomassims: "tomsims",
+  willgreen: "williamgreen",
+  zacharywilliams: "zacwilliams",
+};
+
 export const CARD_PLAYERS: CardPlayer[] = [
   // ── Carlton (Blues) ──────────────────────────────────────
   { id: "adamcerra",       name: "Adam Cerra",       team: "Carlton",          folder: "blues",    teamLogo: "/team-logos/blues.png",     position: "MID" },
@@ -296,6 +325,26 @@ export const CARD_PLAYERS: CardPlayer[] = [
     "aliiraliir", "balynobrien", "bennybarrett", "brandonzerkthatcher", "christianmoraes", "connorrozee", "coreydurdin", "dantevisentini", "darcybyrnejones", "esavaratugolea", "ewanmackinlay", "harrisonramm", "ivansoldo", "jacklukosius", "jacksonmead", "jackwatkins", "jackwhitlock", "jacobmoss", "jacobwehr", "jaseburgoyne", "jasonhornefrancis", "joeberry", "joerichards", "jordonsweet", "joshlai", "joshsinn", "kanefarrell", "lachiejones", "loganevans", "maniliddy", "milesbergman", "mitchgeorgiades", "mitchzadow", "ollielord", "olliewines", "poe", "sampowellpepper", "toddmarshall", "tomanastasopoulos", "tomcochrane", "willbrodie", "willemdrew", "willlorenz", "xavierwalsh", "zakbutters",
   ]),
 ];
+
+export const CARD_PLAYER_BY_ID = new Map(CARD_PLAYERS.map((player) => [player.id, player]));
+
+export function normalizeCardPlayerId(value: string | null | undefined): string {
+  return String(value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+export function resolveCardPlayerId(value: string | null | undefined): string {
+  const normalized = normalizeCardPlayerId(value);
+  return CARD_PLAYER_ID_ALIASES[normalized] ?? normalized;
+}
+
+export function findCardPlayerForCard(card: { player_id?: string | null; player_name?: string | null }) {
+  const candidates = [card.player_id, card.player_name].map(resolveCardPlayerId).filter(Boolean);
+  return candidates.map((id) => CARD_PLAYER_BY_ID.get(id)).find(Boolean) ?? null;
+}
+
+export function canonicalCardPlayerIdForCard(card: { player_id?: string | null; player_name?: string | null }) {
+  return findCardPlayerForCard(card)?.id ?? resolveCardPlayerId(card.player_id);
+}
 
 export function getPlayerImage(folder: string, id: string): string {
   return `/players/${folder}/${id}.png`;
