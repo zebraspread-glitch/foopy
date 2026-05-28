@@ -104,7 +104,7 @@ export function PlayerPassSection({ playerId, playerName, teamName, accentColor 
             flex: 1,
             padding: "12px 16px",
             borderRadius: 14,
-            border: "none",
+            border: alreadyOwned ? `1px solid ${accentColor}44` : "none",
             background: alreadyOwned
               ? `${accentColor}22`
               : success
@@ -120,7 +120,6 @@ export function PlayerPassSection({ playerId, playerName, teamName, accentColor 
             gap: 8,
             transition: "opacity 0.15s",
             opacity: buying ? 0.6 : 1,
-            border: alreadyOwned ? `1px solid ${accentColor}44` : "none",
           } as React.CSSProperties}
         >
           {loading ? (
