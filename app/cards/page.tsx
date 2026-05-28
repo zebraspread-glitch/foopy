@@ -1354,39 +1354,18 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
   );
   const [index, setIndex] = useState(0);
   const [done, setDone] = useState(false);
+  const [animKey, setAnimKey] = useState(0);
+  const [revealingRarity, setRevealingRarity] = useState(false);
 
-  // ── Preload all images eagerly on mount ───────────────────────────────────
-  // By the time the user flips their first card the photos are already cached.
+  // Preload all images on mount so they're ready when cards appear
   useEffect(() => {
     rawCards.forEach(card => {
-      // Card template background (e.g. /cards/gold.png)
       new window.Image().src = `/cards/${card.rarity}.png`;
-      // Player photo — primary path supplied by API
       if (card.player_image) new window.Image().src = card.player_image;
-      // Player photo — folder-based path (fallback used by CardPlayerImage)
       const folder = TEAM_PLAYER_FOLDER[card.team] ?? card.team.toLowerCase().replace(/[^a-z]/g, "");
       new window.Image().src = `/players/${folder}/${card.player_id}.png`;
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Phase: false = card back (rarity tease), true = card front (player revealed)
-  const [flipped, setFlipped] = useState(false);
-  const [flipAnimating, setFlipAnimating] = useState(false);
-  const [revealingRarity, setRevealingRarity] = useState(false);
-
-  // Swipe/drag state
-  const [dragX, setDragX] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [flyingOut, setFlyingOut] = useState(false);
-  const [snappingBack, setSnappingBack] = useState(false);
-  const [enterAnim, setEnterAnim] = useState(true);
-  const touchStart = useRef({ x: 0, y: 0 });
-  const axisLocked = useRef<"h" | "v" | null>(null);
-  // Refs mirror state for event handlers — avoids stale closure issues on mobile
-  // where pointermove fires before React re-renders with new state
-  const isDraggingRef = useRef(false);
-  const dragXRef = useRef(0);
-  const flippedRef = useRef(false);
 
   const current = cards[index];
   const meta = current ? RARITY_META[current.rarity] : null;
@@ -1394,144 +1373,27 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
     sapphire: 800, ruby: 1050, amethyst: 1200, diamond: 1450, pinkdiamond: 1650, mythic: 1950,
   };
   const hasRevealAnim = current ? RARITY_ORDER[current.rarity] >= RARITY_ORDER["sapphire"] : false;
-  const REVEAL_DURATION = (current && RARITY_REVEAL_DURATIONS[current.rarity]) ?? 1000;
+  const REVEAL_DURATION = (current && RARITY_REVEAL_DURATIONS[current.rarity]) ?? 0;
 
-  // Reset all card state when moving to a new card
+  // Auto-fire rarity reveal when a new card appears
   useEffect(() => {
-    flippedRef.current = false;
-    dragXRef.current = 0;
-    setFlipped(false);
-    setFlipAnimating(false);
-    setRevealingRarity(false);
-    setDragX(0);
-    setEnterAnim(true);
-  }, [index]);
-
-  function triggerReveal() {
-    if (hasRevealAnim) {
+    if (!hasRevealAnim) return;
+    const t = setTimeout(() => {
       setRevealingRarity(true);
       setTimeout(() => setRevealingRarity(false), REVEAL_DURATION);
-    }
-  }
-
-  // Complete the flip from current drag position to fully revealed
-  function completeFlip() {
-    flippedRef.current = true;
-    dragXRef.current = 0;
-    setFlipAnimating(true);
-    setFlipped(true);
-    setDragX(0);
-    // After CSS transition completes, fire rarity reveal
-    setTimeout(() => {
-      setFlipAnimating(false);
-      triggerReveal();
-    }, 300);
-  }
+    }, 320);
+    return () => clearTimeout(t);
+  }, [index]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function advance() {
-    if (flyingOut || revealingRarity) return;
-    setFlyingOut(true);
-    setTimeout(() => {
-      setFlyingOut(false);
-      setDragX(0);
-      setEnterAnim(false);
-      if (index < cards.length - 1) {
-        setIndex(i => i + 1);
-      } else {
-        setDone(true);
-      }
-    }, 260);
-  }
-
-  function onPointerDown(e: React.PointerEvent) {
-    if (revealingRarity || flipAnimating) return;
-    touchStart.current = { x: e.clientX, y: e.clientY };
-    axisLocked.current = null;
-    isDraggingRef.current = true;
-    setIsDragging(true);
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-  }
-
-  function onPointerMove(e: React.PointerEvent) {
-    if (!isDraggingRef.current || revealingRarity || flipAnimating) return;
-    const dx = e.clientX - touchStart.current.x;
-    const dy = e.clientY - touchStart.current.y;
-    // Slightly larger threshold on mobile to avoid false axis detection
-    if (!axisLocked.current && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
-      axisLocked.current = Math.abs(dx) > Math.abs(dy) ? "h" : "v";
-    }
-    if (axisLocked.current === "h") {
-      const newDx = Math.min(30, dx);
-      dragXRef.current = newDx;
-      setDragX(newDx);
-    }
-  }
-
-  function onPointerUp() {
-    if (!isDraggingRef.current) return;
-    isDraggingRef.current = false;
-    setIsDragging(false);
-    axisLocked.current = null;
-    // Read from refs — not state — to get the latest values
-    const currentDragX = dragXRef.current;
-    dragXRef.current = 0;
-    // A tap (no drag) or a left swipe both trigger the action.
-    // This makes it work on desktop (click) and mobile (swipe) alike.
-    const isTap = Math.abs(currentDragX) <= 8;
-    if (!flippedRef.current) {
-      // First action: flip card to reveal player
-      if (currentDragX < -55 || isTap) {
-        completeFlip();
-      } else {
-        setSnappingBack(true);
-        setDragX(0);
-        setTimeout(() => setSnappingBack(false), 400);
-      }
+    if (revealingRarity) return;
+    if (index < cards.length - 1) {
+      setAnimKey(k => k + 1);
+      setIndex(i => i + 1);
     } else {
-      // Second action: advance to next card
-      if (currentDragX < -70 || isTap) {
-        advance();
-      } else {
-        setSnappingBack(true);
-        setDragX(0);
-        setTimeout(() => setSnappingBack(false), 400);
-      }
+      setDone(true);
     }
   }
-
-  // ── Visual computations ──────────────────────────────────────────────────────
-
-  // Flip progress: 0 = fully back (tease), 1 = fully front (revealed)
-  const FLIP_ZONE = 110;
-  const flipProgress = flipped ? 1 : Math.max(0, Math.min(1, -dragX / FLIP_ZONE));
-
-  // Pancake/envelope flip: scaleX 1→0 (first half), then 0→1 (second half)
-  const flipScaleX = flipProgress < 0.5
-    ? 1 - flipProgress * 2        // 1 at 0%, 0 at 50%
-    : (flipProgress - 0.5) * 2;  // 0 at 50%, 1 at 100%
-
-  // Which face to show (switch at midpoint of flip)
-  const showFront = flipProgress >= 0.5;
-
-  // Fly-out only applies when already flipped
-  const cardTx = flyingOut ? -500 : (flipped ? dragX : 0);
-  const cardRot = flyingOut ? -18 : (flipped ? dragX * 0.05 : 0);
-
-  // Outer wrapper transition (translateX for fly-out)
-  const outerTransition = isDragging
-    ? "none"
-    : flyingOut
-      ? "transform 0.26s ease, opacity 0.22s ease"
-      : snappingBack && flipped
-        ? "transform 0.4s cubic-bezier(0.34,1.56,0.64,1)"
-        : "none";
-
-  // Flip container transition (scaleX for pancake flip)
-  const flipTransition = flipAnimating
-    ? "transform 0.3s ease"
-    : snappingBack && !flipped
-      ? "transform 0.4s cubic-bezier(0.34,1.56,0.64,1)"
-      : "none";
 
   // ── Done screen ──────────────────────────────────────────────────────────────
 
@@ -1572,160 +1434,56 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
           ))}
         </div>
 
-        {/* Swipeable card area */}
-        <div
-          style={{ position: "relative", width: "100%", maxWidth: 260, marginBottom: 28, touchAction: "none" }}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerUp}
-        >
-          {/* Rarity reveal overlay — fires after the flip */}
+        {/* Card */}
+        <div style={{ position: "relative", width: "100%", maxWidth: 260, marginBottom: 28 }}>
           {revealingRarity && current && meta && (
             <RarityRevealOverlay rarity={current.rarity} meta={meta} duration={REVEAL_DURATION} />
           )}
 
-          {/* Outer wrapper: handles translateX fly-out + rotate + slide-in enter anim */}
-          <div
-            className={enterAnim && !flipped ? "card-reveal-enter" : ""}
-            style={{
-              transform: `translateX(${cardTx}px) rotate(${cardRot}deg)`,
-              transition: outerTransition,
-              opacity: flyingOut ? 0 : 1,
-              cursor: revealingRarity || flipAnimating ? "default" : isDragging ? "grabbing" : "grab",
-            }}
-          >
-            {/* Flip container: scaleX pancake-flip effect */}
-            <div style={{ transform: `scaleX(${flipScaleX})`, transition: flipTransition }}>
-
-              {showFront ? (
-                /* ── Front face: player card ── */
-                <div style={{
-                  width: "100%", aspectRatio: "3/4.2", borderRadius: 18, overflow: "hidden", position: "relative",
-                  boxShadow: meta ? `0 0 0 2px ${meta.color}88, 0 16px 48px ${meta.glow}, 0 0 60px ${meta.glow}33` : "0 16px 48px rgba(0,0,0,.6)",
-                }}>
-                  {current && meta && (
-                    <>
-                      <img src={`/cards/${current.rarity}.png`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-                      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.15) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,.72) 75%, rgba(0,0,0,.88) 100%)" }} />
-                      <div className="ac-rating" style={{ background: "rgba(0,0,0,.82)", fontWeight: 1000, color: meta.color, border: `1px solid ${meta.color}44` }}>{current.rating}</div>
-                      {current.is_new && (
-                        <div style={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", background: "linear-gradient(90deg,#16a34a,#22c55e)", borderRadius: 99, padding: "4px 14px", fontSize: 11, fontWeight: 900, color: "#fff", letterSpacing: ".12em", boxShadow: "0 2px 12px rgba(34,197,94,.55)", whiteSpace: "nowrap", zIndex: 5 }}>✦ NEW</div>
-                      )}
-                      <div style={{ position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)", width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", background: (TEAM_COLORS[current.team] ?? "#1e2438") + "33" }}>
-                        <CardPlayerImage card={current} imageStyle={cardPlayerImageStyle} loading="eager" />
-                      </div>
-                      <div style={{ position: "absolute", top: "71%", left: 0, right: 0, textAlign: "center", padding: "0 5px" }}>
-                        <div className="ac-name" style={{ fontWeight: 900, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: `0 0 12px ${meta.glow}` }}>{current.player_name}</div>
-                      </div>
-                      <div style={{
-                        position: "absolute",
-                        left: "clamp(4px,4.75%,7px)", bottom: "clamp(4px,4.75%,7px)",
-                        top: "auto", right: "auto",
-                        width: "clamp(16px,17.5%,26px)", height: "clamp(16px,17.5%,26px)",
-                        borderRadius: "50%", overflow: "hidden", zIndex: 4,
-                        background: "rgba(0,0,0,.55)", border: "1.5px solid var(--border-3)",
-                      }}>
-                        <img src={current.team_logo} alt={current.team} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                      </div>
-                      <div className="ac-pos" style={{ background: "rgba(0,0,0,.7)", fontWeight: 900, color: "rgba(255,255,255,.75)", letterSpacing: ".05em" }}>2025</div>
-                    </>
-                  )}
+          <div key={animKey} style={{ animation: "slideUp 0.38s cubic-bezier(0.34,1.56,0.64,1)" }}>
+            {current && meta && (
+              <div style={{
+                width: "100%", aspectRatio: "3/4.2", borderRadius: 18, overflow: "hidden", position: "relative",
+                boxShadow: `0 0 0 2px ${meta.color}88, 0 16px 48px ${meta.glow}, 0 0 60px ${meta.glow}33`,
+              }}>
+                <img src={`/cards/${current.rarity}.png`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.15) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,.72) 75%, rgba(0,0,0,.88) 100%)" }} />
+                <div className="ac-rating" style={{ background: "rgba(0,0,0,.82)", fontWeight: 1000, color: meta.color, border: `1px solid ${meta.color}44` }}>{current.rating}</div>
+                {current.is_new && (
+                  <div style={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", background: "linear-gradient(90deg,#16a34a,#22c55e)", borderRadius: 99, padding: "4px 14px", fontSize: 11, fontWeight: 900, color: "#fff", letterSpacing: ".12em", boxShadow: "0 2px 12px rgba(34,197,94,.55)", whiteSpace: "nowrap", zIndex: 5 }}>✦ NEW</div>
+                )}
+                <div style={{ position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)", width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", background: (TEAM_COLORS[current.team] ?? "#1e2438") + "33" }}>
+                  <CardPlayerImage card={current} imageStyle={cardPlayerImageStyle} loading="eager" />
                 </div>
-              ) : (
-                /* ── Back face: card template with identity hidden ── */
-                <div style={{
-                  width: "100%", aspectRatio: "3/4.2", borderRadius: 18, overflow: "hidden", position: "relative",
-                  boxShadow: meta
-                    ? `0 0 0 2px ${meta.color}88, 0 16px 48px ${meta.glow}, 0 0 60px ${meta.glow}33`
-                    : "0 16px 48px rgba(0,0,0,.6)",
-                }}>
-                  {current && meta && (
-                    <>
-                      {/* Same card template as front */}
-                      <img src={`/cards/${current.rarity}.png`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-                      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.15) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,.72) 75%, rgba(0,0,0,.88) 100%)" }} />
-
-                      {/* Rating badge — show "?" */}
-                      <div className="ac-rating" style={{ background: "rgba(0,0,0,.82)", fontWeight: 1000, color: meta.color, border: `1px solid ${meta.color}44` }}>?</div>
-
-                      {/* Player circle — team logo, smaller */}
-                      <div style={{ position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)", width: "48%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", background: (TEAM_COLORS[current.team] ?? "#1e2438") + "88" }}>
-                        <img
-                          src={current.team_logo}
-                          alt={current.team}
-                          style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.85 }}
-                        />
-                      </div>
-
-                      {/* Player name — hidden */}
-                      <div style={{ position: "absolute", top: "71%", left: 0, right: 0, textAlign: "center", padding: "0 5px" }}>
-                        <div className="ac-name" style={{ fontWeight: 900, color: "rgba(255,255,255,.18)", letterSpacing: ".2em" }}>• • • • •</div>
-                      </div>
-
-                      {/* Year badge */}
-                      <div className="ac-pos" style={{ background: "rgba(0,0,0,.7)", fontWeight: 900, color: "rgba(255,255,255,.75)", letterSpacing: ".05em" }}>2025</div>
-
-                      {/* Swipe hint */}
-                      <div style={{
-                        position: "absolute", bottom: "4%", left: "50%", transform: "translateX(-50%)",
-                        display: "flex", alignItems: "center", gap: 5,
-                        color: "rgba(255,255,255,.32)", fontSize: 9.5, fontWeight: 800,
-                        letterSpacing: ".14em", whiteSpace: "nowrap", textTransform: "uppercase" as const,
-                      }}>
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M5 12h14M12 5l7 7-7 7" />
-                        </svg>
-                        Swipe to reveal
-                      </div>
-                    </>
-                  )}
+                <div style={{ position: "absolute", top: "71%", left: 0, right: 0, textAlign: "center", padding: "0 5px" }}>
+                  <div className="ac-name" style={{ fontWeight: 900, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: `0 0 12px ${meta.glow}` }}>{current.player_name}</div>
                 </div>
-              )}
-
-            </div>
+                <div style={{ position: "absolute", left: "clamp(4px,4.75%,7px)", bottom: "clamp(4px,4.75%,7px)", width: "clamp(16px,17.5%,26px)", height: "clamp(16px,17.5%,26px)", borderRadius: "50%", overflow: "hidden", zIndex: 4, background: "rgba(0,0,0,.55)", border: "1.5px solid var(--border-3)" }}>
+                  <img src={current.team_logo} alt={current.team} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                </div>
+                <div className="ac-pos" style={{ background: "rgba(0,0,0,.7)", fontWeight: 900, color: "rgba(255,255,255,.75)", letterSpacing: ".05em" }}>2025</div>
+              </div>
+            )}
           </div>
-
-          {/* Arrow hint when dragging past threshold (fly-out phase) */}
-          {flipped && dragX < -20 && (
-            <div style={{ position: "absolute", right: -36, top: "50%", transform: "translateY(-50%)", fontSize: 22, opacity: Math.min(1, Math.abs(dragX) / 80), transition: "opacity 0.1s", pointerEvents: "none" }}>→</div>
-          )}
         </div>
 
-        {/* Action button — changes based on phase */}
-        {!flipped ? (
-          <button
-            onClick={() => { if (!flipAnimating && !revealingRarity) completeFlip(); }}
-            disabled={flipAnimating}
-            style={{
-              width: "100%", padding: "15px", borderRadius: 16,
-              border: `1px solid ${meta ? meta.color + "44" : "var(--border-2)"}`,
-              background: meta ? `${meta.color}1a` : "var(--border-2)",
-              color: meta ? meta.color : "var(--text-1)",
-              fontWeight: 900, fontSize: 15,
-              cursor: flipAnimating ? "default" : "pointer",
-              marginBottom: 8, backdropFilter: "blur(12px)",
-              opacity: flipAnimating ? 0.5 : 1,
-            }}
-          >
-            Flip Card
-          </button>
-        ) : (
-          <button
-            onClick={advance}
-            disabled={revealingRarity || flyingOut}
-            style={{
-              width: "100%", padding: "15px", borderRadius: 16, border: "none",
-              background: "var(--border-2)", color: "var(--text-1)",
-              fontWeight: 900, fontSize: 15,
-              cursor: revealingRarity || flyingOut ? "default" : "pointer",
-              marginBottom: 8, backdropFilter: "blur(12px)",
-              opacity: revealingRarity ? 0.4 : 1,
-            }}
-          >
-            {revealingRarity ? "…" : index < cards.length - 1 ? `Next  ·  ${cards.length - index - 1} left` : "View All"}
-          </button>
-        )}
+        {/* Next / View All button */}
+        <button
+          onClick={advance}
+          disabled={revealingRarity}
+          style={{
+            width: "100%", padding: "15px", borderRadius: 16, border: "none",
+            background: meta ? meta.color : "var(--border-2)",
+            color: "#14141e",
+            fontWeight: 900, fontSize: 15,
+            cursor: revealingRarity ? "default" : "pointer",
+            marginBottom: 8,
+            opacity: revealingRarity ? 0.4 : 1,
+            transition: "opacity 0.2s",
+          }}
+        >
+          {revealingRarity ? "…" : index < cards.length - 1 ? `Next  ·  ${cards.length - index - 1} left` : "View All"}
+        </button>
 
         <button onClick={() => setDone(true)} style={{ background: "none", border: "none", color: "rgba(255,255,255,.3)", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: "6px 12px" }}>
           Skip to end

@@ -133,10 +133,10 @@ function foopyColor(value: number) {
 
 const CLUB_FOLDER: Record<string, string> = {
   Adelaide: "crows", "Adelaide Crows": "crows", Brisbane: "lions", "Brisbane Lions": "lions",
-  Carlton: "blues", Collingwood: "magpies", Essendon: "bombers", Fremantle: "dockers",
+  Carlton: "blues", "Carlton Blues": "blues", Collingwood: "magpies", "Collingwood Magpies": "magpies", Essendon: "bombers", "Essendon Bombers": "bombers", Fremantle: "dockers", "Fremantle Dockers": "dockers",
   Geelong: "cats", "Geelong Cats": "cats", "Gold Coast": "suns", GWS: "giants", "GWS Giants": "giants",
-  Hawthorn: "hawks", Melbourne: "demons", "North Melbourne": "kangaroos", "Port Adelaide": "power",
-  Richmond: "tigers", "St Kilda": "saints", Sydney: "swans", "West Coast": "eagles", "Western Bulldogs": "bulldogs",
+  Hawthorn: "hawks", "Hawthorn Hawks": "hawks", Melbourne: "demons", "Melbourne Demons": "demons", "North Melbourne": "kangaroos", "North Melbourne Kangaroos": "kangaroos", "Port Adelaide": "power", "Port Adelaide Power": "power",
+  Richmond: "tigers", "Richmond Tigers": "tigers", "St Kilda": "saints", "St Kilda Saints": "saints", Sydney: "swans", "Sydney Swans": "swans", "West Coast": "eagles", "West Coast Eagles": "eagles", "Western Bulldogs": "bulldogs",
 };
 
 function resolvePlayerImage(name: string, team: string) {
@@ -360,9 +360,16 @@ export default function EventCommentsPage() {
     const players = playerStatsJson as PlayerRecord[];
     const idMatch = eventKey.match(/_p([^_]+)$/);
     const target = idMatch ? Number(idMatch[1]) : null;
-    const found = target != null ? players.find(p => Array.isArray(p.eventIds) && p.eventIds.map(Number).includes(target)) : null;
+    const labelPlayerName = cleanPlayerName(label);
+    const foundByEventId = target != null ? players.find(p => Array.isArray(p.eventIds) && p.eventIds.map(Number).includes(target)) : null;
+    const foundByName = players.find(p => {
+      const primaryName = p.name ?? p.player ?? "";
+      const aliases = Array.isArray((p as any).aliases) ? (p as any).aliases : [];
+      return [primaryName, ...aliases].some(alias => slugify(alias) === slugify(labelPlayerName));
+    });
+    const found = foundByEventId ?? foundByName ?? null;
     const team = searchParams.get("team") || found?.club || found?.team || "";
-    const playerName = found?.name ?? found?.player ?? cleanPlayerName(label);
+    const playerName = found?.name ?? found?.player ?? labelPlayerName;
     const img = playerName ? resolvePlayerImage(playerName, team) : "";
     return { playerName, team, img };
   }, [isPlayerComment, eventParts, label, searchParams]);
@@ -940,7 +947,9 @@ const TEAM_COLOR_MAP: Record<string, { primary: string; bg: string }> = {
 };
 
 function getTeamColors(team: string) {
-  return TEAM_COLOR_MAP[team.toLowerCase().trim()] ?? { primary: "#3b82f6", bg: "#0d1b44" };
+  const key = team.toLowerCase().trim();
+  const folderKey = CLUB_FOLDER[team] ?? CLUB_FOLDER[team.trim()] ?? Object.entries(CLUB_FOLDER).find(([name]) => name.toLowerCase() === key)?.[1] ?? "";
+  return TEAM_COLOR_MAP[key] ?? TEAM_COLOR_MAP[folderKey] ?? { primary: "#3b82f6", bg: "#0d1b44" };
 }
 
 function PollStatCard({ question, stat, pollType, stats }: {
@@ -1103,11 +1112,17 @@ function PlayerCardHeader({ name, img, team, rating, slug }: { name: string; img
   );
 }
 
-function CommentBody({ text }: { text: string }) {
+function InlineCommentBody({ name, username, text }: { name: string; username?: string; text: string }) {
   const router = useRouter();
   const parts = text.split(/(@\w+)/g);
   return (
     <p style={commentBodyStyle}>
+      <span
+        onClick={() => username && router.push(`/profile/${username}`)}
+        style={{ fontWeight: 900, marginRight: 6, cursor: username ? "pointer" : "default", color: "var(--text-1)" }}
+      >
+        {name}
+      </span>
       {parts.map((part, i) =>
         /^@\w+$/.test(part) ? (
           <span
@@ -1154,7 +1169,7 @@ function CommentRow({
   const replyCount = comment.replies.length;
 
   return (
-    <article id={`c-${comment.id}`} style={{ ...commentRowStyle, marginLeft: isReply ? 42 : 0 }}>
+    <article id={`c-${comment.id}`} style={{ ...commentRowStyle, paddingLeft: isReply ? 54 : 16 }}>
       <div
         onClick={() => username && router.push(`/profile/${username}`)}
         style={{ ...avatarStyle, cursor: username ? "pointer" : "default" }}
@@ -1167,52 +1182,59 @@ function CommentRow({
       </div>
 
       <div style={commentMainStyle}>
-        <div style={commentBubbleStyle}>
-          <div style={commentMetaStyle}>
-            <span style={commentNameStyle}>{name}</span>
+        <div style={{ minWidth: 0 }}>
+          <InlineCommentBody name={name} username={username} text={comment.body} />
+
+          <div style={commentActionsStyle}>
             <span style={commentTimeStyle}>{formatCommentTime(comment.created_at)}</span>
+            {userId && !hideThreadActions && (
+              <>
+                <button onClick={() => onReply(comment)} style={actionBtnStyle}>Reply</button>
+                {isOwn && (
+                  <button onClick={() => onDelete(comment)} style={{ ...actionBtnStyle, color: "#ef4444" }}>Delete</button>
+                )}
+              </>
+            )}
+            {isOwn && hideThreadActions && (
+              <button onClick={() => onDelete(comment)} style={{ ...actionBtnStyle, color: "#ef4444" }}>Delete</button>
+            )}
           </div>
 
-          <CommentBody text={comment.body} />
-        </div>
-
-        <div style={commentActionsStyle}>
-          <button
-            onClick={() => onLike(comment)}
-            disabled={!userId || isLiking}
-            style={{
-              ...actionBtnStyle,
-              color: comment.liked ? "#f43f5e" : "#64748b",
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-              opacity: isLiking ? 0.5 : 1,
-            }}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill={comment.liked ? "#f43f5e" : "none"} stroke={comment.liked ? "#f43f5e" : "currentColor"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-            </svg>
-            {comment.likes > 0 && <span>{comment.likes}</span>}
-          </button>
-
-          {userId && !hideThreadActions && (
-            <button onClick={() => onReply(comment)} style={actionBtnStyle}>
-              Reply
-            </button>
-          )}
-
-          {isOwn && (
-            <button onClick={() => onDelete(comment)} style={{ ...actionBtnStyle, color: "#ef4444" }}>
-              Delete
+          {replyCount > 0 && !hideThreadActions && (
+            <button onClick={() => onViewReplies(comment)} style={viewRepliesBtnStyle}>
+              <span style={{ width: 24, height: 1, background: "var(--border-2)", display: "inline-block" }} />
+              {`View ${replyCount} ${replyCount === 1 ? "reply" : "replies"}`}
             </button>
           )}
         </div>
 
-        {replyCount > 0 && !hideThreadActions && (
-          <button onClick={() => onViewReplies(comment)} style={viewRepliesBtnStyle}>
-            {`View ${replyCount} ${replyCount === 1 ? "reply" : "replies"}`}
-          </button>
-        )}
+        <button
+          onClick={() => onLike(comment)}
+          disabled={!userId || isLiking}
+          aria-label={comment.liked ? "Unlike comment" : "Like comment"}
+          style={{
+            width: 30,
+            minHeight: 42,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "flex-start",
+            gap: 3,
+            background: "none",
+            border: "none",
+            padding: "3px 0 0",
+            fontSize: 11,
+            fontWeight: 800,
+            cursor: userId ? "pointer" : "default",
+            color: comment.liked ? "#f43f5e" : "var(--text-3)",
+            opacity: isLiking ? 0.5 : 1,
+          }}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill={comment.liked ? "#f43f5e" : "none"} stroke={comment.liked ? "#f43f5e" : "currentColor"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+          </svg>
+          {comment.likes > 0 && <span>{comment.likes}</span>}
+        </button>
       </div>
     </article>
   );
@@ -1251,15 +1273,16 @@ function RepliesPopup({
     const ok = await onSubmitReply(comment, replyBody);
     if (ok) setReplyBody("");
   }
+  const focusReplyInput = () => setTimeout(() => inputRef.current?.focus(), 0);
 
   return (
     <div style={replyModalBackdropStyle} onClick={onClose}>
       <section style={replyModalStyle} onClick={(event) => event.stopPropagation()}>
         <div style={replyModalHeaderStyle}>
-          <div>
-            <div style={replyModalTitleStyle}>Replies</div>
-            <div style={replyModalSubStyle}>{comment.replies.length} {comment.replies.length === 1 ? "reply" : "replies"}</div>
-          </div>
+          <span style={{ display: "flex", alignItems: "baseline", gap: 6, fontSize: 15, fontWeight: 900, color: "var(--text-1)" }}>
+            Replies
+            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-3)" }}>{comment.replies.length > 0 ? comment.replies.length : ""}</span>
+          </span>
           <button onClick={onClose} style={replyModalCloseStyle}>×</button>
         </div>
 
@@ -1269,7 +1292,7 @@ function RepliesPopup({
             userId={userId}
             onLike={onLike}
             onDelete={onDelete}
-            onReply={onReply}
+            onReply={() => focusReplyInput()}
             likingIds={likingIds}
             onViewReplies={onViewReplies}
             hideThreadActions
@@ -1287,10 +1310,9 @@ function RepliesPopup({
                 userId={userId}
                 onLike={onLike}
                 onDelete={onDelete}
-                onReply={onReply}
+                onReply={() => focusReplyInput()}
                 likingIds={likingIds}
                 onViewReplies={onViewReplies}
-                isReply
               />
             ))
           )}
@@ -1575,7 +1597,7 @@ const errorStyle: CSSProperties = {
 
 const listStyle: CSSProperties = {
   flex: 1,
-  padding: "4px 14px 20px",
+  padding: "10px 0 4px",
 };
 
 const centreStyle: CSSProperties = {
@@ -1615,13 +1637,14 @@ const emptySubStyle: CSSProperties = {
 
 const commentRowStyle: CSSProperties = {
   display: "flex",
+  alignItems: "flex-start",
   gap: 10,
-  padding: "10px 0",
+  padding: "12px 16px 6px",
 };
 
 const avatarStyle: CSSProperties = {
-  width: 36,
-  height: 36,
+  width: 34,
+  height: 34,
   borderRadius: "50%",
   background: "var(--surface-2)",
   border: "1px solid var(--border-2)",
@@ -1639,7 +1662,7 @@ const avatarImgStyle: CSSProperties = {
 };
 
 const avatarInitialStyle: CSSProperties = {
-  fontSize: 14,
+  fontSize: 13,
   fontWeight: 950,
   color: "#60a5fa",
 };
@@ -1647,39 +1670,22 @@ const avatarInitialStyle: CSSProperties = {
 const commentMainStyle: CSSProperties = {
   flex: 1,
   minWidth: 0,
-};
-
-const commentBubbleStyle: CSSProperties = {
-  background: "var(--surface-3)",
-  border: "1px solid var(--border-2)",
-  borderRadius: 18,
-  borderTopLeftRadius: 4,
-  padding: "10px 14px",
-};
-
-const commentMetaStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 7,
-  marginBottom: 5,
-};
-
-const commentNameStyle: CSSProperties = {
-  fontSize: 13,
-  fontWeight: 900,
-  color: "var(--text-1)",
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr) auto",
+  columnGap: 10,
 };
 
 const commentTimeStyle: CSSProperties = {
   fontSize: 11,
   color: "var(--text-3)",
-  fontWeight: 800,
+  fontWeight: 600,
+  flexShrink: 0,
 };
 
 const commentBodyStyle: CSSProperties = {
   margin: 0,
   fontSize: 14,
-  lineHeight: 1.45,
+  lineHeight: 1.5,
   color: "var(--text-1)",
   wordBreak: "break-word",
   whiteSpace: "pre-wrap",
@@ -1688,29 +1694,30 @@ const commentBodyStyle: CSSProperties = {
 const commentActionsStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: 16,
-  paddingLeft: 8,
-  marginTop: 8,
+  gap: 12,
+  marginTop: 5,
 };
 
 const actionBtnStyle: CSSProperties = {
   background: "none",
   border: "none",
   padding: 0,
-  color: "var(--text-2)",
+  color: "var(--text-3)",
   fontSize: 12,
-  fontWeight: 850,
+  fontWeight: 800,
   cursor: "pointer",
 };
 
 const viewRepliesBtnStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
   marginTop: 8,
-  marginLeft: 8,
   background: "none",
   border: "none",
-  color: "#60a5fa",
+  color: "var(--text-3)",
   fontSize: 12,
-  fontWeight: 900,
+  fontWeight: 800,
   cursor: "pointer",
   padding: 0,
 };
@@ -1719,20 +1726,22 @@ const replyModalBackdropStyle: CSSProperties = {
   position: "fixed",
   inset: 0,
   zIndex: 9998,
-  background: "rgba(0,0,0,0.72)",
+  background: "rgba(0,0,0,0.68)",
   display: "flex",
-  alignItems: "flex-end",
+  alignItems: "center",
   justifyContent: "center",
+  padding: "18px 10px",
 };
 
 const replyModalStyle: CSSProperties = {
   width: "100%",
-  maxHeight: "85dvh",
+  maxWidth: 720,
+  height: "min(82dvh, 720px)",
   background: "var(--bg)",
   border: "1px solid var(--border-2)",
-  borderBottom: "none",
-  borderRadius: "20px 20px 0 0",
+  borderRadius: 18,
   overflow: "hidden",
+  boxShadow: "0 24px 80px rgba(0,0,0,0.68)",
   display: "flex",
   flexDirection: "column",
 };
@@ -1741,34 +1750,37 @@ const replyModalHeaderStyle: CSSProperties = {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
-  padding: "14px 16px",
-  borderBottom: "1px solid var(--border-2)",
+  padding: "10px 16px 11px",
+  borderBottom: "1px solid var(--border-1)",
 };
 
-const replyModalTitleStyle: CSSProperties = { color: "var(--text-1)", fontSize: 16, fontWeight: 1000 };
-const replyModalSubStyle: CSSProperties = { marginTop: 2, color: "var(--text-3)", fontSize: 12, fontWeight: 800 };
-
 const replyModalCloseStyle: CSSProperties = {
-  width: 34,
-  height: 34,
+  width: 30,
+  height: 30,
   borderRadius: "50%",
-  border: "1px solid var(--border-2)",
-  background: "var(--surface-3)",
+  border: "none",
+  background: "var(--border-1)",
+  backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17' viewBox='0 0 24 24' fill='none' stroke='%23e5e7eb' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='18' y1='6' x2='6' y2='18'/%3E%3Cline x1='6' y1='6' x2='18' y2='18'/%3E%3C/svg%3E\")",
+  backgroundRepeat: "no-repeat",
+  backgroundPosition: "center",
+  backgroundSize: "17px 17px",
   color: "var(--text-1)",
-  fontSize: 24,
+  fontSize: 0,
   lineHeight: 1,
   cursor: "pointer",
 };
 
 const replyModalParentStyle: CSSProperties = {
-  padding: "4px 0 10px",
-  borderBottom: "1px solid var(--border-2)",
+  padding: "4px 0 12px",
+  borderBottom: "1px solid var(--border-1)",
+  flexShrink: 0,
 };
 
 const replyModalRepliesStyle: CSSProperties = {
   flex: 1,
   overflowY: "auto",
   padding: "8px 0 14px",
+  minHeight: 0,
 };
 
 const replyModalEmptyStyle: CSSProperties = {
@@ -1782,9 +1794,11 @@ const replyModalEmptyStyle: CSSProperties = {
 const replyModalInputStyle: CSSProperties = {
   flexShrink: 0,
   padding: "10px 14px",
-  paddingBottom: "calc(12px + env(safe-area-inset-bottom))",
+  paddingBottom: 12,
   borderTop: "1px solid var(--border-2)",
   background: "var(--bottom-nav-bg)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
 };
 
 const inputAreaStyle: CSSProperties = {

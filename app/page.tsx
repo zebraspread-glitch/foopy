@@ -37,6 +37,7 @@ type TopPlayer = {
   image: string;
   rating: number;
   teamColor: string;
+  isLive?: boolean;
 };
 
 type StatLeader = {
@@ -986,6 +987,37 @@ export default function HomePage() {
 
   const roundStarted = shownGames.some((g) => getStatus(g) !== "UPCOMING");
 
+  // Live player stats: keyed by API-Sports game ID → flat array of player entries
+  const [livePlayerStats, setLivePlayerStats] = useState<Record<string, any[]>>({});
+
+  useEffect(() => {
+    const liveGames = shownGames.filter((g) => getStatus(g) === "LIVE");
+    if (liveGames.length === 0) { setLivePlayerStats({}); return; }
+
+    async function fetchLive() {
+      const results: Record<string, any[]> = {};
+      await Promise.all(
+        liveGames.map(async (g) => {
+          const apiId =
+            (API_SPORTS_MATCH_IDS as Record<string, string>)[String(g.id)] ?? String(g.id);
+          try {
+            const res = await fetch(`/api/afl/player-stats?id=${apiId}`);
+            if (!res.ok) return;
+            const data = await res.json();
+            const teams: any[] = data?.response?.[0]?.teams ?? [];
+            const players = teams.flatMap((t: any) => t.players ?? []);
+            if (players.length > 0) results[apiId] = players;
+          } catch {}
+        })
+      );
+      setLivePlayerStats(results);
+    }
+
+    fetchLive();
+    const interval = setInterval(fetchLive, 30_000);
+    return () => clearInterval(interval);
+  }, [shownGames]);
+
   const topPlayers = useMemo(() => {
     type RawGameEntry = {
       teams?: Array<{
@@ -1075,10 +1107,62 @@ free_kicks?: {
       }
     }
 
+    // Merge live game player stats
+    for (const players of Object.values(livePlayerStats)) {
+      for (const playerEntry of players) {
+        const apiPlayerId = playerEntry?.player?.id;
+        if (!apiPlayerId) continue;
+
+        const found = playerData.find(
+          (p) =>
+            p.apiSportsId === apiPlayerId ||
+            idListIncludes(p.eventIds, apiPlayerId) ||
+            idListIncludes(p.statsIds, apiPlayerId)
+        );
+        if (!found) continue;
+
+        const name = String(found.name || "").trim();
+        if (!name) continue;
+
+        // stats may be nested under .statistics or flat on the entry itself
+        const s = playerEntry.statistics ?? playerEntry;
+        const rating = foopyRating({
+          goals:        s.goals?.total      ?? s.goals,
+          goalAssists:  s.goals?.assists     ?? s.goalAssists ?? s.goal_assists,
+          behinds:      s.behinds,
+          kicks:        s.kicks,
+          handballs:    s.handballs,
+          marks:        s.marks,
+          tackles:      s.tackles,
+          hitouts:      s.hitouts,
+          disposals:    s.disposals,
+          clearances:   s.clearances?.total ?? s.clearances,
+          freesFor:     s.free_kicks?.for   ?? s.freesFor    ?? s.frees_for,
+          freesAgainst: s.free_kicks?.against ?? s.freesAgainst ?? s.frees_against,
+        });
+        if (rating <= 0) continue;
+
+        const playerTeam = found.team ?? found.club ?? "";
+        const image = playerImagePath(name, playerTeam);
+        const item: TopPlayer = {
+          name,
+          team: playerTeam,
+          image,
+          rating,
+          teamColor: getTeamColorFromName(playerTeam),
+          isLive: true,
+        };
+        const existing = bestByName.get(name);
+        if (!existing || item.rating > existing.rating) {
+          bestByName.set(name, item);
+        }
+      }
+    }
+
     return Array.from(bestByName.values())
       .sort((a, b) => b.rating - a.rating)
       .slice(0, 10);
-  }, [shownGames]);
+  }, [shownGames, livePlayerStats]);
 
   const statLeaders = useMemo(() => {
     type RawEntry = {
@@ -2587,6 +2671,7 @@ const topPlayersGridStyle: React.CSSProperties = {
 };
 
 const topPlayerTileStyle: React.CSSProperties = {
+  position: "relative",
   minWidth: 0,
   width: "100%",
   display: "flex",

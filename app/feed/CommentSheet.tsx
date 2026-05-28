@@ -306,6 +306,14 @@ export default function CommentSheet({ gameId, gameLabel, eventKey, onClose }: P
 
 /* ── Comment Row ── */
 
+function feedRelTime(dateString: string) {
+  const diff = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
+  if (diff < 60) return "now";
+  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
+  return new Date(dateString).toLocaleDateString("en-AU", { day: "numeric", month: "short" });
+}
+
 function CommentRow({
   comment,
   userId,
@@ -330,11 +338,7 @@ function CommentRow({
   const isOwn = userId === comment.user_id;
   const isLiked = comment.liked;
   const isLiking = liking.has(comment.id);
-
-  const time = new Date(comment.created_at).toLocaleTimeString("en-AU", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const time = feedRelTime(comment.created_at);
 
   return (
     <div style={{ ...commentRowStyle, paddingLeft: isReply ? 48 : 16 }}>
@@ -347,38 +351,33 @@ function CommentRow({
       </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
-        {/* Name + time */}
-        <div style={commentMetaStyle}>
+        {/* Inline username + body (Instagram style) */}
+        <p style={commentBodyStyle}>
           <span style={commentNameStyle}>{name}</span>
-          <span style={commentTimeStyle}>{time}</span>
-        </div>
+          {" "}{comment.body}
+        </p>
 
-        {/* Body */}
-        <p style={commentBodyStyle}>{comment.body}</p>
-
-        {/* Actions */}
+        {/* Actions row: time · like · reply · delete */}
         <div style={commentActionsStyle}>
-          {/* Like */}
+          <span style={commentTimeStyle}>{time}</span>
           <button
             onClick={() => onLike(comment)}
             disabled={!userId || isLiking}
             style={{
               ...actionBtnStyle,
-              color: isLiked ? "#f43f5e" : "#64748b",
+              color: isLiked ? "#f43f5e" : "var(--text-3)",
               opacity: isLiking ? 0.5 : 1,
+              gap: 4,
             }}
           >
             <HeartIcon filled={!!isLiked} />
-            {comment.likes > 0 && <span style={{ marginLeft: 4 }}>{comment.likes}</span>}
+            {comment.likes > 0 && <span>{comment.likes}</span>}
           </button>
-
           {userId && (
             <button onClick={() => onReply(comment)} style={{ ...actionBtnStyle, color: "var(--text-3)" }}>
               Reply
             </button>
           )}
-
-          {/* Delete */}
           {isOwn && (
             <button onClick={() => onDelete(comment.id)} style={{ ...actionBtnStyle, color: "#ef4444" }}>
               Delete
@@ -550,8 +549,7 @@ const emptyStyle: CSSProperties = {
 const commentRowStyle: CSSProperties = {
   display: "flex",
   gap: 10,
-  padding: "12px 16px 8px",
-  borderBottom: "1px solid var(--border-1)",
+  padding: "10px 16px 6px",
 };
 
 const avatarStyle: CSSProperties = {
@@ -572,17 +570,11 @@ const avatarInitialStyle: CSSProperties = {
   color: "#60a5fa",
 };
 
-const commentMetaStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-  marginBottom: 4,
-};
-
 const commentNameStyle: CSSProperties = {
+  fontWeight: 900,
   fontSize: 13,
-  fontWeight: 800,
   color: "var(--text-1)",
+  marginRight: 5,
 };
 
 const commentTimeStyle: CSSProperties = {
@@ -592,7 +584,7 @@ const commentTimeStyle: CSSProperties = {
 };
 
 const commentBodyStyle: CSSProperties = {
-  margin: 0,
+  margin: "0 0 0 0",
   fontSize: 14,
   color: "var(--text-1)",
   lineHeight: 1.5,
@@ -602,8 +594,8 @@ const commentBodyStyle: CSSProperties = {
 const commentActionsStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: 14,
-  marginTop: 8,
+  gap: 12,
+  marginTop: 5,
 };
 
 const actionBtnStyle: CSSProperties = {

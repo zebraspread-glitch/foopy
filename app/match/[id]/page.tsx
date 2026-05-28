@@ -4140,6 +4140,28 @@ function CommentBody({ text }: { text: string }) {
   );
 }
 
+function MCCommentBody({ name, username, text }: { name: string; username?: string; text: string }) {
+  const router = useRouter();
+  const parts = text.split(/(@\w+)/g);
+  return (
+    <p style={{ margin: 0, fontSize: 14, color: "var(--text-1)", lineHeight: 1.5, wordBreak: "break-word" }}>
+      <span
+        onClick={() => username && router.push(`/profile/${username}`)}
+        style={{ fontWeight: 900, marginRight: 6, cursor: username ? "pointer" : "default" }}
+      >
+        {name}
+      </span>
+      {parts.map((part, i) =>
+        /^@\w+$/.test(part) ? (
+          <span key={i} onClick={() => router.push(`/profile/${part.slice(1)}`)} style={{ color: "#60a5fa", fontWeight: 700, cursor: "pointer" }}>
+            {part}
+          </span>
+        ) : part
+      )}
+    </p>
+  );
+}
+
 function MCRow({ comment, userId, onLike, onDelete, onReply, onViewReplies, liking, isReply = false, hideRepliesToggle = false }: {
   comment: MatchComment; userId: string | null;
   onLike: (c: MatchComment) => void; onDelete: (id: string) => void;
@@ -4168,29 +4190,23 @@ function MCRow({ comment, userId, onLike, onDelete, onReply, onViewReplies, liki
 
       <div style={{ flex: 1, minWidth: 0, display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", columnGap: 10 }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 7, marginBottom: 2, minWidth: 0 }}>
-            <span
-              onClick={() => username && router.push(`/profile/${username}`)}
-              style={{ fontSize: 12, fontWeight: 950, color: "var(--text-1)", cursor: username ? "pointer" : "default", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "70%" }}
-            >
-              {name}
-            </span>
-            <span style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 700, flexShrink: 0 }}>{mcRelTime(comment.created_at)}</span>
-          </div>
-          <CommentBody text={comment.body} />
+          <MCCommentBody name={name} username={username} text={comment.body} />
 
-          {userId && (
-            <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 6 }}>
-              <button onClick={() => onReply(comment)} style={{ background: "none", border: "none", padding: 0, fontSize: 12, fontWeight: 800, cursor: "pointer", color: "var(--text-3)" }}>
-                Reply
-              </button>
-              {isOwn && (
-                <button onClick={() => onDelete(comment.id)} style={{ background: "none", border: "none", padding: 0, fontSize: 12, fontWeight: 800, cursor: "pointer", color: "#ef4444" }}>
-                  Delete
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 5 }}>
+            <span style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 600 }}>{mcRelTime(comment.created_at)}</span>
+            {userId && (
+              <>
+                <button onClick={() => onReply(comment)} style={{ background: "none", border: "none", padding: 0, fontSize: 12, fontWeight: 700, cursor: "pointer", color: "var(--text-3)" }}>
+                  Reply
                 </button>
-              )}
-            </div>
-          )}
+                {isOwn && (
+                  <button onClick={() => onDelete(comment.id)} style={{ background: "none", border: "none", padding: 0, fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#ef4444" }}>
+                    Delete
+                  </button>
+                )}
+              </>
+            )}
+          </div>
 
           {!hideRepliesToggle && replyCount > 0 && (
             <button

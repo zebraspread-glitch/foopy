@@ -5193,8 +5193,8 @@
     "name": "Will Day",
     "team": "Hawthorn",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 829,
+    "eventIds": 829,
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.compp-hawthorn-hawks--will-day"
   },
@@ -7759,8 +7759,8 @@
     "name": "Tobie Travaglia",
     "team": "St Kilda",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1918,
+    "eventIds": 1918,
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.compp-st-kilda-saints--tobie-travaglia"
   },
