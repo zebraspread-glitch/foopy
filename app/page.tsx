@@ -230,13 +230,23 @@ function getDayLabel(date: string, showDate = false): string {
   return gameDate.toLocaleString("en-AU", { weekday: "short" });
 }
 
+function formatGameTimestr(timestr?: string) {
+  const t = (timestr ?? "").toLowerCase();
+  if (!t) return "";
+  if (t.startsWith("1/4") || t.includes("quarter time")) return "QTR TIME";
+  if (t.startsWith("1/2") || t.includes("half time")) return "HALF TIME";
+  if (t.startsWith("3/4") || t.includes("three quarter")) return "3QTR TIME";
+  if (t.startsWith("full time") || t.includes("full time")) return "FULL TIME";
+  return timestr ?? "";
+}
+
 function getTime(game: Game, showDate = false) {
   const status = getStatus(game);
 
   if (status === "COMPLETED") return "Full Time";
 
   if (status === "LIVE") {
-    if (game.timestr) return game.timestr;
+    if (game.timestr) return formatGameTimestr(game.timestr);
     return "Live";
   }
 
@@ -265,7 +275,7 @@ function getTime(game: Game, showDate = false) {
 function getTimeOnly(game: Game) {
   const status = getStatus(game);
   if (status === "COMPLETED") return "Full Time";
-  if (status === "LIVE") return game.timestr || "Live";
+  if (status === "LIVE") return formatGameTimestr(game.timestr) || "Live";
 
   if (game.timestr) {
     const spaceIdx = game.timestr.indexOf(" ");

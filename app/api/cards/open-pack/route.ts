@@ -13,13 +13,31 @@ const supabaseAdmin = createClient(
 // ── Types ────────────────────────────────────────────────────────────────────
 
 type Rarity = "bronze" | "silver" | "gold" | "emerald" | "sapphire" | "ruby" | "amethyst" | "diamond" | "pinkdiamond" | "mythic";
-type PackType = "starter" | "general" | "mythical";
+type PackType =
+  | "starter" | "general" | "mythical"
+  | "team_crows" | "team_lions" | "team_blues" | "team_magpies" | "team_bombers"
+  | "team_dockers" | "team_cats" | "team_suns" | "team_giants" | "team_hawks"
+  | "team_demons" | "team_kangaroos" | "team_power" | "team_tigers" | "team_saints"
+  | "team_swans" | "team_eagles" | "team_bulldogs";
 
 interface PackConfig {
   cost: number;
   normalCount: number;
   normalOdds: Record<Rarity, number>;
   guaranteedMythic: boolean;
+  /** If set, only pick players whose folder matches this slug */
+  teamFolder?: string;
+}
+
+// ── Shared odds ───────────────────────────────────────────────────────────────
+
+const GENERAL_ODDS: Record<Rarity, number> = {
+  bronze: 50, silver: 24, gold: 12, emerald: 6,
+  sapphire: 3.5, ruby: 2, amethyst: 1, diamond: 0.35, pinkdiamond: 0.1, mythic: 0.05,
+};
+
+function teamPackConfig(folder: string): PackConfig {
+  return { cost: 500, normalCount: 7, normalOdds: GENERAL_ODDS, guaranteedMythic: false, teamFolder: folder };
 }
 
 // ── Pack configs ─────────────────────────────────────────────────────────────
@@ -34,7 +52,7 @@ const PACK_CONFIGS: Record<PackType, PackConfig> = {
   general: {
     cost: 200,
     normalCount: 7,
-    normalOdds: { bronze: 50, silver: 24, gold: 12, emerald: 6, sapphire: 3.5, ruby: 2, amethyst: 1, diamond: 0.35, pinkdiamond: 0.1, mythic: 0.05 },
+    normalOdds: GENERAL_ODDS,
     guaranteedMythic: false,
   },
   mythical: {
@@ -43,6 +61,25 @@ const PACK_CONFIGS: Record<PackType, PackConfig> = {
     normalOdds: { bronze: 18, silver: 22, gold: 20, emerald: 15, sapphire: 10, ruby: 7, amethyst: 4, diamond: 2, pinkdiamond: 1, mythic: 0 },
     guaranteedMythic: true,
   },
+  // ── Team packs ───────────────────────────────────────────────────────────
+  team_crows:     teamPackConfig("crows"),
+  team_lions:     teamPackConfig("lions"),
+  team_blues:     teamPackConfig("blues"),
+  team_magpies:   teamPackConfig("magpies"),
+  team_bombers:   teamPackConfig("bombers"),
+  team_dockers:   teamPackConfig("dockers"),
+  team_cats:      teamPackConfig("cats"),
+  team_suns:      teamPackConfig("suns"),
+  team_giants:    teamPackConfig("giants"),
+  team_hawks:     teamPackConfig("hawks"),
+  team_demons:    teamPackConfig("demons"),
+  team_kangaroos: teamPackConfig("kangaroos"),
+  team_power:     teamPackConfig("power"),
+  team_tigers:    teamPackConfig("tigers"),
+  team_saints:    teamPackConfig("saints"),
+  team_swans:     teamPackConfig("swans"),
+  team_eagles:    teamPackConfig("eagles"),
+  team_bulldogs:  teamPackConfig("bulldogs"),
 };
 
 // ── Rating ranges per rarity ─────────────────────────────────────────────────
@@ -104,12 +141,18 @@ export async function POST(req: NextRequest) {
   // ── 1. Generate assignments first (pure JS, zero DB) ─────────────────────
   // Doing this before any DB call lets us query existing cards in parallel
   // with the balance check, saving one full serial round trip.
+  const playerPool = config.teamFolder
+    ? CARD_PLAYERS.filter(p => p.folder === config.teamFolder)
+    : CARD_PLAYERS;
+  // Fallback to full pool if team folder has no players (shouldn't happen)
+  const pool = playerPool.length > 0 ? playerPool : CARD_PLAYERS;
+
   const assignments = Array.from({ length: config.normalCount }, () => {
     const rarity = rollRarity(config.normalOdds);
-    return { player: pickRandom(CARD_PLAYERS), rarity, rating: generateRating(rarity) };
+    return { player: pickRandom(pool), rarity, rating: generateRating(rarity) };
   });
   if (config.guaranteedMythic) {
-    assignments.push({ player: pickRandom(CARD_PLAYERS), rarity: "mythic" as Rarity, rating: 100 });
+    assignments.push({ player: pickRandom(pool), rarity: "mythic" as Rarity, rating: 100 });
   }
   const uniquePlayerIds = [...new Set(assignments.map(a => a.player.id))];
 

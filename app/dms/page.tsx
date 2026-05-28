@@ -289,7 +289,7 @@ function DMsPageInner() {
     const chatIds = memberships.map((m: any) => m.group_chat_id);
     const [chatsRes, allMembersRes, recentMsgsRes] = await Promise.all([
       // Try with all columns; falls back below if migration columns don't exist yet
-      supabase.from("group_chats").select("id, team_name, is_public, created_by, description").in("id", chatIds),
+      supabase.from("group_chats").select("id, team_name, is_public, created_by, description, image_url").in("id", chatIds),
       supabase.from("group_chat_members").select("group_chat_id").in("group_chat_id", chatIds),
       supabase.from("group_chat_messages").select("id, group_chat_id, content, created_at, sender_id").in("group_chat_id", chatIds).order("created_at", { ascending: false }).limit(200),
     ]);
@@ -297,7 +297,7 @@ function DMsPageInner() {
     // fall back to the base columns so existing members still see their chats.
     let chatsData: any[] = chatsRes.data ?? [];
     if (!chatsRes.data && chatsRes.error) {
-      const { data: fallback } = await supabase.from("group_chats").select("id, team_name").in("id", chatIds);
+      const { data: fallback } = await supabase.from("group_chats").select("id, team_name, image_url").in("id", chatIds);
       chatsData = (fallback ?? []).map((c: any) => ({ ...c, is_public: true, created_by: null, description: null }));
     }
     const membershipMap: Record<string, string | null> = {};
@@ -318,6 +318,7 @@ function DMsPageInner() {
     }
     setGroupChats(chatsData.map((c: any) => ({
       id: c.id, team_name: c.team_name, is_public: c.is_public ?? true, created_by: c.created_by ?? null, description: c.description ?? null,
+      image_url: c.image_url ?? null,
       member_count: memberCounts[c.id] ?? 0, last_message: lastMsgMap[c.id] ?? null,
       unread: unreadMap[c.id] ?? 0, last_read_at: membershipMap[c.id] ?? null,
     })).sort((a, b) => {

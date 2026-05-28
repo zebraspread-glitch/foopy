@@ -11,7 +11,12 @@ import { PlayerCard as SharedPlayerCard } from "@/app/components/PlayerCard";
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type Rarity = "bronze" | "silver" | "gold" | "emerald" | "sapphire" | "ruby" | "amethyst" | "diamond" | "pinkdiamond" | "mythic";
-type PackType = "starter" | "general" | "mythical" | "daily";
+type PackType =
+  | "starter" | "general" | "mythical" | "daily"
+  | "team_crows" | "team_lions" | "team_blues" | "team_magpies" | "team_bombers"
+  | "team_dockers" | "team_cats" | "team_suns" | "team_giants" | "team_hawks"
+  | "team_demons" | "team_kangaroos" | "team_power" | "team_tigers" | "team_saints"
+  | "team_swans" | "team_eagles" | "team_bulldogs";
 type SortKey = "newest" | "rating_desc" | "rating_asc" | "rarity";
 
 interface UserCard {
@@ -137,6 +142,36 @@ const PACKS: { type: PackType; label: string; cost: number; cards: string; image
   },
 ];
 
+// Team packs — separate list so they render in their own section
+const TEAM_PACKS: { type: PackType; label: string; cost: number; cards: string; image: string; accent: string; description: string }[] = [
+  { type: "team_crows",     label: "Adelaide Crows",     cost: 500, cards: "7 cards", image: "/packs/crows.png",     accent: "#e8c84a", description: "Adelaide Crows · 7 team cards" },
+  { type: "team_lions",     label: "Brisbane Lions",     cost: 500, cards: "7 cards", image: "/packs/lions.png",     accent: "#e8860f", description: "Brisbane Lions · 7 team cards" },
+  { type: "team_blues",     label: "Carlton",            cost: 500, cards: "7 cards", image: "/packs/blues.png",     accent: "#60a5fa", description: "Carlton Blues · 7 team cards" },
+  { type: "team_magpies",   label: "Collingwood",        cost: 500, cards: "7 cards", image: "/packs/magpies.png",   accent: "#e0e0e0", description: "Collingwood Magpies · 7 team cards" },
+  { type: "team_bombers",   label: "Essendon",           cost: 500, cards: "7 cards", image: "/packs/bombers.png",   accent: "#ef4444", description: "Essendon Bombers · 7 team cards" },
+  { type: "team_dockers",   label: "Fremantle",          cost: 500, cards: "7 cards", image: "/packs/dockers.png",   accent: "#a855f7", description: "Fremantle Dockers · 7 team cards" },
+  { type: "team_cats",      label: "Geelong",            cost: 500, cards: "7 cards", image: "/packs/cats.png",      accent: "#3b82f6", description: "Geelong Cats · 7 team cards" },
+  { type: "team_suns",      label: "Gold Coast",         cost: 500, cards: "7 cards", image: "/packs/suns.png",      accent: "#f59e0b", description: "Gold Coast Suns · 7 team cards" },
+  { type: "team_giants",    label: "GWS Giants",         cost: 500, cards: "7 cards", image: "/packs/giants.png",    accent: "#f97316", description: "GWS Giants · 7 team cards" },
+  { type: "team_hawks",     label: "Hawthorn",           cost: 500, cards: "7 cards", image: "/packs/hawks.png",     accent: "#d97706", description: "Hawthorn Hawks · 7 team cards" },
+  { type: "team_demons",    label: "Melbourne",          cost: 500, cards: "7 cards", image: "/packs/demons.png",    accent: "#ef4444", description: "Melbourne Demons · 7 team cards" },
+  { type: "team_kangaroos", label: "North Melbourne",    cost: 500, cards: "7 cards", image: "/packs/kangaroos.png", accent: "#60a5fa", description: "North Melbourne Kangaroos · 7 team cards" },
+  { type: "team_power",     label: "Port Adelaide",      cost: 500, cards: "7 cards", image: "/packs/power.png",     accent: "#06b6d4", description: "Port Adelaide Power · 7 team cards" },
+  { type: "team_tigers",    label: "Richmond",           cost: 500, cards: "7 cards", image: "/packs/tigers.png",    accent: "#facc15", description: "Richmond Tigers · 7 team cards" },
+  { type: "team_saints",    label: "St Kilda",           cost: 500, cards: "7 cards", image: "/packs/saints.png",    accent: "#ef4444", description: "St Kilda Saints · 7 team cards" },
+  { type: "team_swans",     label: "Sydney",             cost: 500, cards: "7 cards", image: "/packs/swans.png",     accent: "#f43f5e", description: "Sydney Swans · 7 team cards" },
+  { type: "team_eagles",    label: "West Coast",         cost: 500, cards: "7 cards", image: "/packs/eagles.png",    accent: "#3b82f6", description: "West Coast Eagles · 7 team cards" },
+  { type: "team_bulldogs",  label: "Western Bulldogs",   cost: 500, cards: "7 cards", image: "/packs/bulldogs.png",  accent: "#4f75e0", description: "Western Bulldogs · 7 team cards" },
+];
+
+const GENERAL_ODDS_DISPLAY: { rarity: Rarity; pct: string }[] = [
+  { rarity: "bronze", pct: "50%" },      { rarity: "silver", pct: "24%" },
+  { rarity: "gold", pct: "12%" },        { rarity: "emerald", pct: "6%" },
+  { rarity: "sapphire", pct: "3.5%" },   { rarity: "ruby", pct: "2%" },
+  { rarity: "amethyst", pct: "1%" },     { rarity: "diamond", pct: "0.35%" },
+  { rarity: "pinkdiamond", pct: "0.1%" }, { rarity: "mythic", pct: "0.05%" },
+];
+
 const RARITY_ODDS: Record<PackType, { rarity: Rarity; pct: string }[]> = {
   daily: [
     { rarity: "bronze", pct: "45%" }, { rarity: "silver", pct: "30%" },
@@ -147,13 +182,7 @@ const RARITY_ODDS: Record<PackType, { rarity: Rarity; pct: string }[]> = {
     { rarity: "bronze", pct: "55%" }, { rarity: "silver", pct: "30%" },
     { rarity: "gold", pct: "12%" },   { rarity: "emerald", pct: "3%" },
   ],
-  general: [
-    { rarity: "bronze", pct: "50%" },      { rarity: "silver", pct: "24%" },
-    { rarity: "gold", pct: "12%" },        { rarity: "emerald", pct: "6%" },
-    { rarity: "sapphire", pct: "3.5%" },   { rarity: "ruby", pct: "2%" },
-    { rarity: "amethyst", pct: "1%" },     { rarity: "diamond", pct: "0.35%" },
-    { rarity: "pinkdiamond", pct: "0.1%" }, { rarity: "mythic", pct: "0.05%" },
-  ],
+  general: GENERAL_ODDS_DISPLAY,
   mythical: [
     { rarity: "bronze", pct: "18%" },   { rarity: "silver", pct: "22%" },
     { rarity: "gold", pct: "20%" },     { rarity: "emerald", pct: "15%" },
@@ -161,6 +190,25 @@ const RARITY_ODDS: Record<PackType, { rarity: Rarity; pct: string }[]> = {
     { rarity: "amethyst", pct: "4%" },  { rarity: "diamond", pct: "2%" },
     { rarity: "pinkdiamond", pct: "1%" }, { rarity: "mythic", pct: "100% (1 guaranteed)" },
   ],
+  // Team packs — all share general odds
+  team_crows:     GENERAL_ODDS_DISPLAY,
+  team_lions:     GENERAL_ODDS_DISPLAY,
+  team_blues:     GENERAL_ODDS_DISPLAY,
+  team_magpies:   GENERAL_ODDS_DISPLAY,
+  team_bombers:   GENERAL_ODDS_DISPLAY,
+  team_dockers:   GENERAL_ODDS_DISPLAY,
+  team_cats:      GENERAL_ODDS_DISPLAY,
+  team_suns:      GENERAL_ODDS_DISPLAY,
+  team_giants:    GENERAL_ODDS_DISPLAY,
+  team_hawks:     GENERAL_ODDS_DISPLAY,
+  team_demons:    GENERAL_ODDS_DISPLAY,
+  team_kangaroos: GENERAL_ODDS_DISPLAY,
+  team_power:     GENERAL_ODDS_DISPLAY,
+  team_tigers:    GENERAL_ODDS_DISPLAY,
+  team_saints:    GENERAL_ODDS_DISPLAY,
+  team_swans:     GENERAL_ODDS_DISPLAY,
+  team_eagles:    GENERAL_ODDS_DISPLAY,
+  team_bulldogs:  GENERAL_ODDS_DISPLAY,
 };
 
 const TEAM_COLORS: Record<string, string> = {
@@ -425,7 +473,7 @@ export default function CardsPage() {
     // 1. Close the pack detail modal immediately.
     // 2. Show the full-screen loading overlay right away.
     // 3. Optimistically deduct coins so the balance updates without delay.
-    const packCost = PACKS.find(p => p.type === packType)?.cost ?? 0;
+    const packCost = [...PACKS, ...TEAM_PACKS].find(p => p.type === packType)?.cost ?? 0;
     setOpening(packType);
     setShopPack(null);
     setPendingPackType(packType);
@@ -565,6 +613,16 @@ export default function CardsPage() {
         @keyframes packModalIn { from { opacity: 0; transform: scale(0.92) translateY(12px); } to { opacity: 1; transform: scale(1) translateY(0); } }
         @keyframes cardRevealEnter { from { transform: translateX(55px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         .card-reveal-enter { animation: cardRevealEnter 0.35s cubic-bezier(0.25,0.46,0.45,0.94) forwards; }
+        @keyframes teaseCardIn { from { transform: translateY(52px) scale(0.88); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+        @keyframes teaseLogoIn { 0% { transform: scale(0); opacity: 0; } 55% { transform: scale(1.14); opacity: 1; } 78% { transform: scale(0.96); } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes teaseSlideDown { from { transform: translateY(-18px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes teaseSlideUp { from { transform: translateY(18px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes teaseRingPulse { 0%,100% { transform: scale(1); opacity: 0.45; } 50% { transform: scale(1.13); opacity: 0.9; } }
+        @keyframes teaseLogoGlow { 0%,100% { transform: scale(1); filter: brightness(1); } 50% { transform: scale(1.07); filter: brightness(1.22); } }
+        @keyframes teaseShimmer { 0% { transform: translateX(-120%); opacity: 0; } 15% { opacity: 1; } 55% { opacity: 0.6; } 70% { transform: translateX(120%); opacity: 0; } 100% { transform: translateX(120%); opacity: 0; } }
+        @keyframes teaseParticle { 0% { transform: translateY(0) scale(0); opacity: 0; } 18% { transform: translateY(-8px) scale(1); opacity: 1; } 100% { transform: translateY(-75px) scale(0.2); opacity: 0; } }
+        @keyframes teaseTapHint { 0%,100% { opacity: 0.35; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-3px); } }
+        @keyframes teaseBtnShimmer { 0% { transform: translateX(-180%); } 100% { transform: translateX(180%); } }
         .cards-grid { animation: fadeIn 0.22s ease; }
         .card-item { transition: transform 0.12s ease; cursor: pointer; }
         .card-item:active { transform: scale(0.95); }
@@ -837,7 +895,7 @@ export default function CardsPage() {
       </div>
 
       {/* Pack detail modal */}
-      {shopPack && (() => { const p = PACKS.find(pk => pk.type === shopPack)!; return (
+      {shopPack && (() => { const p = [...PACKS, ...TEAM_PACKS].find(pk => pk.type === shopPack)!; return (
         <PackDetailModal
           pack={p}
           coins={coins}
@@ -1061,18 +1119,19 @@ function PackDetailModal({ pack, coins, opening, onOpenPack, onClose, onClaimDai
   );
 }
 
-function PackShop({
-  coins, opening, lastDailyPackAt, onSelectPack,
+function PackScrollRow({
+  packs,
+  dailyAvailable,
+  onSelectPack,
+  highlightType,
 }: {
-  coins: number;
-  opening: PackType | null;
-  lastDailyPackAt: string | null;
+  packs: typeof PACKS;
+  dailyAvailable: boolean;
   onSelectPack: (p: PackType) => void;
+  highlightType?: PackType;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const dailyAvailable = isDailyAvailable(lastDailyPackAt);
 
-  // On desktop, remap vertical wheel scroll to horizontal
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -1087,65 +1146,78 @@ function PackShop({
   }, []);
 
   return (
-    <section style={{ marginBottom: 8 }}>
-      <div style={shopHeaderStyle}>
-        <span style={{ fontWeight: 900, fontSize: 16, color: "var(--text-1)" }}>Pack Shop</span>
-      </div>
+    <div ref={scrollRef} className="pack-scroll">
+      {packs.map((pack) => {
+        const isHighlighted = pack.type === highlightType;
+        const isDaily = pack.type === "daily";
+        const dailyClaimed = isDaily && !dailyAvailable;
 
-      <div ref={scrollRef} className="pack-scroll">
-        {PACKS.map((pack) => {
-          const isMiddle = pack.type === "general"; // General Pack is always the elevated centre card
-          const isDaily = pack.type === "daily";
-          const dailyClaimed = isDaily && !dailyAvailable;
-
-          return (
-            <div key={pack.type} className="pack-item">
-              {/* Glow shadow under the elevated middle pack */}
-              {isMiddle && (
-                <div style={{
-                  position: "absolute", bottom: -6, left: "8%", width: "84%", height: 24,
-                  borderRadius: "50%", background: `radial-gradient(ellipse, ${pack.accent}50 0%, transparent 70%)`,
-                  filter: "blur(8px)", pointerEvents: "none",
-                }} />
+        return (
+          <div key={pack.type} className="pack-item">
+            {isHighlighted && (
+              <div style={{
+                position: "absolute", bottom: -6, left: "8%", width: "84%", height: 24,
+                borderRadius: "50%", background: `radial-gradient(ellipse, ${pack.accent}50 0%, transparent 70%)`,
+                filter: "blur(8px)", pointerEvents: "none",
+              }} />
+            )}
+            <div
+              className="pack-img-wrap pack-float"
+              suppressHydrationWarning
+              style={{ position: "relative", boxShadow: "0 16px 48px rgba(0,0,0,.45)", cursor: "pointer" }}
+              onClick={() => onSelectPack(pack.type)}
+            >
+              <img
+                src={pack.image}
+                alt={pack.label}
+                style={{ filter: dailyClaimed ? "grayscale(1) brightness(0.38)" : "none", transition: "filter 0.3s ease" }}
+              />
+              {dailyClaimed && (
+                <div style={{ position: "absolute", inset: 0, borderRadius: 18, display: "flex", alignItems: "flex-end", justifyContent: "center", paddingBottom: 12, pointerEvents: "none" }}>
+                  <div className="pack-tap-hint" style={{ position: "static", transform: "none" }}>✓ Come back tomorrow</div>
+                </div>
               )}
-
-              <div
-                className="pack-img-wrap pack-float"
-                suppressHydrationWarning
-                style={{
-                  position: "relative",
-                  boxShadow: "0 16px 48px rgba(0,0,0,.45)",
-                  cursor: "pointer",
-                }}
-                onClick={() => onSelectPack(pack.type)}
-              >
-                <img
-                  src={pack.image}
-                  alt={pack.label}
-                  style={{
-                    filter: dailyClaimed ? "grayscale(1) brightness(0.38)" : "none",
-                    transition: "filter 0.3s ease",
-                  }}
-                />
-
-                {/* Claimed overlay + label */}
-                {dailyClaimed && (
-                  <div style={{
-                    position: "absolute", inset: 0, borderRadius: 18,
-                    display: "flex", alignItems: "flex-end", justifyContent: "center",
-                    paddingBottom: 12, pointerEvents: "none",
-                  }}>
-                    <div className="pack-tap-hint" style={{ position: "static", transform: "none" }}>
-                      ✓ Come back tomorrow
-                    </div>
-                  </div>
-                )}
-              </div>
             </div>
-          );
-        })}
-      </div>
-    </section>
+            {/* Team pack label under the image */}
+            {pack.type.startsWith("team_") && (
+              <div style={{ textAlign: "center", marginTop: 8, fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.55)", lineHeight: 1.2 }}>
+                {pack.label}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function PackShop({
+  coins, opening, lastDailyPackAt, onSelectPack,
+}: {
+  coins: number;
+  opening: PackType | null;
+  lastDailyPackAt: string | null;
+  onSelectPack: (p: PackType) => void;
+}) {
+  const dailyAvailable = isDailyAvailable(lastDailyPackAt);
+
+  return (
+    <>
+      <section style={{ marginBottom: 8 }}>
+        <div style={shopHeaderStyle}>
+          <span style={{ fontWeight: 900, fontSize: 16, color: "var(--text-1)" }}>Pack Shop</span>
+        </div>
+        <PackScrollRow packs={PACKS} dailyAvailable={dailyAvailable} onSelectPack={onSelectPack} highlightType="general" />
+      </section>
+
+      <section style={{ marginBottom: 8 }}>
+        <div style={shopHeaderStyle}>
+          <span style={{ fontWeight: 900, fontSize: 16, color: "var(--text-1)" }}>Team Packs</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.3)", marginLeft: 8 }}>500 coins · 7 cards</span>
+        </div>
+        <PackScrollRow packs={TEAM_PACKS} dailyAvailable={dailyAvailable} onSelectPack={onSelectPack} />
+      </section>
+    </>
   );
 }
 
@@ -1153,20 +1225,36 @@ function PackShop({
 
 function PackShopPreview() {
   return (
-    <section style={{ marginBottom: 8, opacity: 0.45, pointerEvents: "none" }}>
-      <div style={shopHeaderStyle}>
-        <span style={{ fontWeight: 900, fontSize: 16, color: "var(--text-1)" }}>Pack Shop</span>
-      </div>
-      <div className="pack-scroll">
-        {PACKS.map((pack) => (
-          <div key={pack.type} className="pack-item">
-            <div className="pack-img-wrap pack-float" style={{ boxShadow: "0 16px 48px rgba(0,0,0,.45)" }}>
-              <img src={pack.image} alt={pack.label} />
+    <>
+      <section style={{ marginBottom: 8, opacity: 0.45, pointerEvents: "none" }}>
+        <div style={shopHeaderStyle}>
+          <span style={{ fontWeight: 900, fontSize: 16, color: "var(--text-1)" }}>Pack Shop</span>
+        </div>
+        <div className="pack-scroll">
+          {PACKS.map((pack) => (
+            <div key={pack.type} className="pack-item">
+              <div className="pack-img-wrap pack-float" style={{ boxShadow: "0 16px 48px rgba(0,0,0,.45)" }}>
+                <img src={pack.image} alt={pack.label} />
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
-    </section>
+          ))}
+        </div>
+      </section>
+      <section style={{ marginBottom: 8, opacity: 0.45, pointerEvents: "none" }}>
+        <div style={shopHeaderStyle}>
+          <span style={{ fontWeight: 900, fontSize: 16, color: "var(--text-1)" }}>Team Packs</span>
+        </div>
+        <div className="pack-scroll">
+          {TEAM_PACKS.map((pack) => (
+            <div key={pack.type} className="pack-item">
+              <div className="pack-img-wrap pack-float" style={{ boxShadow: "0 16px 48px rgba(0,0,0,.45)" }}>
+                <img src={pack.image} alt={pack.label} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </>
   );
 }
 
@@ -1307,7 +1395,7 @@ function RarityRevealOverlay({ rarity, meta, duration }: { rarity: Rarity; meta:
 // Removes all perceived delay by giving immediate visual feedback.
 
 function PackOpenLoadingOverlay({ packType }: { packType: PackType }) {
-  const pack = PACKS.find(p => p.type === packType)!;
+  const pack = [...PACKS, ...TEAM_PACKS].find(p => p.type === packType)!;
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 100,
@@ -1345,6 +1433,120 @@ function PackOpenLoadingOverlay({ packType }: { packType: PackType }) {
   );
 }
 
+// ── Tease Card ────────────────────────────────────────────────────────────────
+// Shown BEFORE the actual card — reveals rarity + team but hides the player.
+
+function TeaseCard({ card, meta, onClick, hiding = false }: {
+  card: OpenedCard;
+  meta: { color: string; glow: string; bg: string };
+  onClick: () => void;
+  hiding?: boolean;
+}) {
+  const order = RARITY_ORDER[card.rarity];
+  // Floating particles — more for rarer cards
+  const particles = order >= 4 ? Array.from({ length: Math.min(2 + (order - 4) * 2, 10) }, (_, i) => ({
+    left: 12 + (i * 17 + 5) % 76,
+    bottom: 14 + (i * 11) % 42,
+    delay: i * 260 + 500,
+    duration: 1900 + (i * 430) % 1100,
+    size: i % 3 === 0 ? 4 : 2,
+  })) : [];
+
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        width: "100%", aspectRatio: "3/4.2", borderRadius: 18, overflow: "hidden",
+        position: "relative", cursor: "pointer",
+        boxShadow: `0 0 0 2px ${meta.color}88, 0 20px 60px ${meta.glow}, 0 0 80px ${meta.glow}44`,
+        animation: "teaseCardIn 0.5s cubic-bezier(0.34,1.56,0.64,1)",
+        opacity: hiding ? 0 : 1,
+        transition: hiding ? "opacity 0.18s ease" : undefined,
+        pointerEvents: hiding ? "none" : "auto",
+      }}
+    >
+      {/* Rarity card background */}
+      <img src={`/cards/${card.rarity}.png`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+
+      {/* Dark overlay — hides card details but keeps bg visible */}
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.42) 0%, rgba(0,0,0,.06) 28%, rgba(0,0,0,.06) 58%, rgba(0,0,0,.92) 100%)" }} />
+
+      {/* Team logo circle — bounces in at center (where player image lives) */}
+      <div style={{ position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)", width: "68%", aspectRatio: "1/1" }}>
+        <div style={{
+          width: "100%", height: "100%", borderRadius: "50%", position: "relative",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: `radial-gradient(circle at 50% 45%, ${meta.color}2a 0%, ${meta.color}08 65%, transparent 100%)`,
+          border: `1.5px solid ${meta.color}55`,
+          boxShadow: `inset 0 0 30px ${meta.color}14, 0 0 40px ${meta.glow}88`,
+          animation: "teaseLogoIn 0.58s 0.1s cubic-bezier(0.34,1.56,0.64,1) both",
+        }}>
+          {/* Pulsing outer ring */}
+          <div style={{ position: "absolute", inset: -5, borderRadius: "50%", border: `1.5px solid ${meta.color}50`, animation: "teaseRingPulse 2.4s ease-in-out infinite", pointerEvents: "none" }} />
+          {/* Pulsing far ring */}
+          <div style={{ position: "absolute", inset: -13, borderRadius: "50%", border: `1px solid ${meta.color}2a`, animation: "teaseRingPulse 2.4s 0.7s ease-in-out infinite", pointerEvents: "none" }} />
+
+          {/* Team logo — circular clip */}
+          <div style={{
+            width: "62%", height: "62%", borderRadius: "50%", overflow: "hidden",
+            flexShrink: 0, background: "rgba(0,0,0,.28)",
+            animation: "teaseLogoGlow 2.2s ease-in-out infinite",
+            filter: `drop-shadow(0 0 22px ${meta.color}ee) drop-shadow(0 0 10px ${meta.color}88)`,
+          }}>
+            <img
+              src={card.team_logo} alt={card.team}
+              style={{ width: "100%", height: "100%", objectFit: "contain" }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Team name — slides up where player name usually sits */}
+      <div style={{ position: "absolute", top: "71%", left: 0, right: 0, textAlign: "center", padding: "0 8px" }}>
+        <div style={{ animation: "teaseSlideUp 0.4s 0.44s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+          <div style={{
+            fontWeight: 900, color: "var(--text-1)",
+            fontSize: "clamp(9px, 4.2vw, 15px)",
+            textShadow: `0 0 16px ${meta.glow}`,
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          }}>{card.team}</div>
+        </div>
+      </div>
+
+      {/* Mystery rating */}
+      <div className="ac-rating" style={{ background: "rgba(0,0,0,.82)", fontWeight: 1000, color: `${meta.color}55`, border: `1px solid ${meta.color}2a` }}>?</div>
+      <div className="ac-pos" style={{ background: "rgba(0,0,0,.7)", fontWeight: 900, color: "rgba(255,255,255,.4)", letterSpacing: ".05em" }}>2025</div>
+
+      {/* Shimmer sweep */}
+      <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: 18, pointerEvents: "none" }}>
+        <div style={{
+          position: "absolute", inset: 0,
+          background: `linear-gradient(105deg, transparent 25%, ${meta.color}1a 44%, rgba(255,255,255,0.08) 50%, ${meta.color}1a 56%, transparent 75%)`,
+          animation: "teaseShimmer 3.2s 1s ease-in-out infinite",
+        }} />
+      </div>
+
+      {/* Floating particles (sapphire+) */}
+      {particles.map((p, i) => (
+        <div key={i} style={{
+          position: "absolute", bottom: `${p.bottom}%`, left: `${p.left}%`,
+          width: p.size, height: p.size, borderRadius: "50%",
+          background: meta.color, boxShadow: `0 0 ${p.size * 2}px ${meta.color}`,
+          animation: `teaseParticle ${p.duration}ms ${p.delay}ms ease-in-out infinite`,
+          opacity: 0, pointerEvents: "none",
+        }} />
+      ))}
+
+      {/* "TAP TO REVEAL" hint */}
+      <div style={{ position: "absolute", bottom: "5.5%", left: 0, right: 0, textAlign: "center", pointerEvents: "none" }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 5, animation: "teaseTapHint 2s 1s ease-in-out infinite", opacity: 0 }}>
+          <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: ".22em", color: `${meta.color}cc` }}>TAP TO REVEAL</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Pack Open Modal ───────────────────────────────────────────────────────────
 
 function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onClose: () => void }) {
@@ -1356,6 +1558,8 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
   const [done, setDone] = useState(false);
   const [animKey, setAnimKey] = useState(0);
   const [revealingRarity, setRevealingRarity] = useState(false);
+  const [phase, setPhase] = useState<"tease" | "card">("tease");
+  const [flipActive, setFlipActive] = useState(false);
 
   // Preload all images on mount so they're ready when cards appear
   useEffect(() => {
@@ -1375,21 +1579,32 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
   const hasRevealAnim = current ? RARITY_ORDER[current.rarity] >= RARITY_ORDER["sapphire"] : false;
   const REVEAL_DURATION = (current && RARITY_REVEAL_DURATIONS[current.rarity]) ?? 0;
 
-  // Auto-fire rarity reveal when a new card appears
+  // Fire rarity overlay when the card is revealed (phase → "card")
   useEffect(() => {
-    if (!hasRevealAnim) return;
+    if (phase !== "card" || !hasRevealAnim) return;
     const t = setTimeout(() => {
       setRevealingRarity(true);
       setTimeout(() => setRevealingRarity(false), REVEAL_DURATION);
     }, 320);
     return () => clearTimeout(t);
-  }, [index]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [phase, index]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function revealCard() {
+    if (flipActive) return;
+    setFlipActive(true);
+    setTimeout(() => {
+      setFlipActive(false);
+      setAnimKey(k => k + 1);
+      setPhase("card");
+    }, 580);
+  }
 
   function advance() {
-    if (revealingRarity) return;
+    if (revealingRarity || flipActive) return;
+    if (phase === "tease") { revealCard(); return; }
     if (index < cards.length - 1) {
-      setAnimKey(k => k + 1);
       setIndex(i => i + 1);
+      setPhase("tease");
     } else {
       setDone(true);
     }
@@ -1434,55 +1649,122 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
           ))}
         </div>
 
-        {/* Card */}
+        {/* Card / Tease */}
         <div style={{ position: "relative", width: "100%", maxWidth: 260, marginBottom: 28 }}>
-          {revealingRarity && current && meta && (
-            <RarityRevealOverlay rarity={current.rarity} meta={meta} duration={REVEAL_DURATION} />
-          )}
-
-          <div key={animKey} style={{ animation: "slideUp 0.38s cubic-bezier(0.34,1.56,0.64,1)" }}>
-            {current && meta && (
+          {phase === "tease" ? (
+            // 3D flip container — front = tease, back = real card
+            <div style={{ perspective: "1200px", width: "100%" }}>
               <div style={{
-                width: "100%", aspectRatio: "3/4.2", borderRadius: 18, overflow: "hidden", position: "relative",
-                boxShadow: `0 0 0 2px ${meta.color}88, 0 16px 48px ${meta.glow}, 0 0 60px ${meta.glow}33`,
+                position: "relative", width: "100%",
+                transformStyle: "preserve-3d",
+                transition: "transform 0.58s cubic-bezier(0.34, 1.0, 0.64, 1)",
+                transform: flipActive ? "rotateY(180deg)" : "rotateY(0deg)",
               }}>
-                <img src={`/cards/${current.rarity}.png`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.15) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,.72) 75%, rgba(0,0,0,.88) 100%)" }} />
-                <div className="ac-rating" style={{ background: "rgba(0,0,0,.82)", fontWeight: 1000, color: meta.color, border: `1px solid ${meta.color}44` }}>{current.rating}</div>
-                {current.is_new && (
-                  <div style={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", background: "linear-gradient(90deg,#16a34a,#22c55e)", borderRadius: 99, padding: "4px 14px", fontSize: 11, fontWeight: 900, color: "#fff", letterSpacing: ".12em", boxShadow: "0 2px 12px rgba(34,197,94,.55)", whiteSpace: "nowrap", zIndex: 5 }}>✦ NEW</div>
-                )}
-                <div style={{ position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)", width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", background: (TEAM_COLORS[current.team] ?? "#1e2438") + "33" }}>
-                  <CardPlayerImage card={current} imageStyle={cardPlayerImageStyle} loading="eager" />
+                {/* Front face — tease card */}
+                <div style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}>
+                  {current && meta && <TeaseCard card={current} meta={meta} onClick={revealCard} hiding={flipActive} />}
                 </div>
-                <div style={{ position: "absolute", top: "71%", left: 0, right: 0, textAlign: "center", padding: "0 5px" }}>
-                  <div className="ac-name" style={{ fontWeight: 900, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: `0 0 12px ${meta.glow}` }}>{current.player_name}</div>
+                {/* Back face — real card (pre-rendered, invisible until flip) */}
+                <div style={{
+                  position: "absolute", inset: 0,
+                  backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden",
+                  transform: "rotateY(180deg)",
+                }}>
+                  {current && meta && (
+                    <div style={{
+                      width: "100%", aspectRatio: "3/4.2", borderRadius: 18, overflow: "hidden", position: "relative",
+                      boxShadow: `0 0 0 2px ${meta.color}88, 0 16px 48px ${meta.glow}, 0 0 60px ${meta.glow}33`,
+                    }}>
+                      <img src={`/cards/${current.rarity}.png`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.15) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,.72) 75%, rgba(0,0,0,.88) 100%)" }} />
+                      <div className="ac-rating" style={{ background: "rgba(0,0,0,.82)", fontWeight: 1000, color: meta.color, border: `1px solid ${meta.color}44` }}>{current.rating}</div>
+                      {current.is_new && (
+                        <div style={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", background: "linear-gradient(90deg,#16a34a,#22c55e)", borderRadius: 99, padding: "4px 14px", fontSize: 11, fontWeight: 900, color: "#fff", letterSpacing: ".12em", boxShadow: "0 2px 12px rgba(34,197,94,.55)", whiteSpace: "nowrap", zIndex: 5 }}>✦ NEW</div>
+                      )}
+                      <div style={{ position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)", width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", background: (TEAM_COLORS[current.team] ?? "#1e2438") + "33" }}>
+                        <CardPlayerImage card={current} imageStyle={cardPlayerImageStyle} loading="eager" />
+                      </div>
+                      <div style={{ position: "absolute", top: "71%", left: 0, right: 0, textAlign: "center", padding: "0 5px" }}>
+                        <div className="ac-name" style={{ fontWeight: 900, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: `0 0 12px ${meta.glow}` }}>{current.player_name}</div>
+                      </div>
+                      <div style={{ position: "absolute", left: "clamp(4px,4.75%,7px)", bottom: "clamp(4px,4.75%,7px)", width: "clamp(16px,17.5%,26px)", height: "clamp(16px,17.5%,26px)", borderRadius: "50%", overflow: "hidden", zIndex: 4, background: "rgba(0,0,0,.55)", border: "1.5px solid var(--border-3)" }}>
+                        <img src={current.team_logo} alt={current.team} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      </div>
+                      <div className="ac-pos" style={{ background: "rgba(0,0,0,.7)", fontWeight: 900, color: "rgba(255,255,255,.75)", letterSpacing: ".05em" }}>2025</div>
+                    </div>
+                  )}
                 </div>
-                <div style={{ position: "absolute", left: "clamp(4px,4.75%,7px)", bottom: "clamp(4px,4.75%,7px)", width: "clamp(16px,17.5%,26px)", height: "clamp(16px,17.5%,26px)", borderRadius: "50%", overflow: "hidden", zIndex: 4, background: "rgba(0,0,0,.55)", border: "1.5px solid var(--border-3)" }}>
-                  <img src={current.team_logo} alt={current.team} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                </div>
-                <div className="ac-pos" style={{ background: "rgba(0,0,0,.7)", fontWeight: 900, color: "rgba(255,255,255,.75)", letterSpacing: ".05em" }}>2025</div>
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            // Card phase — flip complete, show card directly
+            <>
+              {revealingRarity && current && meta && (
+                <RarityRevealOverlay rarity={current.rarity} meta={meta} duration={REVEAL_DURATION} />
+              )}
+              <div key={animKey}>
+                {current && meta && (
+                  <div style={{
+                    width: "100%", aspectRatio: "3/4.2", borderRadius: 18, overflow: "hidden", position: "relative",
+                    boxShadow: `0 0 0 2px ${meta.color}88, 0 16px 48px ${meta.glow}, 0 0 60px ${meta.glow}33`,
+                  }}>
+                    <img src={`/cards/${current.rarity}.png`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.15) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,.72) 75%, rgba(0,0,0,.88) 100%)" }} />
+                    <div className="ac-rating" style={{ background: "rgba(0,0,0,.82)", fontWeight: 1000, color: meta.color, border: `1px solid ${meta.color}44` }}>{current.rating}</div>
+                    {current.is_new && (
+                      <div style={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", background: "linear-gradient(90deg,#16a34a,#22c55e)", borderRadius: 99, padding: "4px 14px", fontSize: 11, fontWeight: 900, color: "#fff", letterSpacing: ".12em", boxShadow: "0 2px 12px rgba(34,197,94,.55)", whiteSpace: "nowrap", zIndex: 5 }}>✦ NEW</div>
+                    )}
+                    <div style={{ position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)", width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", background: (TEAM_COLORS[current.team] ?? "#1e2438") + "33" }}>
+                      <CardPlayerImage card={current} imageStyle={cardPlayerImageStyle} loading="eager" />
+                    </div>
+                    <div style={{ position: "absolute", top: "71%", left: 0, right: 0, textAlign: "center", padding: "0 5px" }}>
+                      <div className="ac-name" style={{ fontWeight: 900, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: `0 0 12px ${meta.glow}` }}>{current.player_name}</div>
+                    </div>
+                    <div style={{ position: "absolute", left: "clamp(4px,4.75%,7px)", bottom: "clamp(4px,4.75%,7px)", width: "clamp(16px,17.5%,26px)", height: "clamp(16px,17.5%,26px)", borderRadius: "50%", overflow: "hidden", zIndex: 4, background: "rgba(0,0,0,.55)", border: "1.5px solid var(--border-3)" }}>
+                      <img src={current.team_logo} alt={current.team} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    </div>
+                    <div className="ac-pos" style={{ background: "rgba(0,0,0,.7)", fontWeight: 900, color: "rgba(255,255,255,.75)", letterSpacing: ".05em" }}>2025</div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
 
-        {/* Next / View All button */}
+        {/* Button */}
         <button
           onClick={advance}
-          disabled={revealingRarity}
+          disabled={(phase === "card" && revealingRarity) || flipActive}
           style={{
             width: "100%", padding: "15px", borderRadius: 16, border: "none",
             background: meta ? meta.color : "var(--border-2)",
             color: "#14141e",
             fontWeight: 900, fontSize: 15,
-            cursor: revealingRarity ? "default" : "pointer",
+            cursor: ((phase === "card" && revealingRarity) || flipActive) ? "default" : "pointer",
             marginBottom: 8,
-            opacity: revealingRarity ? 0.4 : 1,
+            opacity: ((phase === "card" && revealingRarity) || flipActive) ? 0.4 : 1,
             transition: "opacity 0.2s",
+            position: "relative", overflow: "hidden",
           }}
         >
-          {revealingRarity ? "…" : index < cards.length - 1 ? `Next  ·  ${cards.length - index - 1} left` : "View All"}
+          <span style={{ position: "relative", zIndex: 1 }}>
+            {phase === "tease"
+              ? flipActive ? "…" : "Reveal Card"
+              : revealingRarity
+              ? "…"
+              : index < cards.length - 1
+              ? `Next  ·  ${cards.length - index - 1} left`
+              : "View All"}
+          </span>
+          {/* Shimmer on Reveal Card button */}
+          {phase === "tease" && !flipActive && (
+            <div style={{
+              position: "absolute", inset: 0,
+              background: "linear-gradient(90deg, transparent 15%, rgba(255,255,255,0.28) 50%, transparent 85%)",
+              animation: "teaseBtnShimmer 2.2s ease-in-out infinite",
+              pointerEvents: "none",
+            }} />
+          )}
         </button>
 
         <button onClick={() => setDone(true)} style={{ background: "none", border: "none", color: "rgba(255,255,255,.3)", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: "6px 12px" }}>
@@ -1685,6 +1967,8 @@ const loginBtnStyle: React.CSSProperties = {
 const shopHeaderStyle: React.CSSProperties = {
   marginBottom: 10,
   paddingLeft: 2,
+  display: "flex",
+  alignItems: "center",
 };
 
 const collectionHeaderStyle: React.CSSProperties = {

@@ -283,6 +283,17 @@ function eventIdentityKey(event: LiveEvent) {
   ].join("|");
 }
 
+function formatTimestr(timestr?: string) {
+  const t = safeText(timestr, "").toLowerCase();
+  if (!t) return "";
+  if (t.startsWith("1/4") || t.includes("quarter time")) return "QTR TIME";
+  if (t.startsWith("1/2") || t.includes("half time")) return "HALF TIME";
+  if (t.startsWith("3/4") || t.includes("three quarter")) return "3QTR TIME";
+  if (t.startsWith("full time") || t.includes("full time")) return "FULL TIME";
+  // "Q2 14:32" → keep as-is but uppercase
+  return safeText(timestr, "").toUpperCase();
+}
+
 function clockFromTimestr(timestr?: string) {
   const text = safeText(timestr, "");
   const qMatch = text.match(/Q\s*(\d+)/i);
@@ -3307,7 +3318,7 @@ export default function MatchPage() {
                   {(game.timestr || getLiveGameClock(liveEvents)) && (
                     <>
                       <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.72)" }}>·</span>
-                      <span style={{ fontSize: 14, fontWeight: 800, color: "var(--text-1)" }}>{game.timestr || getLiveGameClock(liveEvents)}</span>
+                      <span style={{ fontSize: 14, fontWeight: 800, color: "var(--text-1)" }}>{formatTimestr(game.timestr) || getLiveGameClock(liveEvents)}</span>
                     </>
                   )}
                 </div>
@@ -3421,7 +3432,7 @@ export default function MatchPage() {
                   {(game.timestr || getLiveGameClock(liveEvents)) && (
                     <>
                       <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(74,222,128,0.5)" }}>·</span>
-                      <span style={{ fontSize: 12, fontWeight: 800, color: "#4ade80" }}>{game.timestr || getLiveGameClock(liveEvents)}</span>
+                      <span style={{ fontSize: 12, fontWeight: 800, color: "#4ade80" }}>{formatTimestr(game.timestr) || getLiveGameClock(liveEvents)}</span>
                     </>
                   )}
                 </div>
