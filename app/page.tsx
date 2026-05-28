@@ -2151,6 +2151,7 @@ function MobileMatchRow({
   awayLost,
   isUpcoming,
   isLive,
+  isComplete,
   compactRecord,
   gameId,
 }: {
