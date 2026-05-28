@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { claimSync, markSyncFinal } from "@/app/lib/matchCache";
 
 export const dynamic = "force-dynamic";
 
 const API_BASE = "https://v1.afl.api-sports.io";
+const COOLDOWN_S = 10;
 
-const lastSync = new Map<string, number>();
-const COOLDOWN_MS = 10_000;
+// In-process guard: prevents concurrent requests within the same instance
+const inFlightSync = new Set<string>();
 
 function adminSupabase() {
   return createClient(
@@ -15,7 +17,6 @@ function adminSupabase() {
   );
 }
 
-/** Fantasy points formula */
 function computeFP(stats: any): number {
   const n = (v: any) => Number(v ?? 0);
   return (
@@ -31,7 +32,6 @@ function computeFP(stats: any): number {
   );
 }
 
-/** Fetch current player stats from API-Sports and return a map of player_id -> fp */
 async function fetchPlayerFPMap(gameId: string): Promise<Map<number, number>> {
   const fpMap = new Map<number, number>();
   try {
@@ -51,8 +51,6 @@ async function fetchPlayerFPMap(gameId: string): Promise<Map<number, number>> {
       for (const playerEntry of team.players ?? []) {
         const pid = playerEntry?.player?.id;
         if (!pid) continue;
-
-        // Stat fields may be nested under playerEntry.statistics or flat
         const s = playerEntry.statistics ?? playerEntry;
         const stats = {
           kicks:        s.kicks        ?? s.Kicks        ?? 0,
@@ -69,7 +67,7 @@ async function fetchPlayerFPMap(gameId: string): Promise<Map<number, number>> {
       }
     }
   } catch {
-    // If the stats fetch fails, we just won't have FP — not fatal
+    // Non-fatal: events will sync without FP
   }
   return fpMap;
 }
@@ -77,133 +75,137 @@ async function fetchPlayerFPMap(gameId: string): Promise<Map<number, number>> {
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const gameId = searchParams.get("id");
+  const isFinal = searchParams.get("final") === "true";
+
   if (!gameId) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
-  const now = Date.now();
-  if (now - (lastSync.get(gameId) ?? 0) < COOLDOWN_MS) {
+  // Level 1: in-process guard (same Vercel instance)
+  if (inFlightSync.has(gameId)) {
+    return NextResponse.json({ synced: false, reason: "in-flight" });
+  }
+
+  // Level 2: cross-instance cooldown via Supabase
+  const shouldProceed = await claimSync(gameId, COOLDOWN_S);
+  if (!shouldProceed) {
     return NextResponse.json({ synced: false, reason: "cooldown" });
   }
-  lastSync.set(gameId, now);
 
-  const res = await fetch(`${API_BASE}/games/events?id=${gameId}`, {
-    headers: { "x-apisports-key": process.env.API_SPORTS_AFL_KEY ?? "" },
-    cache: "no-store",
-  });
+  inFlightSync.add(gameId);
 
-  if (!res.ok) {
-    lastSync.delete(gameId);
-    return NextResponse.json({ error: "External API failed" }, { status: 502 });
-  }
+  try {
+    const res = await fetch(`${API_BASE}/games/events?id=${gameId}`, {
+      headers: { "x-apisports-key": process.env.API_SPORTS_AFL_KEY ?? "" },
+      cache: "no-store",
+    });
 
-  const data = await res.json();
-  const rawEvents: any[] = data?.response?.[0]?.events ?? [];
-
-  if (rawEvents.length === 0) {
-    return NextResponse.json({ synced: true, inserted: 0 });
-  }
-
-  // Fetch player FP map in parallel with DB work below
-  const fpMapPromise = fetchPlayerFPMap(gameId);
-
-  const supabase = adminSupabase();
-
-  // Build deduplicated real event rows from API-Sports
-  const key = (r: any) =>
-    `${r.period}|${r.minute}|${r.type}|${r.team_id}|${r.player_id}|${r.home_score}|${r.away_score}`;
-
-  const rawRows = Array.from(
-    new Map(
-      rawEvents.map((e: any) => {
-        const row = {
-          api_game_id: gameId,
-          period: e.period ?? e.quarter ?? null,
-          minute: e.minute ?? null,
-          type: e.type ?? null,
-          team_id: e.team?.id ?? null,
-          player_id: e.player?.id ?? null,
-          player_name: e.player?.name ?? null,
-          home_score: e.homeScore ?? e.home_score ?? e.score?.home ?? e.scores?.home ?? null,
-          away_score: e.awayScore ?? e.away_score ?? e.score?.away ?? e.scores?.away ?? null,
-        };
-        return [key(row), row];
-      })
-    ).values()
-  );
-
-  // Fetch all current events for this game
-  const { data: existing } = await supabase
-    .from("live_game_feed")
-    .select("id, period, minute, type, team_id, player_id, home_score, away_score, inferred, player_fp")
-    .eq("api_game_id", gameId);
-
-  const realExisting = (existing ?? []).filter((r: any) => !r.inferred);
-
-  // Build a map of existing key -> stored player_fp so we can preserve it
-  const existingFPMap = new Map<string, number | null>(
-    realExisting.map((r: any) => [key(r), r.player_fp ?? null])
-  );
-
-  // Skip if real events are already identical
-  const apiKeys = new Set(rawRows.map(key));
-  if (
-    realExisting.length === rawRows.length &&
-    realExisting.every((r: any) => apiKeys.has(key(r)))
-  ) {
-    return NextResponse.json({ synced: true, inserted: 0 });
-  }
-
-  // Wait for FP map now that we know we'll need it
-  const fpMap = await fpMapPromise;
-
-  // Attach player_fp: preserve existing stored FP for old events, use live FP only for new events
-  const apiRows = rawRows.map((row) => {
-    const k = key(row);
-    const storedFP = existingFPMap.get(k); // undefined = brand new event, null/number = already existed
-    const isNew = !existingFPMap.has(k);
-    return {
-      ...row,
-      player_fp: isNew
-        ? (row.player_id != null ? (fpMap.get(Number(row.player_id)) ?? null) : null)
-        : storedFP,
-    };
-  });
-
-  // Delete inferred events that a real event now covers.
-  const inferred = (existing ?? []).filter((r: any) => r.inferred);
-  const toDeleteIds: number[] = [];
-
-  for (const real of apiRows) {
-    if (real.home_score != null && real.away_score != null) {
-      const match = inferred.find(
-        (r: any) =>
-          !toDeleteIds.includes(r.id) &&
-          r.team_id === real.team_id &&
-          r.type === real.type &&
-          Number(r.home_score) === Number(real.home_score) &&
-          Number(r.away_score) === Number(real.away_score)
-      );
-      if (match) toDeleteIds.push(match.id);
-    } else {
-      const match = inferred
-        .filter((r: any) => !toDeleteIds.includes(r.id) && r.team_id === real.team_id && r.type === real.type)
-        .sort((a: any, b: any) => (Number(a.home_score) || 0) - (Number(b.home_score) || 0))[0];
-      if (match) toDeleteIds.push(match.id);
+    if (!res.ok) {
+      return NextResponse.json({ error: "External API failed" }, { status: 502 });
     }
+
+    const data = await res.json();
+    const rawEvents: any[] = data?.response?.[0]?.events ?? [];
+
+    if (rawEvents.length === 0) {
+      if (isFinal) await markSyncFinal(gameId);
+      return NextResponse.json({ synced: true, inserted: 0 });
+    }
+
+    const fpMapPromise = fetchPlayerFPMap(gameId);
+    const supabase = adminSupabase();
+
+    const key = (r: any) =>
+      `${r.period}|${r.minute}|${r.type}|${r.team_id}|${r.player_id}|${r.home_score}|${r.away_score}`;
+
+    const rawRows = Array.from(
+      new Map(
+        rawEvents.map((e: any) => {
+          const row = {
+            api_game_id: gameId,
+            period: e.period ?? e.quarter ?? null,
+            minute: e.minute ?? null,
+            type: e.type ?? null,
+            team_id: e.team?.id ?? null,
+            player_id: e.player?.id ?? null,
+            player_name: e.player?.name ?? null,
+            home_score: e.homeScore ?? e.home_score ?? e.score?.home ?? e.scores?.home ?? null,
+            away_score: e.awayScore ?? e.away_score ?? e.score?.away ?? e.scores?.away ?? null,
+          };
+          return [key(row), row];
+        })
+      ).values()
+    );
+
+    const { data: existing } = await supabase
+      .from("live_game_feed")
+      .select("id, period, minute, type, team_id, player_id, home_score, away_score, inferred, player_fp")
+      .eq("api_game_id", gameId);
+
+    const realExisting = (existing ?? []).filter((r: any) => !r.inferred);
+    const existingFPMap = new Map<string, number | null>(
+      realExisting.map((r: any) => [key(r), r.player_fp ?? null])
+    );
+
+    const apiKeys = new Set(rawRows.map(key));
+    if (
+      realExisting.length === rawRows.length &&
+      realExisting.every((r: any) => apiKeys.has(key(r)))
+    ) {
+      if (isFinal) await markSyncFinal(gameId);
+      return NextResponse.json({ synced: true, inserted: 0 });
+    }
+
+    const fpMap = await fpMapPromise;
+
+    const apiRows = rawRows.map((row) => {
+      const k = key(row);
+      const storedFP = existingFPMap.get(k);
+      const isNew = !existingFPMap.has(k);
+      return {
+        ...row,
+        player_fp: isNew
+          ? (row.player_id != null ? (fpMap.get(Number(row.player_id)) ?? null) : null)
+          : storedFP,
+      };
+    });
+
+    // Delete inferred events superseded by real events
+    const inferred = (existing ?? []).filter((r: any) => r.inferred);
+    const toDeleteIds: number[] = [];
+    for (const real of apiRows) {
+      if (real.home_score != null && real.away_score != null) {
+        const match = inferred.find(
+          (r: any) =>
+            !toDeleteIds.includes(r.id) &&
+            r.team_id === real.team_id &&
+            r.type === real.type &&
+            Number(r.home_score) === Number(real.home_score) &&
+            Number(r.away_score) === Number(real.away_score)
+        );
+        if (match) toDeleteIds.push(match.id);
+      } else {
+        const match = inferred
+          .filter((r: any) => !toDeleteIds.includes(r.id) && r.team_id === real.team_id && r.type === real.type)
+          .sort((a: any, b: any) => (Number(a.home_score) || 0) - (Number(b.home_score) || 0))[0];
+        if (match) toDeleteIds.push(match.id);
+      }
+    }
+
+    if (toDeleteIds.length > 0) {
+      await supabase.from("live_game_feed").delete().in("id", toDeleteIds);
+    }
+
+    await supabase.from("live_game_feed").delete().eq("api_game_id", gameId).eq("inferred", false);
+    const { error } = await supabase.from("live_game_feed").insert(apiRows);
+
+    if (error) {
+      console.error("[sync-events] insert error:", error.message);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    if (isFinal) await markSyncFinal(gameId);
+    return NextResponse.json({ synced: true, replaced: true, total: apiRows.length });
+
+  } finally {
+    inFlightSync.delete(gameId);
   }
-
-  if (toDeleteIds.length > 0) {
-    await supabase.from("live_game_feed").delete().in("id", toDeleteIds);
-  }
-
-  // Replace all real events with fresh data from API-Sports
-  await supabase.from("live_game_feed").delete().eq("api_game_id", gameId).eq("inferred", false);
-  const { error } = await supabase.from("live_game_feed").insert(apiRows);
-
-  if (error) {
-    lastSync.delete(gameId);
-    console.error("[sync-events] insert error:", error.message);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ synced: true, replaced: true, total: apiRows.length });
 }

@@ -13,8 +13,6 @@ import { foopyRatingFromRaw } from "@/app/lib/foopyRating";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import matchStatsRaw from "@/app/data/game-stats.json";
 import playersRaw from "@/app/data/players.json";
-import { syncPassXpFromCards } from "@/app/lib/passCardXp";
-import { syncPassRewardBalances } from "@/app/lib/passRewardCredits";
 
 export const dynamic = "force-dynamic";
 
@@ -72,21 +70,24 @@ export async function calcPendingRewards(
   userId: string,
   teamPasses: TeamPass[],
   playerPasses: PlayerPass[],
-  claimedRewards: PassReward[]
+  claimedRewards: PassReward[],
+  prefetchedGames?: SquiggleGame[]
 ): Promise<PendingReward[]> {
-  // Fetch recent final games (current year)
-  let games: SquiggleGame[] = [];
-  try {
-    const year = new Date().getFullYear();
-    const res = await fetch(`https://api.squiggle.com.au/?q=games;year=${year}`, {
-      headers: { "User-Agent": "Foopy AFL App (foopy.app)" },
-      next: { revalidate: 60 },
-    });
-    if (res.ok) {
-      const data = await res.json();
-      games = (data.games ?? []) as SquiggleGame[];
-    }
-  } catch {}
+  let games: SquiggleGame[] = prefetchedGames ?? [];
+
+  if (!prefetchedGames) {
+    try {
+      const year = new Date().getFullYear();
+      const res = await fetch(`https://api.squiggle.com.au/?q=games;year=${year}`, {
+        headers: { "User-Agent": "Foopy AFL App (foopy.app)" },
+        next: { revalidate: 60 },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        games = (data.games ?? []) as SquiggleGame[];
+      }
+    } catch {}
+  }
 
   const finalGames = games.filter(isGameFinal);
 
@@ -183,67 +184,41 @@ export async function GET(req: Request) {
   const { data: { user }, error: authErr } = await supabaseServer.auth.getUser(token);
   if (authErr || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  try {
-    await syncPassXpFromCards(user.id);
-  } catch (err) {
-    console.error("[passes GET sync card xp]", err instanceof Error ? err.message : err);
-  }
+  // Start Squiggle fetch immediately so it overlaps with DB queries
+  const year = new Date().getFullYear();
+  const squigglePromise = fetch(`https://api.squiggle.com.au/?q=games;year=${year}`, {
+    headers: { "User-Agent": "Foopy AFL App (foopy.app)" },
+    next: { revalidate: 60 },
+  }).then(r => r.ok ? r.json() : null).catch(() => null);
 
-  // Fetch all active team passes (up to MAX_TEAM_PASSES)
-  const { data: teamPassRows } = await supabaseServer
-    .from("user_team_passes")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("active", true)
-    .order("created_at", { ascending: true });
-
-  // Fetch player passes
-  const { data: playerPassRows } = await supabaseServer
-    .from("user_player_passes")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("active", true)
-    .order("created_at", { ascending: false });
-
-  // Fetch claimed rewards (last 60 days for comparison + display)
+  // Fetch all DB data in parallel
   const since = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
-  const { data: rewardRows } = await supabaseServer
-    .from("pass_rewards")
-    .select("*")
-    .eq("user_id", user.id)
-    .gte("claimed_at", since)
-    .order("claimed_at", { ascending: false });
+  const [
+    { data: teamPassRows },
+    { data: playerPassRows },
+    { data: rewardRows },
+    { count: teamPassEverCount },
+    { data: profile },
+    squiggleData,
+  ] = await Promise.all([
+    supabaseServer.from("user_team_passes").select("*").eq("user_id", user.id).eq("active", true).order("created_at", { ascending: true }),
+    supabaseServer.from("user_player_passes").select("*").eq("user_id", user.id).eq("active", true).order("created_at", { ascending: false }),
+    supabaseServer.from("pass_rewards").select("*").eq("user_id", user.id).gte("claimed_at", since).order("claimed_at", { ascending: false }).limit(100),
+    supabaseServer.from("user_team_passes").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+    supabaseServer.from("profiles").select("coins").eq("id", user.id).single(),
+    squigglePromise,
+  ]);
 
-  const teamPasses   = (teamPassRows   as TeamPass[]) ?? [];
-  const playerPasses = (playerPassRows as PlayerPass[]) ?? [];
-  const claimedRewards = (rewardRows as PassReward[]) ?? [];
-
-  // Repair historical pass rewards that were recorded but not applied to the
-  // profile balance because an older claim path depended only on RPC success.
-  try {
-    await syncPassRewardBalances(user.id, true);
-  } catch (err) {
-    console.error("[passes GET sync balances]", err instanceof Error ? err.message : err);
-  }
-
-  // Check if user has ever bought a team pass slot (for "buy vs switch" UI)
-  const { count: teamPassEverCount } = await supabaseServer
-    .from("user_team_passes")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", user.id);
-
-  // Fetch coin balance
-  const { data: profile } = await supabaseServer
-    .from("profiles")
-    .select("coins")
-    .eq("id", user.id)
-    .single();
+  const teamPasses     = (teamPassRows   as TeamPass[]) ?? [];
+  const playerPasses   = (playerPassRows as PlayerPass[]) ?? [];
+  const claimedRewards = (rewardRows     as PassReward[]) ?? [];
 
   const pending = await calcPendingRewards(
     user.id,
     teamPasses,
     playerPasses,
-    claimedRewards
+    claimedRewards,
+    (squiggleData?.games ?? []) as SquiggleGame[]
   );
 
   return NextResponse.json({

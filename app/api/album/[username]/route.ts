@@ -1,6 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
-import { syncPassXpFromCards } from "@/app/lib/passCardXp";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,23 +27,17 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ use
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  try {
-    await syncPassXpFromCards(profile.id);
-  } catch (err) {
-    console.error("[album sync pass xp]", err instanceof Error ? err.message : err);
-  }
-
   const [
     { data: cards, error: cardsError },
     { data: playerPasses },
-    { data: teamPass },
+    { data: teamPasses },
   ] = await Promise.all([
     supabaseAdmin.from("user_cards").select("id, player_id, rarity, rating, duplicate_count").eq("user_id", profile.id),
     supabaseAdmin.from("user_player_passes").select("id, user_id, player_id, player_name, team_name, active, xp, serial_number, created_at").eq("user_id", profile.id).eq("active", true).order("created_at", { ascending: true }),
-    supabaseAdmin.from("user_team_passes").select("id, user_id, team_name, active, xp, serial_number, created_at").eq("user_id", profile.id).eq("active", true).maybeSingle(),
+    supabaseAdmin.from("user_team_passes").select("id, user_id, team_name, active, xp, serial_number, created_at").eq("user_id", profile.id).eq("active", true).order("created_at", { ascending: true }),
   ]);
 
   if (cardsError) console.error("Cards query error:", cardsError);
 
-  return NextResponse.json({ profile, cards: cards ?? [], playerPasses: playerPasses ?? [], teamPass: teamPass ?? null });
+  return NextResponse.json({ profile, cards: cards ?? [], playerPasses: playerPasses ?? [], teamPasses: teamPasses ?? [] });
 }

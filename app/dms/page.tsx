@@ -155,17 +155,19 @@ function DMsPageInner() {
   const [tab,       setTab]       = useState<"users" | "groups">("users");
 
   /* ── DM thread state ── */
-  const [activeConv,    setActiveConv]    = useState<InboxEntry | null>(null);
-  const [messages,      setMessages]      = useState<Msg[]>([]);
-  const [text,          setText]          = useState("");
-  const [sendError,     setSendError]     = useState("");
-  const [deletingIds,   setDeletingIds]   = useState<Set<string>>(() => new Set());
-  const [selectedMsgId, setSelectedMsgId] = useState<string | null>(null);
+  const [activeConv,      setActiveConv]      = useState<InboxEntry | null>(null);
+  const [messages,        setMessages]        = useState<Msg[]>([]);
+  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [text,            setText]            = useState("");
+  const [sendError,       setSendError]       = useState("");
+  const [deletingIds,     setDeletingIds]     = useState<Set<string>>(() => new Set());
+  const [selectedMsgId,   setSelectedMsgId]   = useState<string | null>(null);
 
   /* ── Group state ── */
-  const [groupChats,         setGroupChats]         = useState<GroupChat[]>([]);
-  const [activeGroup,        setActiveGroup]        = useState<GroupChat | null>(null);
-  const [groupMessages,      setGroupMessages]      = useState<GroupMsg[]>([]);
+  const [groupChats,           setGroupChats]           = useState<GroupChat[]>([]);
+  const [activeGroup,          setActiveGroup]          = useState<GroupChat | null>(null);
+  const [groupMessages,        setGroupMessages]        = useState<GroupMsg[]>([]);
+  const [groupMessagesLoading, setGroupMessagesLoading] = useState(false);
   const [groupText,          setGroupText]          = useState("");
   const [groupSendError,     setGroupSendError]     = useState("");
   const [groupSelectedMsgId, setGroupSelectedMsgId] = useState<string | null>(null);
@@ -205,10 +207,12 @@ function DMsPageInner() {
   const [sentInviteIds,     setSentInviteIds]     = useState<Set<string>>(() => new Set());
   const [sendingInviteId,   setSendingInviteId]   = useState<string | null>(null);
 
-  const bottomRef     = useRef<HTMLDivElement>(null);
-  const inputRef      = useRef<HTMLInputElement>(null);
-  const groupInputRef = useRef<HTMLInputElement>(null);
-  const profileCache  = useRef<Record<string, Profile>>({});
+  const bottomRef        = useRef<HTMLDivElement>(null);
+  const inputRef         = useRef<HTMLInputElement>(null);
+  const groupInputRef    = useRef<HTMLInputElement>(null);
+  const profileCache     = useRef<Record<string, Profile>>({});
+  const loadingConvRef   = useRef<string | null>(null);
+  const loadingGroupRef  = useRef<string | null>(null);
 
   /* ── Token helper ── */
   async function getToken(): Promise<string | null> {
@@ -432,9 +436,14 @@ function DMsPageInner() {
   async function openEntry(entry: InboxEntry) {
     setActiveConv(entry); setMessages([]); setSelectedMsgId(null);
     if (!entry.convId || !myProfile) return;
-    const { data } = await supabase.from("dm_messages").select("*").eq("conversation_id", entry.convId).order("created_at", { ascending: true });
+    const convId = entry.convId;
+    loadingConvRef.current = convId;
+    setMessagesLoading(true);
+    const { data } = await supabase.from("dm_messages").select("*").eq("conversation_id", convId).order("created_at", { ascending: true });
+    if (loadingConvRef.current !== convId) return; // stale — user switched conversation
     setMessages(data ?? []);
-    await supabase.from("dm_messages").update({ read_at: new Date().toISOString() }).eq("conversation_id", entry.convId).neq("sender_id", myProfile.id).is("read_at", null);
+    setMessagesLoading(false);
+    await supabase.from("dm_messages").update({ read_at: new Date().toISOString() }).eq("conversation_id", convId).neq("sender_id", myProfile.id).is("read_at", null);
     loadInbox();
     setTimeout(() => bottomRef.current?.scrollIntoView(), 100);
   }
@@ -442,7 +451,11 @@ function DMsPageInner() {
   /* ── Open group ── */
   async function openGroup(group: GroupChat) {
     setActiveGroup(group); setGroupMessages([]); setGroupSelectedMsgId(null);
-    const { data: msgs } = await supabase.from("group_chat_messages").select("id, sender_id, content, created_at").eq("group_chat_id", group.id).order("created_at", { ascending: true }).limit(200);
+    const groupId = group.id;
+    loadingGroupRef.current = groupId;
+    setGroupMessagesLoading(true);
+    const { data: msgs } = await supabase.from("group_chat_messages").select("id, sender_id, content, created_at").eq("group_chat_id", groupId).order("created_at", { ascending: true }).limit(200);
+    if (loadingGroupRef.current !== groupId) return; // stale — user switched group
     if (msgs?.length) {
       const senderIds = [...new Set((msgs as any[]).map(m => m.sender_id as string))];
       const uncached = senderIds.filter(id => !profileCache.current[id]);
@@ -450,10 +463,12 @@ function DMsPageInner() {
         const { data: profiles } = await supabase.from("profiles").select("id, username, display_name, avatar_url").in("id", uncached);
         for (const p of profiles ?? []) profileCache.current[(p as any).id] = p as Profile;
       }
+      if (loadingGroupRef.current !== groupId) return;
       setGroupMessages((msgs as any[]).map(m => ({ ...m, sender: profileCache.current[m.sender_id] ?? null })));
     }
+    setGroupMessagesLoading(false);
     if (myProfile) {
-      await supabase.from("group_chat_members").update({ last_read_at: new Date().toISOString() }).eq("group_chat_id", group.id).eq("user_id", myProfile.id);
+      await supabase.from("group_chat_members").update({ last_read_at: new Date().toISOString() }).eq("group_chat_id", groupId).eq("user_id", myProfile.id);
     }
     setTimeout(() => bottomRef.current?.scrollIntoView(), 100);
   }
@@ -931,7 +946,11 @@ function DMsPageInner() {
 
       {/* Messages */}
       <div style={{ flex: 1, overflowY: "auto", padding: "12px 0 4px" }}>
-        {groupMessages.length === 0 && (
+        {groupMessagesLoading ? (
+          <div style={{ display: "flex", justifyContent: "center", padding: "80px 0" }}>
+            <div style={{ width: 28, height: 28, border: "2.5px solid var(--border-2)", borderTop: "2.5px solid #22c55e", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+          </div>
+        ) : groupMessages.length === 0 && (
           <div style={{ padding: "80px 24px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
             {(TEAM_LOGOS[activeGroup.team_name] || activeGroup.image_url)
               ? <img src={TEAM_LOGOS[activeGroup.team_name] || activeGroup.image_url!} alt={activeGroup.team_name} style={{ width: 72, height: 72, borderRadius: "50%", objectFit: "cover", background: TEAM_COLORS[activeGroup.team_name] ?? "#1a1a1a" }} />
@@ -1011,7 +1030,11 @@ function DMsPageInner() {
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: "12px 0 4px" }}>
-        {messages.length === 0 && (
+        {messagesLoading ? (
+          <div style={{ display: "flex", justifyContent: "center", padding: "80px 0" }}>
+            <div style={{ width: 28, height: 28, border: "2.5px solid var(--border-2)", borderTop: "2.5px solid #22c55e", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+          </div>
+        ) : messages.length === 0 && (
           <div style={{ padding: "80px 24px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
             <Avatar name={activeConv.other?.username ?? "?"} url={activeConv.other?.avatar_url} size={80} />
             <div style={{ fontWeight: 700, fontSize: 18, color: "var(--text-1)" }}>{activeConv.other?.display_name || activeConv.other?.username}</div>

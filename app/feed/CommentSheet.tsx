@@ -629,25 +629,23 @@ const viewRepliesBtnStyle: CSSProperties = {
 };
 
 const replyModalBackdropStyle: CSSProperties = {
-  position: "absolute",
+  position: "fixed",
   inset: 0,
-  zIndex: 80,
+  zIndex: 210,
   background: "rgba(0,0,0,0.72)",
   display: "flex",
-  alignItems: "center",
+  alignItems: "flex-end",
   justifyContent: "center",
-  padding: "12px",
 };
 
 const replyModalStyle: CSSProperties = {
   width: "100%",
-  maxWidth: 640,
-  maxHeight: "72%",
+  maxHeight: "85dvh",
   background: "var(--bg)",
-  border: "1px solid var(--border-3)",
-  borderRadius: 22,
+  border: "1px solid var(--border-2)",
+  borderBottom: "none",
+  borderRadius: "20px 20px 0 0",
   overflow: "hidden",
-  boxShadow: "0 24px 80px rgba(0,0,0,0.72)",
   display: "flex",
   flexDirection: "column",
 };

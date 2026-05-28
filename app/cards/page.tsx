@@ -827,7 +827,6 @@ export default function CardsPage() {
                       playerTeamLogo: card.team_logo,
                       rarity: card.rarity,
                       rating: card.rating,
-                      duplicateCount: card.duplicate_count,
                     }} />
                   </div>
                 ))}
@@ -922,6 +921,7 @@ function PackDetailModal({ pack, coins, opening, onOpenPack, onClose, onClaimDai
   const isDaily = pack.type === "daily";
   const canAfford = isDaily ? dailyAvailable : coins >= pack.cost;
   const isOpening = opening === pack.type;
+  const [oddsOpen, setOddsOpen] = useState(false);
 
   // Close on backdrop click
   return (
@@ -992,12 +992,18 @@ function PackDetailModal({ pack, coins, opening, onOpenPack, onClose, onClaimDai
 
           {/* Odds */}
           <div style={{ borderRadius: 14, overflow: "hidden", border: "1px solid rgba(255,255,255,.07)" }}>
-            {/* Header */}
-            <div style={{ background: "rgba(255,255,255,.05)", padding: "9px 14px", borderBottom: "1px solid rgba(255,255,255,.06)" }}>
+            {/* Header — clickable toggle */}
+            <button
+              onClick={() => setOddsOpen(o => !o)}
+              style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(255,255,255,.05)", padding: "9px 14px", border: "none", cursor: "pointer", borderBottom: oddsOpen ? "1px solid rgba(255,255,255,.06)" : "none" }}
+            >
               <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: ".18em", color: "rgba(255,255,255,.4)", textTransform: "uppercase" }}>Odds</span>
-            </div>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ transition: "transform 0.2s", transform: oddsOpen ? "rotate(180deg)" : "rotate(0deg)", flexShrink: 0 }}>
+                <path d="M2 4l4 4 4-4" stroke="rgba(255,255,255,.4)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
             {/* Rows */}
-            {RARITY_ODDS[pack.type].map(({ rarity, pct }, idx, arr) => {
+            {oddsOpen && RARITY_ODDS[pack.type].map(({ rarity, pct }, idx, arr) => {
               const meta = RARITY_META[rarity];
               const isLast = idx === arr.length - 1;
               return (
@@ -1469,9 +1475,12 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
     // Read from refs — not state — to get the latest values
     const currentDragX = dragXRef.current;
     dragXRef.current = 0;
+    // A tap (no drag) or a left swipe both trigger the action.
+    // This makes it work on desktop (click) and mobile (swipe) alike.
+    const isTap = Math.abs(currentDragX) <= 8;
     if (!flippedRef.current) {
-      // First swipe: flip card to reveal player
-      if (currentDragX < -55) {
+      // First action: flip card to reveal player
+      if (currentDragX < -55 || isTap) {
         completeFlip();
       } else {
         setSnappingBack(true);
@@ -1479,8 +1488,8 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
         setTimeout(() => setSnappingBack(false), 400);
       }
     } else {
-      // Second swipe: advance to next card
-      if (currentDragX < -70) {
+      // Second action: advance to next card
+      if (currentDragX < -70 || isTap) {
         advance();
       } else {
         setSnappingBack(true);

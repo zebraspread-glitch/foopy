@@ -51,7 +51,14 @@
       "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('next:', p.dependencies.next\\)\")",
       "Bash(node -e \"const p = require\\('./app/data/players.json'\\); const brisbane = p.filter\\(x => x.team && x.team.toLowerCase\\(\\).includes\\('brisban'\\)\\); console.log\\([...new Set\\(brisbane.map\\(x => x.team\\)\\)], brisbane.length + ' players'\\)\")",
       "Bash(node -e \"const p = require\\('./app/data/players.json'\\); const b = p.filter\\(x => x.team && x.team.toLowerCase\\(\\).includes\\('brisban'\\)\\); console.log\\([...new Set\\(b.map\\(x=>x.team\\)\\)], b.length\\)\")",
-      "Bash(node -e \"const p = require\\('./app/data/players.json'\\); const b = p.filter\\(x => x.team && \\(x.team.includes\\('Brisbane'\\) || x.team === 'Brisbane'\\)\\); b.forEach\\(x => console.log\\(x.id, '|', x.name\\)\\)\")"
+      "Bash(node -e \"const p = require\\('./app/data/players.json'\\); const b = p.filter\\(x => x.team && \\(x.team.includes\\('Brisbane'\\) || x.team === 'Brisbane'\\)\\); b.forEach\\(x => console.log\\(x.id, '|', x.name\\)\\)\")",
+      "mcp__Claude_Preview__preview_start",
+      "PowerShell(taskkill /PID 22032 /F)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\" -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)",
+      "Bash(Select-String -Path \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\\\\app\\\\match\\\\[id]\\\\page.tsx\" -Pattern \"MatchRepliesPopup|replyModal\")",
+      "Bash(Select-Object -First 20)"
     ]
   }
 }

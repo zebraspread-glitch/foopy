@@ -40,6 +40,7 @@ allowedDevOrigins: ["192.168.1.18", "100.89.191.74"],
   experimental: {
     optimizePackageImports: ["lucide-react", "@supabase/supabase-js"],
   },
+
 };
 
 export default nextConfig;

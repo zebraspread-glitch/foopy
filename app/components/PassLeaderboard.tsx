@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
 import { getPassLevel, PLAYER_PASS_LEVELS, type PlayerPass } from "@/app/lib/passes";
 
@@ -32,6 +33,7 @@ type Entry = {
 };
 
 export default function PassLeaderboard({ pass, onClose }: { pass: PlayerPass; onClose: () => void }) {
+  const router = useRouter();
   const [sort, setSort]           = useState<"first" | "level">("first");
   const [entries, setEntries]     = useState<Entry[]>([]);
   const [loadingLb, setLoadingLb] = useState(true);
@@ -109,19 +111,19 @@ export default function PassLeaderboard({ pass, onClose }: { pass: PlayerPass; o
               const level     = getPassLevel(entry.xp ?? 0, PLAYER_PASS_LEVELS);
               const isMe      = entry.user_id === myId;
               const serial    = entry.serial_number;
-              const rankLabel = sort === "first" && serial != null ? `#${serial}` : `#${idx + 1}`;
-              const rankColor = idx === 0 ? "#ffd700" : idx === 1 ? "#c0c0c0" : idx === 2 ? "#cd7f32" : "rgba(255,255,255,0.55)";
+              const rankLabel = serial != null ? `#${serial}` : `#${idx + 1}`;
               return (
-                <div key={entry.id} style={{
+                <div key={entry.id} onClick={() => entry.username && router.push(`/album/${entry.username}`)} style={{
                   borderRadius: 16, overflow: "hidden", position: "relative",
                   background: level.gradient,
                   border: `1.5px solid ${isMe ? level.color + "99" : level.color + "55"}`,
                   boxShadow: isMe ? `0 4px 24px ${level.color}44` : `0 4px 24px ${level.color}22`,
                   aspectRatio: "3/4", display: "flex", flexDirection: "column",
+                  cursor: entry.username ? "pointer" : "default",
                 }}>
                   <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1.5, background: `linear-gradient(90deg,transparent,${level.color}cc,transparent)`, zIndex: 3 }} />
                   <div style={{ position: "absolute", top: 8, left: 8, zIndex: 5, background: level.color, color: "#000", fontSize: 7.5, fontWeight: 900, letterSpacing: "0.1em", padding: "2px 7px", borderRadius: 999 }}>{level.name.toUpperCase()}</div>
-                  <div style={{ position: "absolute", top: 8, right: 8, zIndex: 5, fontSize: 8, fontWeight: 900, color: isMe ? level.color : rankColor, letterSpacing: "0.06em" }}>{rankLabel}</div>
+                  <div style={{ position: "absolute", top: 8, right: 8, zIndex: 5, fontSize: 8, fontWeight: 900, color: "#fff", letterSpacing: "0.06em" }}>{rankLabel}</div>
                   <div style={{ flex: 1, overflow: "hidden", position: "relative", background: "rgba(0,0,0,0.2)" }}>
                     {imgSrc
                       ? <img src={imgSrc} alt={pass.player_name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", display: "block" }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />

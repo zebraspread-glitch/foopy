@@ -1,42 +1,37 @@
 import { NextResponse } from "next/server";
+import { withCache } from "@/app/lib/matchCache";
 
 export const dynamic = "force-dynamic";
 
-const CACHE_MS = 30_000;
-const cache = new Map<string, { time: number; data: any }>();
-
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const id = searchParams.get("id");
-
-  if (!id) {
-    return NextResponse.json({ error: "Missing id" }, { status: 400 });
-  }
-
-  const now = Date.now();
-  const cached = cache.get(id);
-
-  if (cached && now - cached.time < CACHE_MS) {
-    return NextResponse.json({ ...cached.data, cached: true });
-  }
-
+async function fetchPlayerStats(gameId: string) {
   const res = await fetch(
-    `https://v1.afl.api-sports.io/games/statistics/players?id=${id}`,
+    `https://v1.afl.api-sports.io/games/statistics/players?id=${gameId}`,
     {
       headers: { "x-apisports-key": process.env.API_SPORTS_AFL_KEY! },
       cache: "no-store",
     }
   );
+  if (!res.ok) throw new Error(`API-Sports player stats failed: ${res.status}`);
+  return res.json();
+}
 
-  if (!res.ok) {
-    return NextResponse.json(
-      { error: "API-Sports player stats failed", status: res.status },
-      { status: 500 }
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+  const isFinal = searchParams.get("final") === "true";
+
+  if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+
+  try {
+    const { data, fromCache } = await withCache(
+      id,
+      "player_stats",
+      20,
+      () => fetchPlayerStats(id),
+      isFinal
     );
+    return NextResponse.json({ ...(data as any), cached: fromCache });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
-
-  const data = await res.json();
-  cache.set(id, { time: now, data });
-
-  return NextResponse.json(data);
 }

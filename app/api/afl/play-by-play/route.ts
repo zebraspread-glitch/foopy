@@ -1,47 +1,19 @@
 import { NextResponse } from "next/server";
+import { withCache } from "@/app/lib/matchCache";
 
 export const dynamic = "force-dynamic";
 
 const API_BASE = "https://v1.afl.api-sports.io";
-const CACHE_MS = 30_000;
 
-const cache = new Map<string, { time: number; data: any }>();
-
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const gameId = searchParams.get("id");
-
-  if (!gameId) {
-    return NextResponse.json({ error: "Missing game id" }, { status: 400 });
-  }
-
-  const now = Date.now();
-  const cached = cache.get(gameId);
-
-  // Serve from cache if still fresh
-  const payload = cached && now - cached.time < CACHE_MS
-    ? cached.data
-    : await fetchAndCache(gameId, now);
-
-  // If the client already has this many events, skip sending the full payload
-  const knownTotal = searchParams.get("knownTotal");
-  if (knownTotal !== null && parseInt(knownTotal) === payload.total) {
-    return NextResponse.json({ total: payload.total, unchanged: true });
-  }
-
-  return NextResponse.json(payload);
-}
-
-async function fetchAndCache(gameId: string, now: number) {
+async function fetchEvents(gameId: string) {
   const res = await fetch(`${API_BASE}/games/events?id=${gameId}`, {
-    headers: {
-      "x-apisports-key": process.env.API_SPORTS_AFL_KEY || "",
-    },
+    headers: { "x-apisports-key": process.env.API_SPORTS_AFL_KEY ?? "" },
     cache: "no-store",
   });
+  if (!res.ok) throw new Error(`API-Sports events failed: ${res.status}`);
 
   const data = await res.json();
-  const rawEvents = data?.response?.[0]?.events ?? [];
+  const rawEvents: any[] = data?.response?.[0]?.events ?? [];
 
   const events = rawEvents.map((event: any) => ({
     quarter: `Q${event.period}`,
@@ -56,13 +28,32 @@ async function fetchAndCache(gameId: string, now: number) {
     } · Player ID ${event.player?.id ?? "-"}`,
   }));
 
-  const payload = {
-    gameId,
-    events,
-    total: events.length,
-    cached: false,
-  };
+  return { gameId, events, total: events.length };
+}
 
-  cache.set(gameId, { time: now, data: payload });
-  return payload;
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const gameId = searchParams.get("id");
+  const isFinal = searchParams.get("final") === "true";
+
+  if (!gameId) return NextResponse.json({ error: "Missing game id" }, { status: 400 });
+
+  try {
+    const { data: payload, fromCache } = await withCache(
+      gameId,
+      "events",
+      10,
+      () => fetchEvents(gameId),
+      isFinal
+    );
+
+    const knownTotal = searchParams.get("knownTotal");
+    if (knownTotal !== null && parseInt(knownTotal) === (payload as any).total) {
+      return NextResponse.json({ total: (payload as any).total, unchanged: true });
+    }
+
+    return NextResponse.json({ ...(payload as any), cached: fromCache });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 502 });
+  }
 }

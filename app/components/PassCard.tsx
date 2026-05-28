@@ -100,10 +100,12 @@ export function PlayerPassCard({ pass }: { pass: PlayerPass }) {
       <div style={{ position: "absolute", top: 8, left: 8, zIndex: 4, background: level.color, color: "#000", fontSize: 7.5, fontWeight: 900, letterSpacing: "0.1em", padding: "2px 7px", borderRadius: 999 }}>
         {level.name.toUpperCase()}
       </div>
-      {/* year */}
-      <div style={{ position: "absolute", top: 8, right: 8, zIndex: 4, fontSize: 8, fontWeight: 900, color: "rgba(255,255,255,0.35)", letterSpacing: "0.06em" }}>
-        2026
-      </div>
+      {/* serial number */}
+      {pass.serial_number != null && (
+        <div style={{ position: "absolute", top: 8, right: 8, zIndex: 4, fontSize: 8, fontWeight: 900, color: "#fff", letterSpacing: "0.06em" }}>
+          #{pass.serial_number}
+        </div>
+      )}
       {/* photo */}
       <div style={{ flex: 1, overflow: "hidden", position: "relative", background: "rgba(0,0,0,0.2)" }}>
         {img
@@ -118,9 +120,6 @@ export function PlayerPassCard({ pass }: { pass: PlayerPass }) {
       <div style={{ padding: "8px 10px 10px", background: "rgba(0,0,0,0.25)", flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 1 }}>
           <div style={{ fontWeight: 900, fontSize: 12, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>{pass.player_name}</div>
-          {pass.serial_number != null && (
-            <div style={{ fontSize: 9, fontWeight: 900, color: level.color, letterSpacing: "0.04em", flexShrink: 0, marginLeft: 5 }}>#{pass.serial_number}</div>
-          )}
         </div>
         <div style={{ fontSize: 9.5, color: "rgba(255,255,255,0.45)", marginBottom: 6 }}>{pass.team_name}</div>
         <PassXpBar xp={pass.xp ?? 0} levels={PLAYER_PASS_LEVELS} />
@@ -150,10 +149,12 @@ export function TeamPassCard({ pass }: { pass: TeamPass }) {
       <div style={{ position: "absolute", top: 10, left: 10, zIndex: 4, background: level.color, color: "#000", fontSize: 7.5, fontWeight: 900, letterSpacing: "0.1em", padding: "2px 8px", borderRadius: 999 }}>
         {level.name.toUpperCase()}
       </div>
-      {/* year */}
-      <div style={{ position: "absolute", top: 10, right: 10, zIndex: 4, fontSize: 8, fontWeight: 900, color: "rgba(255,255,255,0.35)", letterSpacing: "0.06em" }}>
-        2026
-      </div>
+      {/* serial number */}
+      {pass.serial_number != null && (
+        <div style={{ position: "absolute", top: 10, right: 10, zIndex: 4, fontSize: 8, fontWeight: 900, color: "#fff", letterSpacing: "0.06em" }}>
+          #{pass.serial_number}
+        </div>
+      )}
       {/* logo area */}
       <div style={{ flex: 1, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
         <div style={{ position: "absolute", width: "70%", height: "70%", borderRadius: "50%", background: `${color}40`, filter: "blur(32px)" }} />
@@ -166,9 +167,6 @@ export function TeamPassCard({ pass }: { pass: TeamPass }) {
       <div style={{ padding: "10px 12px 14px", background: "rgba(0,0,0,0.25)", flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 1 }}>
           <div style={{ fontWeight: 900, fontSize: 16, color: "#fff", letterSpacing: "-0.01em" }}>{pass.team_name}</div>
-          {pass.serial_number != null && (
-            <div style={{ fontSize: 11, fontWeight: 900, color: level.color, letterSpacing: "0.04em" }}>#{pass.serial_number}</div>
-          )}
         </div>
         <div style={{ fontSize: 10, color: level.color, fontWeight: 800, marginBottom: 8, letterSpacing: "0.04em" }}>TEAM PASS · 2026 SEASON</div>
         <PassXpBar xp={pass.xp ?? 0} levels={TEAM_PASS_LEVELS} />

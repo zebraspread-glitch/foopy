@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
 import { getPassLevel, TEAM_PASS_LEVELS, type TeamPass } from "@/app/lib/passes";
 
@@ -44,6 +45,7 @@ type Entry = {
 };
 
 export default function TeamPassLeaderboard({ pass, onClose }: { pass: TeamPass; onClose: () => void }) {
+  const router = useRouter();
   const [sort, setSort]           = useState<"first" | "level">("first");
   const [entries, setEntries]     = useState<Entry[]>([]);
   const [loadingLb, setLoadingLb] = useState(true);
@@ -118,20 +120,20 @@ export default function TeamPassLeaderboard({ pass, onClose }: { pass: TeamPass;
               const level     = getPassLevel(entry.xp ?? 0, TEAM_PASS_LEVELS);
               const isMe      = entry.user_id === myId;
               const serial    = entry.serial_number;
-              const rankLabel = sort === "first" && serial != null ? `#${serial}` : `#${idx + 1}`;
-              const rankColor = idx === 0 ? "#ffd700" : idx === 1 ? "#c0c0c0" : idx === 2 ? "#cd7f32" : "rgba(255,255,255,0.55)";
+              const rankLabel = serial != null ? `#${serial}` : `#${idx + 1}`;
               const color     = teamColor(entry.team_name);
               return (
-                <div key={entry.id} style={{
+                <div key={entry.id} onClick={() => entry.username && router.push(`/album/${entry.username}`)} style={{
                   borderRadius: 20, overflow: "hidden", position: "relative",
                   background: level.gradient,
                   border: `1.5px solid ${isMe ? level.color + "99" : level.color + "55"}`,
                   boxShadow: isMe ? `0 6px 28px ${level.color}44` : `0 4px 24px ${level.color}22`,
                   aspectRatio: "3/4", display: "flex", flexDirection: "column",
+                  cursor: entry.username ? "pointer" : "default",
                 }}>
                   <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1.5, background: `linear-gradient(90deg,transparent,${level.color}cc,transparent)`, zIndex: 3 }} />
                   <div style={{ position: "absolute", top: 10, left: 10, zIndex: 4, background: level.color, color: "#000", fontSize: 7.5, fontWeight: 900, letterSpacing: "0.1em", padding: "2px 8px", borderRadius: 999 }}>{level.name.toUpperCase()}</div>
-                  <div style={{ position: "absolute", top: 10, right: 10, zIndex: 4, fontSize: 8, fontWeight: 900, color: isMe ? level.color : rankColor, letterSpacing: "0.06em" }}>{rankLabel}</div>
+                  <div style={{ position: "absolute", top: 10, right: 10, zIndex: 4, fontSize: 8, fontWeight: 900, color: "#fff", letterSpacing: "0.06em" }}>{rankLabel}</div>
                   <div style={{ flex: 1, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
                     <div style={{ position: "absolute", width: "70%", height: "70%", borderRadius: "50%", background: `${color}40`, filter: "blur(32px)" }} />
                     <div style={{ width: 110, height: 110, borderRadius: "50%", overflow: "hidden", flexShrink: 0, position: "relative", zIndex: 1 }}>

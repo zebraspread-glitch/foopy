@@ -253,9 +253,6 @@ export default function NotificationsPage() {
 
       load(uid);
 
-      // Stamp last-seen so the TopBar badge clears even on direct navigation
-      localStorage.setItem("foopy_notif_last_seen", new Date().toISOString());
-
       // Mark all as read
       supabase.from("notifications").update({ read: true }).eq("user_id", uid).eq("read", false);
 

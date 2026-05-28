@@ -179,7 +179,6 @@ function PassLeaderboard({ pass, onClose }: { pass: PlayerPass; onClose: () => v
               const isMe   = entry.user_id === myId;
               const serial = entry.serial_number;
               const rankLabel = serial != null ? `#${serial}` : `#${idx + 1}`;
-              const rankColor = "#ffffff";
 
               return (
                 <div key={entry.id} style={{
@@ -201,7 +200,7 @@ function PassLeaderboard({ pass, onClose }: { pass: PlayerPass; onClose: () => v
                   </div>
 
                   {/* rank / serial — top right */}
-                  <div style={{ position: "absolute", top: 8, right: 8, zIndex: 5, fontSize: 8, fontWeight: 900, color: rankColor, letterSpacing: "0.06em" }}>
+                  <div style={{ position: "absolute", top: 8, right: 8, zIndex: 5, fontSize: 8, fontWeight: 900, color: "#fff", letterSpacing: "0.06em" }}>
                     {rankLabel}
                   </div>
 
@@ -337,7 +336,6 @@ function TeamPassLeaderboard({ pass, onClose }: { pass: TeamPass; onClose: () =>
               const isMe   = entry.user_id === myId;
               const serial = entry.serial_number;
               const rankLabel = serial != null ? `#${serial}` : `#${idx + 1}`;
-              const rankColor = "#ffffff";
               const color = teamColor(entry.team_name);
 
               return (
@@ -356,7 +354,7 @@ function TeamPassLeaderboard({ pass, onClose }: { pass: TeamPass; onClose: () =>
                     {level.name.toUpperCase()}
                   </div>
                   {/* rank */}
-                  <div style={{ position: "absolute", top: 10, right: 10, zIndex: 4, fontSize: 8, fontWeight: 900, color: rankColor, letterSpacing: "0.06em" }}>
+                  <div style={{ position: "absolute", top: 10, right: 10, zIndex: 4, fontSize: 8, fontWeight: 900, color: "#fff", letterSpacing: "0.06em" }}>
                     {rankLabel}
                   </div>
                   {/* logo area */}
@@ -400,6 +398,7 @@ function TeamPassLeaderboard({ pass, onClose }: { pass: TeamPass; onClose: () =>
 
 export default function PassesPage() {
   const [token, setToken]             = useState<string | null>(null);
+  const [userId, setUserId]           = useState<string | null>(null);
   const [authed, setAuthed]           = useState<boolean | null>(null);
   const [data, setData]               = useState<PassesData | null>(null);
   const [loading, setLoading]         = useState(true);
@@ -422,6 +421,7 @@ export default function PassesPage() {
     supabase.auth.getSession().then(({ data: s }) => {
       setAuthed(!!s.session);
       setToken(s.session?.access_token ?? null);
+      setUserId(s.session?.user?.id ?? null);
     });
   }, []);
 
@@ -975,12 +975,14 @@ export default function PassesPage() {
                           const { data: byName } = await supabase
                             .from("user_cards")
                             .select("rating, duplicate_count")
+                            .eq("user_id", userId ?? "")
                             .ilike("player_name", pname.trim());
                           // Fallback: also try by the cardIdForName format of the player id
                           const cardPlayerId = pname.toLowerCase().replace(/'/g, "").replace(/[^a-z0-9]+/g, "");
                           const { data: byId } = await supabase
                             .from("user_cards")
                             .select("rating, duplicate_count")
+                            .eq("user_id", userId ?? "")
                             .eq("player_id", cardPlayerId);
                           // Merge and deduplicate — pick whichever query returned rows
                           const cardRows = (byName?.length ? byName : byId) ?? [];

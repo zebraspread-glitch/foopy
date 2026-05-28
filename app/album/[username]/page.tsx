@@ -91,7 +91,7 @@ export default function UserAlbumPage() {
   const [selectedCard, setSelectedCard] = useState<SelectedCard | null>(null);
   const [view, setView] = useState<"album" | "passes">("album");
   const [playerPasses, setPlayerPasses] = useState<PlayerPass[]>([]);
-  const [teamPass, setTeamPass] = useState<TeamPass | null>(null);
+  const [teamPasses, setTeamPasses] = useState<TeamPass[]>([]);
   const [leaderboardPlayerPass, setLeaderboardPlayerPass] = useState<PlayerPass | null>(null);
   const [leaderboardTeamPass,   setLeaderboardTeamPass]   = useState<TeamPass | null>(null);
   const [myUserId, setMyUserId] = useState<string | null>(null);
@@ -118,7 +118,7 @@ export default function UserAlbumPage() {
         setProfile(data.profile);
         setUserCards(data.cards);
         setPlayerPasses(data.playerPasses ?? []);
-        setTeamPass(data.teamPass ?? null);
+        setTeamPasses(data.teamPasses ?? []);
         setLoading(false);
       })
       .catch(() => { setNotFound(true); setLoading(false); });
@@ -237,7 +237,7 @@ export default function UserAlbumPage() {
             )}
             {!loading && view === "passes" && (
               <div style={{ fontSize: 12, color: "rgba(255,255,255,.4)", fontWeight: 600, marginTop: 1 }}>
-                {playerPasses.length} player pass{playerPasses.length !== 1 ? "es" : ""}{teamPass ? " · 1 team pass" : ""}
+                {playerPasses.length} player pass{playerPasses.length !== 1 ? "es" : ""}{teamPasses.length > 0 ? ` · ${teamPasses.length} team pass${teamPasses.length !== 1 ? "es" : ""}` : ""}
               </div>
             )}
           </div>
@@ -357,7 +357,7 @@ export default function UserAlbumPage() {
       ) : (
         <PassesView
           playerPasses={playerPasses}
-          teamPass={teamPass}
+          teamPasses={teamPasses}
           onPlayerPassClick={(p) => setLeaderboardPlayerPass(p)}
           onTeamPassClick={(t) => setLeaderboardTeamPass(t)}
         />
@@ -445,9 +445,9 @@ function playerImgSrc(playerName: string, teamName: string): string {
 
 type PassSortKey = "recent" | "level";
 
-function PassesView({ playerPasses, teamPass, onPlayerPassClick, onTeamPassClick }: {
+function PassesView({ playerPasses, teamPasses, onPlayerPassClick, onTeamPassClick }: {
   playerPasses: PlayerPass[];
-  teamPass: TeamPass | null;
+  teamPasses: TeamPass[];
   onPlayerPassClick: (p: PlayerPass) => void;
   onTeamPassClick: (t: TeamPass) => void;
 }) {
@@ -463,7 +463,7 @@ function PassesView({ playerPasses, teamPass, onPlayerPassClick, onTeamPassClick
     return copy;
   }, [playerPasses, sortBy]);
 
-  const hasAny = playerPasses.length > 0 || !!teamPass;
+  const hasAny = playerPasses.length > 0 || teamPasses.length > 0;
 
   if (!hasAny) {
     return (
@@ -478,35 +478,41 @@ function PassesView({ playerPasses, teamPass, onPlayerPassClick, onTeamPassClick
   return (
     <div style={{ padding: "14px 14px 0", display: "flex", flexDirection: "column", gap: 20 }}>
 
-      {/* Team pass */}
-      {teamPass && (() => {
-        const level = getPassLevel(teamPass.xp ?? 0, TEAM_PASS_LEVELS);
-        const logo  = TEAM_LOGOS[teamPass.team_name] ?? "/team-logos/default.png";
-        return (
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.35)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Team Pass</div>
-            <div onClick={() => onTeamPassClick(teamPass!)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", borderRadius: 16, background: level.gradient, border: `1.5px solid ${level.color}44`, position: "relative", overflow: "hidden", cursor: "pointer" }}>
-              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1.5, background: `linear-gradient(90deg,transparent,${level.color}cc,transparent)` }} />
-              <div style={{ width: 52, height: 52, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(0,0,0,0.3)" }}>
-                <img src={logo} alt={teamPass.team_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 3 }}>
-                  <div style={{ fontWeight: 900, fontSize: 16, color: "#fff" }}>{teamPass.team_name}</div>
-                  {teamPass.serial_number != null && <div style={{ fontSize: 13, fontWeight: 900, color: level.color }}>#{teamPass.serial_number}</div>}
-                </div>
-                <div style={{ fontSize: 11, color: level.color, fontWeight: 800, letterSpacing: "0.05em", marginBottom: 6 }}>{level.name.toUpperCase()} · {level.multiplier}×</div>
-                <div style={{ background: "rgba(0,0,0,0.35)", borderRadius: 999, height: 4, overflow: "hidden" }}>
-                  <div style={{ width: `${Math.round(level.progress * 100)}%`, height: "100%", borderRadius: 999, background: `linear-gradient(90deg,${level.darkColor},${level.color})` }} />
-                </div>
-                <div style={{ marginTop: 4, fontSize: 10, color: "rgba(255,255,255,.3)", fontWeight: 600 }}>
-                  {level.isMaxed ? "MAX" : `${teamPass.xp ?? 0} / ${level.nextXp} XP`}
-                </div>
-              </div>
-            </div>
+      {/* Team passes */}
+      {teamPasses.length > 0 && (
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.35)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
+            Team Pass{teamPasses.length !== 1 ? "es" : ""}
           </div>
-        );
-      })()}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {teamPasses.map((tp) => {
+              const level = getPassLevel(tp.xp ?? 0, TEAM_PASS_LEVELS);
+              const logo  = TEAM_LOGOS[tp.team_name] ?? "/team-logos/default.png";
+              return (
+                <div key={tp.id} onClick={() => onTeamPassClick(tp)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", borderRadius: 16, background: level.gradient, border: `1.5px solid ${level.color}44`, position: "relative", overflow: "hidden", cursor: "pointer" }}>
+                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1.5, background: `linear-gradient(90deg,transparent,${level.color}cc,transparent)` }} />
+                  <div style={{ width: 52, height: 52, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(0,0,0,0.3)" }}>
+                    <img src={logo} alt={tp.team_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 3 }}>
+                      <div style={{ fontWeight: 900, fontSize: 16, color: "#fff" }}>{tp.team_name}</div>
+                      {tp.serial_number != null && <div style={{ fontSize: 13, fontWeight: 900, color: "#fff" }}>#{tp.serial_number}</div>}
+                    </div>
+                    <div style={{ fontSize: 11, color: level.color, fontWeight: 800, letterSpacing: "0.05em", marginBottom: 6 }}>{level.name.toUpperCase()} · {level.multiplier}×</div>
+                    <div style={{ background: "rgba(0,0,0,0.35)", borderRadius: 999, height: 4, overflow: "hidden" }}>
+                      <div style={{ width: `${Math.round(level.progress * 100)}%`, height: "100%", borderRadius: 999, background: `linear-gradient(90deg,${level.darkColor},${level.color})` }} />
+                    </div>
+                    <div style={{ marginTop: 4, fontSize: 10, color: "rgba(255,255,255,.3)", fontWeight: 600 }}>
+                      {level.isMaxed ? "MAX" : `${tp.xp ?? 0} / ${level.nextXp} XP`}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Player passes */}
       {playerPasses.length > 0 && (
@@ -553,8 +559,10 @@ function PassesView({ playerPasses, teamPass, onPlayerPassClick, onTeamPassClick
                   <div style={{ position: "absolute", top: 8, left: 8, zIndex: 4, background: level.color, color: "#000", fontSize: 7.5, fontWeight: 900, letterSpacing: "0.1em", padding: "2px 7px", borderRadius: 999 }}>
                     {level.name.toUpperCase()}
                   </div>
-                  {/* year */}
-                  <div style={{ position: "absolute", top: 8, right: 8, zIndex: 4, fontSize: 8, fontWeight: 900, color: "rgba(255,255,255,0.35)", letterSpacing: "0.06em" }}>2026</div>
+                  {/* serial number */}
+                  {pass.serial_number != null && (
+                    <div style={{ position: "absolute", top: 8, right: 8, zIndex: 4, fontSize: 8, fontWeight: 900, color: "#fff", letterSpacing: "0.06em" }}>#{pass.serial_number}</div>
+                  )}
                   {/* photo */}
                   <div style={{ flex: 1, overflow: "hidden", position: "relative", background: "rgba(0,0,0,0.2)" }}>
                     {imgSrc
@@ -567,7 +575,6 @@ function PassesView({ playerPasses, teamPass, onPlayerPassClick, onTeamPassClick
                   <div style={{ padding: "8px 10px 10px", background: "rgba(0,0,0,0.25)", flexShrink: 0 }}>
                     <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 1 }}>
                       <div style={{ fontWeight: 900, fontSize: 12, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>{pass.player_name}</div>
-                      {pass.serial_number != null && <div style={{ fontSize: 9, fontWeight: 900, color: level.color, letterSpacing: "0.04em", flexShrink: 0, marginLeft: 5 }}>#{pass.serial_number}</div>}
                     </div>
                     <div style={{ fontSize: 9.5, color: "rgba(255,255,255,0.45)", marginBottom: 6 }}>{pass.team_name}</div>
                     <div>

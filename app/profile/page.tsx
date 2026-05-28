@@ -1241,8 +1241,8 @@ export default function ProfilePage() {
   async function confirmImageUpload() {
     if (!previewFile || !previewType || !previewUrl || !croppedAreaPixels) return;
 
+    const type = previewType;
     try {
-      const type = previewType;
       const croppedFile = await getCroppedImage(previewUrl, croppedAreaPixels, type);
 
       closeImagePreview();
@@ -1251,8 +1251,8 @@ export default function ProfilePage() {
       if (type === "banner") await uploadBannerFile(croppedFile);
     } catch (err: any) {
       const message = err?.message || "Could not crop image.";
-      if (previewType === "avatar") setAvatarErr(message);
-      if (previewType === "banner") setBannerErr(message);
+      if (type === "avatar") { setAvatarErr(message); setAvatarUploading(false); }
+      if (type === "banner") { setBannerErr(message); setBannerUploading(false); }
     }
   }
 
@@ -1331,12 +1331,10 @@ export default function ProfilePage() {
     setAvatarUploading(true);
     setAvatarErr("");
 
-    const ext = file.name.split(".").pop() ?? "jpg";
-    const path = `${user!.id}/avatar.${ext}`;
+    const path = `${user!.id}/avatar-${Date.now()}.jpg`;
 
     const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, {
-      upsert: true,
-      contentType: file.type,
+      contentType: "image/jpeg",
     });
 
     if (upErr) {
@@ -1345,11 +1343,18 @@ export default function ProfilePage() {
       return;
     }
 
+    // Delete old avatar file from storage (fire-and-forget)
+    const oldUrl = profile?.avatar_url;
+    if (oldUrl) {
+      const oldMatch = oldUrl.match(/\/avatars\/(.+?)(?:\?|$)/);
+      if (oldMatch?.[1]) supabase.storage.from("avatars").remove([decodeURIComponent(oldMatch[1])]);
+    }
+
     const {
       data: { publicUrl },
     } = supabase.storage.from("avatars").getPublicUrl(path);
 
-    const url = `${publicUrl}?t=${Date.now()}`;
+    const url = publicUrl;
 
     const { data, error } = await supabase.from("profiles").update({ avatar_url: url }).eq("id", user!.id).select().single();
 
@@ -1374,12 +1379,10 @@ export default function ProfilePage() {
     setBannerUploading(true);
     setBannerErr("");
 
-    const ext = file.name.split(".").pop() ?? "jpg";
-    const path = `${user!.id}/banner.${ext}`;
+    const path = `${user!.id}/banner-${Date.now()}.jpg`;
 
     const { error: upErr } = await supabase.storage.from("banners").upload(path, file, {
-      upsert: true,
-      contentType: file.type,
+      contentType: "image/jpeg",
     });
 
     if (upErr) {
@@ -1388,11 +1391,18 @@ export default function ProfilePage() {
       return;
     }
 
+    // Delete old banner file from storage (fire-and-forget)
+    const oldUrl = profile?.banner_url;
+    if (oldUrl) {
+      const oldMatch = oldUrl.match(/\/banners\/(.+?)(?:\?|$)/);
+      if (oldMatch?.[1]) supabase.storage.from("banners").remove([decodeURIComponent(oldMatch[1])]);
+    }
+
     const {
       data: { publicUrl },
     } = supabase.storage.from("banners").getPublicUrl(path);
 
-    const url = `${publicUrl}?t=${Date.now()}`;
+    const url = publicUrl;
 
     const { data, error } = await supabase.from("profiles").update({ banner_url: url }).eq("id", user!.id).select().single();
 
@@ -2930,11 +2940,14 @@ const previewOverlayStyle: CSSProperties = {
 };
 
 const previewHeaderStyle: CSSProperties = {
-  height: 58,
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  padding: "0 18px",
+  paddingTop: "calc(env(safe-area-inset-top) + 10px)",
+  paddingBottom: 10,
+  paddingLeft: 18,
+  paddingRight: 18,
+  minHeight: 58,
   background: "var(--bg)",
   borderBottom: "1px solid var(--border-2)",
 };

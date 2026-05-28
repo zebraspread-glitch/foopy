@@ -1721,20 +1721,18 @@ const replyModalBackdropStyle: CSSProperties = {
   zIndex: 9998,
   background: "rgba(0,0,0,0.72)",
   display: "flex",
-  alignItems: "center",
+  alignItems: "flex-end",
   justifyContent: "center",
-  padding: "20px 10px",
 };
 
 const replyModalStyle: CSSProperties = {
   width: "100%",
-  maxWidth: 720,
-  maxHeight: "78dvh",
+  maxHeight: "85dvh",
   background: "var(--bg)",
-  border: "1px solid var(--border-3)",
-  borderRadius: 24,
+  border: "1px solid var(--border-2)",
+  borderBottom: "none",
+  borderRadius: "20px 20px 0 0",
   overflow: "hidden",
-  boxShadow: "0 24px 80px rgba(0,0,0,0.72)",
   display: "flex",
   flexDirection: "column",
 };

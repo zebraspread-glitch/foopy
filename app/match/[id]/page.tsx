@@ -3898,32 +3898,34 @@ function MatchComments({ gameId, highlight }: { gameId: number; highlight: strin
 
   useEffect(() => { load(sort); }, [load, sort]);
 
-  async function submit() {
-    if (!body.trim() || !userId || submitting) return;
+  async function submit(replyTarget: MatchComment | null = replyTo, text = body, onSent?: () => void) {
+    if (!text.trim() || !userId || submitting) return false;
 
     // Check for duplicate — same text already sent by this user in this section
-    const trimmed = body.trim().toLowerCase();
+    const trimmed = text.trim().toLowerCase();
     const allComments = comments.flatMap(c => [c, ...(c.replies ?? [])]);
     const isDuplicate = allComments.some(
       c => c.user_id === userId && c.body.trim().toLowerCase() === trimmed
     );
-    if (isDuplicate) { showDupToast(); return; }
+    if (isDuplicate) { showDupToast(); return false; }
 
     setSubmitting(true);
-    const trimmedBody = body.trim();
+    const trimmedBody = text.trim();
     const { data: inserted, error } = await supabase.from("feed_comments").insert({
-      game_id: gameId, user_id: userId, parent_id: replyTo?.id ?? null,
+      game_id: gameId, user_id: userId, parent_id: replyTarget?.id ?? null,
       body: trimmedBody, event_key: null,
     }).select("id").single();
     if (error) {
       console.error("Chat insert error:", error);
+      setSubmitting(false);
+      return false;
     } else {
       const newCommentId = (inserted as { id: string } | null)?.id;
       // Notify parent comment author of reply
-      if (replyTo && replyTo.user_id && replyTo.user_id !== userId) {
-        await createNotification(replyTo.user_id, "reply_comment", userId, {
+      if (replyTarget && replyTarget.user_id && replyTarget.user_id !== userId) {
+        await createNotification(replyTarget.user_id, "reply_comment", userId, {
           comment_body: trimmedBody.slice(0, 100),
-          comment_id: replyTo.id,
+          comment_id: replyTarget.id,
           game_id: gameId,
           event_key: null,
         });
@@ -3935,13 +3937,15 @@ function MatchComments({ gameId, highlight }: { gameId: number; highlight: strin
         game_id: gameId,
         event_key: null,
       });
-      setBody(""); setReplyTo(null);
+      onSent ? onSent() : setBody("");
+      setReplyTo(null);
       const newCount = commentsSent + 1;
       setCommentsSent(newCount);
       if (newCount > 3) setCooldown(30);
       await load(sort);
     }
     setSubmitting(false);
+    return true;
   }
 
   async function handleLike(c: MatchComment) {
@@ -4055,9 +4059,12 @@ function MatchComments({ gameId, highlight }: { gameId: number; highlight: strin
           onClose={() => setReplyThreadId(null)}
           onLike={handleLike}
           onDelete={handleDelete}
-          onReply={startReply}
           onViewReplies={(comment) => setReplyThreadId(comment.id)}
           liking={liking}
+          onSubmitReply={(text) => submit(replyThread, text, () => undefined)}
+          submitting={submitting}
+          cooldown={cooldown}
+          onSignIn={() => router.push("/login")}
         />
       )}
 
@@ -4094,7 +4101,7 @@ function MatchComments({ gameId, highlight }: { gameId: number; highlight: strin
                 style={{ width: "100%", minHeight: 44, maxHeight: 110, background: "var(--surface-3)", border: "1.5px solid var(--border-3)", borderRadius: 22, color: "var(--text-1)", fontSize: 14, padding: "11px 16px", resize: "none", outline: "none", fontFamily: "inherit", lineHeight: 1.45 }}
               />
               <button
-                onClick={submit}
+                onClick={() => submit()}
                 disabled={!body.trim() || submitting || cooldown > 0}
                 style={{ width: 44, height: 44, borderRadius: "50%", background: "linear-gradient(135deg,#3b82f6,#2563eb)", boxShadow: "0 2px 12px rgba(59,130,246,0.35)", border: "none", color: "var(--text-1)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, opacity: !body.trim() || submitting || cooldown > 0 ? 0.38 : 1, transition: "opacity 0.15s" }}
               >
@@ -4133,10 +4140,10 @@ function CommentBody({ text }: { text: string }) {
   );
 }
 
-function MCRow({ comment, userId, onLike, onDelete, onReply, onViewReplies, liking, isReply = false }: {
+function MCRow({ comment, userId, onLike, onDelete, onReply, onViewReplies, liking, isReply = false, hideRepliesToggle = false }: {
   comment: MatchComment; userId: string | null;
   onLike: (c: MatchComment) => void; onDelete: (id: string) => void;
-  onReply: (c: MatchComment) => void; onViewReplies: (c: MatchComment) => void; liking: Set<string>; isReply?: boolean;
+  onReply: (c: MatchComment) => void; onViewReplies: (c: MatchComment) => void; liking: Set<string>; isReply?: boolean; hideRepliesToggle?: boolean;
 }) {
   const router = useRouter();
   const name = comment.profile?.display_name || comment.profile?.username || "User";
@@ -4148,8 +4155,7 @@ function MCRow({ comment, userId, onLike, onDelete, onReply, onViewReplies, liki
   const replyCount = comment.replies?.length ?? 0;
 
   return (
-    <div id={`c-${comment.id}`} style={{ display: "flex", gap: 10, padding: isReply ? "8px 16px 4px 54px" : "10px 16px 4px", marginBottom: 2 }}>
-      {/* Avatar */}
+    <div id={`c-${comment.id}`} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: isReply ? "10px 16px 6px 54px" : "12px 16px 6px", marginBottom: 0 }}>
       <div
         onClick={() => username && router.push(`/profile/${username}`)}
         style={{ width: 34, height: 34, borderRadius: "50%", background: "var(--surface-2)", border: "1px solid var(--border-2)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", cursor: username ? "pointer" : "default" }}
@@ -4160,80 +4166,134 @@ function MCRow({ comment, userId, onLike, onDelete, onReply, onViewReplies, liki
         }
       </div>
 
-      <div style={{ flex: 1, minWidth: 0 }}>
-        {/* Bubble */}
-        <div style={{ background: "var(--surface-3)", border: "1px solid var(--border-2)", borderRadius: 18, borderTopLeftRadius: 4, padding: "9px 13px", display: "inline-block", maxWidth: "100%", wordBreak: "break-word" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 4 }}>
-            <span style={{ fontSize: 12, fontWeight: 900, color: "var(--text-1)" }}>{name}</span>
-            <span style={{ fontSize: 10, color: "var(--text-3)", fontWeight: 700 }}>{mcRelTime(comment.created_at)}</span>
+      <div style={{ flex: 1, minWidth: 0, display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", columnGap: 10 }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 7, marginBottom: 2, minWidth: 0 }}>
+            <span
+              onClick={() => username && router.push(`/profile/${username}`)}
+              style={{ fontSize: 12, fontWeight: 950, color: "var(--text-1)", cursor: username ? "pointer" : "default", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "70%" }}
+            >
+              {name}
+            </span>
+            <span style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 700, flexShrink: 0 }}>{mcRelTime(comment.created_at)}</span>
           </div>
           <CommentBody text={comment.body} />
-        </div>
 
-        {/* Actions */}
-        <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 5, paddingLeft: 4 }}>
-          <button onClick={() => onLike(comment)} disabled={!userId || isLiking}
-            style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", padding: 0, fontSize: 12, fontWeight: 800, cursor: "pointer", color: isLiked ? "#f43f5e" : "#475569", opacity: isLiking ? 0.5 : 1 }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill={isLiked ? "#f43f5e" : "none"} stroke={isLiked ? "#f43f5e" : "currentColor"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-            </svg>
-            {comment.likes > 0 && comment.likes}
-          </button>
           {userId && (
-            <button onClick={() => onReply(comment)} style={{ background: "none", border: "none", padding: 0, fontSize: 12, fontWeight: 800, cursor: "pointer", color: "var(--text-3)" }}>
-              Reply
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 6 }}>
+              <button onClick={() => onReply(comment)} style={{ background: "none", border: "none", padding: 0, fontSize: 12, fontWeight: 800, cursor: "pointer", color: "var(--text-3)" }}>
+                Reply
+              </button>
+              {isOwn && (
+                <button onClick={() => onDelete(comment.id)} style={{ background: "none", border: "none", padding: 0, fontSize: 12, fontWeight: 800, cursor: "pointer", color: "#ef4444" }}>
+                  Delete
+                </button>
+              )}
+            </div>
           )}
-          {isOwn && (
-            <button onClick={() => onDelete(comment.id)} style={{ background: "none", border: "none", padding: 0, fontSize: 12, fontWeight: 800, cursor: "pointer", color: "#ef4444" }}>
-              Delete
+
+          {!hideRepliesToggle && replyCount > 0 && (
+            <button
+              onClick={() => onViewReplies(comment)}
+              style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", padding: "8px 0 0", fontSize: 12, fontWeight: 800, color: "var(--text-3)", cursor: "pointer" }}
+            >
+              <span style={{ width: 24, height: 1, background: "var(--border-2)", display: "inline-block" }} />
+              {`View ${replyCount} ${replyCount === 1 ? "reply" : "replies"}`}
             </button>
           )}
         </div>
 
-        {/* View replies toggle */}
-        {replyCount > 0 && (
-          <button
-            onClick={() => onViewReplies(comment)}
-            style={{ display: "flex", alignItems: "center", gap: 5, background: "none", border: "none", padding: "6px 4px 2px", fontSize: 12, fontWeight: 800, color: "#3b82f6", cursor: "pointer" }}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-            {`View ${replyCount} ${replyCount === 1 ? "reply" : "replies"}`}
-          </button>
-        )}
+        <button
+          onClick={() => onLike(comment)}
+          disabled={!userId || isLiking}
+          aria-label={isLiked ? "Unlike comment" : "Like comment"}
+          style={{ width: 30, minHeight: 42, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", gap: 3, background: "none", border: "none", padding: "3px 0 0", fontSize: 11, fontWeight: 800, cursor: userId ? "pointer" : "default", color: isLiked ? "#f43f5e" : "var(--text-3)", opacity: isLiking ? 0.5 : 1 }}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill={isLiked ? "#f43f5e" : "none"} stroke={isLiked ? "#f43f5e" : "currentColor"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+          </svg>
+          {comment.likes > 0 && <span>{comment.likes}</span>}
+        </button>
       </div>
     </div>
   );
 }
 
-function MatchRepliesPopup({ comment, userId, onClose, onLike, onDelete, onReply, onViewReplies, liking }: {
+function MatchRepliesPopup({ comment, userId, onClose, onLike, onDelete, onViewReplies, liking, onSubmitReply, submitting, cooldown, onSignIn }: {
   comment: MatchComment; userId: string | null; onClose: () => void;
-  onLike: (c: MatchComment) => void; onDelete: (id: string) => void; onReply: (c: MatchComment) => void;
+  onLike: (c: MatchComment) => void; onDelete: (id: string) => void;
   onViewReplies: (c: MatchComment) => void; liking: Set<string>;
+  onSubmitReply: (text: string) => Promise<boolean>;
+  submitting: boolean;
+  cooldown: number;
+  onSignIn: () => void;
 }) {
   const replyCount = comment.replies?.length ?? 0;
+  const [replyBody, setReplyBody] = useState("");
+  const popupInputRef = useRef<HTMLTextAreaElement>(null);
+  const replyPlaceholder = cooldown > 0 ? `Wait ${cooldown}s...` : "Reply...";
+  const submitReply = async () => {
+    const sent = await onSubmitReply(replyBody);
+    if (sent) setReplyBody("");
+  };
+  const focusReplyInput = () => setTimeout(() => popupInputRef.current?.focus(), 0);
+
   return (
     <div style={matchReplyModalBackdropStyle} onClick={onClose}>
       <section style={matchReplyModalStyle} onClick={(event) => event.stopPropagation()}>
         <div style={matchReplyModalHeaderStyle}>
-          <div>
-            <div style={{ color: "var(--text-1)", fontSize: 16, fontWeight: 1000 }}>Replies</div>
-            <div style={{ marginTop: 2, color: "var(--text-3)", fontSize: 12, fontWeight: 800 }}>{replyCount} {replyCount === 1 ? "reply" : "replies"}</div>
-          </div>
+          <span style={{ display: "flex", alignItems: "baseline", gap: 6, fontSize: 15, fontWeight: 900, color: "var(--text-1)" }}>
+            Replies
+            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-3)" }}>{replyCount > 0 ? replyCount : ""}</span>
+          </span>
           <button onClick={onClose} style={matchReplyModalCloseStyle}>×</button>
         </div>
-        <div style={{ padding: "4px 0 10px", borderBottom: "1px solid var(--border-2)" }}>
-          <MCRow comment={comment} userId={userId} onLike={onLike} onDelete={onDelete} onReply={onReply} onViewReplies={onViewReplies} liking={liking} />
+        <div style={matchReplyParentStyle}>
+          <MCRow comment={comment} userId={userId} onLike={onLike} onDelete={onDelete} onReply={() => focusReplyInput()} onViewReplies={onViewReplies} liking={liking} hideRepliesToggle />
         </div>
-        <div style={{ overflowY: "auto", padding: "8px 0 14px" }}>
+        <div style={matchReplyListStyle}>
           {replyCount === 0 ? (
-            <div style={{ padding: "22px 16px", color: "var(--text-3)", fontSize: 13, fontWeight: 800, textAlign: "center" }}>No replies yet.</div>
+            <div style={matchReplyEmptyStyle}>No replies yet.</div>
           ) : (
             comment.replies!.map((reply) => (
-              <MCRow key={reply.id} comment={reply} userId={userId} onLike={onLike} onDelete={onDelete} onReply={onReply} onViewReplies={onViewReplies} liking={liking} isReply />
+              <MCRow key={reply.id} comment={reply} userId={userId} onLike={onLike} onDelete={onDelete} onReply={() => focusReplyInput()} onViewReplies={onViewReplies} liking={liking} />
             ))
+          )}
+        </div>
+        <div style={matchReplyComposerStyle}>
+          {!userId ? (
+            <button onClick={onSignIn} style={matchReplySignInStyle}>Sign in to reply</button>
+          ) : (
+            <>
+              {cooldown > 0 && (
+                <div style={matchReplyCooldownStyle}>Wait {cooldown}s before replying again</div>
+              )}
+              <div style={matchReplyInputRowStyle}>
+                <MentionTextarea
+                  textareaRef={popupInputRef}
+                  value={replyBody}
+                  onChange={setReplyBody}
+                  onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && !cooldown) { e.preventDefault(); submitReply(); } }}
+                  placeholder={replyPlaceholder}
+                  rows={1}
+                  maxLength={500}
+                  style={matchReplyTextareaStyle}
+                />
+                <button
+                  onClick={submitReply}
+                  disabled={!replyBody.trim() || submitting || cooldown > 0}
+                  style={{ ...matchReplySendBtnStyle, opacity: !replyBody.trim() || submitting || cooldown > 0 ? 0.38 : 1 }}
+                  aria-label="Send reply"
+                >
+                  {submitting
+                    ? <div style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+                    : cooldown > 0
+                    ? <span style={{ fontSize: 11, fontWeight: 900 }}>{cooldown}s</span>
+                    : <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" fill="currentColor" stroke="none" /></svg>
+                  }
+                </button>
+              </div>
+            </>
           )}
         </div>
       </section>
@@ -4254,22 +4314,22 @@ const matchReplyModalBackdropStyle: CSSProperties = {
   position: "fixed",
   inset: 0,
   zIndex: 9998,
-  background: "rgba(0,0,0,0.72)",
+  background: "rgba(0,0,0,0.68)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  padding: "20px 10px",
+  padding: "18px 10px",
 };
 
 const matchReplyModalStyle: CSSProperties = {
   width: "100%",
   maxWidth: 720,
-  maxHeight: "78dvh",
+  height: "min(82dvh, 720px)",
   background: "var(--bg)",
-  border: "1px solid var(--border-3)",
-  borderRadius: 24,
+  border: "1px solid var(--border-2)",
+  borderRadius: 18,
   overflow: "hidden",
-  boxShadow: "0 24px 80px rgba(0,0,0,0.72)",
+  boxShadow: "0 24px 80px rgba(0,0,0,0.68)",
   display: "flex",
   flexDirection: "column",
 };
@@ -4278,20 +4338,116 @@ const matchReplyModalHeaderStyle: CSSProperties = {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
-  padding: "14px 16px",
-  borderBottom: "1px solid var(--border-2)",
+  padding: "10px 16px 11px",
+  borderBottom: "1px solid var(--border-1)",
 };
 
 const matchReplyModalCloseStyle: CSSProperties = {
-  width: 34,
-  height: 34,
+  width: 30,
+  height: 30,
   borderRadius: "50%",
-  border: "1px solid var(--border-2)",
-  background: "var(--surface-3)",
+  border: "none",
+  background: "var(--border-1)",
+  backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17' viewBox='0 0 24 24' fill='none' stroke='%23e5e7eb' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='18' y1='6' x2='6' y2='18'/%3E%3Cline x1='6' y1='6' x2='18' y2='18'/%3E%3C/svg%3E\")",
+  backgroundRepeat: "no-repeat",
+  backgroundPosition: "center",
+  backgroundSize: "17px 17px",
   color: "var(--text-1)",
-  fontSize: 24,
+  fontSize: 0,
   lineHeight: 1,
   cursor: "pointer",
+};
+
+const matchReplyParentStyle: CSSProperties = {
+  padding: "4px 0 12px",
+  borderBottom: "1px solid var(--border-1)",
+  flexShrink: 0,
+};
+
+const matchReplyListStyle: CSSProperties = {
+  overflowY: "auto",
+  padding: "8px 0 14px",
+  flex: 1,
+  minHeight: 0,
+};
+
+const matchReplyEmptyStyle: CSSProperties = {
+  padding: "28px 16px",
+  color: "var(--text-3)",
+  fontSize: 13,
+  fontWeight: 800,
+  textAlign: "center",
+};
+
+const matchReplyComposerStyle: CSSProperties = {
+  borderTop: "1px solid var(--border-2)",
+  padding: "10px 14px 12px",
+  background: "var(--bottom-nav-bg)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
+  flexShrink: 0,
+};
+
+const matchReplyInputRowStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "flex-end",
+  gap: 10,
+};
+
+const matchReplyTextareaStyle: CSSProperties = {
+  width: "100%",
+  minHeight: 44,
+  maxHeight: 96,
+  background: "var(--surface-3)",
+  border: "1.5px solid var(--border-3)",
+  borderRadius: 22,
+  color: "var(--text-1)",
+  fontSize: 14,
+  padding: "11px 16px",
+  resize: "none",
+  outline: "none",
+  fontFamily: "inherit",
+  lineHeight: 1.45,
+};
+
+const matchReplySendBtnStyle: CSSProperties = {
+  width: 44,
+  height: 44,
+  borderRadius: "50%",
+  background: "linear-gradient(135deg,#3b82f6,#2563eb)",
+  boxShadow: "0 2px 12px rgba(59,130,246,0.35)",
+  border: "none",
+  color: "var(--text-1)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+  flexShrink: 0,
+  transition: "opacity 0.15s",
+};
+
+const matchReplySignInStyle: CSSProperties = {
+  width: "100%",
+  height: 46,
+  borderRadius: 16,
+  border: "none",
+  background: "linear-gradient(135deg,#3b82f6,#2563eb)",
+  color: "var(--text-1)",
+  fontWeight: 900,
+  fontSize: 14,
+  cursor: "pointer",
+};
+
+const matchReplyCooldownStyle: CSSProperties = {
+  marginBottom: 8,
+  padding: "7px 12px",
+  borderRadius: 12,
+  background: "rgba(251,146,60,.1)",
+  border: "1px solid rgba(251,146,60,.25)",
+  fontSize: 12,
+  fontWeight: 700,
+  color: "#fb923c",
+  textAlign: "center",
 };
 
 /* ================= POLLS ================= */

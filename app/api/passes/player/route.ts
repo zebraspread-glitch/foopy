@@ -112,12 +112,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Failed to deduct coins — try again" }, { status: 500 });
   }
 
-  // Sum XP from cards the user already owns for this player
-  const { data: existingCards } = await supabaseServer
+  // Sum XP from cards the user already owns for this player.
+  // Try case-insensitive name match first, then fall back to player_id.
+  const cardPlayerIdFallback = player_name.toLowerCase().replace(/'/g, "").replace(/[^a-z0-9]+/g, "");
+  let { data: existingCards } = await supabaseServer
     .from("user_cards")
     .select("rating, duplicate_count")
     .eq("user_id", user.id)
-    .eq("player_name", player_name);
+    .ilike("player_name", player_name);
+  if (!existingCards?.length) {
+    const { data: byId } = await supabaseServer
+      .from("user_cards")
+      .select("rating, duplicate_count")
+      .eq("user_id", user.id)
+      .eq("player_id", cardPlayerIdFallback);
+    existingCards = byId ?? [];
+  }
   const initialXp = (existingCards ?? []).reduce(
     (sum, c) => sum + (c.rating ?? 0) * (c.duplicate_count ?? 1),
     0
