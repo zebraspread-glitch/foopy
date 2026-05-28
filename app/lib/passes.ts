@@ -27,7 +27,7 @@ export const PLAYER_PASS_LEVELS: LevelDef[] = [
   { name: "Amethyst",     color: "#a78bfa", darkColor: "#5b21b6", gradient: "linear-gradient(155deg,#1a0a33,#2d1060)",  xpRequired: 825  },
   { name: "Diamond",      color: "#7ff7ee", darkColor: "#008b8f", gradient: "radial-gradient(ellipse at 18% 12%,rgba(190,255,250,.34),transparent 34%),radial-gradient(ellipse at 88% 18%,rgba(45,212,191,.32),transparent 38%),linear-gradient(155deg,#032f35,#075e66 48%,#0a3f48)",  xpRequired: 1125 },
   { name: "Pink Diamond", color: "#f472b6", darkColor: "#be185d", gradient: "linear-gradient(155deg,#2d0a1a,#5a1030)",  xpRequired: 1625 },
-  { name: "Mythic",       color: "#c084fc", darkColor: "#5b1ea8", gradient: "linear-gradient(155deg,#1a0033,#36006b)",  xpRequired: 2625 },
+  { name: "Mythic",       color: "#7dd3fc", darkColor: "#7c3aed", gradient: "radial-gradient(circle at 16% 10%,rgba(255,255,255,.98),transparent 28%),radial-gradient(circle at 78% 22%,rgba(125,211,252,.34),transparent 34%),radial-gradient(circle at 72% 74%,rgba(167,139,250,.28),transparent 42%),radial-gradient(circle at 28% 68%,rgba(153,246,228,.24),transparent 36%),linear-gradient(135deg,#ffffff 0%,#eef7ff 28%,#f4efff 56%,#e0f7ff 82%,#fbfdff 100%)",  xpRequired: 2625 },
 ];
 
 export const TEAM_PASS_LEVELS: LevelDef[] = [
@@ -40,7 +40,7 @@ export const TEAM_PASS_LEVELS: LevelDef[] = [
   { name: "Amethyst",     color: "#a78bfa", darkColor: "#5b21b6", gradient: "linear-gradient(155deg,#1a0a33,#2d1060)",  xpRequired: 4150  },
   { name: "Diamond",      color: "#67e8f9", darkColor: "#0050a0", gradient: "linear-gradient(155deg,#00103d,#002966)",  xpRequired: 6150  },
   { name: "Pink Diamond", color: "#f472b6", darkColor: "#be185d", gradient: "linear-gradient(155deg,#2d0a1a,#5a1030)",  xpRequired: 9150  },
-  { name: "Mythic",       color: "#c084fc", darkColor: "#5b1ea8", gradient: "linear-gradient(155deg,#1a0033,#36006b)",  xpRequired: 14150 },
+  { name: "Mythic",       color: "#7dd3fc", darkColor: "#7c3aed", gradient: "radial-gradient(circle at 16% 10%,rgba(255,255,255,.98),transparent 28%),radial-gradient(circle at 78% 22%,rgba(125,211,252,.34),transparent 34%),radial-gradient(circle at 72% 74%,rgba(167,139,250,.28),transparent 42%),radial-gradient(circle at 28% 68%,rgba(153,246,228,.24),transparent 36%),linear-gradient(135deg,#ffffff 0%,#eef7ff 28%,#f4efff 56%,#e0f7ff 82%,#fbfdff 100%)",  xpRequired: 14150 },
 ];
 
 const LEVEL_MULTIPLIERS = [1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5, 7] as const;

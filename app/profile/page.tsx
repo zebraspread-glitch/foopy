@@ -1985,7 +1985,7 @@ export default function ProfilePage() {
               display: "flex",
               alignItems: "center",
               gap: 14,
-              padding: "16px 20px",
+              padding: "calc(env(safe-area-inset-top) + 16px) 20px 16px",
               borderBottom: "1px solid var(--border-2)",
               background: "var(--bg)",
             }}

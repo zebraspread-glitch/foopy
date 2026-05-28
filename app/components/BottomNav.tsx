@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { supabase } from "@/app/lib/supabase";
 
 /* ── Icons ── */
 
@@ -81,6 +83,76 @@ const TABS = [
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const [unreadDms, setUnreadDms] = useState(0);
+
+  useEffect(() => {
+    let uid: string | null = null;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    async function countUnread(userId: string) {
+      // Count unread direct messages
+      const { data: convos } = await supabase
+        .from("dm_conversations")
+        .select("id")
+        .or(`participant_a.eq.${userId},participant_b.eq.${userId}`);
+      const convIds = (convos ?? []).map((c: any) => c.id);
+      let dmUnread = 0;
+      if (convIds.length > 0) {
+        const { count } = await supabase
+          .from("dm_messages")
+          .select("id", { count: "exact", head: true })
+          .in("conversation_id", convIds)
+          .neq("sender_id", userId)
+          .is("read_at", null);
+        dmUnread = count ?? 0;
+      }
+
+      // Count unread group chat messages
+      const { data: memberships } = await supabase
+        .from("group_chat_members")
+        .select("group_chat_id, last_read_at")
+        .eq("user_id", userId);
+      let groupUnread = 0;
+      if (memberships?.length) {
+        const { data: recentMsgs } = await supabase
+          .from("group_chat_messages")
+          .select("group_chat_id, created_at, sender_id")
+          .in("group_chat_id", memberships.map((m: any) => m.group_chat_id))
+          .neq("sender_id", userId);
+        const lastReadMap: Record<string, string | null> = {};
+        for (const m of memberships as any[]) lastReadMap[m.group_chat_id] = m.last_read_at;
+        for (const msg of recentMsgs ?? []) {
+          const m = msg as any;
+          const lastRead = lastReadMap[m.group_chat_id];
+          if (!lastRead || new Date(m.created_at) > new Date(lastRead)) groupUnread++;
+        }
+      }
+
+      setUnreadDms(dmUnread + groupUnread);
+    }
+
+    async function init() {
+      const { data } = await supabase.auth.getSession();
+      uid = data?.session?.user?.id ?? null;
+      if (!uid) return;
+      await countUnread(uid);
+
+      channel = supabase
+        .channel("dm-badge")
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "dm_messages" }, () => countUnread(uid!))
+        .on("postgres_changes", { event: "UPDATE", schema: "public", table: "dm_messages" }, () => countUnread(uid!))
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "group_chat_messages" }, () => countUnread(uid!))
+        .subscribe();
+    }
+
+    init();
+    return () => { channel?.unsubscribe(); };
+  }, []);
+
+  // Clear DM badge when on the DMs page (page itself marks messages read)
+  useEffect(() => {
+    if (pathname.startsWith("/dms")) setUnreadDms(0);
+  }, [pathname]);
 
   // Hide the bottom nav on the match detail page
   if (pathname.startsWith("/match/")) return null;
@@ -89,6 +161,7 @@ export default function BottomNav() {
     <nav className="bottom-nav" role="tablist">
       {TABS.map(({ href, label, Icon }) => {
         const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+        const showDmBadge = href === "/dms" && unreadDms > 0;
         return (
           <Link
             key={href}
@@ -99,8 +172,24 @@ export default function BottomNav() {
             aria-selected={active}
             aria-label={label}
           >
-            <span className="tab-icon-wrap">
+            <span className="tab-icon-wrap" style={{ position: "relative" }}>
               <Icon active={active} />
+              {showDmBadge && (
+                <span style={{
+                  position: "absolute", top: -4, right: -6,
+                  minWidth: 16, height: 16,
+                  background: "#ef4444",
+                  borderRadius: 999,
+                  fontSize: 10, fontWeight: 800,
+                  color: "#fff",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  padding: "0 3px",
+                  lineHeight: 1,
+                  pointerEvents: "none",
+                }}>
+                  {unreadDms > 99 ? "99+" : unreadDms}
+                </span>
+              )}
             </span>
             <span className="tab-label">{label}</span>
           </Link>

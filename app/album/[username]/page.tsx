@@ -68,6 +68,14 @@ const TEAM_COLORS: Record<string, string> = {
   Sydney: "#c0392b", "West Coast": "#003087", "Western Bulldogs": "#1a4abf",
 };
 
+const MYTHIC_TEXT = "#29276b";
+const MYTHIC_MUTED = "rgba(41,39,107,0.62)";
+const MYTHIC_ACCENT = "#5b5ff0";
+
+function isMythicLevel(level: { name: string }) {
+  return level.name === "Mythic";
+}
+
 const RARITY_META: Record<Rarity, { color: string; glow: string }> = {
   bronze:      { color: "#cd7f32", glow: "rgba(205,127,50,0.6)" },
   silver:      { color: "#c0c0c0", glow: "rgba(192,192,192,0.6)" },
@@ -516,22 +524,24 @@ function PassesView({ playerPasses, teamPasses, onPlayerPassClick, onTeamPassCli
             {teamPasses.map((tp) => {
               const level = getPassLevel(tp.xp ?? 0, TEAM_PASS_LEVELS);
               const logo  = TEAM_LOGOS[tp.team_name] ?? "/team-logos/default.png";
+              const isMythic = isMythicLevel(level);
               return (
-                <div key={tp.id} onClick={() => onTeamPassClick(tp)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", borderRadius: 16, background: level.gradient, border: `1.5px solid ${level.color}44`, position: "relative", overflow: "hidden", cursor: "pointer" }}>
-                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1.5, background: `linear-gradient(90deg,transparent,${level.color}cc,transparent)` }} />
-                  <div style={{ width: 52, height: 52, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(0,0,0,0.3)" }}>
+                <div key={tp.id} onClick={() => onTeamPassClick(tp)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", borderRadius: 16, background: level.gradient, border: `1.5px solid ${isMythic ? "rgba(125,211,252,0.75)" : level.color + "44"}`, boxShadow: isMythic ? "0 6px 26px rgba(125,211,252,0.24), 0 0 18px rgba(167,139,250,0.18)" : "none", position: "relative", overflow: "hidden", cursor: "pointer" }}>
+                  {isMythic && <div className="mythic-pass-shine" style={{ zIndex: 1 }} />}
+                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1.5, background: `linear-gradient(90deg,transparent,${level.color}cc,transparent)`, zIndex: 3 }} />
+                  <div style={{ width: 52, height: 52, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(0,0,0,0.3)", position: "relative", zIndex: 2 }}>
                     <img src={logo} alt={tp.team_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ flex: 1, minWidth: 0, position: "relative", zIndex: 2 }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 3 }}>
-                      <div style={{ fontWeight: 900, fontSize: 16, color: "#fff" }}>{tp.team_name}</div>
-                      {tp.serial_number != null && <div style={{ fontSize: 13, fontWeight: 900, color: "#fff" }}>#{tp.serial_number}</div>}
+                      <div style={{ fontWeight: 900, fontSize: 16, color: isMythic ? MYTHIC_TEXT : "#fff" }}>{tp.team_name}</div>
+                      {tp.serial_number != null && <div style={{ fontSize: 13, fontWeight: 900, color: isMythic ? MYTHIC_TEXT : "#fff" }}>#{tp.serial_number}</div>}
                     </div>
-                    <div style={{ fontSize: 11, color: level.color, fontWeight: 800, letterSpacing: "0.05em", marginBottom: 6 }}>{level.name.toUpperCase()} · {level.multiplier}×</div>
-                    <div style={{ background: "rgba(0,0,0,0.35)", borderRadius: 999, height: 4, overflow: "hidden" }}>
-                      <div style={{ width: `${Math.round(level.progress * 100)}%`, height: "100%", borderRadius: 999, background: `linear-gradient(90deg,${level.darkColor},${level.color})` }} />
+                    <div style={{ fontSize: 11, color: isMythic ? MYTHIC_ACCENT : level.color, fontWeight: 800, letterSpacing: "0.05em", marginBottom: 6 }}>{level.name.toUpperCase()} · {level.multiplier}×</div>
+                    <div style={{ background: isMythic ? "rgba(91,95,240,0.16)" : "rgba(0,0,0,0.35)", borderRadius: 999, height: 4, overflow: "hidden" }}>
+                      <div style={{ width: `${Math.round(level.progress * 100)}%`, height: "100%", borderRadius: 999, background: isMythic ? `linear-gradient(90deg,${level.darkColor},#22d3ee,#ffffff)` : `linear-gradient(90deg,${level.darkColor},${level.color})` }} />
                     </div>
-                    <div style={{ marginTop: 4, fontSize: 10, color: "rgba(255,255,255,.3)", fontWeight: 600 }}>
+                    <div style={{ marginTop: 4, fontSize: 10, color: isMythic ? MYTHIC_MUTED : "rgba(255,255,255,.3)", fontWeight: 600 }}>
                       {level.isMaxed ? "MAX" : `${tp.xp ?? 0} / ${level.nextXp} XP`}
                     </div>
                   </div>
@@ -572,46 +582,50 @@ function PassesView({ playerPasses, teamPasses, onPlayerPassClick, onTeamPassCli
             {sortedPlayerPasses.map((pass) => {
               const level  = getPassLevel(pass.xp ?? 0, PLAYER_PASS_LEVELS);
               const imgSrc = playerImgSrc(pass.player_name, pass.team_name);
+              const isMythic = isMythicLevel(level);
               return (
                 <div key={pass.id} onClick={() => onPlayerPassClick(pass)} style={{
                   borderRadius: 16, overflow: "hidden", position: "relative",
                   background: level.gradient, cursor: "pointer",
-                  border: `1.5px solid ${level.color}55`,
-                  boxShadow: `0 4px 24px ${level.color}22, 0 0 0 0.5px rgba(255,255,255,0.06)`,
+                  border: `1.5px solid ${isMythic ? "rgba(125,211,252,0.75)" : level.color + "55"}`,
+                  boxShadow: isMythic
+                    ? "0 4px 26px rgba(125,211,252,0.30), 0 0 18px rgba(167,139,250,0.22), 0 0 0 0.5px rgba(255,255,255,0.70)"
+                    : `0 4px 24px ${level.color}22, 0 0 0 0.5px rgba(255,255,255,0.06)`,
                   aspectRatio: "3/4",
                   display: "flex", flexDirection: "column",
                 }}>
+                  {isMythic && <div className="mythic-pass-shine" style={{ zIndex: 2 }} />}
                   {/* shimmer */}
                   <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1.5, background: `linear-gradient(90deg,transparent,${level.color}cc,transparent)`, zIndex: 3 }} />
                   {/* level badge */}
-                  <div style={{ position: "absolute", top: 8, left: 8, zIndex: 4, background: level.color, color: "#000", fontSize: 7.5, fontWeight: 900, letterSpacing: "0.1em", padding: "2px 7px", borderRadius: 999 }}>
+                  <div style={{ position: "absolute", top: 8, left: 8, zIndex: 4, background: isMythic ? "linear-gradient(135deg,rgba(255,255,255,0.82),rgba(125,211,252,0.34),rgba(167,139,250,0.36))" : level.color, color: isMythic ? MYTHIC_ACCENT : "#000", border: isMythic ? "1px solid rgba(125,211,252,0.55)" : "none", fontSize: 7.5, fontWeight: 900, letterSpacing: "0.1em", padding: "2px 7px", borderRadius: 999 }}>
                     {level.name.toUpperCase()}
                   </div>
                   {/* serial number */}
                   {pass.serial_number != null && (
-                    <div style={{ position: "absolute", top: 8, right: 8, zIndex: 4, fontSize: 8, fontWeight: 900, color: "#fff", letterSpacing: "0.06em" }}>#{pass.serial_number}</div>
+                    <div style={{ position: "absolute", top: 8, right: 8, zIndex: 4, fontSize: 8, fontWeight: 900, color: isMythic ? MYTHIC_TEXT : "#fff", letterSpacing: "0.06em" }}>#{pass.serial_number}</div>
                   )}
                   {/* photo */}
-                  <div style={{ flex: 1, overflow: "hidden", position: "relative", background: "rgba(0,0,0,0.2)" }}>
+                  <div style={{ flex: 1, overflow: "hidden", position: "relative", background: isMythic ? "rgba(255,255,255,0.24)" : "rgba(0,0,0,0.2)" }}>
                     {imgSrc
                       ? <img src={imgSrc} alt={pass.player_name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", display: "block" }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                       : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 44 }}>👤</div>
                     }
-                    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 40, background: `linear-gradient(to bottom,transparent,${level.gradient.match(/#[0-9a-f]{6}/i)?.[0] ?? "#0a0a14"})` }} />
+                    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 40, background: isMythic ? "linear-gradient(to bottom,transparent,rgba(238,247,255,0.92))" : `linear-gradient(to bottom,transparent,${level.gradient.match(/#[0-9a-f]{6}/i)?.[0] ?? "#0a0a14"})` }} />
                   </div>
                   {/* footer */}
-                  <div style={{ padding: "8px 10px 10px", background: "rgba(0,0,0,0.25)", flexShrink: 0 }}>
+                  <div style={{ padding: "8px 10px 10px", background: isMythic ? "rgba(255,255,255,0.72)" : "rgba(0,0,0,0.25)", flexShrink: 0, position: "relative", zIndex: 4 }}>
                     <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 1 }}>
-                      <div style={{ fontWeight: 900, fontSize: 12, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>{pass.player_name}</div>
+                      <div style={{ fontWeight: 900, fontSize: 12, color: isMythic ? MYTHIC_TEXT : "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>{pass.player_name}</div>
                     </div>
-                    <div style={{ fontSize: 9.5, color: "rgba(255,255,255,0.45)", marginBottom: 6 }}>{pass.team_name}</div>
+                    <div style={{ fontSize: 9.5, color: isMythic ? MYTHIC_MUTED : "rgba(255,255,255,0.45)", marginBottom: 6 }}>{pass.team_name}</div>
                     <div>
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-                        <span style={{ fontSize: 9, fontWeight: 900, color: level.color, letterSpacing: "0.06em" }}>{level.name.toUpperCase()} · {level.multiplier}×</span>
-                        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>{level.isMaxed ? "MAX" : `${pass.xp ?? 0}/${level.nextXp}`}</span>
+                        <span style={{ fontSize: 9, fontWeight: 900, color: isMythic ? MYTHIC_ACCENT : level.color, letterSpacing: "0.06em" }}>{level.name.toUpperCase()} · {level.multiplier}×</span>
+                        <span style={{ fontSize: 9, color: isMythic ? MYTHIC_MUTED : "rgba(255,255,255,0.4)", fontWeight: 600 }}>{level.isMaxed ? "MAX" : `${pass.xp ?? 0}/${level.nextXp}`}</span>
                       </div>
-                      <div style={{ background: "rgba(0,0,0,0.45)", borderRadius: 999, height: 4, overflow: "hidden" }}>
-                        <div style={{ width: `${Math.round(level.progress * 100)}%`, height: "100%", borderRadius: 999, background: `linear-gradient(90deg,${level.darkColor},${level.color})`, boxShadow: `0 0 6px ${level.color}80` }} />
+                      <div style={{ background: isMythic ? "rgba(91,95,240,0.16)" : "rgba(0,0,0,0.45)", borderRadius: 999, height: 4, overflow: "hidden" }}>
+                        <div style={{ width: `${Math.round(level.progress * 100)}%`, height: "100%", borderRadius: 999, background: isMythic ? `linear-gradient(90deg,${level.darkColor},#22d3ee,#ffffff)` : `linear-gradient(90deg,${level.darkColor},${level.color})`, boxShadow: `0 0 6px ${level.color}80` }} />
                       </div>
                     </div>
                   </div>

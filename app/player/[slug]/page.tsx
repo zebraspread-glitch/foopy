@@ -2,6 +2,7 @@ import path from "path";
 import fs from "fs";
 import Link from "next/link";
 import { BackButton, PlayerHeroImage } from "./PlayerClient";
+import { PlayerPassSection } from "./PlayerPassSection";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 
 // Reverse map: API Sports game ID → Squiggle game ID
@@ -416,6 +417,14 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
             </div>
           </section>
         )}
+
+        {/* ── Player Pass ── */}
+        <PlayerPassSection
+          playerId={player.id}
+          playerName={player.name}
+          teamName={player.team}
+          accentColor={color}
+        />
 
         {/* ── Season averages ── */}
         {season && games > 0 && (

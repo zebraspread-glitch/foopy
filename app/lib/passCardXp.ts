@@ -30,6 +30,8 @@ type PlayerJsonRow = {
   club?: string;
 };
 
+const USER_CARDS_PAGE_SIZE = 1000;
+
 const PLAYERS_BY_PASS_ID = new Map(
   (playersRaw as PlayerJsonRow[]).map((player) => [
     String(player.id ?? "").toLowerCase(),
@@ -47,6 +49,26 @@ function cardIdForName(name: string): string {
 
 function sumCards(cards: { rating: number | null; duplicate_count: number | null }[]): number {
   return cards.reduce((sum, c) => sum + (c.rating ?? 0) * (c.duplicate_count ?? 1), 0);
+}
+
+async function fetchAllUserCards(userId: string): Promise<UserCardRow[]> {
+  const cards: UserCardRow[] = [];
+
+  for (let from = 0; ; from += USER_CARDS_PAGE_SIZE) {
+    const { data, error } = await supabaseServer
+      .from("user_cards")
+      .select("player_id, player_name, team, rating, duplicate_count")
+      .eq("user_id", userId)
+      .order("player_id", { ascending: true })
+      .order("rarity", { ascending: true })
+      .range(from, from + USER_CARDS_PAGE_SIZE - 1);
+
+    if (error) throw new Error(error.message);
+    cards.push(...((data ?? []) as UserCardRow[]));
+    if (!data || data.length < USER_CARDS_PAGE_SIZE) break;
+  }
+
+  return cards;
 }
 
 async function xpForPlayerPass(userId: string, pass: PlayerPassRow): Promise<number> {
@@ -111,7 +133,7 @@ async function xpForPlayerPass(userId: string, pass: PlayerPassRow): Promise<num
 }
 
 export async function syncPassXpFromCards(userId: string) {
-  const [{ data: playerPasses, error: playerError }, { data: teamPasses, error: teamError }, { data: allCards, error: cardsError }] =
+  const [playerPassResult, teamPassResult, userCards] =
     await Promise.all([
       supabaseServer
         .from("user_player_passes")
@@ -121,17 +143,15 @@ export async function syncPassXpFromCards(userId: string) {
         .from("user_team_passes")
         .select("id, team_name, xp")
         .eq("user_id", userId),
-      supabaseServer
-        .from("user_cards")
-        .select("player_id, player_name, team, rating, duplicate_count")
-        .eq("user_id", userId),
+      fetchAllUserCards(userId),
     ]);
+
+  const { data: playerPasses, error: playerError } = playerPassResult;
+  const { data: teamPasses, error: teamError } = teamPassResult;
 
   if (playerError) throw new Error(playerError.message);
   if (teamError) throw new Error(teamError.message);
-  if (cardsError) throw new Error(cardsError.message);
 
-  const userCards = (allCards ?? []) as UserCardRow[];
   const updates: Promise<void>[] = [];
 
   for (const pass of ((playerPasses ?? []) as PlayerPassRow[])) {

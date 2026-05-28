@@ -2,6 +2,7 @@ import path from "path";
 import fs from "fs";
 import Link from "next/link";
 import { BackButton, TeamLogoImage } from "./TeamClient";
+import { TeamPassSection } from "./TeamPassSection";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 
 const API_SPORTS_TO_SQUIGGLE: Record<number, string> = Object.fromEntries(
@@ -510,6 +511,12 @@ export default async function TeamProfilePage({ params }: { params: Promise<{ sl
             </div>
           </div>
         </section>
+
+        {/* ── Team Pass ── */}
+        <TeamPassSection
+          teamName={teamName}
+          accentColor={color}
+        />
 
         {played > 0 && (
           <section style={cardStyle}>

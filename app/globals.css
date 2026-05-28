@@ -140,6 +140,45 @@
   font-display: swap;
 }
 
+@keyframes mythic-pass-shine {
+  0% {
+    transform: translateX(-140%) skewX(-14deg);
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  55% {
+    transform: translateX(140%) skewX(-14deg);
+    opacity: 0.95;
+  }
+  100% {
+    transform: translateX(140%) skewX(-14deg);
+    opacity: 0;
+  }
+}
+
+.mythic-pass-shine {
+  position: absolute;
+  top: -18%;
+  bottom: -18%;
+  left: 0;
+  width: 45%;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    rgba(255,255,255,0) 22%,
+    rgba(34,211,238,0.32) 38%,
+    rgba(255,255,255,0.90) 50%,
+    rgba(167,139,250,0.34) 62%,
+    transparent 78%
+  );
+  filter: blur(1px);
+  mix-blend-mode: screen;
+  animation: mythic-pass-shine 3.4s ease-in-out infinite;
+}
+
 /* ============================================================
    BASE RESET
    ============================================================ */
@@ -303,10 +342,10 @@ a.pressable:active {
   position: sticky;
   top: 0;
   z-index: 50;
-  height: 56px;
+  height: calc(56px + env(safe-area-inset-top));
   display: flex;
   align-items: center;
-  padding: 0 18px;
+  padding: env(safe-area-inset-top) 18px 0;
   background: var(--bottom-nav-bg);
   backdrop-filter: blur(28px) saturate(200%);
   -webkit-backdrop-filter: blur(28px) saturate(200%);
@@ -314,7 +353,7 @@ a.pressable:active {
   will-change: transform;
 }
 
-/* First header on page needs top safe area */
+/* Alias kept for backwards compat — app-header now always includes safe area */
 .app-header-top {
   padding-top: env(safe-area-inset-top);
   height: calc(56px + env(safe-area-inset-top));

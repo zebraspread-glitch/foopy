@@ -8,6 +8,27 @@ import type { User } from "@supabase/supabase-js";
 import TradesInboxModal from "@/app/components/TradesInboxModal";
 import { PlayerCard as SharedPlayerCard } from "@/app/components/PlayerCard";
 
+const USER_CARDS_PAGE_SIZE = 1000;
+
+async function fetchAllUserCards(userId: string): Promise<UserCard[]> {
+  const cards: UserCard[] = [];
+
+  for (let from = 0; ; from += USER_CARDS_PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("user_cards")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .range(from, from + USER_CARDS_PAGE_SIZE - 1);
+
+    if (error) throw error;
+    cards.push(...((data ?? []) as UserCard[]));
+    if (!data || data.length < USER_CARDS_PAGE_SIZE) break;
+  }
+
+  return cards;
+}
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type Rarity = "bronze" | "silver" | "gold" | "emerald" | "sapphire" | "ruby" | "amethyst" | "diamond" | "pinkdiamond" | "mythic";
@@ -435,8 +456,8 @@ export default function CardsPage() {
     // Fire all three fetches in parallel — no sequential waiting
     Promise.all([
       supabase.from("profiles").select("coins, featured_cards, last_daily_pack_at").eq("id", user.id).single(),
-      supabase.from("user_cards").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
-    ]).then(([profileRes, cardsRes]) => {
+      fetchAllUserCards(user.id),
+    ]).then(([profileRes, fetchedCards]) => {
       if (profileRes.data) {
         setCoins(profileRes.data.coins ?? 0);
         setLastDailyPackAt(profileRes.data.last_daily_pack_at ?? null);
@@ -444,9 +465,10 @@ export default function CardsPage() {
           setFeaturedCards(profileRes.data.featured_cards as { player_id: string; rarity: Rarity }[]);
         }
       }
-      if (!cardsRes.error && cardsRes.data) {
-        setCards(cardsRes.data as UserCard[]);
-      }
+      setCards(fetchedCards);
+      setCardsLoading(false);
+    }).catch((err) => {
+      console.error("[cards fetch]", err);
       setCardsLoading(false);
     });
     setCardsLoading(true);
@@ -921,9 +943,9 @@ export default function CardsPage() {
             // Coins are already correct (set from API response / optimistic update).
             // Only refetch the card collection so the grid stays up-to-date.
             if (user) {
-              supabase.from("user_cards").select("*").eq("user_id", user.id)
-                .order("created_at", { ascending: false })
-                .then(({ data, error }) => { if (!error && data) setCards(data as UserCard[]); });
+              fetchAllUserCards(user.id)
+                .then((data) => setCards(data))
+                .catch((err) => console.error("[cards refresh]", err));
             }
           }}
         />

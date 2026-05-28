@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Activity } from "lucide-react";
 import { supabase } from "@/app/lib/supabase";
 
@@ -9,6 +10,15 @@ export const NOTIF_LAST_SEEN_KEY = "foopy_notif_last_seen";
 
 export default function TopBar() {
   const [unread, setUnread] = useState(0);
+  const pathname = usePathname();
+
+  // Clear badge whenever the user navigates to the notifications page
+  useEffect(() => {
+    if (pathname === "/notifications") {
+      localStorage.setItem(NOTIF_LAST_SEEN_KEY, new Date().toISOString());
+      setUnread(0);
+    }
+  }, [pathname]);
 
   useEffect(() => {
     let userId: string | null = null;

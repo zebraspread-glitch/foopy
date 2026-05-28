@@ -107,6 +107,14 @@ function fmtDay(iso: string) {
   if (d.toDateString() === y.toDateString()) return "Yesterday";
   return d.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });
 }
+function isLightColor(hex: string): boolean {
+  const h = hex.replace("#", "");
+  if (h.length !== 6) return true;
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return (r * 299 + g * 587 + b * 114) / 1000 > 128;
+}
 
 /* ── Avatar ── */
 function Avatar({ name, url, size = 46 }: { name: string; url?: string | null; size?: number }) {
@@ -153,6 +161,19 @@ function DMsPageInner() {
   const [inbox,     setInbox]     = useState<InboxEntry[]>([]);
   const [search,    setSearch]    = useState("");
   const [tab,       setTab]       = useState<"users" | "groups">("users");
+
+  /* ── Chat bubble colour (from settings) ── */
+  const [bubbleColor, setBubbleColor] = useState<string>(() =>
+    typeof window !== "undefined" ? (localStorage.getItem("foopy_dm_bubble_color") ?? "#22c55e") : "#22c55e"
+  );
+  useEffect(() => {
+    function onSettingsChange() {
+      setBubbleColor(localStorage.getItem("foopy_dm_bubble_color") ?? "#22c55e");
+    }
+    window.addEventListener("foopy-settings-changed", onSettingsChange);
+    return () => window.removeEventListener("foopy-settings-changed", onSettingsChange);
+  }, []);
+  const bubbleTextColor = isLightColor(bubbleColor) ? "#000" : "#fff";
 
   /* ── DM thread state ── */
   const [activeConv,      setActiveConv]      = useState<InboxEntry | null>(null);
@@ -949,7 +970,7 @@ function DMsPageInner() {
       <div style={{ flex: 1, overflowY: "auto", padding: "12px 0 4px" }}>
         {groupMessagesLoading ? (
           <div style={{ display: "flex", justifyContent: "center", padding: "80px 0" }}>
-            <div style={{ width: 28, height: 28, border: "2.5px solid var(--border-2)", borderTop: "2.5px solid #22c55e", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+            <div style={{ width: 28, height: 28, border: "2.5px solid var(--border-2)", borderTop: `2.5px solid ${bubbleColor}`, borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
           </div>
         ) : groupMessages.length === 0 && (
           <div style={{ padding: "80px 24px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
@@ -982,7 +1003,7 @@ function DMsPageInner() {
                   {!mine && <div style={{ width: 28, flexShrink: 0 }}>{!sameNext && <button onClick={() => router.push(`/profile/${sn}`)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}><Avatar name={sn} url={m.sender?.avatar_url} size={28} /></button>}</div>}
                   <div style={{ maxWidth: "75%", display: "flex", flexDirection: "column", alignItems: mine ? "flex-end" : "flex-start" }}>
                     {!mine && !samePrev && <button onClick={() => router.push(`/profile/${sn}`)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", marginBottom: 3, alignSelf: "flex-start" }}><span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-3)" }}>@{sn}</span></button>}
-                    <div onClick={() => { if (!mine || m.id.startsWith("t")) return; setGroupSelectedMsgId(prev => prev === m.id ? null : m.id); }} role={mine && !m.id.startsWith("t") ? "button" : undefined} tabIndex={mine && !m.id.startsWith("t") ? 0 : undefined} onKeyDown={e => { if (mine && !m.id.startsWith("t") && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setGroupSelectedMsgId(prev => prev === m.id ? null : m.id); } }} style={{ padding: "10px 14px", borderRadius: br, background: mine ? "#22c55e" : "var(--surface-2)", color: mine ? "#000" : "var(--text-1)", fontSize: 15, lineHeight: 1.5, wordBreak: "break-word", opacity: m.id.startsWith("t") || groupDeletingIds.has(m.id) ? 0.55 : 1, cursor: mine && !m.id.startsWith("t") ? "pointer" : "default" }}>{m.content}</div>
+                    <div onClick={() => { if (!mine || m.id.startsWith("t")) return; setGroupSelectedMsgId(prev => prev === m.id ? null : m.id); }} role={mine && !m.id.startsWith("t") ? "button" : undefined} tabIndex={mine && !m.id.startsWith("t") ? 0 : undefined} onKeyDown={e => { if (mine && !m.id.startsWith("t") && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setGroupSelectedMsgId(prev => prev === m.id ? null : m.id); } }} style={{ padding: "10px 14px", borderRadius: br, background: mine ? bubbleColor : "var(--surface-2)", color: mine ? bubbleTextColor : "var(--text-1)", fontSize: 15, lineHeight: 1.5, wordBreak: "break-word", opacity: m.id.startsWith("t") || groupDeletingIds.has(m.id) ? 0.55 : 1, cursor: mine && !m.id.startsWith("t") ? "pointer" : "default" }}>{m.content}</div>
                     {mine && groupSelectedMsgId === m.id && !m.id.startsWith("t") && <div style={{ marginTop: 6, padding: 4, borderRadius: 12, background: "var(--surface-1)", border: "1px solid var(--border-2)", boxShadow: "0 8px 24px rgba(0,0,0,.35)" }}><button onClick={e => { e.stopPropagation(); deleteGroupMessage(m); }} disabled={groupDeletingIds.has(m.id)} style={{ border: "none", background: "transparent", color: groupDeletingIds.has(m.id) ? "#64748b" : "#f87171", fontWeight: 700, fontSize: 13, padding: "7px 10px", cursor: "pointer", fontFamily: "inherit" }}>Delete</button></div>}
                     {!sameNext && <span style={{ fontSize: 11, color: "var(--text-4)", fontWeight: 400, marginTop: 4, paddingInline: 4 }}>{fmtTime(m.created_at)}</span>}
                   </div>
@@ -1000,7 +1021,7 @@ function DMsPageInner() {
         <div style={{ flex: 1, display: "flex", alignItems: "center", background: "var(--surface-2)", borderRadius: 24, border: "1px solid var(--border-2)", padding: "2px 6px 2px 16px", minHeight: 44 }}>
           <input ref={groupInputRef} value={groupText} onChange={e => setGroupText(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendGroupMessage(); } }} placeholder={`Message ${activeGroup.team_name}…`} style={{ flex: 1, background: "none", border: "none", outline: "none", color: "var(--text-1)", fontSize: 15, fontFamily: "inherit", padding: "8px 0" }} />
           {groupText.trim() && (
-            <button onClick={sendGroupMessage} style={{ width: 32, height: 32, borderRadius: "50%", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", background: "#22c55e", flexShrink: 0 }}>
+            <button onClick={sendGroupMessage} style={{ width: 32, height: 32, borderRadius: "50%", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", background: bubbleColor, flexShrink: 0 }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
           )}
@@ -1033,7 +1054,7 @@ function DMsPageInner() {
       <div style={{ flex: 1, overflowY: "auto", padding: "12px 0 4px" }}>
         {messagesLoading ? (
           <div style={{ display: "flex", justifyContent: "center", padding: "80px 0" }}>
-            <div style={{ width: 28, height: 28, border: "2.5px solid var(--border-2)", borderTop: "2.5px solid #22c55e", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+            <div style={{ width: 28, height: 28, border: "2.5px solid var(--border-2)", borderTop: `2.5px solid ${bubbleColor}`, borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
           </div>
         ) : messages.length === 0 && (
           <div style={{ padding: "80px 24px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
@@ -1060,7 +1081,7 @@ function DMsPageInner() {
                 <div key={m.id} style={{ display: "flex", flexDirection: mine ? "row-reverse" : "row", alignItems: "flex-end", gap: 8, paddingInline: 12, marginBottom: sameNext ? 2 : 8 }}>
                   {!mine && <div style={{ width: 28, flexShrink: 0 }}>{!sameNext && <Avatar name={activeConv.other?.username ?? "?"} url={activeConv.other?.avatar_url} size={28} />}</div>}
                   <div style={{ maxWidth: "75%", display: "flex", flexDirection: "column", alignItems: mine ? "flex-end" : "flex-start" }}>
-                    <div onClick={() => { if (!mine || m.id.startsWith("t")) return; setSelectedMsgId(prev => prev === m.id ? null : m.id); }} role={mine && !m.id.startsWith("t") ? "button" : undefined} tabIndex={mine && !m.id.startsWith("t") ? 0 : undefined} onKeyDown={e => { if (mine && !m.id.startsWith("t") && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setSelectedMsgId(prev => prev === m.id ? null : m.id); } }} style={{ padding: "10px 14px", borderRadius: br, background: mine ? "#22c55e" : "var(--surface-2)", color: mine ? "#000" : "var(--text-1)", fontSize: 15, lineHeight: 1.5, wordBreak: "break-word", opacity: m.id.startsWith("t") || deletingIds.has(m.id) ? 0.55 : 1, cursor: mine && !m.id.startsWith("t") ? "pointer" : "default" }}>{m.content}</div>
+                    <div onClick={() => { if (!mine || m.id.startsWith("t")) return; setSelectedMsgId(prev => prev === m.id ? null : m.id); }} role={mine && !m.id.startsWith("t") ? "button" : undefined} tabIndex={mine && !m.id.startsWith("t") ? 0 : undefined} onKeyDown={e => { if (mine && !m.id.startsWith("t") && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setSelectedMsgId(prev => prev === m.id ? null : m.id); } }} style={{ padding: "10px 14px", borderRadius: br, background: mine ? bubbleColor : "var(--surface-2)", color: mine ? bubbleTextColor : "var(--text-1)", fontSize: 15, lineHeight: 1.5, wordBreak: "break-word", opacity: m.id.startsWith("t") || deletingIds.has(m.id) ? 0.55 : 1, cursor: mine && !m.id.startsWith("t") ? "pointer" : "default" }}>{m.content}</div>
                     {mine && selectedMsgId === m.id && !m.id.startsWith("t") && <div style={{ marginTop: 6, padding: 4, borderRadius: 12, background: "var(--surface-1)", border: "1px solid var(--border-2)", boxShadow: "0 8px 24px rgba(0,0,0,.35)" }}><button onClick={e => { e.stopPropagation(); deleteMessage(m); }} disabled={deletingIds.has(m.id)} style={{ border: "none", background: "transparent", color: deletingIds.has(m.id) ? "#64748b" : "#f87171", fontWeight: 700, fontSize: 13, padding: "7px 10px", cursor: "pointer", fontFamily: "inherit" }}>Delete</button></div>}
                     {!sameNext && <span style={{ fontSize: 11, color: "var(--text-4)", fontWeight: 400, marginTop: 4, paddingInline: 4 }}>{fmtTime(m.created_at)}</span>}
                   </div>
@@ -1078,7 +1099,7 @@ function DMsPageInner() {
         <div style={{ flex: 1, display: "flex", alignItems: "center", background: "var(--surface-2)", borderRadius: 24, border: "1px solid var(--border-2)", padding: "2px 6px 2px 16px", minHeight: 44 }}>
           <input ref={inputRef} value={text} onChange={e => setText(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} placeholder="Message…" style={{ flex: 1, background: "none", border: "none", outline: "none", color: "var(--text-1)", fontSize: 15, fontFamily: "inherit", padding: "8px 0" }} />
           {text.trim() && (
-            <button onClick={send} style={{ width: 32, height: 32, borderRadius: "50%", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", background: "#22c55e", flexShrink: 0 }}>
+            <button onClick={send} style={{ width: 32, height: 32, borderRadius: "50%", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", background: bubbleColor, flexShrink: 0 }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
           )}
@@ -1416,11 +1437,11 @@ function DMsPageInner() {
                 {!search && <button onClick={() => router.push("/profile")} style={{ padding: "12px 28px", borderRadius: 14, background: "#22c55e", color: "var(--text-1)", border: "none", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>Find Friends</button>}
               </div>
             )}
-            {filteredInbox.filter(e => e.convId).map((entry, i, arr) => <InboxRow key={entry.id} entry={entry} myId={myProfile.id} isLast={i === arr.length - 1 && noConvoFriends.length === 0} onClick={() => openEntry(entry)} />)}
+            {filteredInbox.filter(e => e.convId).map((entry, i, arr) => <InboxRow key={entry.id} entry={entry} myId={myProfile.id} isLast={i === arr.length - 1 && noConvoFriends.length === 0} onClick={() => openEntry(entry)} bubbleColor={bubbleColor} />)}
             {noConvoFriends.length > 0 && (
               <>
                 {hasConvos && <div style={{ padding: "18px 20px 8px" }}><span style={{ fontSize: 11, fontWeight: 900, color: "var(--text-3)", letterSpacing: ".08em", textTransform: "uppercase" }}>Friends</span></div>}
-                {noConvoFriends.map((entry, i) => <InboxRow key={entry.id} entry={entry} myId={myProfile.id} isLast={i === noConvoFriends.length - 1} onClick={() => openEntry(entry)} />)}
+                {noConvoFriends.map((entry, i) => <InboxRow key={entry.id} entry={entry} myId={myProfile.id} isLast={i === noConvoFriends.length - 1} onClick={() => openEntry(entry)} bubbleColor={bubbleColor} />)}
               </>
             )}
           </>
@@ -1463,7 +1484,7 @@ function DMsPageInner() {
               </div>
             )}
             {filteredGroups.map((group, i) => (
-              <GroupRow key={group.id} group={group} isLast={i === filteredGroups.length - 1} onClick={() => openGroup(group)} />
+              <GroupRow key={group.id} group={group} isLast={i === filteredGroups.length - 1} onClick={() => openGroup(group)} bubbleColor={bubbleColor} />
             ))}
           </>
         )}
@@ -1474,14 +1495,14 @@ function DMsPageInner() {
 }
 
 /* ── Inbox row ── */
-function InboxRow({ entry, myId, isLast, onClick }: { entry: InboxEntry; myId: string; isLast: boolean; onClick: () => void }) {
+function InboxRow({ entry, myId, isLast, onClick, bubbleColor = "#22c55e" }: { entry: InboxEntry; myId: string; isLast: boolean; onClick: () => void; bubbleColor?: string }) {
   const username = entry.other?.username ?? "?";
   const displayName = entry.other?.display_name || entry.other?.username || "?";
   const hasUnread = entry.unread > 0;
   return (
     <button onClick={onClick} style={{ width: "100%", display: "flex", alignItems: "center", gap: 13, padding: "10px 16px", background: "none", cursor: "pointer", textAlign: "left", border: "none", color: "var(--text-1)" }}>
       {/* Story-ring avatar */}
-      <div style={{ flexShrink: 0, padding: hasUnread ? 2.5 : 0, borderRadius: "50%", background: hasUnread ? "#22c55e" : "transparent", transition: "background .2s" }}>
+      <div style={{ flexShrink: 0, padding: hasUnread ? 2.5 : 0, borderRadius: "50%", background: hasUnread ? bubbleColor : "transparent", transition: "background .2s" }}>
         <div style={{ padding: hasUnread ? 2 : 0, borderRadius: "50%", background: hasUnread ? "var(--bg)" : "transparent" }}>
           <Avatar name={username} url={entry.other?.avatar_url} size={54} />
         </div>
@@ -1495,7 +1516,7 @@ function InboxRow({ entry, myId, isLast, onClick }: { entry: InboxEntry; myId: s
           <span style={{ fontSize: 13.5, lineHeight: 1.4, color: hasUnread ? "var(--text-2)" : "var(--text-3)", fontWeight: hasUnread ? 500 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
             {entry.convId ? (entry.preview || "Tap to say hi 👋") : <span style={{ fontStyle: "italic" }}>Say hi 👋</span>}
           </span>
-          {hasUnread && <div style={{ width: 9, height: 9, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }} />}
+          {hasUnread && <div style={{ width: 9, height: 9, borderRadius: "50%", background: bubbleColor, flexShrink: 0 }} />}
         </div>
       </div>
     </button>
@@ -1503,7 +1524,7 @@ function InboxRow({ entry, myId, isLast, onClick }: { entry: InboxEntry; myId: s
 }
 
 /* ── Group row ── */
-function GroupRow({ group, isLast, onClick }: { group: GroupChat; isLast: boolean; onClick: () => void }) {
+function GroupRow({ group, isLast, onClick, bubbleColor = "#22c55e" }: { group: GroupChat; isLast: boolean; onClick: () => void; bubbleColor?: string }) {
   const hasUnread = group.unread > 0;
   // Team logo takes priority over custom image_url so official teams always show their badge
   const logo = TEAM_LOGOS[group.team_name] || group.image_url;
@@ -1511,7 +1532,7 @@ function GroupRow({ group, isLast, onClick }: { group: GroupChat; isLast: boolea
   const isGeneral = group.team_name === "General";
   return (
     <button onClick={onClick} style={{ width: "100%", display: "flex", alignItems: "center", gap: 13, padding: "10px 16px", background: "none", cursor: "pointer", textAlign: "left", border: "none", color: "var(--text-1)" }}>
-      <div style={{ flexShrink: 0, padding: hasUnread ? 2.5 : 0, borderRadius: "50%", background: hasUnread ? "#22c55e" : "transparent", transition: "background .2s" }}>
+      <div style={{ flexShrink: 0, padding: hasUnread ? 2.5 : 0, borderRadius: "50%", background: hasUnread ? bubbleColor : "transparent", transition: "background .2s" }}>
         <div style={{ padding: hasUnread ? 2 : 0, borderRadius: "50%", background: hasUnread ? "var(--bg)" : "transparent" }}>
           {logo
             ? <img src={logo} alt={group.team_name} style={{ width: 54, height: 54, borderRadius: "50%", objectFit: "cover", background: color ?? "#1a1a1a", display: "block" }} />
@@ -1534,7 +1555,7 @@ function GroupRow({ group, isLast, onClick }: { group: GroupChat; isLast: boolea
           <span style={{ fontSize: 13.5, lineHeight: 1.4, color: hasUnread ? "var(--text-2)" : "var(--text-3)", fontWeight: hasUnread ? 500 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
             {group.last_message ? (group.last_message.content.length > 50 ? group.last_message.content.slice(0, 50) + "…" : group.last_message.content) : <span style={{ fontStyle: "italic" }}>{group.member_count} member{group.member_count !== 1 ? "s" : ""}</span>}
           </span>
-          {hasUnread && <div style={{ width: 9, height: 9, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }} />}
+          {hasUnread && <div style={{ width: 9, height: 9, borderRadius: "50%", background: bubbleColor, flexShrink: 0 }} />}
         </div>
       </div>
     </button>

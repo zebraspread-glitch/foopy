@@ -991,7 +991,7 @@ export default function PublicProfilePage() {
       {/* ── Friends overlay ── */}
       {showFriends && (
         <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "var(--bg)", color: "var(--text-1)", overflowY: "auto" }}>
-          <div style={{ height: 58, display: "flex", alignItems: "center", gap: 18, padding: "0 20px", background: "var(--bg)", borderBottom: "1px solid var(--border-2)", position: "sticky", top: 0 }}>
+          <div style={{ height: "calc(58px + env(safe-area-inset-top))", display: "flex", alignItems: "center", gap: 18, padding: "env(safe-area-inset-top) 20px 0", background: "var(--bg)", borderBottom: "1px solid var(--border-2)", position: "sticky", top: 0 }}>
             <button onClick={() => setShowFriends(false)} style={backBtnStyle}>← Back</button>
             <strong style={{ fontSize: 18 }}>Friends</strong>
           </div>

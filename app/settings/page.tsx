@@ -202,6 +202,9 @@ export default function SettingsPage() {
   const [showJerseyNum, setShowJerseyNum] = useState(true);
   const [themeMode, setThemeMode]       = useState<FoopyThemeMode>("default");
 
+  // Messaging
+  const [chatBubbleColor, setChatBubbleColor] = useState("#22c55e");
+
   // My Team features
   const [teamFeaturedMatch, setTeamFeaturedMatch] = useState(true);
   const [teamBorderColor, setTeamBorderColor]     = useState("#c9962a");
@@ -238,6 +241,7 @@ export default function SettingsPage() {
     setNotifTrades(localStorage.getItem("foopy_notif_trades") === "true");
     setNotifNews(localStorage.getItem("foopy_notif_news") !== "false");
     setShowJerseyNum(localStorage.getItem("foopy_show_jersey") !== "false");
+    setChatBubbleColor(localStorage.getItem("foopy_dm_bubble_color") ?? "#22c55e");
     setTeamFeaturedMatch(localStorage.getItem("foopy_team_featured") !== "false");
     setTeamBorderColor(localStorage.getItem("foopy_team_border_color") ?? "#c9962a");
     setTeamNotifStart(localStorage.getItem("foopy_team_notif_start") !== "false");
@@ -524,6 +528,64 @@ export default function SettingsPage() {
               last
             >
               <Toggle on={notifNews} onToggle={() => toggle("foopy_notif_news", notifNews, setNotifNews)} />
+            </Row>
+          </Section>
+
+          {/* ── Messaging ── */}
+          <Section label="Messaging">
+            <Row
+              icon={
+                <div style={{
+                  width: 18, height: 18, borderRadius: 5,
+                  background: chatBubbleColor,
+                  border: "2px solid rgba(255,255,255,0.15)",
+                  flexShrink: 0,
+                }} />
+              }
+              label="Chat Bubble Colour"
+              sub="Your sent message colour in DMs"
+              last
+            >
+              <div style={{ display: "flex", gap: 7, alignItems: "center" }}>
+                {["#22c55e", "#3b82f6", "#a855f7", "#ef4444", "#f59e0b", "#ec4899"].map(color => (
+                  <button
+                    key={color}
+                    onClick={() => { setChatBubbleColor(color); savePref("foopy_dm_bubble_color", color); }}
+                    style={{
+                      width: 22, height: 22, borderRadius: "50%",
+                      background: color, cursor: "pointer", padding: 0,
+                      border: chatBubbleColor === color
+                        ? "2.5px solid var(--text-1)"
+                        : "2px solid rgba(255,255,255,0.1)",
+                      outline: "none", flexShrink: 0,
+                    }}
+                  />
+                ))}
+                {/* Custom colour picker */}
+                <label style={{ cursor: "pointer", position: "relative", flexShrink: 0 }}>
+                  <input
+                    type="color"
+                    value={chatBubbleColor}
+                    onChange={e => { setChatBubbleColor(e.target.value); savePref("foopy_dm_bubble_color", e.target.value); }}
+                    style={{
+                      position: "absolute", opacity: 0,
+                      width: 22, height: 22, top: 0, left: 0,
+                      cursor: "pointer", padding: 0, border: "none",
+                    }}
+                  />
+                  <div style={{
+                    width: 22, height: 22, borderRadius: "50%",
+                    background: "var(--surface-3)",
+                    border: "2px solid var(--border-2)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    color: "var(--text-2)",
+                  }}>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="13.5" cy="6.5" r="3.5"/><path d="M20 14c0 3.31-4 6-8 6s-8-2.69-8-6"/><path d="M2 20h20"/>
+                    </svg>
+                  </div>
+                </label>
+              </div>
             </Row>
           </Section>
 
