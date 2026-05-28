@@ -2537,6 +2537,8 @@ export default function MatchPage() {
   const [roundGames, setRoundGames] = useState<MatchGame[]>([]);
   const [scoreboardPassed, setScoreboardPassed] = useState(false);
   const scoreboardRef = useRef<HTMLDivElement>(null);
+  /** Prevents re-fetching final stats on every 5-second game-poll tick */
+  const finalStatsFetchedRef = useRef(false);
 
   const [liveViewerCount, setLiveViewerCount] = useState(0);
 
@@ -2792,7 +2794,39 @@ export default function MatchPage() {
   useEffect(() => {
     if (!mounted || !game || !apiSportsGameId) return;
 
-    if (getStatus(game) !== "LIVE") {
+    const status = getStatus(game);
+
+    // ── Game is FINAL: fetch once with ?final=true so the server permanently
+    //    caches the result. Re-use those stats instead of clearing to blank. ──
+    if (status === "FINAL") {
+      if (finalStatsFetchedRef.current) return; // already fetched this session
+      finalStatsFetchedRef.current = true;
+
+      fetch(`/api/afl/player-stats?id=${apiSportsGameId}&final=true`, { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          const apiMatch = data?.response?.[0];
+          if (!apiMatch?.teams?.length) return;
+
+          const homeApiTeamId = getApiTeamId(game.hteam);
+          const awayApiTeamId = getApiTeamId(game.ateam);
+
+          const homeTeamBlock = getPlayerTeamBlock(apiMatch.teams, homeApiTeamId, game.hteam, 0);
+          const awayTeamBlock = getPlayerTeamBlock(apiMatch.teams, awayApiTeamId, game.ateam, 1, homeTeamBlock);
+
+          const home = (homeTeamBlock?.players || []).map((p: any) => normalizeApiSportsPlayer(p, game.hteam));
+          const away = (awayTeamBlock?.players || []).map((p: any) => normalizeApiSportsPlayer(p, game.ateam));
+          const split = mergeStatsByKnownTeam(game.hteam, game.ateam, home, away);
+
+          setLiveHomeStats(split.home.length ? split.home : home);
+          setLiveAwayStats(split.away.length ? split.away : away);
+        })
+        .catch(() => {}); // silently fall back to static JSON / empty
+
+      return;
+    }
+
+    if (status !== "LIVE") {
       setLiveHomeStats([]);
       setLiveAwayStats([]);
       setLiveStatsError("");
@@ -3060,6 +3094,7 @@ export default function MatchPage() {
   }, [mounted, apiSportsGameId, game, processSupabaseEvents]);
 
   // Track live viewers via Supabase Realtime Presence
+  // Also persists this user in match_viewers so completed-game totals are accurate.
   useEffect(() => {
     if (!id) return;
     const presenceChannel = supabase.channel(`match-viewers-${id}`, {
@@ -3073,6 +3108,18 @@ export default function MatchPage() {
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
           await presenceChannel.track({ joined_at: Date.now() });
+          // Persist this viewer so the total count survives after the game ends
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              await supabase
+                .from("match_viewers")
+                .upsert(
+                  { game_id: Number(id), user_id: user.id },
+                  { onConflict: "game_id,user_id" }
+                );
+            }
+          } catch {}
         }
       });
     return () => { supabase.removeChannel(presenceChannel); };
@@ -3187,8 +3234,10 @@ export default function MatchPage() {
   const homeAbbr = getAbbr(game.hteam);
   const awayAbbr = getAbbr(game.ateam);
 
-  const displayHomeStats = isLiveGame && liveHomeStats.length > 0 ? liveHomeStats : homeStats;
-  const displayAwayStats = isLiveGame && liveAwayStats.length > 0 ? liveAwayStats : awayStats;
+  // Use live/final API stats when available; fall back to static JSON for older games
+  const useLiveStats = (isLiveGame || status === "FINAL") && liveHomeStats.length > 0;
+  const displayHomeStats = useLiveStats ? liveHomeStats : homeStats;
+  const displayAwayStats = useLiveStats ? liveAwayStats : awayStats;
 
   const homeApiTeamId = getApiTeamId(game.hteam);
   const awayApiTeamId = getApiTeamId(game.ateam);

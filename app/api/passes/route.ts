@@ -14,6 +14,19 @@ import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import matchStatsRaw from "@/app/data/game-stats.json";
 import playersRaw from "@/app/data/players.json";
 
+// ── Supabase match_cache lookup ───────────────────────────────────────────────
+// Batch-fetch cached player stats for multiple fixture IDs in one query.
+// The payload stored by withCache is the full API-Sports response object.
+async function loadCachedPlayerStats(fixtureIds: string[]): Promise<Map<string, any>> {
+  if (fixtureIds.length === 0) return new Map();
+  const { data } = await supabaseServer
+    .from("match_cache")
+    .select("game_id, payload")
+    .in("game_id", fixtureIds)
+    .eq("data_type", "player_stats");
+  return new Map((data ?? []).map((row: any) => [String(row.game_id), row.payload]));
+}
+
 export const dynamic = "force-dynamic";
 
 // ── Squiggle game shape ──────────────────────────────────────────────────────
@@ -47,21 +60,46 @@ function getPlayerApiSportsId(playerSlug: string): number | null {
   return player?.apiSportsId ?? null;
 }
 
-// ── Look up a player's raw stats for a fixture in game-stats.json ────────────
+// ── Look up a player's raw stats for a fixture ───────────────────────────────
+// Checks static game-stats.json first, then falls back to match_cache from Supabase.
 function getPlayerStatsForFixture(
   fixtureId: string,
-  apiSportsPlayerId: number
+  apiSportsPlayerId: number,
+  cacheMap?: Map<string, any>
 ): ReturnType<typeof foopyRatingFromRaw> | null {
-  const gameData = (matchStatsRaw as Record<string, any>)[fixtureId];
-  if (!gameData) return null;
-
-  for (const team of (gameData.teams ?? []) as any[]) {
-    for (const p of (team.players ?? []) as any[]) {
-      if (Number(p?.player?.id) === apiSportsPlayerId) {
-        return foopyRatingFromRaw(p);
+  // Helper: scan a teams array for this player
+  function findInTeams(teams: any[]): ReturnType<typeof foopyRatingFromRaw> | null {
+    for (const team of teams) {
+      for (const p of (team.players ?? []) as any[]) {
+        if (Number(p?.player?.id) === apiSportsPlayerId) {
+          return foopyRatingFromRaw(p);
+        }
       }
     }
+    return null;
   }
+
+  // 1. Static JSON (bundled at build time — older games)
+  const staticData = (matchStatsRaw as Record<string, any>)[fixtureId];
+  if (staticData) {
+    const result = findInTeams(staticData.teams ?? []);
+    if (result !== null) return result;
+  }
+
+  // 2. match_cache (auto-populated by cron / match page visits)
+  if (cacheMap) {
+    const cached = cacheMap.get(fixtureId);
+    if (cached) {
+      // Payload may be the full API response {response:[{teams:[...]}]} or unwrapped
+      const teams: any[] =
+        cached?.response?.[0]?.teams ??
+        cached?.teams ??
+        [];
+      const result = findInTeams(teams);
+      if (result !== null) return result;
+    }
+  }
+
   return null;
 }
 
@@ -95,6 +133,17 @@ export async function calcPendingRewards(
   const claimedKeys = new Set(
     claimedRewards.map((r) => `${r.pass_type}:${r.pass_id}:${r.match_id}`)
   );
+
+  // ── Pre-load match_cache for all fixture IDs needed by player passes ───────
+  // One batch query instead of N individual lookups — avoids N×latency hits.
+  const neededFixtureIds = playerPasses.length > 0
+    ? [...new Set(
+        finalGames
+          .map((g) => getFixtureId(g.id))
+          .filter((id): id is string => id !== null)
+      )]
+    : [];
+  const cacheMap = await loadCachedPlayerStats(neededFixtureIds);
 
   const pending: PendingReward[] = [];
 
@@ -149,7 +198,8 @@ export async function calcPendingRewards(
       const fixtureId = getFixtureId(game.id);
       if (!fixtureId) continue;
 
-      const rating = getPlayerStatsForFixture(fixtureId, apiId);
+      // Uses static JSON first, then match_cache fallback
+      const rating = getPlayerStatsForFixture(fixtureId, apiId, cacheMap);
       if (rating === null || rating <= 0) continue;
 
       const reward = playerPassReward(rating, pass.xp ?? 0);

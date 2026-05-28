@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/finalize-polls",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/sync-round-stats",
+      "schedule": "* * * * *"
     }
   ]
 }

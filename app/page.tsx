@@ -1002,12 +1002,18 @@ export default function HomePage() {
 
   useEffect(() => {
     const liveGames = shownGames.filter((g) => getStatus(g) === "LIVE");
-    if (liveGames.length === 0) { setLivePlayerStats({}); return; }
+    const completedGames = shownGames.filter((g) => getStatus(g) === "COMPLETED");
+
+    if (liveGames.length === 0 && completedGames.length === 0) {
+      setLivePlayerStats({});
+      return;
+    }
 
     async function fetchLive() {
       const results: Record<string, any[]> = {};
-      await Promise.all(
-        liveGames.map(async (g) => {
+      await Promise.all([
+        // Live games — short-TTL live data
+        ...liveGames.map(async (g) => {
           const apiId =
             (API_SPORTS_MATCH_IDS as Record<string, string>)[String(g.id)] ?? String(g.id);
           try {
@@ -1018,12 +1024,27 @@ export default function HomePage() {
             const players = teams.flatMap((t: any) => t.players ?? []);
             if (players.length > 0) results[apiId] = players;
           } catch {}
-        })
-      );
+        }),
+        // Completed games — fetch with ?final=true so server permanently caches
+        ...completedGames.map(async (g) => {
+          const apiId =
+            (API_SPORTS_MATCH_IDS as Record<string, string>)[String(g.id)] ?? String(g.id);
+          try {
+            const res = await fetch(`/api/afl/player-stats?id=${apiId}&final=true`);
+            if (!res.ok) return;
+            const data = await res.json();
+            const teams: any[] = data?.response?.[0]?.teams ?? [];
+            const players = teams.flatMap((t: any) => t.players ?? []);
+            if (players.length > 0) results[apiId] = players;
+          } catch {}
+        }),
+      ]);
       setLivePlayerStats(results);
     }
 
     fetchLive();
+    // Only keep polling if there are live games — completed games are cached permanently
+    if (liveGames.length === 0) return;
     const interval = setInterval(fetchLive, 30_000);
     return () => clearInterval(interval);
   }, [shownGames]);
@@ -1175,74 +1196,79 @@ free_kicks?: {
   }, [shownGames, livePlayerStats]);
 
   const statLeaders = useMemo(() => {
-    type RawEntry = {
-      teams?: Array<{
-        players?: Array<{
-          player?: { id?: number };
-          goals?: { total?: number };
-          behinds?: number;
-          disposals?: number;
-          kicks?: number;
-          handballs?: number;
-          hitouts?: number;
-        }>;
-      }>;
-    };
-
     const disposalsMap = new Map<string, StatLeader>();
     const goalsMap = new Map<string, StatLeader>();
     const hitoutsMap = new Map<string, StatLeader>();
 
-    const matchData = matchStatsRaw as Record<string, RawEntry>;
     const playerData = playerStatsRaw as PlayerStatsPlayer[];
 
+    function processPlayerEntry(rawPlayer: any, found: PlayerStatsPlayer) {
+      const name = String(found.name || "").trim();
+      if (!name) return;
+
+      const playerTeam = found.team ?? found.club ?? "";
+      const image = playerImagePath(name, playerTeam);
+      const teamColor = getTeamColorFromName(playerTeam);
+
+      // Handle both nested (API-Sports live) and flat (static JSON) shapes
+      const s = rawPlayer.statistics ?? rawPlayer;
+      const disposals = s.disposals ?? 0;
+      const goals     = s.goals?.total ?? s.goals ?? 0;
+      const hitouts   = s.hitouts ?? 0;
+      const kicks     = s.kicks ?? 0;
+      const handballs = s.handballs ?? 0;
+      const behinds   = s.behinds ?? 0;
+
+      const trySet = (map: Map<string, StatLeader>, value: number, statLine: string) => {
+        if (value <= 0) return;
+        const existing = map.get(name);
+        if (!existing || value > existing.value)
+          map.set(name, { name, team: playerTeam, image, teamColor, value, statLine });
+      };
+
+      trySet(disposalsMap, disposals, `${kicks}k ${handballs}h`);
+      trySet(goalsMap,     goals,     `${behinds} beh`);
+      trySet(hitoutsMap,   hitouts,   `${disposals} disp`);
+    }
+
+    // ── 1. Static JSON (older games already bundled) ─────────────────────────
+    type RawEntry = { teams?: Array<{ players?: Array<{ player?: { id?: number } }> }> };
+    const matchData = matchStatsRaw as Record<string, RawEntry>;
     const apiSportsIds = new Set(
       shownGames.map((g) => {
         const mapped = (API_SPORTS_MATCH_IDS as Record<string, string>)[String(g.id)];
         return mapped ?? String(g.id);
       })
     );
-
     for (const [gameKey, gameEntry] of Object.entries(matchData)) {
       if (!apiSportsIds.has(String(gameKey))) continue;
       for (const teamEntry of gameEntry.teams ?? []) {
         for (const rawPlayer of teamEntry.players ?? []) {
           const apiPlayerId = rawPlayer.player?.id;
           if (!apiPlayerId) continue;
-
           const found = playerData.find(
             (p) =>
               p.apiSportsId === apiPlayerId ||
               idListIncludes(p.eventIds, apiPlayerId) ||
               idListIncludes(p.statsIds, apiPlayerId)
           );
-          if (!found) continue;
-
-          const name = String(found.name || "").trim();
-          if (!name) continue;
-
-          const playerTeam = found.team ?? found.club ?? "";
-          const image = playerImagePath(name, playerTeam);
-          const teamColor = getTeamColorFromName(playerTeam);
-
-          const disposals = rawPlayer.disposals ?? 0;
-          const goals = rawPlayer.goals?.total ?? 0;
-          const hitouts = rawPlayer.hitouts ?? 0;
-          const kicks = rawPlayer.kicks ?? 0;
-          const handballs = rawPlayer.handballs ?? 0;
-          const behinds = rawPlayer.behinds ?? 0;
-
-          const trySet = (map: Map<string, StatLeader>, value: number, statLine: string) => {
-            if (value <= 0) return;
-            const existing = map.get(name);
-            if (!existing || value > existing.value)
-              map.set(name, { name, team: playerTeam, image, teamColor, value, statLine });
-          };
-
-          trySet(disposalsMap, disposals, `${kicks}k ${handballs}h`);
-          trySet(goalsMap, goals, `${behinds} beh`);
-          trySet(hitoutsMap, hitouts, `${disposals} disp`);
+          if (found) processPlayerEntry(rawPlayer, found);
         }
+      }
+    }
+
+    // ── 2. Live / cached API stats (current round live + completed games) ────
+    for (const players of Object.values(livePlayerStats)) {
+      for (const playerEntry of players) {
+        const apiPlayerId = playerEntry?.player?.id;
+        if (!apiPlayerId) continue;
+        const found = playerData.find(
+          (p) =>
+            p.apiSportsId === apiPlayerId ||
+            idListIncludes(p.eventIds, apiPlayerId) ||
+            idListIncludes(p.statsIds, apiPlayerId)
+        );
+        if (found) processPlayerEntry(playerEntry, found);
       }
     }
 
@@ -1250,7 +1276,7 @@ free_kicks?: {
       Array.from(m.values()).sort((a, b) => b.value - a.value).slice(0, 5);
 
     return { disposals: top5(disposalsMap), goals: top5(goalsMap), hitouts: top5(hitoutsMap) };
-  }, [shownGames]);
+  }, [shownGames, livePlayerStats]);
 
   const byeTeams = useMemo(() => {
     if (shownGames.length === 0) return [];
@@ -1583,7 +1609,9 @@ free_kicks?: {
                       </section>
 
                       <div style={cardFooterStyle}>
-                        {status === "LIVE" && <LiveViewerCount gameId={game.id} />}
+                        {(status === "LIVE" || status === "COMPLETED") && (
+                          <LiveViewerCount gameId={game.id} isComplete={status === "COMPLETED"} />
+                        )}
                         <span
                           style={{
                             ...cardFooterTimeStyle,
@@ -2044,6 +2072,7 @@ function MobileRoundPanel({
                   awayLost={status === "COMPLETED" && (game.ascore ?? 0) < (game.hscore ?? 0)}
                   isUpcoming={isUpcoming}
                   isLive={status === "LIVE"}
+                  isComplete={status === "COMPLETED"}
                   compactRecord={!isLongCard && isUpcoming}
                   gameId={game.id}
                 />
@@ -2056,10 +2085,31 @@ function MobileRoundPanel({
   );
 }
 
-function LiveViewerCount({ gameId }: { gameId: number }) {
+function LiveViewerCount({ gameId, isComplete = false }: { gameId: number; isComplete?: boolean }) {
   const [count, setCount] = useState(0);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
+    if (isComplete) {
+      // Fetch total unique viewers who watched this match
+      supabase
+        .from("match_viewers")
+        .select("*", { count: "exact", head: true })
+        .eq("game_id", gameId)
+        .then(({ count: c }) => { setCount(c ?? 0); setLoaded(true); });
+      return;
+    }
+
+    // Track this user as a viewer of the live match
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        supabase.from("match_viewers").upsert(
+          { game_id: gameId, user_id: user.id },
+          { onConflict: "game_id,user_id" }
+        );
+      }
+    });
+
     const ch = supabase.channel(`match-viewers-${gameId}`, {
       config: { presence: { key: "" } },
     });
@@ -2067,7 +2117,10 @@ function LiveViewerCount({ gameId }: { gameId: number }) {
       setCount(Object.keys(ch.presenceState()).length);
     }).subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [gameId]);
+  }, [gameId, isComplete]);
+
+  // Don't render while loading, or if the count is 0 (no tracked viewers yet)
+  if (isComplete && (!loaded || count === 0)) return null;
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
@@ -2075,7 +2128,9 @@ function LiveViewerCount({ gameId }: { gameId: number }) {
         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
         <circle cx="12" cy="12" r="3" />
       </svg>
-      <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-1)" }}>{Math.max(1, count)}</span>
+      <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-1)" }}>
+        {isComplete ? count : Math.max(1, count)}
+      </span>
     </div>
   );
 }
@@ -2114,6 +2169,7 @@ function MobileMatchRow({
   awayLost: boolean;
   isUpcoming: boolean;
   isLive: boolean;
+  isComplete: boolean;
   compactRecord: boolean;
   gameId: number;
 }) {
@@ -2145,7 +2201,9 @@ function MobileMatchRow({
       />
 
       <div style={mobileMatchFooterStyle}>
-        {isLive && <LiveViewerCount gameId={gameId} />}
+        {(isLive || isComplete) && (
+          <LiveViewerCount gameId={gameId} isComplete={isComplete} />
+        )}
         <span
           style={{
             ...mobileFooterTimeStyle,

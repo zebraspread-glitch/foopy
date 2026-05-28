@@ -26,11 +26,13 @@ export async function GET(req: Request) {
     const { data, fromCache } = await withCache(
       id,
       "player_stats",
-      20,
+      90, // 90s TTL — cron refreshes every 60s so users always hit cache
       () => fetchPlayerStats(id),
       isFinal
     );
-    return NextResponse.json({ ...(data as any), cached: fromCache });
+    const res = NextResponse.json({ ...(data as any), cached: fromCache });
+    res.headers.set("x-from-cache", fromCache ? "1" : "0");
+    return res;
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
