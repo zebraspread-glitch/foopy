@@ -3341,8 +3341,8 @@ export default function MatchPage() {
             <TeamScore
               team={game.hteam}
               score={homeScoreDisplay}
-              goals={status !== "UPCOMING" ? displayHomeStats.reduce((s, p) => s + num(p.goals), 0) : undefined}
-              behinds={status !== "UPCOMING" ? displayHomeStats.reduce((s, p) => s + num(p.behinds), 0) : undefined}
+              goals={status !== "UPCOMING" ? (game.hgoals ?? undefined) : undefined}
+              behinds={status !== "UPCOMING" ? (game.hbehinds ?? undefined) : undefined}
               align="left"
             />
 
@@ -3404,8 +3404,8 @@ export default function MatchPage() {
             <TeamScore
               team={game.ateam}
               score={awayScoreDisplay}
-              goals={status !== "UPCOMING" ? displayAwayStats.reduce((s, p) => s + num(p.goals), 0) : undefined}
-              behinds={status !== "UPCOMING" ? displayAwayStats.reduce((s, p) => s + num(p.behinds), 0) : undefined}
+              goals={status !== "UPCOMING" ? (game.agoals ?? undefined) : undefined}
+              behinds={status !== "UPCOMING" ? (game.abehinds ?? undefined) : undefined}
               align="right"
             />
           </div>

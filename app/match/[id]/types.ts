@@ -26,6 +26,10 @@ export type MatchGame = {
   ateam: string;
   hscore?: number | string;
   ascore?: number | string;
+  hgoals?: number | null;
+  hbehinds?: number | null;
+  agoals?: number | null;
+  abehinds?: number | null;
   complete?: number | string;
   is_final?: number;
   date?: string;
