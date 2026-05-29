@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
@@ -397,7 +398,7 @@ function TeamPassLeaderboard({ pass, onClose }: { pass: TeamPass; onClose: () =>
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
-export default function PassesPage() {
+function PassesPageInner() {
   const [token, setToken]             = useState<string | null>(null);
   const [userId, setUserId]           = useState<string | null>(null);
   const [authed, setAuthed]           = useState<boolean | null>(null);
@@ -417,6 +418,23 @@ export default function PassesPage() {
   const [selectedTeamPass, setSelectedTeamPass]       = useState<TeamPass | null>(null);
   const [leaderboardTeamPass, setLeaderboardTeamPass] = useState<TeamPass | null>(null);
   const autoClaimFired = useRef(false);
+  const searchParams = useSearchParams();
+
+  // Auto-open player pass modal when navigated from a player profile page
+  // e.g. /passes?player=bailey_smith
+  useEffect(() => {
+    const playerSlug = searchParams.get("player");
+    if (!playerSlug) return;
+    const p = (playersRaw as any[]).find((x: any) => x.id === playerSlug);
+    if (!p) return;
+    const pid   = String(p.id ?? "");
+    const pname = String(p.name ?? "");
+    const team  = String(p.team ?? p.club ?? "");
+    const imgSrc = playerPassImgSrc(pname, team);
+    setPendingPlayer({ pid, name: pname, team, imgSrc, xp: 0 });
+    setPlayerPickerOpen(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: s }) => {
@@ -1098,6 +1116,14 @@ function Modal({ title, onClose, children, centered }: { title: string; onClose:
         <div style={{ padding: "12px 14px 24px", overflowY: "auto", flex: 1 }}>{children}</div>
       </div>
     </div>
+  );
+}
+
+export default function PassesPage() {
+  return (
+    <Suspense>
+      <PassesPageInner />
+    </Suspense>
   );
 }
 

@@ -60,7 +60,12 @@
       "Bash(Select-String -Path \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\\\\app\\\\match\\\\[id]\\\\page.tsx\" -Pattern \"MatchRepliesPopup|replyModal\")",
       "Bash(Select-Object -First 20)",
       "Bash(Select-String -Path \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\\\\app\\\\match\\\\[id]\\\\page.tsx\" -Pattern \"liveHomeStats|liveAwayStats|homeStats|awayStats\")",
-      "Bash(Select-Object -First 30)"
+      "Bash(Select-Object -First 30)",
+      "Bash(node -e \"const data = require\\('./app/data/game-stats.json'\\); const keys = Object.keys\\(data\\); console.log\\('Total games:', keys.length\\); console.log\\('Last 3 keys:', keys.slice\\(-3\\)\\);\")",
+      "Bash(node -e \"const ids = require\\('./app/data/apiSportsMatchIds.json'\\); const keys = Object.keys\\(ids\\); console.log\\('Total mappings:', keys.length\\); const sorted = keys.sort\\(\\(a,b\\) => Number\\(b\\)-Number\\(a\\)\\); console.log\\('Highest squiggle IDs:', sorted.slice\\(0,8\\).map\\(k => \\({squiggle: k, apiSports: ids[k]}\\)\\)\\);\")",
+      "Bash(node -e \"const {API_SPORTS_MATCH_IDS} = require\\('./app/data/apiSportsMatchIds'\\); const keys = Object.keys\\(API_SPORTS_MATCH_IDS\\); console.log\\('Total:', keys.length\\); const sorted = keys.sort\\(\\(a,b\\)=>Number\\(b\\)-Number\\(a\\)\\); console.log\\('Top 8:', sorted.slice\\(0,8\\).map\\(k=>\\({squiggle:k,api:API_SPORTS_MATCH_IDS[k]}\\)\\)\\);\")",
+      "Bash(Select-Object FullName)",
+      "Bash(grep -E \"\\\\.\\(json|ts\\)$\")"
     ]
   }
 }

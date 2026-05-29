@@ -137,11 +137,19 @@ function RoundStatsInner() {
   const [round, setRound] = useState(Number(params.get("round") ?? 1));
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
+  const [liveGameStats, setLiveGameStats] = useState<Record<string, any>>(matchStatsRaw as any);
 
   useEffect(() => {
     getGames()
       .then((data) => setGames(data as Game[]))
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/game-stats")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setLiveGameStats(data); })
+      .catch(() => {});
   }, []);
 
   // Sync URL so link is shareable
@@ -176,7 +184,7 @@ function RoundStatsInner() {
     };
 
     const best = new Map<string, { name: string; team: string; image: string; value: number }>();
-    const matchData = matchStatsRaw as Record<string, RawEntry>;
+    const matchData = liveGameStats as Record<string, RawEntry>;
     const playerData = playerStatsRaw as PlayerInfo[];
 
     for (const [gameKey, gameEntry] of Object.entries(matchData)) {
@@ -210,7 +218,7 @@ function RoundStatsInner() {
     }
 
     return Array.from(best.values()).sort((a, b) => b.value - a.value);
-  }, [apiSportsIds, stat, games]);
+  }, [apiSportsIds, stat, games, liveGameStats]);
 
   const config = STAT_TABS.find((t) => t.key === stat) ?? STAT_TABS[0];
   const maxValue = ranked[0]?.value ?? 1;

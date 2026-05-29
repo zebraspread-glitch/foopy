@@ -603,6 +603,7 @@ function getTeamColorFromName(team?: string) {
 
 export default function HomePage() {
   const [games, setGames] = useState<Game[]>([]);
+  const [liveGameStats, setLiveGameStats] = useState<Record<string, any>>(matchStatsRaw as any);
   const [selectedRound, setSelectedRound] = useState<number>(1);
   const [loading, setLoading] = useState(true);
   const [columns, setColumns] = useState<"1" | "3">("3");
@@ -685,6 +686,14 @@ export default function HomePage() {
   };
 
   useEffect(() => { setMounted(true); }, []);
+
+  // Fetch fresh merged game stats (static JSON + Supabase match_cache)
+  useEffect(() => {
+    fetch("/api/game-stats")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setLiveGameStats(data); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!showStreaksPopup) return;
@@ -1073,7 +1082,7 @@ free_kicks?: {
     };
 
     const bestByName = new Map<string, TopPlayer>();
-    const matchData = matchStatsRaw as Record<string, RawGameEntry>;
+    const matchData = liveGameStats as Record<string, RawGameEntry>;
     const playerData = playerStatsRaw as PlayerStatsPlayer[];
 
     const apiSportsIds = new Set(
@@ -1193,7 +1202,7 @@ free_kicks?: {
     return Array.from(bestByName.values())
       .sort((a, b) => b.rating - a.rating)
       .slice(0, 10);
-  }, [shownGames, livePlayerStats]);
+  }, [shownGames, livePlayerStats, liveGameStats]);
 
   const statLeaders = useMemo(() => {
     const disposalsMap = new Map<string, StatLeader>();
@@ -1233,7 +1242,7 @@ free_kicks?: {
 
     // ── 1. Static JSON (older games already bundled) ─────────────────────────
     type RawEntry = { teams?: Array<{ players?: Array<{ player?: { id?: number } }> }> };
-    const matchData = matchStatsRaw as Record<string, RawEntry>;
+    const matchData = liveGameStats as Record<string, RawEntry>;
     const apiSportsIds = new Set(
       shownGames.map((g) => {
         const mapped = (API_SPORTS_MATCH_IDS as Record<string, string>)[String(g.id)];
@@ -1276,7 +1285,7 @@ free_kicks?: {
       Array.from(m.values()).sort((a, b) => b.value - a.value).slice(0, 5);
 
     return { disposals: top5(disposalsMap), goals: top5(goalsMap), hitouts: top5(hitoutsMap) };
-  }, [shownGames, livePlayerStats]);
+  }, [shownGames, livePlayerStats, liveGameStats]);
 
   const byeTeams = useMemo(() => {
     if (shownGames.length === 0) return [];
@@ -1344,7 +1353,7 @@ free_kicks?: {
       }>;
     };
 
-    const allStats = matchStatsRaw as unknown as Record<string, RawGame>;
+    const allStats = liveGameStats as unknown as Record<string, RawGame>;
     const playerGames: Record<number, Array<{ date: string; goals: number; disposals: number; kicks: number; tackles: number }>> = {};
 
     for (const g of Object.values(allStats)) {
@@ -1412,7 +1421,7 @@ free_kicks?: {
     results.sort((a, b) => b.streak - a.streak || a.name.localeCompare(b.name));
 
     return results.slice(0, 20);
-  }, []);
+  }, [liveGameStats]);
 
   function chooseRound(round: number) {
     setSelectedRound(round);

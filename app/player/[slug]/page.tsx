@@ -4,6 +4,7 @@ import Link from "next/link";
 import { BackButton, PlayerHeroImage } from "./PlayerClient";
 import { PlayerPassSection } from "./PlayerPassSection";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
+import { supabaseServer } from "@/app/lib/supabase-server";
 
 // Reverse map: API Sports game ID → Squiggle game ID
 const API_SPORTS_TO_SQUIGGLE: Record<number, string> = Object.fromEntries(
@@ -23,8 +24,12 @@ type SeasonStats = {
   totalTackles?: number; totalHitouts?: number; totalClearances?: number;
 };
 type GamePerf = {
-  gameId: number; squiggleId: string | null; date: string; foopy: number; goals: number;
-  disposals: number; kicks: number; marks: number; tackles: number; hitouts: number;
+  gameId: number; squiggleId: string | null; date: string; foopy: number;
+  goals: number; goalAssists: number; behinds: number;
+  disposals: number; kicks: number; handballs: number;
+  marks: number; tackles: number; hitouts: number; clearances: number;
+  freesFor: number; freesAgainst: number;
+  jerseyNumber: number | null;
   opponentTeam: string; round: number | string | null;
 };
 
@@ -217,17 +222,21 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
 
   const season = seasonData.find(p => p.id === slug) ?? null;
 
-  // Fetch Squiggle for round numbers
-  const squiggleMap = new Map<number, { round: number | string; hteam: string; ateam: string }>();
+  // Fetch Squiggle for round numbers + completed game detection
+  const squiggleMap = new Map<number, { round: number | string; hteam: string; ateam: string; complete: number; is_final: number; date: string }>();
   try {
     const res = await fetch(
       `https://api.squiggle.com.au/?q=games;year=${new Date().getFullYear()}`,
-      { headers: { "User-Agent": "Foopy AFL App (foopy.app)" }, next: { revalidate: 3600 } }
+      { headers: { "User-Agent": "Foopy AFL App (foopy.app)" }, cache: "no-store" }
     );
     if (res.ok) {
       const json = await res.json();
       for (const g of json.games ?? []) {
-        squiggleMap.set(Number(g.id), { round: g.round, hteam: g.hteam, ateam: g.ateam });
+        squiggleMap.set(Number(g.id), {
+          round: g.round, hteam: g.hteam, ateam: g.ateam,
+          complete: Number(g.complete ?? 0), is_final: Number(g.is_final ?? 0),
+          date: g.date ?? "",
+        });
       }
     }
   } catch {}
@@ -268,11 +277,18 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
           squiggleId:   squiggleGameId ?? null,
           date:         g.date,
           goals:        num(ps.goals?.total),
+          goalAssists:  num(ps.goals?.assists),
+          behinds:      num(ps.behinds),
           disposals:    num(ps.disposals),
           kicks:        num(ps.kicks),
+          handballs:    num(ps.handballs),
           marks:        num(ps.marks),
           tackles:      num(ps.tackles),
           hitouts:      num(ps.hitouts),
+          clearances:   num(ps.clearances),
+          freesFor:     num(ps.free_kicks?.for),
+          freesAgainst: num(ps.free_kicks?.against),
+          jerseyNumber: (ps as any).player?.number ?? null,
           opponentTeam,
           round:        sq?.round ?? null,
           foopy: foopyRating({
@@ -288,10 +304,158 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
     }
   }
 
+  // ── Supplement with match_cache for games not yet in game-stats.json ────────
+  // The static JSON is only updated on redeploy. For newer games we check
+  // match_cache first; if it's empty we fetch live from API Sports and cache it.
+  try {
+    const apiSportsIdsInJson = new Set(Object.values(gameStats).map((g: any) => Number(g.gameId)));
+    const SQUIGGLE_TO_API: Record<string, number> = Object.fromEntries(
+      Object.entries(API_SPORTS_MATCH_IDS).map(([sq, api]) => [sq, Number(api)])
+    );
+
+
+    // Find completed Squiggle games involving this player's team that aren't in the JSON
+    const missingGames: { apiId: number; squiggleId: string; date: string; round: number | string | null }[] = [];
+    for (const [sqId, sq] of squiggleMap.entries()) {
+      const isCompleted = sq.is_final === 1 || sq.complete >= 100;
+      if (!isCompleted) continue;
+      const teamInGame = teamMatches(sq.hteam, player.team) || teamMatches(sq.ateam, player.team);
+      if (!teamInGame) continue;
+      const apiId = SQUIGGLE_TO_API[String(sqId)];
+      const inJson = apiSportsIdsInJson.has(apiId);
+      if (!apiId) continue;
+      if (inJson) continue;
+      if (recentGames.some(g => g.gameId === apiId)) continue;
+      missingGames.push({ apiId, squiggleId: String(sqId), date: sq.date, round: sq.round });
+    }
+
+    if (missingGames.length > 0) {
+      // 1. Pull whatever is already cached
+      const { data: cacheRows } = await supabaseServer
+        .from("match_cache")
+        .select("game_id, payload")
+        .in("game_id", missingGames.map(m => String(m.apiId)))
+        .eq("data_type", "player_stats");
+
+      const cachedIds = new Set((cacheRows ?? []).map((r: any) => String(r.game_id)));
+
+      // 2. For any game not yet cached, fetch live from API Sports and store it
+      const notCached = missingGames.filter(m => !cachedIds.has(String(m.apiId)));
+      const freshRows: { game_id: string; payload: any }[] = [];
+
+      await Promise.all(
+        notCached.map(async (m) => {
+          try {
+            const res = await fetch(
+              `https://v1.afl.api-sports.io/games/statistics/players?id=${m.apiId}`,
+              {
+                headers: { "x-apisports-key": process.env.API_SPORTS_AFL_KEY! },
+                cache: "no-store",
+              }
+            );
+            if (!res.ok) return;
+            const json = await res.json();
+            const payload = json;
+            freshRows.push({ game_id: String(m.apiId), payload });
+            await supabaseServer.from("match_cache").upsert(
+              { game_id: String(m.apiId), data_type: "player_stats", payload, fetched_at: new Date().toISOString(), is_final: true },
+              { onConflict: "game_id,data_type" }
+            );
+          } catch (e) {
+            console.error(`[player-page] fetch error for id=${m.apiId}:`, e);
+          }
+        })
+      );
+
+      // 3. Merge cached + freshly-fetched rows
+      const allRows = [...(cacheRows ?? []), ...freshRows];
+
+      for (const row of allRows) {
+        const meta = missingGames.find(m => String(m.apiId) === String(row.game_id));
+        if (!meta) continue;
+        const payload = row.payload as any;
+        const responseItems: any[] = payload?.response ?? [];
+        // API Sports ID endpoint returns ONE item per game with nested .teams array:
+        //   [ { game: {...}, teams: [ {team, players}, {team, players} ] } ]
+        // (not one item per team like the date endpoint)
+        const teams: any[] =
+          responseItems.length > 0 && Array.isArray(responseItems[0]?.teams)
+            ? responseItems[0].teams
+            : responseItems; // fallback: already flat per-team structure
+        for (const t of teams) {
+          const ps = (t.players ?? []).find((p: any) => allPlayerIds.has(Number(p.player?.id)));
+          if (!ps) continue;
+          const opponentEntry = teams.find((ot: any) => ot !== t);
+          const opponentTeamId = Number(opponentEntry?.team?.id);
+          const opponentTeam = (opponentTeamId && TEAM_ID_MAP[opponentTeamId]) ? TEAM_ID_MAP[opponentTeamId] : (opponentEntry?.team?.name ?? "");
+          recentGames.push({
+            gameId:       meta.apiId,
+            squiggleId:   meta.squiggleId,
+            date:         meta.date,
+            goals:        num(ps.goals?.total ?? ps.goals),
+            goalAssists:  num(ps.goals?.assists ?? ps.goalAssists),
+            behinds:      num(ps.behinds),
+            disposals:    num(ps.disposals),
+            kicks:        num(ps.kicks),
+            handballs:    num(ps.handballs),
+            marks:        num(ps.marks),
+            tackles:      num(ps.tackles),
+            hitouts:      num(ps.hitouts),
+            clearances:   num(ps.clearances),
+            freesFor:     num(ps.free_kicks?.for ?? ps.freesFor),
+            freesAgainst: num(ps.free_kicks?.against ?? ps.freesAgainst),
+            jerseyNumber: ps.player?.number ?? null,
+            opponentTeam,
+            round:        meta.round,
+            foopy: foopyRating({
+              goals: num(ps.goals?.total ?? ps.goals), goalAssists: num(ps.goals?.assists ?? ps.goalAssists),
+              behinds: num(ps.behinds), kicks: num(ps.kicks), handballs: num(ps.handballs),
+              marks: num(ps.marks), tackles: num(ps.tackles), hitouts: num(ps.hitouts),
+              disposals: num(ps.disposals), clearances: num(ps.clearances),
+              freesFor: num(ps.free_kicks?.for ?? ps.freesFor), freesAgainst: num(ps.free_kicks?.against ?? ps.freesAgainst),
+            }),
+          });
+          break;
+        }
+      }
+
+      // Re-sort so most recent is first
+      recentGames.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }
+  } catch {}
+
   const color    = teamColor(player.team);
   const imgSrc   = playerImgSrc(player.name, player.team);
-  const games    = season?.games ?? 0;
+
+  // ── Compute season averages from actual game data (always up-to-date) ────────
+  // recentGames includes both game-stats.json AND match_cache, so no manual
+  // script or redeploy is needed for season stats to stay current.
   const playedGames = recentGames.filter(g => g.foopy > 0);
+  const n = playedGames.length;
+  const avg = (key: keyof GamePerf) =>
+    n > 0 ? Math.round((playedGames.reduce((s, g) => s + num(g[key]), 0) / n) * 10) / 10 : 0;
+
+  const computedSeason = n > 0 ? {
+    games:        n,
+    goalAvg:      avg("goals"),
+    goals:        playedGames.reduce((s, g) => s + g.goals, 0),
+    goalAssists:  playedGames.reduce((s, g) => s + g.goalAssists, 0),
+    behinds:      playedGames.reduce((s, g) => s + g.behinds, 0),
+    disposals:    avg("disposals"),
+    kicks:        avg("kicks"),
+    handballs:    avg("handballs"),
+    marks:        avg("marks"),
+    tackles:      avg("tackles"),
+    hitouts:      avg("hitouts"),
+    clearances:   avg("clearances"),
+    freesFor:     playedGames.reduce((s, g) => s + g.freesFor, 0),
+    freesAgainst: playedGames.reduce((s, g) => s + g.freesAgainst, 0),
+    // Keep metadata (position, jerseyNumber) from static JSON as fallback
+    position:     season?.position ?? null,
+    jerseyNumber: playedGames.find(g => g.jerseyNumber != null)?.jerseyNumber ?? season?.jerseyNumber ?? null,
+  } : season;  // fall back to static JSON if no game data at all
+
+  const games    = computedSeason?.games ?? 0;
   const avgFoopy = playedGames.length
     ? (playedGames.reduce((s, g) => s + g.foopy, 0) / playedGames.length)
     : null;
@@ -346,13 +510,13 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
   const foopyTotal = allAvgs.length;
 
   const statGrid = [
-    { label: "Goals",      value: season?.goalAvg?.toFixed(1)    ?? (games ? ((season?.goals  ?? 0) / games).toFixed(1) : "—") },
-    { label: "Disposals",  value: season?.disposals?.toFixed(1)  ?? "—" },
-    { label: "Kicks",      value: season?.kicks?.toFixed(1)       ?? "—" },
-    { label: "Marks",      value: season?.marks?.toFixed(1)       ?? "—" },
-    { label: "Tackles",    value: season?.tackles?.toFixed(1)     ?? "—" },
-    { label: "Hitouts",    value: season?.hitouts?.toFixed(1)     ?? "—" },
-    { label: "Clearances", value: season?.clearances?.toFixed(1)  ?? "—" },
+    { label: "Goals",      value: computedSeason?.goalAvg?.toFixed(1)    ?? "—" },
+    { label: "Disposals",  value: computedSeason?.disposals?.toFixed(1)  ?? "—" },
+    { label: "Kicks",      value: computedSeason?.kicks?.toFixed(1)       ?? "—" },
+    { label: "Marks",      value: computedSeason?.marks?.toFixed(1)       ?? "—" },
+    { label: "Tackles",    value: computedSeason?.tackles?.toFixed(1)     ?? "—" },
+    { label: "Hitouts",    value: computedSeason?.hitouts?.toFixed(1)     ?? "—" },
+    { label: "Clearances", value: computedSeason?.clearances?.toFixed(1)  ?? "—" },
     { label: "Games",      value: games > 0 ? String(games) : "—" },
   ];
 
@@ -374,10 +538,10 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                 <h1 style={{ margin: "0 0 6px", fontSize: 22, fontWeight: 950, letterSpacing: "-0.04em", color: "var(--text-1)", lineHeight: 1.1 }}>{player.name}</h1>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
                   <span style={{ fontSize: 13, fontWeight: 800, color: "var(--text-2)" }}>{player.team}</span>
-                  {season?.position && (
+                  {computedSeason?.position && (
                     <span style={{ fontSize: 11, fontWeight: 800, color: color, background: `${color}22`, border: `1px solid ${color}44`, borderRadius: 999, padding: "2px 8px" }}>{season.position}</span>
                   )}
-                  {season?.jerseyNumber && (
+                  {computedSeason?.jerseyNumber && (
                     <span style={{ fontSize: 11, fontWeight: 900, color: "var(--text-3)" }}>#{season.jerseyNumber}</span>
                   )}
                 </div>
@@ -424,6 +588,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
           playerName={player.name}
           teamName={player.team}
           accentColor={color}
+          imgSrc={imgSrc}
         />
 
         {/* ── Season averages ── */}

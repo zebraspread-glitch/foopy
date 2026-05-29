@@ -2541,6 +2541,7 @@ export default function MatchPage() {
   const finalStatsFetchedRef = useRef(false);
 
   const [liveViewerCount, setLiveViewerCount] = useState(0);
+  const [totalViewerCount, setTotalViewerCount] = useState<number | null>(null);
 
   const apiSportsGameId = useMemo(() => {
     const mapped = (API_SPORTS_MATCH_IDS as Record<string, any>)[id];
@@ -3125,6 +3126,21 @@ export default function MatchPage() {
     return () => { supabase.removeChannel(presenceChannel); };
   }, [id]);
 
+  // For completed games, fetch the total unique viewer count from match_viewers
+  useEffect(() => {
+    if (!id || status !== "FINAL") return;
+    async function fetchTotalViewers() {
+      try {
+        const { count } = await supabase
+          .from("match_viewers")
+          .select("*", { count: "exact", head: true })
+          .eq("game_id", Number(id));
+        if (count !== null) setTotalViewerCount(count);
+      } catch {}
+    }
+    fetchTotalViewers();
+  }, [id, status]);
+
   // Award +10 aura once per live game viewed
   useEffect(() => {
     if (!id || !mounted) return;
@@ -3395,7 +3411,11 @@ export default function MatchPage() {
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                     <circle cx="12" cy="12" r="3" />
                   </svg>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-2)" }}>{Math.max(1, liveViewerCount)}</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-2)" }}>
+                    {status === "FINAL"
+                      ? (totalViewerCount ?? "—")
+                      : Math.max(1, liveViewerCount)}
+                  </span>
                 </div>
               )}
 
