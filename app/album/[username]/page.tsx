@@ -149,7 +149,7 @@ export default function UserAlbumPage() {
         return r.json();
       })
       .then((data) => {
-        if (!data) return;
+        if (!data) { setLoading(false); return; }
         setProfile(data.profile);
         setUserCards(data.cards);
         setPlayerPasses(dedupePlayerPasses((data.playerPasses ?? []) as PlayerPass[]));

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
+import { NOTIF_LAST_SEEN_KEY } from "@/app/components/TopBar";
 
 /* ── Types ── */
 type NotifType =
@@ -253,7 +254,8 @@ export default function NotificationsPage() {
 
       load(uid);
 
-      // Mark all as read
+      // Mark the badge as seen and all rows as read
+      localStorage.setItem(NOTIF_LAST_SEEN_KEY, new Date().toISOString());
       supabase.from("notifications").update({ read: true }).eq("user_id", uid).eq("read", false);
 
       // Realtime — reload whenever a new notification arrives

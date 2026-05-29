@@ -578,7 +578,7 @@ export default function PublicProfilePage() {
       setLoading(false);
     }
 
-    if (username) load();
+    if (username) load().catch(() => setLoading(false));
   }, [username]);
 
   if (loading) {

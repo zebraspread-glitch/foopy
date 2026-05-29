@@ -437,7 +437,7 @@ export default function PassesPage() {
 
   useEffect(() => {
     if (token) fetchData(token);
-    else if (authed === false) setLoading(false);
+    else if (authed !== null) setLoading(false);
   }, [token, authed, fetchData]);
 
   // Auto-claim pending rewards on first load

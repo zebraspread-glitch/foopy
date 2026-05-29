@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/app/lib/supabase-server";
-import { syncPassXpFromCards } from "@/app/lib/passCardXp";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +11,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "team_name required" }, { status: 400 });
   }
 
-  let { data: passes, error } = await supabaseServer
+  const { data: passes, error } = await supabaseServer
     .from("user_team_passes")
     .select("id, user_id, team_name, serial_number, xp, created_at")
     .eq("team_name", team_name)
@@ -27,19 +26,6 @@ export async function GET(req: NextRequest) {
   }
 
   const userIds = [...new Set(passes.map((p) => p.user_id))];
-  const syncResults = await Promise.allSettled(userIds.map((userId) => syncPassXpFromCards(userId)));
-  for (const result of syncResults) {
-    if (result.status === "rejected") {
-      console.error("[passes/team-leaderboard sync xp]", result.reason);
-    }
-  }
-
-  const { data: syncedPasses } = await supabaseServer
-    .from("user_team_passes")
-    .select("id, user_id, team_name, serial_number, xp, created_at")
-    .eq("team_name", team_name)
-    .eq("active", true);
-  if (syncedPasses) passes = syncedPasses;
 
   const { data: profiles } = await supabaseServer
     .from("profiles")
