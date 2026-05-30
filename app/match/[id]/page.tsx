@@ -3140,27 +3140,28 @@ export default function MatchPage() {
     const homeTeamId = getApiTeamId(game.hteam);
     const awayTeamId = getApiTeamId(game.ateam);
 
-    let teamId: number | null = null;
-    let type: 'GOAL' | 'BEHIND' | null = null;
-
-    if      (hDiff === 6) { teamId = homeTeamId; type = 'GOAL'; }
-    else if (hDiff === 1) { teamId = homeTeamId; type = 'BEHIND'; }
-    else if (aDiff === 6) { teamId = awayTeamId; type = 'GOAL'; }
-    else if (aDiff === 1) { teamId = awayTeamId; type = 'BEHIND'; }
-
-    if (!teamId || !type) return;
-
     const timestr = String(game.timestr ?? '');
     const qMatch = timestr.match(/^Q(\d)/i);
     const minMatch = timestr.match(/^Q\d\s+(\d+):/i);
     const period = qMatch ? Number(qMatch[1]) : null;
     const minute = minMatch ? Number(minMatch[1]) : null;
 
-    fetch('/api/afl/score-check', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ gameId: apiSportsGameId, teamId, type, hscore: newHome, ascore: newAway, period, minute }),
-    }).catch(() => {});
+    const toInsert: { teamId: number; type: 'GOAL' | 'BEHIND' }[] = [];
+
+    if      (hDiff === 6) toInsert.push({ teamId: homeTeamId, type: 'GOAL' });
+    else if (hDiff === 1) toInsert.push({ teamId: homeTeamId, type: 'BEHIND' });
+
+    if      (aDiff === 6) toInsert.push({ teamId: awayTeamId, type: 'GOAL' });
+    else if (aDiff === 1) toInsert.push({ teamId: awayTeamId, type: 'BEHIND' });
+
+    for (const { teamId, type } of toInsert) {
+      if (!teamId) continue;
+      fetch('/api/afl/score-check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gameId: apiSportsGameId, teamId, type, hscore: newHome, ascore: newAway, period, minute }),
+      }).catch(() => {});
+    }
   }, [game?.hscore, game?.ascore]);
 
   // Track live viewers via Supabase Realtime Presence
