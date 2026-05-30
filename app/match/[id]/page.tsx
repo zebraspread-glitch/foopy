@@ -3787,15 +3787,6 @@ export default function MatchPage() {
           <section style={sectionStyle}>
             <h2 style={sectionHeadingStyle}>Game Stats</h2>
 
-            <ScoreWorm
-              events={liveEvents}
-              homeTeamId={getApiTeamId(game.hteam)}
-              awayTeamId={getApiTeamId(game.ateam)}
-              homeColor={teamColor(game.hteam, "primary")}
-              awayColor={teamColor(game.ateam, "primary")}
-              homeAbbr={homeAbbr}
-              awayAbbr={awayAbbr}
-            />
 
             <div style={gameHeaderStyle}>
               <div style={gameTeamStyle}>
