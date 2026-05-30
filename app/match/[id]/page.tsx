@@ -2948,14 +2948,13 @@ export default function MatchPage() {
           return true;
         }
 
-        // Inferred event: drop only if a real event with the exact same score already exists
+        // Inferred event: drop if a real event with exact same score exists
         if (e.home_score != null && e.away_score != null) {
           if (scoreKey.has(`${e.team_id}|${e.type}|${e.home_score}|${e.away_score}`)) return false;
-          // Has specific scores — no count-based dedup, show it
-          return true;
         }
 
-        // No scores on inferred event — count-based fallback
+        // Count-based dedup: if real events >= inferred events for same (team|type|quarter), drop
+        // This handles APISports events that don't carry home_score/away_score
         const pk = `${e.team_id}|${e.type}|${e.period}`;
         const realCount = realCountByPeriod.get(pk) ?? 0;
         const inferredSoFar = (inferredSeenByPeriod.get(pk) ?? 0) + 1;
