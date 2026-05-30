@@ -247,37 +247,10 @@ export async function GET(req: Request) {
           console.log(`[sync-events] ✅ confirmed pending event id=${pendingMatch.id} player="${playerName}" type=${type}`);
         }
       } else {
-        // ── INSERT as a new confirmed event ──────────────────────────────────
-        const insertPayload: any = {
-          api_game_id: String(gameId),
-          period, minute, type,
-          team_id: teamId, player_id: playerId, player_name: playerName,
-          home_score: homeScore, away_score: awayScore,
-          player_fp: playerFP, inferred: false,
-          status: "confirmed", source: "apisports",
-        };
-        let { error: insertErr } = await supabase.from("live_game_feed").insert(insertPayload);
-        // Retry without new columns if SQL migration hasn't run yet
-        if (insertErr && (insertErr.code === "42703" || insertErr.message?.includes("column"))) {
-          const { error: fallback } = await supabase.from("live_game_feed").insert({
-            api_game_id: String(gameId),
-            period, minute, type,
-            team_id: teamId, player_id: playerId, player_name: playerName,
-            home_score: homeScore, away_score: awayScore,
-            player_fp: playerFP, inferred: false,
-          });
-          insertErr = fallback;
-        }
-
-        if (insertErr) {
-          // Duplicate — already confirmed from a previous sync, skip silently
-          if (insertErr.code === "23505" || insertErr.message?.includes("unique")) continue;
-          console.error("[sync-events] insert error:", insertErr.message, { type, teamId });
-        } else {
-          insertedCount++;
-          syncedConfirmed.push({ type, period, home_score: homeScore, away_score: awayScore });
-          console.log(`[sync-events] ✅ inserted confirmed event player="${playerName}" type=${type}`);
-        }
+        // No pending event found — skip entirely.
+        // APISports only fills in player data on existing squiggle events.
+        // It never creates new rows. This prevents duplicates.
+        console.log(`[sync-events] no pending match for ${type} period=${period} minute=${minute} player="${playerName}" — skipping`);
       }
     }
 
