@@ -6833,7 +6833,7 @@
     "aliases": [],
     "apiSportsId": 1960,
     "eventIds": [
-      1960
+      1855
     ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.compp-richmond-tigers--jasper-alger"
@@ -7030,7 +7030,7 @@
     "aliases": [],
     "apiSportsId": 2081,
     "eventIds": [
-      2081
+      2087
     ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.compp-richmond-tigers--oliver-hayes-brown"
@@ -7995,8 +7995,8 @@
     "name": "Jesse Dattoli",
     "team": "Sydney",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 2013,
+    "eventIds": 2013,
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.compp-sydney-swans--jesse-dattoli"
   },
@@ -8184,7 +8184,7 @@
     "aliases": [],
     "apiSportsId": 1882,
     "eventIds": [
-      1882
+      1833
     ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.compp-sydney-swans--riley-bice"
