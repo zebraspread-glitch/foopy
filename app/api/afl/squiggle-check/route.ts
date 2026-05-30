@@ -209,8 +209,14 @@ export async function GET(req: Request) {
   }
 
   // ── Determine which team scored and what type ──────────────────────────────
-  const homeTeamId = getTeamId(hteam);
-  const awayTeamId = getTeamId(ateam);
+  // IMPORTANT: use hteam/ateam from the FETCHED Squiggle game, not client params.
+  // The h/a prefix on hgoals/hbehinds/agoals/abehinds always refers to Squiggle's
+  // own home/away designation — using the same source eliminates any mismatch.
+  const squiggleHTeam = String(game.hteam ?? hteam);
+  const squiggleATeam = String(game.ateam ?? ateam);
+  const homeTeamId = getTeamId(squiggleHTeam);
+  const awayTeamId = getTeamId(squiggleATeam);
+  console.log(`[squiggle-check] teams home="${squiggleHTeam}"(${homeTeamId}) away="${squiggleATeam}"(${awayTeamId})`);
 
   let teamId = 0;
   let type: "GOAL" | "BEHIND" | null = null;
