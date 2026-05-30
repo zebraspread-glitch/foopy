@@ -3120,116 +3120,48 @@ export default function MatchPage() {
     };
   }, [mounted, apiSportsGameId, game, processSupabaseEvents]);
 
-  // Squiggle SSE — fires instantly on each goal/behind, inserts an inferred event
-  // so the feed updates immediately rather than waiting for the APISports 10s poll.
-  // When APISports syncs, it replaces the inferred row with the real one (incl. player name).
+  // Detect score changes from the Squiggle game poll (updates every ~5s).
+  // When hscore/ascore changes, insert an inferred event immediately so the feed
+  // updates before APISports catches up. No SSE needed — uses existing polling.
+  const prevScoreRef = useRef<{ home: number; away: number } | null>(null);
   useEffect(() => {
-    if (!mounted || !isLiveGame || !id || !apiSportsGameId) return;
+    if (!mounted || !isLiveGame || !game || !apiSportsGameId) return;
 
-    const homeTeamId = getApiTeamId(gameRef.current?.hteam);
-    const awayTeamId = getApiTeamId(gameRef.current?.ateam);
-    if (!homeTeamId || !awayTeamId) return;
+    const newHome = Number(game.hscore ?? 0);
+    const newAway = Number(game.ascore ?? 0);
+    const prev = prevScoreRef.current;
+    prevScoreRef.current = { home: newHome, away: newAway };
 
-    // Initialise from current known scores so the first diff is correct
-    let sseHome = Number(gameRef.current?.hscore ?? 0);
-    let sseAway = Number(gameRef.current?.ascore ?? 0);
-    let sseInitialized = false; // true after first game event syncs the baseline
+    if (!prev) return;
 
-    const sse = new EventSource(`/api/squiggle/events/${id}`);
-    console.log('[squiggle-sse] connecting to', `/api/squiggle/events/${id}`, { homeTeamId, awayTeamId, sseHome, sseAway });
+    const hDiff = newHome - prev.home;
+    const aDiff = newAway - prev.away;
 
-    sse.onopen = () => console.log('[squiggle-sse] connected');
-    sse.onerror = (e) => console.warn('[squiggle-sse] error/reconnect', e);
+    const homeTeamId = getApiTeamId(game.hteam);
+    const awayTeamId = getApiTeamId(game.ateam);
 
-    // Log and handle default 'message' events (no explicit event: field in SSE stream)
-    sse.onmessage = (e) => {
-      console.log('[squiggle-sse] raw message:', e.type, e.data);
-      try {
-        const data = JSON.parse(e.data);
-        if (data.hscore != null || data.ascore != null) {
-          const newHome = Number(data.hscore ?? sseHome);
-          const newAway = Number(data.ascore ?? sseAway);
-          tryInsertScore(newHome, newAway, data.timestr);
-        }
-      } catch {}
-    };
+    let teamId: number | null = null;
+    let type: 'GOAL' | 'BEHIND' | null = null;
 
-    const tryInsertScore = (newHome: number, newAway: number, timestrRaw?: string) => {
-      const hDiff = newHome - sseHome;
-      const aDiff = newAway - sseAway;
-      console.log('[squiggle-sse] tryInsertScore', { sseHome, sseAway, newHome, newAway, hDiff, aDiff });
+    if      (hDiff === 6) { teamId = homeTeamId; type = 'GOAL'; }
+    else if (hDiff === 1) { teamId = homeTeamId; type = 'BEHIND'; }
+    else if (aDiff === 6) { teamId = awayTeamId; type = 'GOAL'; }
+    else if (aDiff === 1) { teamId = awayTeamId; type = 'BEHIND'; }
 
-      let teamId: number | null = null;
-      let type: 'GOAL' | 'BEHIND' | null = null;
+    if (!teamId || !type) return;
 
-      if      (hDiff === 6) { teamId = homeTeamId; type = 'GOAL'; }
-      else if (hDiff === 1) { teamId = homeTeamId; type = 'BEHIND'; }
-      else if (aDiff === 6) { teamId = awayTeamId; type = 'GOAL'; }
-      else if (aDiff === 1) { teamId = awayTeamId; type = 'BEHIND'; }
+    const timestr = String(game.timestr ?? '');
+    const qMatch = timestr.match(/^Q(\d)/i);
+    const minMatch = timestr.match(/^Q\d\s+(\d+):/i);
+    const period = qMatch ? Number(qMatch[1]) : null;
+    const minute = minMatch ? Number(minMatch[1]) : null;
 
-      // Always advance tracked scores, even for unexpected deltas (corrections etc.)
-      sseHome = newHome;
-      sseAway = newAway;
-
-      if (!teamId || !type) { console.log('[squiggle-sse] no match — ignoring delta'); return; }
-
-      const timestr = String(timestrRaw ?? gameRef.current?.timestr ?? '');
-      const qMatch = timestr.match(/^Q(\d)/i);
-      const period = qMatch ? Number(qMatch[1]) : null;
-      const minMatch = timestr.match(/^Q\d\s+(\d+):/i);
-      const minute = minMatch ? Number(minMatch[1]) : null;
-
-      console.log('[squiggle-sse] calling score-check', { gameId: apiSportsGameId, teamId, type, hscore: newHome, ascore: newAway, period });
-      fetch('/api/afl/score-check', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          gameId: apiSportsGameId,
-          teamId,
-          type,
-          hscore: newHome,
-          ascore: newAway,
-          period,
-          minute,
-        }),
-      }).then(r => r.json()).then(j => console.log('[squiggle-sse] score-check response:', j)).catch(err => console.error('[squiggle-sse] score-check error:', err));
-    };
-
-    // game event carries the full game snapshot (guaranteed hscore/ascore) — primary score detector
-    sse.addEventListener('game', (e: Event) => {
-      console.log('[squiggle-sse] game event:', (e as MessageEvent).data);
-      try {
-        const data = JSON.parse((e as MessageEvent).data);
-        const newHome = Number(data.hscore ?? sseHome);
-        const newAway = Number(data.ascore ?? sseAway);
-        if (!sseInitialized) {
-          // First event is just the current state snapshot — sync baseline, don't insert
-          sseHome = newHome;
-          sseAway = newAway;
-          sseInitialized = true;
-          console.log('[squiggle-sse] baseline set', { sseHome, sseAway });
-          return;
-        }
-        tryInsertScore(newHome, newAway, data.timestr);
-      } catch {}
-    });
-
-    // score event fires before the game event — only process after baseline is set
-    sse.addEventListener('score', (e: Event) => {
-      console.log('[squiggle-sse] score event:', (e as MessageEvent).data);
-      if (!sseInitialized) return; // wait for game event to set baseline first
-      try {
-        const data = JSON.parse((e as MessageEvent).data);
-        // scores are nested under data.score
-        const scoreBlock = data.score ?? data;
-        const newHome = Number(scoreBlock.hscore ?? sseHome);
-        const newAway = Number(scoreBlock.ascore ?? sseAway);
-        tryInsertScore(newHome, newAway, data.timestr);
-      } catch {}
-    });
-
-    return () => sse.close();
-  }, [mounted, isLiveGame, id, apiSportsGameId]);
+    fetch('/api/afl/score-check', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gameId: apiSportsGameId, teamId, type, hscore: newHome, ascore: newAway, period, minute }),
+    }).catch(() => {});
+  }, [game?.hscore, game?.ascore]);
 
   // Track live viewers via Supabase Realtime Presence
   // Also persists this user in match_viewers so completed-game totals are accurate.
