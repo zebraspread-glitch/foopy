@@ -3147,24 +3147,30 @@ export default function MatchPage() {
     const newHome = Number(game.hscore ?? 0);
     const newAway = Number(game.ascore ?? 0);
 
-    const toInsert: { teamId: number; type: 'GOAL' | 'BEHIND' }[] = [];
+    const hgDiff = hg - prev.hg;
+    const hbDiff = hb - prev.hb;
+    const agDiff = ag - prev.ag;
+    const abDiff = ab - prev.ab;
 
-    // Home team: prefer goal if they scored one, otherwise behind
-    if (hg > prev.hg)      toInsert.push({ teamId: homeTeamId, type: 'GOAL' });
-    else if (hb > prev.hb) toInsert.push({ teamId: homeTeamId, type: 'BEHIND' });
+    // Only infer when exactly one thing changed — any ambiguity and we wait for APISports
+    const totalChanges = hgDiff + hbDiff + agDiff + abDiff;
+    if (totalChanges !== 1) return;
 
-    // Away team: same logic
-    if (ag > prev.ag)      toInsert.push({ teamId: awayTeamId, type: 'GOAL' });
-    else if (ab > prev.ab) toInsert.push({ teamId: awayTeamId, type: 'BEHIND' });
+    let teamId: number | null = null;
+    let type: 'GOAL' | 'BEHIND' | null = null;
 
-    for (const { teamId, type } of toInsert) {
-      if (!teamId) continue;
-      fetch('/api/afl/score-check', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameId: apiSportsGameId, teamId, type, hscore: newHome, ascore: newAway, period, minute }),
-      }).catch(() => {});
-    }
+    if      (hgDiff === 1) { teamId = homeTeamId; type = 'GOAL'; }
+    else if (hbDiff === 1) { teamId = homeTeamId; type = 'BEHIND'; }
+    else if (agDiff === 1) { teamId = awayTeamId; type = 'GOAL'; }
+    else if (abDiff === 1) { teamId = awayTeamId; type = 'BEHIND'; }
+
+    if (!teamId || !type) return;
+
+    fetch('/api/afl/score-check', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gameId: apiSportsGameId, teamId, type, hscore: newHome, ascore: newAway, period, minute }),
+    }).catch(() => {});
   }, [game?.hgoals, game?.hbehinds, game?.agoals, game?.abehinds]);
 
   // Track live viewers via Supabase Realtime Presence
