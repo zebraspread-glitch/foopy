@@ -247,8 +247,12 @@ export default function NotificationsPage() {
     let uid: string | null = null;
     let channel: ReturnType<typeof supabase.channel> | null = null;
 
-    supabase.auth.getSession().then(({ data }) => {
-      uid = data?.session?.user?.id ?? null;
+    // Use INITIAL_SESSION to avoid the getSession() race condition that would
+    // briefly show "Sign in" even when the user is logged in.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event !== "INITIAL_SESSION") return; // only care about the first definitive check
+
+      uid = session?.user?.id ?? null;
       setUserId(uid);
       if (!uid) { setLoading(false); return; }
 
@@ -269,7 +273,7 @@ export default function NotificationsPage() {
         .subscribe();
     });
 
-    return () => { channel?.unsubscribe(); };
+    return () => { subscription.unsubscribe(); channel?.unsubscribe(); };
   }, [load]);
 
   const markRead = async (id: string) => {

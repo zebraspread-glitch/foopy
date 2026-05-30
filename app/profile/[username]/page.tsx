@@ -36,6 +36,7 @@ type Profile = {
   featured_passes: FeaturedPassSlot[] | null;
   aura: number | null;
   coins: number | null;
+  favourite_team: string | null;
 };
 
 type FriendEntry = { id: string; username: string | null; avatar_url: string | null };
@@ -530,7 +531,7 @@ export default function PublicProfilePage() {
 
       const { data: p } = await supabase
         .from("profiles")
-        .select("id, username, display_name, avatar_url, banner_url, bio, created_at, favourites, featured_cards, featured_passes, aura, coins")
+        .select("id, username, display_name, avatar_url, banner_url, bio, created_at, favourites, featured_cards, featured_passes, aura, coins, favourite_team")
         .eq("username", username)
         .maybeSingle();
 
@@ -688,9 +689,21 @@ export default function PublicProfilePage() {
 
             {/* Username + pills */}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <h1 style={{ margin: "0 0 10px", fontSize: 18, fontWeight: 950, letterSpacing: "-0.04em", lineHeight: 1, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
+              <h1 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 950, letterSpacing: "-0.04em", lineHeight: 1, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
                 @{profile.username}
               </h1>
+              {/* Favourite team badge */}
+              {profile.favourite_team && (() => {
+                const team = TEAMS.find(t => t.name === profile.favourite_team);
+                return team ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
+                    <div style={{ width: 18, height: 18, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${team.color}18` }}>
+                      <img src={team.logo} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                    </div>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-3)", letterSpacing: "-0.01em" }}>{profile.favourite_team}</span>
+                  </div>
+                ) : null;
+              })()}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
                 {/* Aura */}
                 <a href="/aura-leaderboard" style={{ textDecoration: "none", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3 }}>

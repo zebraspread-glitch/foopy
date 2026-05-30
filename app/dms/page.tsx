@@ -243,21 +243,29 @@ function DMsPageInner() {
 
   /* ── Auth ── */
   useEffect(() => {
-    const fallback = setTimeout(() => setReady(true), 6000);
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      const u = session?.user ?? null;
-      setUser(u);
-      if (u) {
-        const { data } = await supabase.from("profiles").select("id,username,display_name,avatar_url").eq("id", u.id).single();
-        setMyProfile(data ?? null);
-        if (data) profileCache.current[(data as any).id] = data as Profile;
-      }
-    }).catch(() => {}).finally(() => { clearTimeout(fallback); setReady(true); });
+    // Safety-net: if INITIAL_SESSION never fires within 5s, unblock the UI
+    const fallback = setTimeout(() => setReady(true), 5000);
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_e, session) => {
+    // Use onAuthStateChange exclusively — INITIAL_SESSION fires once with the
+    // definitive session state, eliminating the getSession() race condition
+    // where a brief null return would incorrectly show the sign-in gate.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       const u = session?.user ?? null;
       setUser(u);
-      if (u) {
+
+      if (event === "INITIAL_SESSION") {
+        // Guaranteed to be the real session — safe to mark as ready
+        if (u) {
+          try {
+            const { data } = await supabase.from("profiles").select("id,username,display_name,avatar_url").eq("id", u.id).single();
+            setMyProfile(data ?? null);
+            if (data) profileCache.current[(data as any).id] = data as Profile;
+          } catch {}
+        }
+        clearTimeout(fallback);
+        setReady(true);
+      } else if (u) {
+        // Subsequent sign-in / token refresh — sync profile
         try {
           const { data } = await supabase.from("profiles").select("id,username,display_name,avatar_url").eq("id", u.id).single();
           setMyProfile(data ?? null);
@@ -267,6 +275,7 @@ function DMsPageInner() {
         setMyProfile(null);
       }
     });
+
     return () => { clearTimeout(fallback); subscription.unsubscribe(); };
   }, []);
 
