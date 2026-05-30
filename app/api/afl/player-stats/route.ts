@@ -26,7 +26,7 @@ export async function GET(req: Request) {
     const { data, fromCache } = await withCache(
       id,
       "player_stats",
-      90, // 90s TTL — cron refreshes every 60s so users always hit cache
+      isFinal ? 90 : 10, // live games: 10s TTL to stay fresh; final: 90s is fine
       () => fetchPlayerStats(id),
       isFinal
     );
