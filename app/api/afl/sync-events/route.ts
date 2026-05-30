@@ -34,18 +34,24 @@ function computeFP(stats: any): number {
 async function fetchPlayerFPMap(gameId: string): Promise<Map<number, number>> {
   const fpMap = new Map<number, number>();
   try {
-    const res = await fetch(`${API_BASE}/games/statistics/players?id=${gameId}`, {
-      headers: { "x-apisports-key": process.env.API_SPORTS_AFL_KEY ?? "" },
-      cache: "no-store",
-    });
+    const res = await fetch(
+      `${API_BASE}/games/statistics/players?id=${gameId}`,
+      {
+        headers: { "x-apisports-key": process.env.API_SPORTS_AFL_KEY ?? "" },
+        cache: "no-store",
+      }
+    );
     if (!res.ok) return fpMap;
+
     const data = await res.json();
-    for (const team of data?.response?.[0]?.teams ?? []) {
-      for (const entry of team.players ?? []) {
-        const pid = entry?.player?.id;
+    const teams: any[] = data?.response?.[0]?.teams ?? [];
+
+    for (const team of teams) {
+      for (const playerEntry of team.players ?? []) {
+        const pid = playerEntry?.player?.id;
         if (!pid) continue;
-        const s = entry.statistics ?? entry;
-        fpMap.set(Number(pid), computeFP({
+        const s = playerEntry.statistics ?? playerEntry;
+        const stats = {
           kicks:        s.kicks        ?? s.Kicks        ?? 0,
           handballs:    s.handballs    ?? s.Handballs    ?? 0,
           marks:        s.marks        ?? s.Marks        ?? 0,
@@ -55,16 +61,19 @@ async function fetchPlayerFPMap(gameId: string): Promise<Map<number, number>> {
           hitouts:      s.hitouts      ?? s.Hitouts      ?? 0,
           goals:        s.goals        ?? s.Goals        ?? 0,
           behinds:      s.behinds      ?? s.Behinds      ?? 0,
-        }));
+        };
+        fpMap.set(Number(pid), computeFP(stats));
       }
     }
-  } catch { /* non-fatal */ }
+  } catch {
+    // Non-fatal
+  }
   return fpMap;
 }
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const gameId  = searchParams.get("id");
+  const gameId = searchParams.get("id");
   const isFinal = searchParams.get("final") === "true";
 
   if (!gameId) return NextResponse.json({ error: "Missing id" }, { status: 400 });
@@ -81,239 +90,92 @@ export async function GET(req: Request) {
   inFlightSync.add(gameId);
 
   try {
-    // ── 1. Fetch APISports events ─────────────────────────────────────────────
     const res = await fetch(`${API_BASE}/games/events?id=${gameId}`, {
       headers: { "x-apisports-key": process.env.API_SPORTS_AFL_KEY ?? "" },
       cache: "no-store",
     });
 
     if (!res.ok) {
-      console.error(`[sync-events] APISports ${res.status} for game ${gameId}`);
       return NextResponse.json({ error: "External API failed" }, { status: 502 });
     }
 
-    const data     = await res.json();
+    const data = await res.json();
     const rawEvents: any[] = data?.response?.[0]?.events ?? [];
 
     if (rawEvents.length === 0) {
       if (isFinal) await markSyncFinal(gameId);
-      return NextResponse.json({ synced: true, confirmed: 0 });
+      return NextResponse.json({ synced: true, inserted: 0 });
     }
 
-    // ── 2. Deduplicate APISports events by a composite key ───────────────────
-    const eventKey = (e: any) =>
-      `${e.period ?? e.quarter}|${e.minute}|${e.type}|${e.team?.id}|${e.player?.id}`;
+    const fpMapPromise = fetchPlayerFPMap(gameId);
+    const supabase = adminSupabase();
 
-    const apiEvents = Array.from(
-      new Map(rawEvents.map((e: any) => [eventKey(e), e])).values()
+    const key = (r: any) =>
+      `${r.period}|${r.minute}|${r.type}|${r.team_id}|${r.player_id}|${r.home_score}|${r.away_score}`;
+
+    const rawRows = Array.from(
+      new Map(
+        rawEvents.map((e: any) => {
+          const row = {
+            api_game_id: gameId,
+            period: e.period ?? e.quarter ?? null,
+            minute: e.minute ?? null,
+            type: e.type ?? null,
+            team_id: e.team?.id ?? null,
+            player_id: e.player?.id ?? null,
+            player_name: e.player?.name ?? null,
+            home_score: e.homeScore ?? e.home_score ?? e.score?.home ?? e.scores?.home ?? null,
+            away_score: e.awayScore ?? e.away_score ?? e.score?.away ?? e.scores?.away ?? null,
+          };
+          return [key(row), row];
+        })
+      ).values()
     );
 
-    const supabase   = adminSupabase();
-    const fpMapProm  = fetchPlayerFPMap(gameId);
-
-    // ── 3. Load all existing feed rows for this game ─────────────────────────
-    // Note: status/source/squiggle_key columns only exist after SQL migration.
-    // We intentionally omit them here so this works before migration too.
     const { data: existing } = await supabase
       .from("live_game_feed")
       .select("id, period, minute, type, team_id, player_id, home_score, away_score, inferred, player_fp")
       .eq("api_game_id", gameId);
 
-    const allRows   = existing ?? [];
-    const pending   = allRows.filter((r: any) => r.inferred === true);
-    const confirmed = allRows.filter((r: any) => r.inferred === false);
-
-    // Build a set of already-confirmed event keys so we don't double-insert
-    const confirmedKeySet = new Set(
-      confirmed.map((r: any) =>
-        `${r.period}|${r.minute}|${r.type}|${r.team_id}|${r.player_id}`
-      )
+    const realExisting = (existing ?? []).filter((r: any) => !r.inferred);
+    const existingFPMap = new Map<string, number | null>(
+      realExisting.map((r: any) => [key(r), r.player_fp ?? null])
     );
 
-    const fpMap = await fpMapProm;
-
-    let updatedCount = 0;
-    let insertedCount = 0;
-
-    // Track which pending row IDs were matched (so we can clean up unmatched ones)
-    const matchedPendingIds = new Set<number>();
-
-    // Track events inserted/updated during this sync so post-loop cleanup can use them
-    const syncedConfirmed: { type: string; period: any; home_score: any; away_score: any }[] = [];
-
-    for (const e of apiEvents) {
-      const period    = e.period   ?? e.quarter ?? null;
-      const minute    = e.minute   ?? null;
-      const type      = e.type     ?? null;
-      const teamId    = e.team?.id ?? null;
-      const playerId  = e.player?.id  ?? null;
-      const playerName = e.player?.name ?? null;
-      const homeScore = e.homeScore ?? e.home_score ?? e.score?.home ?? e.scores?.home ?? null;
-      const awayScore = e.awayScore ?? e.away_score ?? e.score?.away ?? e.scores?.away ?? null;
-      const playerFP  = playerId != null ? (fpMap.get(Number(playerId)) ?? null) : null;
-
-      if (!type || !teamId) continue; // skip malformed events
-
-      const ck = `${period}|${minute}|${type}|${teamId}|${playerId}`;
-
-      // Skip events already confirmed in the DB
-      if (confirmedKeySet.has(ck)) {
-        // Still update FP if it changed
-        const existing = confirmed.find(
-          (r: any) => r.period === period && r.minute === minute &&
-                       r.type === type && r.team_id === teamId && r.player_id === playerId
-        );
-        if (existing && playerFP != null && existing.player_fp !== playerFP) {
-          await supabase
-            .from("live_game_feed")
-            .update({ player_fp: playerFP })
-            .eq("id", existing.id);
-        }
-        continue;
-      }
-
-      // ── Try to match a pending (inferred) event ───────────────────────────
-      // Pass 1: strict match — team + type + period + optional scores
-      let pendingMatch = pending.find((p: any) => {
-        if (matchedPendingIds.has(p.id)) return false;
-        if (p.team_id !== teamId || p.type !== type) return false;
-        if (p.period != null && period != null && p.period !== period) return false;
-        if (homeScore != null && awayScore != null && p.home_score != null && p.away_score != null) {
-          return Number(p.home_score) === Number(homeScore) &&
-                 Number(p.away_score) === Number(awayScore);
-        }
-        return true;
-      });
-
-      // Pass 2: team-ID-agnostic match — APISports and squiggle-check may use different
-      // team ID systems so the strict match above can miss. Match by score or minute instead.
-      if (!pendingMatch) {
-        pendingMatch = pending.find((p: any) => {
-          if (matchedPendingIds.has(p.id)) return false;
-          if (p.type !== type) return false;
-          if (p.period != null && period != null && p.period !== period) return false;
-          // Score-based: same resulting score = same play
-          if (homeScore != null && awayScore != null && p.home_score != null && p.away_score != null) {
-            return Number(p.home_score) === Number(homeScore) &&
-                   Number(p.away_score) === Number(awayScore);
-          }
-          // Minute-based: two plays can't share the exact same minute
-          if (minute != null && p.minute != null) {
-            return Number(p.minute) === Number(minute);
-          }
-          return false;
-        });
-        if (pendingMatch) {
-          console.log(`[sync-events] broad-matched pending id=${pendingMatch.id} (team_id mismatch: pending=${pendingMatch.team_id} api=${teamId})`);
-        }
-      }
-
-      if (pendingMatch) {
-        // ── UPDATE pending → confirmed ───────────────────────────────────────
-        matchedPendingIds.add(pendingMatch.id);
-        const updatePayload: any = {
-          minute,
-          player_id:   playerId,
-          player_name: playerName,
-          home_score:  homeScore,
-          away_score:  awayScore,
-          player_fp:   playerFP,
-          inferred:    false,
-        };
-        // Add new columns only if SQL migration has been run
-        // (inserting unknown columns returns a 42703 error which we handle below)
-        updatePayload.status = "confirmed";
-        updatePayload.source = "apisports";
-
-        const { error: updateErr } = await supabase
-          .from("live_game_feed")
-          .update(updatePayload)
-          .eq("id", pendingMatch.id);
-
-        if (updateErr) {
-          // 42703 = column doesn't exist yet (SQL migration pending) — retry without new columns
-          if (updateErr.code === "42703" || updateErr.message?.includes("column")) {
-            await supabase.from("live_game_feed").update({
-              minute, player_id: playerId, player_name: playerName,
-              home_score: homeScore, away_score: awayScore,
-              player_fp: playerFP, inferred: false,
-            }).eq("id", pendingMatch.id);
-          } else {
-            console.error("[sync-events] update error:", updateErr.message, { pendingId: pendingMatch.id });
-          }
-        } else {
-          updatedCount++;
-          syncedConfirmed.push({ type, period, home_score: homeScore, away_score: awayScore });
-          console.log(`[sync-events] ✅ confirmed pending event id=${pendingMatch.id} player="${playerName}" type=${type}`);
-        }
-      } else {
-        // No pending event found — skip entirely.
-        // APISports only fills in player data on existing squiggle events.
-        // It never creates new rows. This prevents duplicates.
-        console.log(`[sync-events] no pending match for ${type} period=${period} minute=${minute} player="${playerName}" — skipping`);
-      }
+    const apiKeys = new Set(rawRows.map(key));
+    if (
+      realExisting.length === rawRows.length &&
+      realExisting.every((r: any) => apiKeys.has(key(r)))
+    ) {
+      if (isFinal) await markSyncFinal(gameId);
+      return NextResponse.json({ synced: true, inserted: 0 });
     }
 
-    // ── 4. Clean up remaining pending events ─────────────────────────────────
-    const unmatched = pending.filter((p: any) => !matchedPendingIds.has(p.id));
+    const fpMap = await fpMapPromise;
 
-    // Case A: pending event is already covered by a confirmed event in the DB.
-    // This happens when APISports confirmed the event BEFORE squiggle-check inserted
-    // the pending row (squiggle runs every 5s, APISports every 10s — they can race).
-    // Use score-based match (no team_id) since both sides may use different team IDs.
-    const coveredIds: number[] = [];
-    const genuinelyUnmatched: any[] = [];
+    const apiRows = rawRows.map((row) => {
+      const k = key(row);
+      const storedFP = existingFPMap.get(k);
+      const isNew = !existingFPMap.has(k);
+      return {
+        ...row,
+        player_fp: isNew
+          ? (row.player_id != null ? (fpMap.get(Number(row.player_id)) ?? null) : null)
+          : storedFP,
+      };
+    });
 
-    // All confirmed events available for coverage check = pre-existing + newly synced this run
-    const allConfirmedForCoverage = [
-      ...confirmed,
-      ...syncedConfirmed,
-    ];
+    // Delete all rows then reinsert clean APISports data
+    await supabase.from("live_game_feed").delete().eq("api_game_id", gameId);
+    const { error } = await supabase.from("live_game_feed").insert(apiRows);
 
-    for (const p of unmatched) {
-      // Primary: exact score match (most reliable, team-ID-independent)
-      const coveredByScore =
-        p.home_score != null && p.away_score != null &&
-        allConfirmedForCoverage.some((c: any) =>
-          c.type === p.type &&
-          Number(c.home_score) === Number(p.home_score) &&
-          Number(c.away_score) === Number(p.away_score)
-        );
-
-      // Fallback: same type + same period when APISports has no scores
-      // Counts events for both teams combined — acceptable since pending events
-      // represent the most recent unconfirmed play and APISports is authoritative.
-      const coveredByPeriod = !coveredByScore && (
-        p.period != null &&
-        allConfirmedForCoverage.filter((c: any) =>
-          c.type === p.type && c.period === p.period
-        ).length > 0
-      );
-
-      if (coveredByScore || coveredByPeriod) {
-        coveredIds.push(p.id);
-      } else {
-        genuinelyUnmatched.push(p);
-      }
-    }
-
-    if (coveredIds.length > 0) {
-      await supabase.from("live_game_feed").delete().in("id", coveredIds);
-      console.log(`[sync-events] deleted ${coveredIds.length} pending events already covered by confirmed events`, coveredIds);
-    }
-
-    // Case B: genuinely unmatched — APISports doesn't have them yet (or rushed behind etc.)
-    // Mark as "unconfirmed" so they stay in the feed as basic team events.
-    if (genuinelyUnmatched.length > 0) {
-      const ids = genuinelyUnmatched.map((p: any) => p.id);
-      await supabase.from("live_game_feed").update({ status: "unconfirmed" }).in("id", ids);
-      console.log(`[sync-events] marked ${ids.length} pending events as unconfirmed`, ids);
+    if (error) {
+      console.error("[sync-events] insert error:", error.message);
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     if (isFinal) await markSyncFinal(gameId);
-
-    console.log(`[sync-events] game=${gameId} updated=${updatedCount} inserted=${insertedCount} unconfirmed=${unmatched.length}`);
-    return NextResponse.json({ synced: true, updated: updatedCount, inserted: insertedCount, unconfirmed: unmatched.length });
+    return NextResponse.json({ synced: true, replaced: true, total: apiRows.length });
 
   } finally {
     inFlightSync.delete(gameId);

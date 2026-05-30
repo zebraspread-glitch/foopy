@@ -2925,8 +2925,6 @@ export default function MatchPage() {
     });
 
     const seen = new Set<string>();
-    const scoreKey = new Set<string>(); // confirmed event keys: score-based and minute-based
-    const realCountByPeriod = new Map<string, number>(); // kept for potential future use
 
     const normalised = sortedRows
       .filter((e: any) => {
@@ -2934,34 +2932,8 @@ export default function MatchPage() {
         if (seen.has(k)) return false;
         seen.add(k);
 
-        const isScoring = e.type === "GOAL" || e.type === "BEHIND";
-        if (!isScoring) return true;
-
-        if (!e.inferred) {
-          // Real event: register for multiple dedup strategies (all team-ID-independent).
-          // 1. Score-based: (type, home_score, away_score) — unique per play when scores available
-          if (e.home_score != null && e.away_score != null) {
-            scoreKey.add(`${e.type}|${e.home_score}|${e.away_score}`);
-          }
-          // 2. Minute-based: (type, period, minute) — two plays can't share exact same minute
-          if (e.period != null && e.minute != null) {
-            scoreKey.add(`${e.type}|${e.period}|${e.minute}`);
-          }
-          const pk = `${e.team_id}|${e.type}|${e.period}`;
-          realCountByPeriod.set(pk, (realCountByPeriod.get(pk) ?? 0) + 1);
-          return true;
-        }
-
-        // Inferred event: drop only if a confirmed event matches this exact play.
-        // Match by resulting score (most precise) or by minute (same play can't share a minute).
-        // No count-based fallback — that suppresses valid new pending events when
-        // prior confirmed events already exist for the same team+type.
-        if (e.home_score != null && e.away_score != null) {
-          if (scoreKey.has(`${e.type}|${e.home_score}|${e.away_score}`)) return false;
-        }
-        if (e.period != null && e.minute != null) {
-          if (scoreKey.has(`${e.type}|${e.period}|${e.minute}`)) return false;
-        }
+        // Drop inferred events — feed is APISports only
+        if (e.inferred) return false;
 
         return true;
       })
@@ -3072,45 +3044,19 @@ export default function MatchPage() {
       }
     }
 
-    // ── 2. Trigger APISports sync (confirms pending events with player data) ───
+    // ── 2. Trigger a sync from APISports → Supabase ─────────────────────────
     async function triggerSync() {
       try {
         await fetch(`/api/afl/sync-events?id=${apiSportsGameId}`, { cache: "no-store" });
       } catch {}
     }
 
-    // ── 3. Trigger Squiggle score check (server-side, locked to one instance) ─
-    async function triggerSquiggleCheck() {
-      if (!game || !isLiveGame) return;
-      try {
-        const params = new URLSearchParams({
-          id:       apiSportsGameId,
-          squiggle: id,
-          hteam:    game.hteam ?? "",
-          ateam:    game.ateam ?? "",
-        });
-        await fetch(`/api/afl/squiggle-check?${params}`, { cache: "no-store" });
-      } catch {}
-    }
-
     loadFromSupabase();
-    // On load: run squiggle check immediately, then sync APISports
-    triggerSquiggleCheck().then(() => {
-      if (!cancelled) loadFromSupabase();
-    });
     triggerSync().then(() => {
       if (!cancelled) loadFromSupabase();
     });
 
-    // Every 5s: squiggle check for fast pending events
-    const squiggleInterval = setInterval(() => {
-      if (document.hidden) return;
-      triggerSquiggleCheck().then(() => {
-        if (!cancelled) loadFromSupabase();
-      });
-    }, 5_000);
-
-    // Every 10s: APISports sync to confirm pending events with player data
+    // Re-sync and reload every 10s while visible
     const syncInterval = setInterval(() => {
       if (document.hidden) return;
       triggerSync().then(() => {
@@ -3120,16 +3066,13 @@ export default function MatchPage() {
 
     const handleVisibility = () => {
       if (document.hidden) return;
-      triggerSquiggleCheck();
       triggerSync().then(() => {
         if (!cancelled) loadFromSupabase();
       });
     };
     document.addEventListener("visibilitychange", handleVisibility);
 
-    // ── 4. Subscribe to Realtime — INSERT fires for new pending/confirmed events
-    //       UPDATE fires when pending → confirmed (player name fills in)
-    //       Fallback: polling above handles any missed Realtime events
+    // ── 3. Subscribe to Realtime — new events pushed automatically ───────────
     const channel = supabase
       .channel(`live-feed-${apiSportsGameId}`)
       .on(
@@ -3137,24 +3080,15 @@ export default function MatchPage() {
         { event: "INSERT", schema: "public", table: "live_game_feed", filter: `api_game_id=eq.${apiSportsGameId}` },
         () => { if (!cancelled) loadFromSupabase(); }
       )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "live_game_feed", filter: `api_game_id=eq.${apiSportsGameId}` },
-        () => { if (!cancelled) loadFromSupabase(); }
-      )
       .subscribe();
 
     return () => {
       cancelled = true;
-      clearInterval(squiggleInterval);
       clearInterval(syncInterval);
       document.removeEventListener("visibilitychange", handleVisibility);
       supabase.removeChannel(channel);
     };
   }, [mounted, apiSportsGameId, game, processSupabaseEvents]);
-
-  // Score detection is now handled server-side via /api/afl/squiggle-check
-  // (called in the polling interval above). Nothing to do here.
 
   // Track live viewers via Supabase Realtime Presence
   // Also persists this user in match_viewers so completed-game totals are accurate.
