@@ -3135,8 +3135,8 @@ export default function MatchPage() {
     let sseAway = Number(gameRef.current?.ascore ?? 0);
     let sseInitialized = false; // true after first game event syncs the baseline
 
-    const sse = new EventSource(`https://sse.squiggle.com.au/events/${id}`);
-    console.log('[squiggle-sse] connecting to', `https://sse.squiggle.com.au/events/${id}`, { homeTeamId, awayTeamId, sseHome, sseAway });
+    const sse = new EventSource(`/api/squiggle/events/${id}`);
+    console.log('[squiggle-sse] connecting to', `/api/squiggle/events/${id}`, { homeTeamId, awayTeamId, sseHome, sseAway });
 
     sse.onopen = () => console.log('[squiggle-sse] connected');
     sse.onerror = (e) => console.warn('[squiggle-sse] error/reconnect', e);
