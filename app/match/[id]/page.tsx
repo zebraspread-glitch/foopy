@@ -2953,13 +2953,18 @@ export default function MatchPage() {
           if (scoreKey.has(`${e.team_id}|${e.type}|${e.home_score}|${e.away_score}`)) return false;
         }
 
-        // Count-based dedup: if real events >= inferred events for same (team|type|quarter), drop
-        // This handles APISports events that don't carry home_score/away_score
-        const pk = `${e.team_id}|${e.type}|${e.period}`;
-        const realCount = realCountByPeriod.get(pk) ?? 0;
-        const inferredSoFar = (inferredSeenByPeriod.get(pk) ?? 0) + 1;
-        inferredSeenByPeriod.set(pk, inferredSoFar);
-        if (inferredSoFar <= realCount) return false;
+        // Count-based dedup: count real events for this team+type across ALL periods.
+        // We can't rely on period matching because the inferred event may have period=null
+        // (e.g. Squiggle timestr wasn't parseable at the moment of detection).
+        // If total real events >= total inferred seen so far → this inferred is already covered.
+        const teamTypeKey = `${e.team_id}|${e.type}`;
+        let totalRealForTeamType = 0;
+        for (const [k, v] of realCountByPeriod) {
+          if (k.startsWith(teamTypeKey + "|")) totalRealForTeamType += v;
+        }
+        const inferredSoFar = (inferredSeenByPeriod.get(teamTypeKey) ?? 0) + 1;
+        inferredSeenByPeriod.set(teamTypeKey, inferredSoFar);
+        if (inferredSoFar <= totalRealForTeamType) return false;
 
         return true;
       })

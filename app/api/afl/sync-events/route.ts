@@ -112,9 +112,11 @@ export async function GET(req: Request) {
     const fpMapProm  = fetchPlayerFPMap(gameId);
 
     // ── 3. Load all existing feed rows for this game ─────────────────────────
+    // Note: status/source/squiggle_key columns only exist after SQL migration.
+    // We intentionally omit them here so this works before migration too.
     const { data: existing } = await supabase
       .from("live_game_feed")
-      .select("id, period, minute, type, team_id, player_id, home_score, away_score, inferred, status, player_fp")
+      .select("id, period, minute, type, team_id, player_id, home_score, away_score, inferred, player_fp")
       .eq("api_game_id", gameId);
 
     const allRows   = existing ?? [];
@@ -168,58 +170,79 @@ export async function GET(req: Request) {
       }
 
       // ── Try to match a pending (inferred) event ───────────────────────────
-      // Match on: same team, same type, same quarter, and (if scores available) same score snapshot
+      // Match on team + type + (period if both non-null) + score snapshot if available
       const pendingMatch = pending.find((p: any) => {
         if (matchedPendingIds.has(p.id)) return false;
-        if (p.team_id !== teamId || p.type !== type || p.period !== period) return false;
-        // If APISports provides scores, verify they match the pending event's snapshot
+        if (p.team_id !== teamId || p.type !== type) return false;
+        // Period check: only enforce if both have a period value
+        if (p.period != null && period != null && p.period !== period) return false;
+        // Score snapshot match (most precise) — if both have scores, they must match
         if (homeScore != null && awayScore != null && p.home_score != null && p.away_score != null) {
           return Number(p.home_score) === Number(homeScore) &&
                  Number(p.away_score) === Number(awayScore);
         }
-        // No scores on either side — accept the team+type+quarter match
         return true;
       });
 
       if (pendingMatch) {
         // ── UPDATE pending → confirmed ───────────────────────────────────────
         matchedPendingIds.add(pendingMatch.id);
+        const updatePayload: any = {
+          minute,
+          player_id:   playerId,
+          player_name: playerName,
+          home_score:  homeScore,
+          away_score:  awayScore,
+          player_fp:   playerFP,
+          inferred:    false,
+        };
+        // Add new columns only if SQL migration has been run
+        // (inserting unknown columns returns a 42703 error which we handle below)
+        updatePayload.status = "confirmed";
+        updatePayload.source = "apisports";
+
         const { error: updateErr } = await supabase
           .from("live_game_feed")
-          .update({
-            minute,
-            player_id:   playerId,
-            player_name: playerName,
-            home_score:  homeScore,
-            away_score:  awayScore,
-            player_fp:   playerFP,
-            inferred:    false,
-            status:      "confirmed",
-            source:      "apisports",
-          })
+          .update(updatePayload)
           .eq("id", pendingMatch.id);
 
         if (updateErr) {
-          console.error("[sync-events] update error:", updateErr.message, { pendingId: pendingMatch.id });
+          // 42703 = column doesn't exist yet (SQL migration pending) — retry without new columns
+          if (updateErr.code === "42703" || updateErr.message?.includes("column")) {
+            await supabase.from("live_game_feed").update({
+              minute, player_id: playerId, player_name: playerName,
+              home_score: homeScore, away_score: awayScore,
+              player_fp: playerFP, inferred: false,
+            }).eq("id", pendingMatch.id);
+          } else {
+            console.error("[sync-events] update error:", updateErr.message, { pendingId: pendingMatch.id });
+          }
         } else {
           updatedCount++;
           console.log(`[sync-events] ✅ confirmed pending event id=${pendingMatch.id} player="${playerName}" type=${type}`);
         }
       } else {
         // ── INSERT as a new confirmed event ──────────────────────────────────
-        const { error: insertErr } = await supabase.from("live_game_feed").insert({
-          api_game_id:  String(gameId),
+        const insertPayload: any = {
+          api_game_id: String(gameId),
           period, minute, type,
-          team_id:      teamId,
-          player_id:    playerId,
-          player_name:  playerName,
-          home_score:   homeScore,
-          away_score:   awayScore,
-          player_fp:    playerFP,
-          inferred:     false,
-          status:       "confirmed",
-          source:       "apisports",
-        });
+          team_id: teamId, player_id: playerId, player_name: playerName,
+          home_score: homeScore, away_score: awayScore,
+          player_fp: playerFP, inferred: false,
+          status: "confirmed", source: "apisports",
+        };
+        let { error: insertErr } = await supabase.from("live_game_feed").insert(insertPayload);
+        // Retry without new columns if SQL migration hasn't run yet
+        if (insertErr && (insertErr.code === "42703" || insertErr.message?.includes("column"))) {
+          const { error: fallback } = await supabase.from("live_game_feed").insert({
+            api_game_id: String(gameId),
+            period, minute, type,
+            team_id: teamId, player_id: playerId, player_name: playerName,
+            home_score: homeScore, away_score: awayScore,
+            player_fp: playerFP, inferred: false,
+          });
+          insertErr = fallback;
+        }
 
         if (insertErr) {
           // Duplicate — already confirmed from a previous sync, skip silently
@@ -238,10 +261,8 @@ export async function GET(req: Request) {
     const unmatched = pending.filter((p: any) => !matchedPendingIds.has(p.id));
     if (unmatched.length > 0) {
       const ids = unmatched.map((p: any) => p.id);
-      await supabase
-        .from("live_game_feed")
-        .update({ status: "unconfirmed" })
-        .in("id", ids);
+      // Try to mark as unconfirmed (only works after SQL migration)
+      await supabase.from("live_game_feed").update({ status: "unconfirmed" }).in("id", ids);
       console.log(`[sync-events] marked ${ids.length} pending events as unconfirmed`, ids);
     }
 
