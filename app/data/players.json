@@ -1695,8 +1695,8 @@
     "name": "Harvey Harrison",
     "team": "Collingwood",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1725,
+    "eventIds": 1725,
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--harvey-harrison"
   },
@@ -1939,8 +1939,8 @@
     "name": "Samuel Swadling",
     "team": "Collingwood",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 2107,
+    "eventIds": 2107,
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.compp-collingwood-magpies--samuel-swadling"
   },
