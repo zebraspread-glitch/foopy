@@ -2539,6 +2539,7 @@ export default function MatchPage() {
   const scoreboardRef = useRef<HTMLDivElement>(null);
   /** Prevents re-fetching final stats on every 5-second game-poll tick */
   const finalStatsFetchedRef = useRef(false);
+  const gameRef = useRef(game);
 
   const [liveViewerCount, setLiveViewerCount] = useState(0);
   const [totalViewerCount, setTotalViewerCount] = useState<number | null>(null);
@@ -2715,6 +2716,8 @@ export default function MatchPage() {
     lastScoreRef.current = { home: hscore, away: ascore };
   }, [game?.hscore, game?.ascore]);
 
+  useEffect(() => { gameRef.current = game; }, [game]);
+
   const displayLiveEvents = useMemo(() => liveEvents, [liveEvents]);
 
   // Count unanswered open polls — always runs so tab badge is visible before entering the tab
@@ -2797,15 +2800,27 @@ export default function MatchPage() {
 
     const status = getStatus(game);
 
-    // ── Game is FINAL: fetch once with ?final=true so the server permanently
-    //    caches the result. Re-use those stats instead of clearing to blank. ──
+    // ── Game is FINAL: keep re-fetching for up to 5 minutes so APISports has
+    //    time to publish final stats before we permanently lock the cache. ──
     if (status === "FINAL") {
-      if (finalStatsFetchedRef.current) return; // already fetched this session
-      finalStatsFetchedRef.current = true;
+      if (finalStatsFetchedRef.current) return;
 
-      fetch(`/api/afl/player-stats?id=${apiSportsGameId}&final=true`, { cache: "no-store" })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((data) => {
+      let attempts = 0;
+      const MAX_ATTEMPTS = 10; // every 30s for ~5 min
+      let cancelled = false;
+
+      async function fetchFinalStats() {
+        if (cancelled) return;
+        attempts++;
+        const isFinal = attempts >= MAX_ATTEMPTS;
+
+        try {
+          const r = await fetch(
+            `/api/afl/player-stats?id=${apiSportsGameId}${isFinal ? "&final=true" : ""}`,
+            { cache: "no-store" }
+          );
+          if (!r.ok) return;
+          const data = await r.json();
           const apiMatch = data?.response?.[0];
           if (!apiMatch?.teams?.length) return;
 
@@ -2819,12 +2834,21 @@ export default function MatchPage() {
           const away = (awayTeamBlock?.players || []).map((p: any) => normalizeApiSportsPlayer(p, game.ateam));
           const split = mergeStatsByKnownTeam(game.hteam, game.ateam, home, away);
 
-          setLiveHomeStats(split.home.length ? split.home : home);
-          setLiveAwayStats(split.away.length ? split.away : away);
-        })
-        .catch(() => {}); // silently fall back to static JSON / empty
+          if (!cancelled) {
+            setLiveHomeStats(split.home.length ? split.home : home);
+            setLiveAwayStats(split.away.length ? split.away : away);
+          }
+        } catch {}
+      }
 
-      return;
+      finalStatsFetchedRef.current = true;
+      fetchFinalStats();
+      const finalInterval = setInterval(() => {
+        if (attempts >= MAX_ATTEMPTS) { clearInterval(finalInterval); return; }
+        fetchFinalStats();
+      }, 30_000);
+
+      return () => { cancelled = true; clearInterval(finalInterval); };
     }
 
     if (status !== "LIVE") {
@@ -2871,7 +2895,7 @@ export default function MatchPage() {
     const interval = setInterval(() => {
       if (document.hidden) return;
       loadLivePlayerStats();
-    }, 30_000);
+    }, 10_000);
 
     const handleVisibility = () => {
       if (!document.hidden) loadLivePlayerStats();
@@ -3094,6 +3118,91 @@ export default function MatchPage() {
     };
   }, [mounted, apiSportsGameId, game, processSupabaseEvents]);
 
+  // Squiggle SSE — fires instantly on each goal/behind, inserts an inferred event
+  // so the feed updates immediately rather than waiting for the APISports 10s poll.
+  // When APISports syncs, it replaces the inferred row with the real one (incl. player name).
+  useEffect(() => {
+    if (!mounted || !isLiveGame || !id || !apiSportsGameId) return;
+
+    const homeTeamId = getApiTeamId(gameRef.current?.hteam);
+    const awayTeamId = getApiTeamId(gameRef.current?.ateam);
+    if (!homeTeamId || !awayTeamId) return;
+
+    // Initialise from current known scores so the first diff is correct
+    let sseHome = Number(gameRef.current?.hscore ?? 0);
+    let sseAway = Number(gameRef.current?.ascore ?? 0);
+
+    const sse = new EventSource(`https://sse.squiggle.com.au/events/${id}`);
+    console.log('[squiggle-sse] connecting to', `https://sse.squiggle.com.au/events/${id}`, { homeTeamId, awayTeamId, sseHome, sseAway });
+
+    sse.onopen = () => console.log('[squiggle-sse] connected');
+    sse.onerror = (e) => console.warn('[squiggle-sse] error/reconnect', e);
+
+    // Log every raw SSE message so we can see exactly what Squiggle sends
+    sse.onmessage = (e) => console.log('[squiggle-sse] raw message:', e.type, e.data);
+
+    const tryInsertScore = (newHome: number, newAway: number, timestrRaw?: string) => {
+      const hDiff = newHome - sseHome;
+      const aDiff = newAway - sseAway;
+
+      let teamId: number | null = null;
+      let type: 'GOAL' | 'BEHIND' | null = null;
+
+      if      (hDiff === 6) { teamId = homeTeamId; type = 'GOAL'; }
+      else if (hDiff === 1) { teamId = homeTeamId; type = 'BEHIND'; }
+      else if (aDiff === 6) { teamId = awayTeamId; type = 'GOAL'; }
+      else if (aDiff === 1) { teamId = awayTeamId; type = 'BEHIND'; }
+
+      // Always advance tracked scores, even for unexpected deltas (corrections etc.)
+      sseHome = newHome;
+      sseAway = newAway;
+
+      if (!teamId || !type) return;
+
+      const timestr = String(timestrRaw ?? gameRef.current?.timestr ?? '');
+      const qMatch = timestr.match(/^Q(\d)/i);
+      const period = qMatch ? Number(qMatch[1]) : null;
+
+      fetch('/api/afl/score-check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          gameId: apiSportsGameId,
+          teamId,
+          type,
+          hscore: newHome,
+          ascore: newAway,
+          period,
+          minute: null,
+        }),
+      }).catch(() => {});
+    };
+
+    // game event carries the full game snapshot (guaranteed hscore/ascore) — primary score detector
+    sse.addEventListener('game', (e: Event) => {
+      try {
+        const data = JSON.parse((e as MessageEvent).data);
+        const newHome = Number(data.hscore ?? sseHome);
+        const newAway = Number(data.ascore ?? sseAway);
+        tryInsertScore(newHome, newAway, data.timestr);
+      } catch {}
+    });
+
+    // score event may also carry score data — try it as a backup
+    // if game event already fired first, diff will be 0 and nothing extra is inserted
+    sse.addEventListener('score', (e: Event) => {
+      try {
+        const data = JSON.parse((e as MessageEvent).data);
+        if (data.hscore == null && data.ascore == null) return;
+        const newHome = Number(data.hscore ?? sseHome);
+        const newAway = Number(data.ascore ?? sseAway);
+        tryInsertScore(newHome, newAway, data.timestr);
+      } catch {}
+    });
+
+    return () => sse.close();
+  }, [mounted, isLiveGame, id, apiSportsGameId]);
+
   // Track live viewers via Supabase Realtime Presence
   // Also persists this user in match_viewers so completed-game totals are accurate.
   useEffect(() => {
@@ -3126,16 +3235,15 @@ export default function MatchPage() {
     return () => { supabase.removeChannel(presenceChannel); };
   }, [id]);
 
-  // For completed games, fetch the total unique viewer count from match_viewers
+  // For completed games, fetch the total unique viewer count via server route (bypasses RLS)
   useEffect(() => {
     if (!id || status !== "FINAL") return;
     async function fetchTotalViewers() {
       try {
-        const { count } = await supabase
-          .from("match_viewers")
-          .select("*", { count: "exact", head: true })
-          .eq("game_id", Number(id));
-        if (count !== null) setTotalViewerCount(count);
+        const res = await fetch(`/api/afl/viewer-count?id=${id}`, { cache: "no-store" });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (json.count != null) setTotalViewerCount(json.count);
       } catch {}
     }
     fetchTotalViewers();
