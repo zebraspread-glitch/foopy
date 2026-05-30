@@ -3121,21 +3121,20 @@ export default function MatchPage() {
   }, [mounted, apiSportsGameId, game, processSupabaseEvents]);
 
   // Detect score changes from the Squiggle game poll (updates every ~5s).
-  // When hscore/ascore changes, insert an inferred event immediately so the feed
-  // updates before APISports catches up. No SSE needed — uses existing polling.
-  const prevScoreRef = useRef<{ home: number; away: number } | null>(null);
+  // Uses goals/behinds breakdown so multiple scores between polls are handled correctly.
+  const prevScoreRef = useRef<{ hg: number; hb: number; ag: number; ab: number } | null>(null);
   useEffect(() => {
     if (!mounted || !isLiveGame || !game || !apiSportsGameId) return;
 
-    const newHome = Number(game.hscore ?? 0);
-    const newAway = Number(game.ascore ?? 0);
+    const hg = Number(game.hgoals ?? 0);
+    const hb = Number(game.hbehinds ?? 0);
+    const ag = Number(game.agoals ?? 0);
+    const ab = Number(game.abehinds ?? 0);
+
     const prev = prevScoreRef.current;
-    prevScoreRef.current = { home: newHome, away: newAway };
+    prevScoreRef.current = { hg, hb, ag, ab };
 
     if (!prev) return;
-
-    const hDiff = newHome - prev.home;
-    const aDiff = newAway - prev.away;
 
     const homeTeamId = getApiTeamId(game.hteam);
     const awayTeamId = getApiTeamId(game.ateam);
@@ -3145,14 +3144,18 @@ export default function MatchPage() {
     const minMatch = timestr.match(/^Q\d\s+(\d+):/i);
     const period = qMatch ? Number(qMatch[1]) : null;
     const minute = minMatch ? Number(minMatch[1]) : null;
+    const newHome = Number(game.hscore ?? 0);
+    const newAway = Number(game.ascore ?? 0);
 
     const toInsert: { teamId: number; type: 'GOAL' | 'BEHIND' }[] = [];
 
-    if      (hDiff === 6) toInsert.push({ teamId: homeTeamId, type: 'GOAL' });
-    else if (hDiff === 1) toInsert.push({ teamId: homeTeamId, type: 'BEHIND' });
+    // Home team: prefer goal if they scored one, otherwise behind
+    if (hg > prev.hg)      toInsert.push({ teamId: homeTeamId, type: 'GOAL' });
+    else if (hb > prev.hb) toInsert.push({ teamId: homeTeamId, type: 'BEHIND' });
 
-    if      (aDiff === 6) toInsert.push({ teamId: awayTeamId, type: 'GOAL' });
-    else if (aDiff === 1) toInsert.push({ teamId: awayTeamId, type: 'BEHIND' });
+    // Away team: same logic
+    if (ag > prev.ag)      toInsert.push({ teamId: awayTeamId, type: 'GOAL' });
+    else if (ab > prev.ab) toInsert.push({ teamId: awayTeamId, type: 'BEHIND' });
 
     for (const { teamId, type } of toInsert) {
       if (!teamId) continue;
@@ -3162,7 +3165,7 @@ export default function MatchPage() {
         body: JSON.stringify({ gameId: apiSportsGameId, teamId, type, hscore: newHome, ascore: newAway, period, minute }),
       }).catch(() => {});
     }
-  }, [game?.hscore, game?.ascore]);
+  }, [game?.hgoals, game?.hbehinds, game?.agoals, game?.abehinds]);
 
   // Track live viewers via Supabase Realtime Presence
   // Also persists this user in match_viewers so completed-game totals are accurate.
