@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
@@ -157,7 +157,7 @@ function resolvePlayerImage(name: string, team: string) {
   return `/players/${folder}/${img}`;
 }
 
-export default function EventCommentsPage() {
+function EventCommentsPageInner() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1896,3 +1896,11 @@ const sendBtnStyle: CSSProperties = {
   cursor: "pointer",
   transition: "opacity 0.15s",
 };
+
+export default function EventCommentsPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: "100dvh", background: "var(--bg)" }} />}>
+      <EventCommentsPageInner />
+    </Suspense>
+  );
+}

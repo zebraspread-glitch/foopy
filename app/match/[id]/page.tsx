@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -2502,7 +2502,7 @@ function ScoreWorm({
 }
 
 
-export default function MatchPage() {
+function MatchPageInner() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -5915,3 +5915,11 @@ const freeKickBarShellStyle: CSSProperties = { display: "flex", height: 9, overf
 const freeKickBarLeftStyle: CSSProperties = { height: "100%" };
 const freeKickBarRightStyle: CSSProperties = { height: "100%" };
 const freeKickMessageStyle: CSSProperties = { marginTop: 12, textAlign: "center", color: "#facc15", fontWeight: 900 };
+
+export default function MatchPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: "100dvh", background: "var(--bg)" }} />}>
+      <MatchPageInner />
+    </Suspense>
+  );
+}
