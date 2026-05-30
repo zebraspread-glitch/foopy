@@ -173,19 +173,40 @@ export async function GET(req: Request) {
       }
 
       // ── Try to match a pending (inferred) event ───────────────────────────
-      // Match on team + type + (period if both non-null) + score snapshot if available
-      const pendingMatch = pending.find((p: any) => {
+      // Pass 1: strict match — team + type + period + optional scores
+      let pendingMatch = pending.find((p: any) => {
         if (matchedPendingIds.has(p.id)) return false;
         if (p.team_id !== teamId || p.type !== type) return false;
-        // Period check: only enforce if both have a period value
         if (p.period != null && period != null && p.period !== period) return false;
-        // Score snapshot match (most precise) — if both have scores, they must match
         if (homeScore != null && awayScore != null && p.home_score != null && p.away_score != null) {
           return Number(p.home_score) === Number(homeScore) &&
                  Number(p.away_score) === Number(awayScore);
         }
         return true;
       });
+
+      // Pass 2: team-ID-agnostic match — APISports and squiggle-check may use different
+      // team ID systems so the strict match above can miss. Match by score or minute instead.
+      if (!pendingMatch) {
+        pendingMatch = pending.find((p: any) => {
+          if (matchedPendingIds.has(p.id)) return false;
+          if (p.type !== type) return false;
+          if (p.period != null && period != null && p.period !== period) return false;
+          // Score-based: same resulting score = same play
+          if (homeScore != null && awayScore != null && p.home_score != null && p.away_score != null) {
+            return Number(p.home_score) === Number(homeScore) &&
+                   Number(p.away_score) === Number(awayScore);
+          }
+          // Minute-based: two plays can't share the exact same minute
+          if (minute != null && p.minute != null) {
+            return Number(p.minute) === Number(minute);
+          }
+          return false;
+        });
+        if (pendingMatch) {
+          console.log(`[sync-events] broad-matched pending id=${pendingMatch.id} (team_id mismatch: pending=${pendingMatch.team_id} api=${teamId})`);
+        }
+      }
 
       if (pendingMatch) {
         // ── UPDATE pending → confirmed ───────────────────────────────────────
