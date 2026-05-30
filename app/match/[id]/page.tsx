@@ -2948,12 +2948,14 @@ export default function MatchPage() {
           return true;
         }
 
-        // Inferred event: drop if a real event covers it
+        // Inferred event: drop only if a real event with the exact same score already exists
         if (e.home_score != null && e.away_score != null) {
           if (scoreKey.has(`${e.team_id}|${e.type}|${e.home_score}|${e.away_score}`)) return false;
+          // Has specific scores — no count-based dedup, show it
+          return true;
         }
 
-        // Count-based fallback: if real events >= inferred events seen so far for same (team|type|period), drop
+        // No scores on inferred event — count-based fallback
         const pk = `${e.team_id}|${e.type}|${e.period}`;
         const realCount = realCountByPeriod.get(pk) ?? 0;
         const inferredSoFar = (inferredSeenByPeriod.get(pk) ?? 0) + 1;
@@ -3131,6 +3133,7 @@ export default function MatchPage() {
     // Initialise from current known scores so the first diff is correct
     let sseHome = Number(gameRef.current?.hscore ?? 0);
     let sseAway = Number(gameRef.current?.ascore ?? 0);
+    let sseInitialized = false; // true after first game event syncs the baseline
 
     const sse = new EventSource(`https://sse.squiggle.com.au/events/${id}`);
     console.log('[squiggle-sse] connecting to', `https://sse.squiggle.com.au/events/${id}`, { homeTeamId, awayTeamId, sseHome, sseAway });
@@ -3138,12 +3141,23 @@ export default function MatchPage() {
     sse.onopen = () => console.log('[squiggle-sse] connected');
     sse.onerror = (e) => console.warn('[squiggle-sse] error/reconnect', e);
 
-    // Log every raw SSE message so we can see exactly what Squiggle sends
-    sse.onmessage = (e) => console.log('[squiggle-sse] raw message:', e.type, e.data);
+    // Log and handle default 'message' events (no explicit event: field in SSE stream)
+    sse.onmessage = (e) => {
+      console.log('[squiggle-sse] raw message:', e.type, e.data);
+      try {
+        const data = JSON.parse(e.data);
+        if (data.hscore != null || data.ascore != null) {
+          const newHome = Number(data.hscore ?? sseHome);
+          const newAway = Number(data.ascore ?? sseAway);
+          tryInsertScore(newHome, newAway, data.timestr);
+        }
+      } catch {}
+    };
 
     const tryInsertScore = (newHome: number, newAway: number, timestrRaw?: string) => {
       const hDiff = newHome - sseHome;
       const aDiff = newAway - sseAway;
+      console.log('[squiggle-sse] tryInsertScore', { sseHome, sseAway, newHome, newAway, hDiff, aDiff });
 
       let teamId: number | null = null;
       let type: 'GOAL' | 'BEHIND' | null = null;
@@ -3157,12 +3171,15 @@ export default function MatchPage() {
       sseHome = newHome;
       sseAway = newAway;
 
-      if (!teamId || !type) return;
+      if (!teamId || !type) { console.log('[squiggle-sse] no match — ignoring delta'); return; }
 
       const timestr = String(timestrRaw ?? gameRef.current?.timestr ?? '');
       const qMatch = timestr.match(/^Q(\d)/i);
       const period = qMatch ? Number(qMatch[1]) : null;
+      const minMatch = timestr.match(/^Q\d\s+(\d+):/i);
+      const minute = minMatch ? Number(minMatch[1]) : null;
 
+      console.log('[squiggle-sse] calling score-check', { gameId: apiSportsGameId, teamId, type, hscore: newHome, ascore: newAway, period });
       fetch('/api/afl/score-check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -3173,29 +3190,40 @@ export default function MatchPage() {
           hscore: newHome,
           ascore: newAway,
           period,
-          minute: null,
+          minute,
         }),
-      }).catch(() => {});
+      }).then(r => r.json()).then(j => console.log('[squiggle-sse] score-check response:', j)).catch(err => console.error('[squiggle-sse] score-check error:', err));
     };
 
     // game event carries the full game snapshot (guaranteed hscore/ascore) — primary score detector
     sse.addEventListener('game', (e: Event) => {
+      console.log('[squiggle-sse] game event:', (e as MessageEvent).data);
       try {
         const data = JSON.parse((e as MessageEvent).data);
         const newHome = Number(data.hscore ?? sseHome);
         const newAway = Number(data.ascore ?? sseAway);
+        if (!sseInitialized) {
+          // First event is just the current state snapshot — sync baseline, don't insert
+          sseHome = newHome;
+          sseAway = newAway;
+          sseInitialized = true;
+          console.log('[squiggle-sse] baseline set', { sseHome, sseAway });
+          return;
+        }
         tryInsertScore(newHome, newAway, data.timestr);
       } catch {}
     });
 
-    // score event may also carry score data — try it as a backup
-    // if game event already fired first, diff will be 0 and nothing extra is inserted
+    // score event fires before the game event — only process after baseline is set
     sse.addEventListener('score', (e: Event) => {
+      console.log('[squiggle-sse] score event:', (e as MessageEvent).data);
+      if (!sseInitialized) return; // wait for game event to set baseline first
       try {
         const data = JSON.parse((e as MessageEvent).data);
-        if (data.hscore == null && data.ascore == null) return;
-        const newHome = Number(data.hscore ?? sseHome);
-        const newAway = Number(data.ascore ?? sseAway);
+        // scores are nested under data.score
+        const scoreBlock = data.score ?? data;
+        const newHome = Number(scoreBlock.hscore ?? sseHome);
+        const newAway = Number(scoreBlock.ascore ?? sseAway);
         tryInsertScore(newHome, newAway, data.timestr);
       } catch {}
     });

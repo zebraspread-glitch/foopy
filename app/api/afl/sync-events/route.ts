@@ -194,7 +194,9 @@ export async function GET(req: Request) {
       await supabase.from("live_game_feed").delete().in("id", toDeleteIds);
     }
 
-    await supabase.from("live_game_feed").delete().eq("api_game_id", gameId).eq("inferred", false);
+    // Delete all rows (inferred and real) before reinserting real events.
+    // Clears any inferred events from score-check to prevent unique constraint conflicts.
+    await supabase.from("live_game_feed").delete().eq("api_game_id", gameId);
     const { error } = await supabase.from("live_game_feed").insert(apiRows);
 
     if (error) {

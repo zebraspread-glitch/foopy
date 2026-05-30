@@ -23,7 +23,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid type" }, { status: 400 });
   }
 
-  const { error } = await adminSupabase().from("live_game_feed").insert({
+  const supabase = adminSupabase();
+
+  const { error } = await supabase.from("live_game_feed").insert({
     api_game_id: String(gameId),
     period: period != null ? Number(period) : null,
     minute: minute != null ? Number(minute) : null,

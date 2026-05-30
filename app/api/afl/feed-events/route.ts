@@ -32,7 +32,6 @@ export async function GET(req: Request) {
 
   const seen = new Set<string>();
   const events = (data ?? [])
-    .filter((row: any) => row.inferred !== true)
     .filter((row: any) => {
       const key = `${row.period}|${row.minute}|${row.type}|${row.team_id}|${row.player_id}|${row.home_score}|${row.away_score}`;
       if (seen.has(key)) return false;
