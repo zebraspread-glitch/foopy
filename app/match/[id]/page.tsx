@@ -2925,9 +2925,8 @@ export default function MatchPage() {
     });
 
     const seen = new Set<string>();
-    const scoreKey = new Set<string>(); // (team_id|type|home_score|away_score) exact-score dedup
-    const realCountByPeriod = new Map<string, number>(); // real event count per (team_id|type|period)
-    const inferredSeenByPeriod = new Map<string, number>(); // inferred events processed per key
+    const scoreKey = new Set<string>(); // confirmed event keys: score-based and minute-based
+    const realCountByPeriod = new Map<string, number>(); // kept for potential future use
 
     const normalised = sortedRows
       .filter((e: any) => {
@@ -2953,26 +2952,16 @@ export default function MatchPage() {
           return true;
         }
 
-        // Inferred event: drop if any real event matches by score or by minute
+        // Inferred event: drop only if a confirmed event matches this exact play.
+        // Match by resulting score (most precise) or by minute (same play can't share a minute).
+        // No count-based fallback — that suppresses valid new pending events when
+        // prior confirmed events already exist for the same team+type.
         if (e.home_score != null && e.away_score != null) {
           if (scoreKey.has(`${e.type}|${e.home_score}|${e.away_score}`)) return false;
         }
         if (e.period != null && e.minute != null) {
           if (scoreKey.has(`${e.type}|${e.period}|${e.minute}`)) return false;
         }
-
-        // Count-based dedup: count real events for this team+type across ALL periods.
-        // We can't rely on period matching because the inferred event may have period=null
-        // (e.g. Squiggle timestr wasn't parseable at the moment of detection).
-        // If total real events >= total inferred seen so far → this inferred is already covered.
-        const teamTypeKey = `${e.team_id}|${e.type}`;
-        let totalRealForTeamType = 0;
-        for (const [k, v] of realCountByPeriod) {
-          if (k.startsWith(teamTypeKey + "|")) totalRealForTeamType += v;
-        }
-        const inferredSoFar = (inferredSeenByPeriod.get(teamTypeKey) ?? 0) + 1;
-        inferredSeenByPeriod.set(teamTypeKey, inferredSoFar);
-        if (inferredSoFar <= totalRealForTeamType) return false;
 
         return true;
       })
