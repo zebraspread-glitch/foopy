@@ -3524,7 +3524,7 @@ export default function MatchPage() {
 
         {/* ── Tabs ── */}
         <div style={{
-          position: "sticky", top: scoreboardPassed ? 52 : 0, zIndex: 10,
+          position: "sticky", top: scoreboardPassed ? "calc(env(safe-area-inset-top) + 55px)" : 0, zIndex: 10,
           background: "rgba(30,30,40,0.97)",
           backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
           borderBottom: "1px solid var(--border-2)",

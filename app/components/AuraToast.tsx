@@ -2,20 +2,56 @@
 
 import { useEffect, useState } from "react";
 import { auraToastEmitter } from "@/app/lib/auraToastEmitter";
+import { supabase } from "@/app/lib/supabase";
 
-type Toast = { id: number; amount: number; reason: string };
+type Toast = { id: number; amount: number; reason: string; exiting: boolean };
 
 export default function AuraToast() {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
+  // Emitter-driven toasts (comments, likes, live game, daily login, etc.)
   useEffect(() => {
     return auraToastEmitter.subscribe((amount, reason) => {
       const id = Date.now() + Math.random();
-      setToasts(prev => [...prev, { id, amount, reason }]);
+      // Cap visible toasts at 3 — drop the oldest when a new one arrives
+      setToasts(prev => [...prev.slice(-2), { id, amount, reason, exiting: false }]);
+      // Begin exit animation
+      setTimeout(() => {
+        setToasts(prev => prev.map(t => t.id === id ? { ...t, exiting: true } : t));
+      }, 2400);
+      // Remove from DOM
       setTimeout(() => {
         setToasts(prev => prev.filter(t => t.id !== id));
       }, 2800);
     });
+  }, []);
+
+  // Poll-win notifications from Supabase realtime
+  useEffect(() => {
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    supabase.auth.getSession().then(({ data }) => {
+      const userId = data.session?.user.id;
+      if (!userId) return;
+
+      channel = supabase
+        .channel("aura-poll-win")
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
+          (payload) => {
+            if (payload.new?.type === "poll_win") {
+              const aura = (payload.new?.data as any)?.aura ?? 0;
+              if (aura > 0) auraToastEmitter.emit(aura, "winning a poll 🎯");
+            }
+          }
+        )
+        .subscribe();
+    });
+
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
   }, []);
 
   if (toasts.length === 0) return null;
@@ -23,7 +59,7 @@ export default function AuraToast() {
   return (
     <div style={{
       position: "fixed",
-      top: "env(safe-area-inset-top, 16px)",
+      top: 0,
       left: 0,
       right: 0,
       display: "flex",
@@ -32,7 +68,7 @@ export default function AuraToast() {
       gap: 8,
       zIndex: 99999,
       pointerEvents: "none",
-      paddingTop: 16,
+      paddingTop: "calc(env(safe-area-inset-top) + 16px)",
     }}>
       {toasts.map(t => (
         <div
@@ -46,7 +82,9 @@ export default function AuraToast() {
             alignItems: "center",
             gap: 9,
             boxShadow: "0 8px 32px rgba(109,40,217,0.45), 0 2px 8px rgba(0,0,0,0.4)",
-            animation: "aura-toast-in 0.35s cubic-bezier(0.34,1.56,0.64,1) both",
+            animation: t.exiting
+              ? "aura-toast-out 0.4s ease-in forwards"
+              : "aura-toast-in 0.35s cubic-bezier(0.34,1.56,0.64,1) both",
           }}
         >
           <span style={{ fontSize: 18, lineHeight: 1 }}>✨</span>

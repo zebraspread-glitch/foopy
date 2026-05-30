@@ -900,6 +900,11 @@ textarea::placeholder { color: var(--text-3); }
   to   { opacity: 1; transform: translateY(0)    scale(1); }
 }
 
+@keyframes aura-toast-out {
+  from { opacity: 1; transform: translateY(0)    scale(1); }
+  to   { opacity: 0; transform: translateY(-10px) scale(0.85); }
+}
+
 .spinner {
   width: 32px;
   height: 32px;

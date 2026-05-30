@@ -7,6 +7,15 @@ import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
   {
+    label: "Aura",
+    href: "/aura",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M12 2 L13.8 8.2 L20 8.2 L14.9 11.8 L16.7 18 L12 14.4 L7.3 18 L9.1 11.8 L4 8.2 L10.2 8.2 Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" fill="none"/>
+      </svg>
+    ),
+  },
+  {
     label: "Notifications",
     href: "/notifications",
     icon: (

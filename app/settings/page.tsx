@@ -187,6 +187,7 @@ export default function SettingsPage() {
   const router = useRouter();
 
   // Account state
+  const [userId, setUserId]         = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl]   = useState<string | null>(null);
   const [username, setUsername]     = useState<string | null>(null);
   const [email, setEmail]           = useState<string | null>(null);
@@ -222,18 +223,25 @@ export default function SettingsPage() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       const user = session?.user;
       if (!user) return;
+      setUserId(user.id);
       setEmail(user.email ?? null);
-      supabase.from("profiles").select("avatar_url, username").eq("id", user.id).single()
+      supabase.from("profiles").select("avatar_url, username, favourite_team").eq("id", user.id).single()
         .then(({ data }) => {
           if (!data) return;
           setAvatarUrl(data.avatar_url ?? null);
           setUsername(data.username ?? null);
           const label = data.username || user.email?.split("@")[0] || "?";
           setInitials(label[0].toUpperCase());
+          // DB is the source of truth; fall back to localStorage if DB has nothing yet
+          const dbTeam = data.favourite_team ?? "";
+          const localTeam = localStorage.getItem("foopy_fav_team") ?? "";
+          const resolved = dbTeam || localTeam;
+          setFavTeam(resolved);
+          if (resolved) localStorage.setItem("foopy_fav_team", resolved);
         });
     });
 
-    // Load prefs
+    // Load prefs (team is loaded from DB above, other prefs are localStorage-only)
     setFavTeam(localStorage.getItem("foopy_fav_team") ?? "");
     setDefaultStat(localStorage.getItem("foopy_default_stat") ?? "disposals");
     setNotifGames(localStorage.getItem("foopy_notif_games") !== "false");
@@ -376,7 +384,7 @@ export default function SettingsPage() {
                   : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
               }
               label="Favourite Team"
-              sub={favTeam || "Not selected"}
+              sub={favTeam || "Not selected — Required"}
               onPress={() => setShowTeamPicker(true)}
             >
               {favTeam && (
@@ -746,24 +754,6 @@ export default function SettingsPage() {
 
               {/* List */}
               <div style={{ overflowY: "auto", flex: 1 }}>
-                {/* None option */}
-                <button
-                  className="steambtn"
-                  onClick={() => { setFavTeam(""); savePref("foopy_fav_team", ""); setShowTeamPicker(false); }}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 12, width: "100%",
-                    padding: "12px 18px", background: favTeam === "" ? "var(--surface-2)" : "none",
-                    border: "none", borderBottom: "1px solid var(--border-1)",
-                    color: favTeam === "" ? "var(--text-1)" : "var(--text-2)",
-                    fontSize: 14, fontWeight: favTeam === "" ? 700 : 400, cursor: "pointer", textAlign: "left",
-                  }}
-                >
-                  None
-                  {favTeam === "" && (
-                    <svg style={{ marginLeft: "auto" }} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                  )}
-                </button>
-
                 {AFL_TEAMS.map(t => {
                   const active = favTeam === t;
                   const tc = TEAM_COLOR[t];
@@ -771,7 +761,12 @@ export default function SettingsPage() {
                     <button
                       key={t}
                       className="steambtn"
-                      onClick={() => { setFavTeam(t); savePref("foopy_fav_team", t); setShowTeamPicker(false); }}
+                      onClick={() => {
+                        setFavTeam(t);
+                        savePref("foopy_fav_team", t);
+                        setShowTeamPicker(false);
+                        if (userId) supabase.from("profiles").update({ favourite_team: t }).eq("id", userId).then(() => {});
+                      }}
                       style={{
                         display: "flex", alignItems: "center", gap: 12, width: "100%",
                         padding: "12px 18px",

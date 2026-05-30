@@ -70,7 +70,11 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
-      "Bash(node -e \"const fs=require\\('fs'\\);fs.readdirSync\\('public/packs'\\).forEach\\(f=>{const s=fs.statSync\\('public/packs/'+f\\).size;console.log\\(f+': '+\\(s/1024\\).toFixed\\(0\\)+'KB'\\)}\\)\")"
+      "Bash(node -e \"const fs=require\\('fs'\\);fs.readdirSync\\('public/packs'\\).forEach\\(f=>{const s=fs.statSync\\('public/packs/'+f\\).size;console.log\\(f+': '+\\(s/1024\\).toFixed\\(0\\)+'KB'\\)}\\)\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\" -Recurse -Force -ErrorAction SilentlyContinue)",
+      "Bash(Head -30)",
+      "Bash(del \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\\\\app\\\\lib\\\\auraTier.ts\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\\\\app\\\\aura\")"
     ]
   }
 }

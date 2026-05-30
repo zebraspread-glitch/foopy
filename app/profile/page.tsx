@@ -10,6 +10,7 @@ import { X, Plus, Search, RotateCcw, Camera, ImageIcon, AtSign, Pencil, Users } 
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
 import AuraBadge from "@/app/components/AuraBadge";
+import { auraToastEmitter } from "@/app/lib/auraToastEmitter";
 import { supabase } from "@/app/lib/supabase";
 import { createNotification } from "@/app/lib/notifications";
 import playersRaw from "@/app/data/players.json";
@@ -17,6 +18,31 @@ import { CARD_PLAYERS } from "@/app/data/cardPlayers";
 import { PlayerCard } from "@/app/components/PlayerCard";
 import { PlayerPassCard, TeamPassCard } from "@/app/components/PassCard";
 import { type PlayerPass, type TeamPass, PLAYER_PASS_LEVELS, TEAM_PASS_LEVELS, getPassLevel, dedupePlayerPasses } from "@/app/lib/passes";
+
+/* ─────────────────── Team picker data ─────────────────── */
+const TEAM_PICKER_LIST = [
+  { name: "Adelaide Crows",    slug: "crows",     color: "#c8102e" },
+  { name: "Brisbane Lions",    slug: "lions",     color: "#7a003c" },
+  { name: "Carlton",           slug: "blues",     color: "#0b3b75" },
+  { name: "Collingwood",       slug: "magpies",   color: "#888"    },
+  { name: "Essendon",          slug: "bombers",   color: "#cc1020" },
+  { name: "Fremantle",         slug: "dockers",   color: "#4b1979" },
+  { name: "Geelong Cats",      slug: "cats",      color: "#003b73" },
+  { name: "Gold Coast Suns",   slug: "suns",      color: "#e8281a" },
+  { name: "GWS Giants",        slug: "giants",    color: "#f15a22" },
+  { name: "Hawthorn",          slug: "hawks",     color: "#6b3310" },
+  { name: "Melbourne",         slug: "demons",    color: "#031b4e" },
+  { name: "North Melbourne",   slug: "kangaroos", color: "#0055a4" },
+  { name: "Port Adelaide",     slug: "power",     color: "#007b8a" },
+  { name: "Richmond",          slug: "tigers",    color: "#c8a800" },
+  { name: "St Kilda",          slug: "saints",    color: "#cc1122" },
+  { name: "Sydney Swans",      slug: "swans",     color: "#cc1122" },
+  { name: "West Coast Eagles", slug: "eagles",    color: "#003087" },
+  { name: "Western Bulldogs",  slug: "bulldogs",  color: "#1a5fd4" },
+];
+const TEAM_LOGO_SLUG: Record<string, string> = Object.fromEntries(
+  TEAM_PICKER_LIST.map(t => [t.name, t.slug])
+);
 
 /* ─────────────────── Types ─────────────────── */
 type FeaturedCardSlot = { player_id: string; rarity: string };
@@ -37,6 +63,7 @@ type Profile = {
   matches_viewed: number | null;
   total_likes: number | null;
   aura: number | null;
+  favourite_team: string | null;
 };
 
 type FriendEntry = {
@@ -54,7 +81,7 @@ type RequestEntry = {
   created_at: string;
 };
 
-type EditSection = null | "menu" | "username" | "bio";
+type EditSection = null | "menu" | "username" | "bio" | "team";
 type FriendsTab = "friends" | "requests" | "add";
 type PreviewType = "avatar" | "banner";
 
@@ -914,7 +941,7 @@ export default function ProfilePage() {
               method: "POST",
               headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
               body: JSON.stringify({ event_type: "daily_login", related_id: today }),
-            }).catch(() => {});
+            }).then(r => r.json()).then(d => { if (d.awarded) auraToastEmitter.emit(10, "daily login"); }).catch(() => {});
           }
         }
         clearTimeout(fallback);
@@ -1321,6 +1348,21 @@ export default function ProfilePage() {
     setEBioBusy(false);
   }
 
+  async function saveTeam(team: string) {
+    const { data, error } = await supabase
+      .from("profiles")
+      .update({ favourite_team: team })
+      .eq("id", user!.id)
+      .select()
+      .single();
+
+    if (!error) {
+      setProfile(data as Profile);
+      localStorage.setItem("foopy_fav_team", team);
+    }
+    setEditSection(null);
+  }
+
   async function uploadAvatarFile(file: File) {
     const err = validImageFile(file, "avatar");
     if (err) {
@@ -1602,9 +1644,23 @@ export default function ProfilePage() {
 
             {/* Username + pills */}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <h1 style={{ margin: "0 0 10px", fontSize: 18, fontWeight: 950, letterSpacing: "-0.04em", lineHeight: 1, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
+              <h1 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 950, letterSpacing: "-0.04em", lineHeight: 1, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
                 @{username || "—"}
               </h1>
+
+              {/* Favourite team badge */}
+              {profile?.favourite_team ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
+                  <div style={{ width: 18, height: 18, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${TEAM_PICKER_LIST.find(t => t.name === profile.favourite_team)?.color ?? "#3b82f6"}18` }}>
+                    <img src={`/team-logos/${TEAM_LOGO_SLUG[profile.favourite_team] ?? "unknown"}.png`} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-3)", letterSpacing: "-0.01em" }}>{profile.favourite_team}</span>
+                </div>
+              ) : (
+                <button onClick={() => setEditSection("team")} style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 8, background: "none", border: "1px dashed #ef4444", borderRadius: 8, padding: "3px 8px", cursor: "pointer" }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#ef4444" }}>Choose your team</span>
+                </button>
+              )}
 
               {/* Stats row */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
@@ -1921,6 +1977,20 @@ export default function ProfilePage() {
                     </div>
                     <Chevron />
                   </button>
+                  <button onClick={() => setEditSection("team")} style={menuBtnSty}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      {profile?.favourite_team ? (
+                        <img src={`/team-logos/${TEAM_LOGO_SLUG[profile.favourite_team] ?? "unknown"}.png`} alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />
+                      ) : (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                      )}
+                      <div style={{ textAlign: "left" as const }}>
+                        <strong>Favourite Team</strong>
+                        {!profile?.favourite_team && <div style={{ fontSize: 12, color: "#ef4444", marginTop: 2 }}>Required</div>}
+                      </div>
+                    </div>
+                    <Chevron />
+                  </button>
                   <button onClick={() => setEditSection(null)} style={cancelBtnSty}>Cancel</button>
                 </div>
               </>
@@ -1968,6 +2038,45 @@ export default function ProfilePage() {
                     <button type="button" onClick={() => setEditSection("menu")} style={cancelBtnSty}>Back</button>
                   </div>
                 </form>
+              </>
+            )}
+
+            {editSection === "team" && (
+              <>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+                  <button onClick={() => setEditSection("menu")} style={{ background: "none", border: "none", color: "#60a5fa", fontWeight: 800, fontSize: 15, cursor: "pointer", padding: 0 }}>← Back</button>
+                  <div style={{ fontSize: 18, fontWeight: 950 }}>Favourite Team</div>
+                </div>
+                <p style={{ margin: "0 0 14px", fontSize: 13, color: "var(--text-3)", fontWeight: 500 }}>
+                  Your favourite team is shown on your profile. Choose one — it's required.
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: "52dvh", overflowY: "auto" }}>
+                  {TEAM_PICKER_LIST.map(({ name, slug, color }) => {
+                    const active = profile?.favourite_team === name;
+                    return (
+                      <button
+                        key={name}
+                        onClick={() => saveTeam(name)}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 12,
+                          padding: "10px 14px", borderRadius: 12, width: "100%",
+                          background: active ? `${color}18` : "var(--surface-2)",
+                          border: active ? `1.5px solid ${color}55` : "1px solid var(--border-2)",
+                          cursor: "pointer", textAlign: "left" as const,
+                          transition: "all 0.12s",
+                        }}
+                      >
+                        <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", background: `${color}15`, border: `1px solid ${color}33`, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <img src={`/team-logos/${slug}.png`} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                        </div>
+                        <span style={{ fontSize: 14, fontWeight: active ? 800 : 600, color: active ? "var(--text-1)" : "var(--text-2)", flex: 1 }}>{name}</span>
+                        {active && (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </>
             )}
 

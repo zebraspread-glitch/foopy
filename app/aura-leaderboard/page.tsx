@@ -90,9 +90,9 @@ function AuraLeaderboardInner() {
   const [myAura, setMyAura]     = useState<number | null>(null);
 
   // history
-  const [history, setHistory]       = useState<AuraEvent[]>([]);
+  const [history, setHistory]         = useState<AuraEvent[]>([]);
   const [histLoading, setHistLoading] = useState(false);
-  const [histTotal, setHistTotal]   = useState(0);
+  const [profileAura, setProfileAura] = useState<number | null>(null);
 
   // auth
   useEffect(() => {
@@ -137,6 +137,9 @@ function AuraLeaderboardInner() {
   useEffect(() => {
     if (mainTab !== "history" || !myUserId) return;
     setHistLoading(true);
+    // Fetch actual total from profile (source of truth)
+    supabase.from("profiles").select("aura").eq("id", myUserId).single()
+      .then(({ data }) => setProfileAura(data?.aura ?? 0));
     supabase
       .from("aura_events")
       .select("id, event_type, related_id, amount, created_at")
@@ -145,9 +148,7 @@ function AuraLeaderboardInner() {
       .limit(100)
       .then(({ data, error }) => {
         if (error) console.error(error);
-        const rows = (data ?? []) as AuraEvent[];
-        setHistory(rows);
-        setHistTotal(rows.reduce((s, r) => s + r.amount, 0));
+        setHistory((data ?? []) as AuraEvent[]);
         setHistLoading(false);
       });
   }, [mainTab, myUserId]);
@@ -302,9 +303,9 @@ function AuraLeaderboardInner() {
             <>
               {/* Total banner */}
               <div style={{ marginBottom: 14, padding: "13px 16px", borderRadius: 14, background: "linear-gradient(135deg, rgba(139,92,246,0.15), rgba(99,102,241,0.1))", border: "1px solid rgba(139,92,246,0.3)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-2)" }}>Total earned</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-2)" }}>Total Aura</span>
                 <span style={{ fontSize: 18, fontWeight: 900, background: "linear-gradient(135deg, #c084fc, #818cf8, #fbbf24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-                  ✦ {histTotal.toLocaleString()}
+                  ✦ {(profileAura ?? 0).toLocaleString()}
                 </span>
               </div>
 

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "@/app/lib/supabase";
 import { useRouter } from "next/navigation";
+import { auraToastEmitter } from "@/app/lib/auraToastEmitter";
 
 type Profile = {
   id: string;
@@ -143,7 +144,7 @@ export default function CommentSheet({ gameId, gameLabel, eventKey, onClose }: P
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
           body: JSON.stringify({ event_type: "comment_post", related_id: inserted.id }),
-        }).catch(() => {});
+        }).then(r => r.json()).then(d => { if (d.awarded) auraToastEmitter.emit(5, "posting a comment"); }).catch(() => {});
       }
     }
     setSubmitting(false);
@@ -167,7 +168,7 @@ export default function CommentSheet({ gameId, gameLabel, eventKey, onClose }: P
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
           body: JSON.stringify({ event_type: "like_given", related_id: comment.id }),
-        }).catch(() => {});
+        }).then(r => r.json()).then(d => { if (d.awarded) auraToastEmitter.emit(1, "liking a comment"); }).catch(() => {});
         if (comment.user_id !== userId) {
           fetch("/api/aura/award", {
             method: "POST",
