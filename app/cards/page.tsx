@@ -244,24 +244,24 @@ const TEAM_COLORS: Record<string, string> = {
 };
 
 const ALL_TEAMS = [
-  "Carlton",
-  "Western Bulldogs",
   "Adelaide",
   "Brisbane Lions",
+  "Carlton",
   "Collingwood",
   "Essendon",
   "Fremantle",
-  "GWS",
-  "Port Adelaide",
   "Geelong",
   "Gold Coast",
+  "GWS",
   "Hawthorn",
   "Melbourne",
   "North Melbourne",
+  "Port Adelaide",
   "Richmond",
   "St Kilda",
   "Sydney",
   "West Coast",
+  "Western Bulldogs",
 ];
 
 
