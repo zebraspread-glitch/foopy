@@ -255,13 +255,41 @@ export async function GET(req: Request) {
       }
     }
 
-    // ── 4. Clean up pending events that APISports never confirmed ─────────────
-    // Any pending rows not matched after a full APISports sync are orphaned.
-    // Mark them "unconfirmed" so they stay in the feed as basic team events.
+    // ── 4. Clean up remaining pending events ─────────────────────────────────
     const unmatched = pending.filter((p: any) => !matchedPendingIds.has(p.id));
-    if (unmatched.length > 0) {
-      const ids = unmatched.map((p: any) => p.id);
-      // Try to mark as unconfirmed (only works after SQL migration)
+
+    // Case A: pending event is already covered by a confirmed event in the DB.
+    // This happens when APISports confirmed the event BEFORE squiggle-check inserted
+    // the pending row (squiggle runs every 5s, APISports every 10s — they can race).
+    // Use score-based match (no team_id) since both sides may use different team IDs.
+    const coveredIds: number[] = [];
+    const genuinelyUnmatched: any[] = [];
+
+    for (const p of unmatched) {
+      const coveredByScore =
+        p.home_score != null && p.away_score != null &&
+        confirmed.some((c: any) =>
+          c.type === p.type &&
+          Number(c.home_score) === Number(p.home_score) &&
+          Number(c.away_score) === Number(p.away_score)
+        );
+
+      if (coveredByScore) {
+        coveredIds.push(p.id);
+      } else {
+        genuinelyUnmatched.push(p);
+      }
+    }
+
+    if (coveredIds.length > 0) {
+      await supabase.from("live_game_feed").delete().in("id", coveredIds);
+      console.log(`[sync-events] deleted ${coveredIds.length} pending events already covered by confirmed events`, coveredIds);
+    }
+
+    // Case B: genuinely unmatched — APISports doesn't have them yet (or rushed behind etc.)
+    // Mark as "unconfirmed" so they stay in the feed as basic team events.
+    if (genuinelyUnmatched.length > 0) {
+      const ids = genuinelyUnmatched.map((p: any) => p.id);
       await supabase.from("live_game_feed").update({ status: "unconfirmed" }).in("id", ids);
       console.log(`[sync-events] marked ${ids.length} pending events as unconfirmed`, ids);
     }

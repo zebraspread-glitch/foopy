@@ -2939,18 +2939,21 @@ export default function MatchPage() {
         if (!isScoring) return true;
 
         if (!e.inferred) {
-          // Real event: register for score-based and count-based dedup
+          // Real event: register for score-based and count-based dedup.
+          // Score key intentionally omits team_id — in AFL only one team scores per play,
+          // so (type, home_score, away_score) uniquely identifies any scoring play.
+          // This allows matching even when APISports and squiggle-check use different team ID values.
           if (e.home_score != null && e.away_score != null) {
-            scoreKey.add(`${e.team_id}|${e.type}|${e.home_score}|${e.away_score}`);
+            scoreKey.add(`${e.type}|${e.home_score}|${e.away_score}`);
           }
           const pk = `${e.team_id}|${e.type}|${e.period}`;
           realCountByPeriod.set(pk, (realCountByPeriod.get(pk) ?? 0) + 1);
           return true;
         }
 
-        // Inferred event: drop if a real event with exact same score exists
+        // Inferred event: drop if any real event resulted in the same score for the same play type
         if (e.home_score != null && e.away_score != null) {
-          if (scoreKey.has(`${e.team_id}|${e.type}|${e.home_score}|${e.away_score}`)) return false;
+          if (scoreKey.has(`${e.type}|${e.home_score}|${e.away_score}`)) return false;
         }
 
         // Count-based dedup: count real events for this team+type across ALL periods.
