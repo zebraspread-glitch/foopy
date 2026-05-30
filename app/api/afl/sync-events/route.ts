@@ -138,6 +138,9 @@ export async function GET(req: Request) {
     // Track which pending row IDs were matched (so we can clean up unmatched ones)
     const matchedPendingIds = new Set<number>();
 
+    // Track events inserted/updated during this sync so post-loop cleanup can use them
+    const syncedConfirmed: { type: string; period: any; home_score: any; away_score: any }[] = [];
+
     for (const e of apiEvents) {
       const period    = e.period   ?? e.quarter ?? null;
       const minute    = e.minute   ?? null;
@@ -219,6 +222,7 @@ export async function GET(req: Request) {
           }
         } else {
           updatedCount++;
+          syncedConfirmed.push({ type, period, home_score: homeScore, away_score: awayScore });
           console.log(`[sync-events] ✅ confirmed pending event id=${pendingMatch.id} player="${playerName}" type=${type}`);
         }
       } else {
@@ -250,6 +254,7 @@ export async function GET(req: Request) {
           console.error("[sync-events] insert error:", insertErr.message, { type, teamId });
         } else {
           insertedCount++;
+          syncedConfirmed.push({ type, period, home_score: homeScore, away_score: awayScore });
           console.log(`[sync-events] ✅ inserted confirmed event player="${playerName}" type=${type}`);
         }
       }
@@ -265,16 +270,33 @@ export async function GET(req: Request) {
     const coveredIds: number[] = [];
     const genuinelyUnmatched: any[] = [];
 
+    // All confirmed events available for coverage check = pre-existing + newly synced this run
+    const allConfirmedForCoverage = [
+      ...confirmed,
+      ...syncedConfirmed,
+    ];
+
     for (const p of unmatched) {
+      // Primary: exact score match (most reliable, team-ID-independent)
       const coveredByScore =
         p.home_score != null && p.away_score != null &&
-        confirmed.some((c: any) =>
+        allConfirmedForCoverage.some((c: any) =>
           c.type === p.type &&
           Number(c.home_score) === Number(p.home_score) &&
           Number(c.away_score) === Number(p.away_score)
         );
 
-      if (coveredByScore) {
+      // Fallback: same type + same period when APISports has no scores
+      // Counts events for both teams combined — acceptable since pending events
+      // represent the most recent unconfirmed play and APISports is authoritative.
+      const coveredByPeriod = !coveredByScore && (
+        p.period != null &&
+        allConfirmedForCoverage.filter((c: any) =>
+          c.type === p.type && c.period === p.period
+        ).length > 0
+      );
+
+      if (coveredByScore || coveredByPeriod) {
         coveredIds.push(p.id);
       } else {
         genuinelyUnmatched.push(p);
