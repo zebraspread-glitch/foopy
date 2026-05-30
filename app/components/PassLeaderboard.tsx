@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
-import { getPassLevel, PLAYER_PASS_LEVELS, type PlayerPass } from "@/app/lib/passes";
+import { getPassLevel, xpProgressLabel, PLAYER_PASS_LEVELS, type PlayerPass } from "@/app/lib/passes";
 
 const TEAM_FOLDER: Record<string, string> = {
   Adelaide: "crows", "Adelaide Crows": "crows",
@@ -142,7 +142,7 @@ export default function PassLeaderboard({ pass, onClose }: { pass: PlayerPass; o
                     <div>
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
                         <span style={{ fontSize: 9, fontWeight: 900, color: level.color, letterSpacing: "0.06em" }}>{level.name.toUpperCase()} · {level.multiplier}×</span>
-                        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>{level.isMaxed ? "MAX" : `${entry.xp ?? 0}/${level.nextXp}`}</span>
+                        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>{xpProgressLabel(level)}</span>
                       </div>
                       <div style={{ background: "rgba(0,0,0,0.45)", borderRadius: 999, height: 4, overflow: "hidden" }}>
                         <div style={{ width: `${Math.round(level.progress * 100)}%`, height: "100%", borderRadius: 999, background: `linear-gradient(90deg,${level.darkColor},${level.color})`, boxShadow: `0 0 6px ${level.color}80` }} />

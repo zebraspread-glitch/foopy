@@ -46,17 +46,18 @@ export const TEAM_PASS_LEVELS: LevelDef[] = [
 const LEVEL_MULTIPLIERS = [1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5, 7] as const;
 
 export interface PassLevelInfo {
-  levelIdx:   number;
-  name:       PassLevelName;
-  color:      string;
-  darkColor:  string;
-  gradient:   string;
-  multiplier: number;
-  xp:         number;
-  levelXp:    number;
-  nextXp:     number | null;
-  isMaxed:    boolean;
-  progress:   number; // 0–1
+  levelIdx:     number;
+  name:         PassLevelName;
+  color:        string;
+  darkColor:    string;
+  gradient:     string;
+  multiplier:   number;
+  xp:           number;
+  levelXp:      number;
+  nextXp:       number | null;
+  isMaxed:      boolean;
+  overMythicXp: number; // XP earned beyond Mythic threshold (0 when not maxed)
+  progress:     number; // 0–1
 }
 
 export function getPassLevel(xp: number, levels: LevelDef[]): PassLevelInfo {
@@ -76,9 +77,17 @@ export function getPassLevel(xp: number, levels: LevelDef[]): PassLevelInfo {
     xp,
     levelXp:    lvl.xpRequired,
     nextXp:     next?.xpRequired ?? null,
-    isMaxed:    !next,
-    progress:   next ? Math.min(1, (xp - lvl.xpRequired) / (next.xpRequired - lvl.xpRequired)) : 1,
+    isMaxed:      !next,
+    overMythicXp: !next ? xp - lvl.xpRequired : 0,
+    progress:     next ? Math.min(1, (xp - lvl.xpRequired) / (next.xpRequired - lvl.xpRequired)) : 1,
   };
+}
+
+/** Human-readable XP progress label — replaces the old hard-coded "MAX" text. */
+export function xpProgressLabel(level: PassLevelInfo): string {
+  if (!level.isMaxed) return `${level.xp}/${level.nextXp}`;
+  if (level.overMythicXp <= 0) return "Mythic";
+  return `+${level.overMythicXp.toLocaleString()} over Mythic`;
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -225,11 +234,59 @@ export function normaliseTeam(s: string): string {
   return s.toLowerCase().replace(/[^a-z]/g, "");
 }
 
+/**
+ * Maps normalised short-form / Squiggle names → normalised canonical form.
+ * Every entry that could be a substring of another team MUST be listed here
+ * so we never fall through to a substring match.
+ */
+const TEAM_ALIAS: Record<string, string> = {
+  // Short Squiggle names → canonical
+  adelaide:                       "adelaidecrows",
+  brisbane:                       "brisbanelions",
+  geelong:                        "geelongcats",
+  goldcoast:                      "goldcoastsuns",
+  gws:                            "gwsgiants",
+  greaterwesternsydney:           "gwsgiants",
+  greaterwesternsydneygiants:     "gwsgiants",
+  sydney:                         "sydneyswans",
+  westcoast:                      "westcoasteagles",
+  // Canonical long-form → self (prevents any substring match bleeding through)
+  adelaidecrows:                  "adelaidecrows",
+  brisbanelions:                  "brisbanelions",
+  carlton:                        "carlton",
+  collingwood:                    "collingwood",
+  essendon:                       "essendon",
+  fremantle:                      "fremantle",
+  geelongcats:                    "geelongcats",
+  goldcoastsuns:                  "goldcoastsuns",
+  gwsgiants:                      "gwsgiants",
+  hawthorn:                       "hawthorn",
+  hawthornhawks:                  "hawthorn",
+  melbourne:                      "melbourne",        // must NOT match northmelbourne
+  melbournedemons:                "melbourne",
+  northmelbourne:                 "northmelbourne",   // must NOT match melbourne
+  northmelbournekangaroos:        "northmelbourne",
+  portadelaide:                   "portadelaide",     // must NOT match adelaidecrows
+  portadelaidepow:                "portadelaide",
+  portadelaidenormalpower:        "portadelaide",
+  richmond:                       "richmond",
+  richmodtigers:                  "richmond",
+  stkilda:                        "stkilda",
+  stkildasaints:                  "stkilda",
+  sydneyswans:                    "sydneyswans",
+  westcoasteagles:                "westcoasteagles",
+  westernbulldogs:                "westernbulldogs",
+};
+
+function canonicalTeam(s: string): string {
+  const n = normaliseTeam(s);
+  return TEAM_ALIAS[n] ?? n;
+}
+
 export function teamsMatch(a: string, b: string): boolean {
-  const na = normaliseTeam(a);
-  const nb = normaliseTeam(b);
-  if (!na || !nb) return false;
-  return na === nb || na.includes(nb) || nb.includes(na);
+  const ca = canonicalTeam(a);
+  const cb = canonicalTeam(b);
+  return !!ca && !!cb && ca === cb;
 }
 
 export const AFL_TEAMS: string[] = [

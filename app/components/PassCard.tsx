@@ -2,6 +2,7 @@
 
 import {
   getPassLevel,
+  xpProgressLabel,
   PLAYER_PASS_LEVELS,
   TEAM_PASS_LEVELS,
   type PlayerPass,
@@ -79,7 +80,7 @@ export function PassXpBar({ xp, levels }: { xp: number; levels: typeof PLAYER_PA
           {level.name.toUpperCase()} · {level.multiplier}×
         </span>
         <span style={{ fontSize: 9, color: isMythic ? MYTHIC_MUTED : "rgba(255,255,255,0.4)", fontWeight: 600 }}>
-          {level.isMaxed ? "MAX" : `${level.xp}/${level.nextXp}`}
+          {xpProgressLabel(level)}
         </span>
       </div>
       <div style={{ background: isMythic ? "rgba(91,95,240,0.16)" : "rgba(0,0,0,0.45)", borderRadius: 999, height: 4, overflow: "hidden" }}>
