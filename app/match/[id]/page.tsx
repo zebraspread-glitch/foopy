@@ -3070,19 +3070,45 @@ export default function MatchPage() {
       }
     }
 
-    // ── 2. Trigger a sync from external API → Supabase ──────────────────────
+    // ── 2. Trigger APISports sync (confirms pending events with player data) ───
     async function triggerSync() {
       try {
         await fetch(`/api/afl/sync-events?id=${apiSportsGameId}`, { cache: "no-store" });
       } catch {}
     }
 
+    // ── 3. Trigger Squiggle score check (server-side, locked to one instance) ─
+    async function triggerSquiggleCheck() {
+      if (!game || !isLiveGame) return;
+      try {
+        const params = new URLSearchParams({
+          id:       apiSportsGameId,
+          squiggle: id,
+          hteam:    game.hteam ?? "",
+          ateam:    game.ateam ?? "",
+        });
+        await fetch(`/api/afl/squiggle-check?${params}`, { cache: "no-store" });
+      } catch {}
+    }
+
     loadFromSupabase();
+    // On load: run squiggle check immediately, then sync APISports
+    triggerSquiggleCheck().then(() => {
+      if (!cancelled) loadFromSupabase();
+    });
     triggerSync().then(() => {
       if (!cancelled) loadFromSupabase();
     });
 
-    // Re-sync and reload every 10s while visible. Realtime can miss delete/replace cycles, so the poll is the reliability layer.
+    // Every 5s: squiggle check for fast pending events
+    const squiggleInterval = setInterval(() => {
+      if (document.hidden) return;
+      triggerSquiggleCheck().then(() => {
+        if (!cancelled) loadFromSupabase();
+      });
+    }, 5_000);
+
+    // Every 10s: APISports sync to confirm pending events with player data
     const syncInterval = setInterval(() => {
       if (document.hidden) return;
       triggerSync().then(() => {
@@ -3092,85 +3118,41 @@ export default function MatchPage() {
 
     const handleVisibility = () => {
       if (document.hidden) return;
+      triggerSquiggleCheck();
       triggerSync().then(() => {
         if (!cancelled) loadFromSupabase();
       });
     };
     document.addEventListener("visibilitychange", handleVisibility);
 
-    // ── 3. Subscribe to Realtime — new events pushed automatically ───────────
+    // ── 4. Subscribe to Realtime — INSERT fires for new pending/confirmed events
+    //       UPDATE fires when pending → confirmed (player name fills in)
+    //       Fallback: polling above handles any missed Realtime events
     const channel = supabase
       .channel(`live-feed-${apiSportsGameId}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "live_game_feed", filter: `api_game_id=eq.${apiSportsGameId}` },
-        () => {
-          // A new event landed — reload from Supabase so processing has full context
-          if (!cancelled) loadFromSupabase();
-        }
+        () => { if (!cancelled) loadFromSupabase(); }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "live_game_feed", filter: `api_game_id=eq.${apiSportsGameId}` },
+        () => { if (!cancelled) loadFromSupabase(); }
       )
       .subscribe();
 
     return () => {
       cancelled = true;
+      clearInterval(squiggleInterval);
       clearInterval(syncInterval);
       document.removeEventListener("visibilitychange", handleVisibility);
       supabase.removeChannel(channel);
     };
   }, [mounted, apiSportsGameId, game, processSupabaseEvents]);
 
-  // Detect score changes from the Squiggle game poll (updates every ~5s).
-  // Uses goals/behinds breakdown so multiple scores between polls are handled correctly.
-  const prevScoreRef = useRef<{ hg: number; hb: number; ag: number; ab: number } | null>(null);
-  useEffect(() => {
-    if (!mounted || !isLiveGame || !game || !apiSportsGameId) return;
-
-    const hg = Number(game.hgoals ?? 0);
-    const hb = Number(game.hbehinds ?? 0);
-    const ag = Number(game.agoals ?? 0);
-    const ab = Number(game.abehinds ?? 0);
-
-    const prev = prevScoreRef.current;
-    prevScoreRef.current = { hg, hb, ag, ab };
-
-    if (!prev) return;
-
-    const homeTeamId = getApiTeamId(game.hteam);
-    const awayTeamId = getApiTeamId(game.ateam);
-
-    const timestr = String(game.timestr ?? '');
-    const qMatch = timestr.match(/^Q(\d)/i);
-    const minMatch = timestr.match(/^Q\d\s+(\d+):/i);
-    const period = qMatch ? Number(qMatch[1]) : null;
-    const minute = minMatch ? Number(minMatch[1]) : null;
-    const newHome = Number(game.hscore ?? 0);
-    const newAway = Number(game.ascore ?? 0);
-
-    const hgDiff = hg - prev.hg;
-    const hbDiff = hb - prev.hb;
-    const agDiff = ag - prev.ag;
-    const abDiff = ab - prev.ab;
-
-    // Only infer when exactly one thing changed — any ambiguity and we wait for APISports
-    const totalChanges = hgDiff + hbDiff + agDiff + abDiff;
-    if (totalChanges !== 1) return;
-
-    let teamId: number | null = null;
-    let type: 'GOAL' | 'BEHIND' | null = null;
-
-    if      (hgDiff === 1) { teamId = homeTeamId; type = 'GOAL'; }
-    else if (hbDiff === 1) { teamId = homeTeamId; type = 'BEHIND'; }
-    else if (agDiff === 1) { teamId = awayTeamId; type = 'GOAL'; }
-    else if (abDiff === 1) { teamId = awayTeamId; type = 'BEHIND'; }
-
-    if (!teamId || !type) return;
-
-    fetch('/api/afl/score-check', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ gameId: apiSportsGameId, teamId, type, hscore: newHome, ascore: newAway, period, minute }),
-    }).catch(() => {});
-  }, [game?.hgoals, game?.hbehinds, game?.agoals, game?.abehinds]);
+  // Score detection is now handled server-side via /api/afl/squiggle-check
+  // (called in the polling interval above). Nothing to do here.
 
   // Track live viewers via Supabase Realtime Presence
   // Also persists this user in match_viewers so completed-game totals are accurate.
