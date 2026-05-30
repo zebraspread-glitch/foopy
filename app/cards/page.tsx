@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
 import type { User } from "@supabase/supabase-js";
@@ -651,7 +652,7 @@ export default function CardsPage() {
         .pack-scroll { display: flex; overflow-x: auto; overflow-y: visible; scroll-snap-type: x mandatory; scrollbar-width: none; padding: 8px 4px 20px; gap: 16px; align-items: flex-start; }
         .pack-scroll::-webkit-scrollbar { display: none; }
         .pack-item { scroll-snap-align: center; flex-shrink: 0; width: min(240px, 72vw); display: flex; flex-direction: column; position: relative; }
-        .pack-img-wrap { border-radius: 18px; overflow: visible; aspect-ratio: 3/4; cursor: pointer; transition: box-shadow 0.2s ease; flex-shrink: 0; }
+        .pack-img-wrap { border-radius: 18px; overflow: hidden; aspect-ratio: 3/4; cursor: pointer; transition: box-shadow 0.2s ease; flex-shrink: 0; position: relative; }
         .pack-img-wrap img { width: 100%; height: 100%; object-fit: cover; border-radius: 18px; display: block; }
         .pack-img-wrap:active { transform: scale(0.97); }
         .pack-float { animation: packPop 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards; }
@@ -1036,14 +1037,17 @@ function PackDetailModal({ pack, coins, opening, onOpenPack, onClose, onClaimDai
 
         {/* Pack image */}
         <div style={{ padding: "16px 40px 8px", display: "flex", justifyContent: "center" }}>
-          <img
+          <Image
             src={pack.image}
             alt={pack.label}
+            width={200}
+            height={267}
             style={{
               width: "100%", maxWidth: 200,
               aspectRatio: "3/4", objectFit: "cover", borderRadius: 14,
               boxShadow: `0 16px 48px rgba(0,0,0,.6), 0 0 40px ${pack.accent}33`,
             }}
+            priority
           />
         </div>
 
@@ -1189,10 +1193,13 @@ function PackScrollRow({
               style={{ position: "relative", boxShadow: "0 16px 48px rgba(0,0,0,.45)", cursor: "pointer" }}
               onClick={() => onSelectPack(pack.type)}
             >
-              <img
+              <Image
                 src={pack.image}
                 alt={pack.label}
-                style={{ filter: dailyClaimed ? "grayscale(1) brightness(0.38)" : "none", transition: "filter 0.3s ease" }}
+                fill
+                sizes="(max-width: 600px) 72vw, 240px"
+                style={{ objectFit: "cover", filter: dailyClaimed ? "grayscale(1) brightness(0.38)" : "none", transition: "filter 0.3s ease" }}
+                priority
               />
               {dailyClaimed && (
                 <div style={{ position: "absolute", inset: 0, borderRadius: 18, display: "flex", alignItems: "flex-end", justifyContent: "center", paddingBottom: 12, pointerEvents: "none" }}>
@@ -1256,7 +1263,7 @@ function PackShopPreview() {
           {PACKS.map((pack) => (
             <div key={pack.type} className="pack-item">
               <div className="pack-img-wrap pack-float" style={{ boxShadow: "0 16px 48px rgba(0,0,0,.45)" }}>
-                <img src={pack.image} alt={pack.label} />
+                <Image src={pack.image} alt={pack.label} fill sizes="(max-width: 600px) 72vw, 240px" style={{ objectFit: "cover" }} priority />
               </div>
             </div>
           ))}
@@ -1270,7 +1277,7 @@ function PackShopPreview() {
           {TEAM_PACKS.map((pack) => (
             <div key={pack.type} className="pack-item">
               <div className="pack-img-wrap pack-float" style={{ boxShadow: "0 16px 48px rgba(0,0,0,.45)" }}>
-                <img src={pack.image} alt={pack.label} />
+                <Image src={pack.image} alt={pack.label} fill sizes="(max-width: 600px) 72vw, 240px" style={{ objectFit: "cover" }} priority />
               </div>
             </div>
           ))}
