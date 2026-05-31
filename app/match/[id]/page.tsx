@@ -11,6 +11,7 @@ import teamStatsJson from "@/app/data/team-stats.json";
 import playerStatsJson from "@/app/data/players.json";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import WinnerPick from "./components/WinnerPick";
+import DuelsTab from "./components/DuelsTab";
 import { teamColors } from "./utils";
 import { supabase } from "@/app/lib/supabase";
 import { createNotification, notifyMentions } from "@/app/lib/notifications";
@@ -3530,7 +3531,7 @@ function MatchPageInner() {
           borderBottom: "1px solid var(--border-2)",
         }}>
           <nav style={{ display: "flex", width: "100%" }}>
-            {(["feed","chat","polls"] as const).map(t => (
+            {(["feed","chat","polls","duels"] as const).map(t => (
               <button key={t} type="button" onClick={() => setActiveTab(t)} style={{
                 flex: 1, padding: "13px 4px 11px",
                 background: "none", border: "none",
@@ -3542,7 +3543,7 @@ function MatchPageInner() {
                 transition: "color 0.12s",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
               }}>
-                {t === "feed" && status === "UPCOMING" ? "Preview" : t.charAt(0).toUpperCase() + t.slice(1)}
+                {t === "feed" && status === "UPCOMING" ? "Preview" : t === "duels" ? "⚔" : t.charAt(0).toUpperCase() + t.slice(1)}
                 {t === "polls" && unansweredPollCount > 0 && activeTab !== "polls" && (
                   <span style={{
                     fontSize: 10, fontWeight: 900, lineHeight: 1,
@@ -3844,6 +3845,12 @@ function MatchPageInner() {
               awayStats={displayAwayStats}
               onUnansweredCount={setUnansweredPollCount}
             />
+          </section>
+        )}
+
+        {activeTab === "duels" && (
+          <section style={sectionStyle}>
+            <DuelsTab gameId={Number(id)} gameStarted={status === "LIVE" || status === "FINAL"} />
           </section>
         )}
       </section>

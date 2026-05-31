@@ -59,5 +59,14 @@ export async function GET(req: Request) {
     }
   }
 
+  // Also resolve any completed duels
+  try {
+    await fetch(`${origin}/api/cron/resolve-duels`, {
+      method: "POST",
+      headers: { "x-cron-secret": process.env.CRON_SECRET ?? "foopy-cron" },
+      cache: "no-store",
+    });
+  } catch {}
+
   return NextResponse.json({ ok: true, processed: finalGames.length, awarded: results });
 }

@@ -1524,6 +1524,7 @@ free_kicks?: {
       </div>
 
       <div style={{ height: "calc(92px + env(safe-area-inset-top))" }} />
+      <DuelHomepageCard />
       <section style={wrapStyle}>
         <div style={listStyle} className={loading ? undefined : "stagger"}>
           {loading &&
@@ -3099,4 +3100,169 @@ const streakLabelStyle: React.CSSProperties = {
   color: "var(--text-3)",
   marginTop: "2px",
 };
+
+// ── Duel Homepage Card ────────────────────────────────────────────────────────
+
+type DuelCardData = {
+  type: "available" | "active" | "waiting" | "result";
+  duelGameId: string;
+  gameId: number;
+  homeTeam: string;
+  awayTeam: string;
+  round: number;
+  opponentName?: string;
+  opponentAvatar?: string | null;
+  myScore?: number;
+  oppScore?: number;
+  won?: boolean;
+  isDraw?: boolean;
+};
+
+function DuelHomepageCard() {
+  const [card, setCard]     = useState<DuelCardData | null>(null);
+  const [checked, setChecked] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data }) => {
+      const token = data.session?.access_token;
+      const userId = data.session?.user.id;
+      if (!token || !userId) { setChecked(true); return; }
+
+      // Fetch all open duel games
+      try {
+        const res = await fetch("/api/duels/history", {
+          headers: { authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) { setChecked(true); return; }
+        const json = await res.json();
+        const duels: any[] = json.duels ?? [];
+
+        // Priority 1: active/waiting duel
+        const activeDuel = duels.find((d: any) => d.status === "active" || d.status === "waiting");
+        if (activeDuel) {
+          const dg = activeDuel.duel_game;
+          const isChallenger = activeDuel.challenger_id === userId;
+          const opp = isChallenger ? activeDuel.opponent : activeDuel.challenger;
+          setCard({
+            type: activeDuel.status as "active" | "waiting",
+            duelGameId: dg.id,
+            gameId: dg.game_id,
+            homeTeam: dg.home_team,
+            awayTeam: dg.away_team,
+            round: dg.round,
+            opponentName: opp?.display_name || opp?.username || undefined,
+            opponentAvatar: opp?.avatar_url ?? null,
+          });
+          setChecked(true);
+          return;
+        }
+
+        // Priority 2: recent unread result
+        const recentResult = duels.find((d: any) => d.status === "complete");
+        if (recentResult) {
+          const dg = recentResult.duel_game;
+          const isChallenger = recentResult.challenger_id === userId;
+          const opp = isChallenger ? recentResult.opponent : recentResult.challenger;
+          const myScore  = isChallenger ? recentResult.challenger_score : recentResult.opponent_score;
+          const oppScore = isChallenger ? recentResult.opponent_score   : recentResult.challenger_score;
+          setCard({
+            type: "result",
+            duelGameId: dg.id,
+            gameId: dg.game_id,
+            homeTeam: dg.home_team,
+            awayTeam: dg.away_team,
+            round: dg.round,
+            opponentName: opp?.display_name || opp?.username || undefined,
+            opponentAvatar: opp?.avatar_url ?? null,
+            myScore,
+            oppScore,
+            won: recentResult.winner_id === userId,
+            isDraw: recentResult.is_draw,
+          });
+          setChecked(true);
+          return;
+        }
+
+        // Priority 3: available duel game (fetch open duel games)
+        const gamesRes = await fetch("/api/duels/open");
+        if (gamesRes.ok) {
+          const gamesJson = await gamesRes.json();
+          const openGame = (gamesJson.games ?? []).find(
+            (g: any) => g.status === "open" && new Date(g.game_date) > new Date()
+          );
+          if (openGame) {
+            setCard({
+              type: "available",
+              duelGameId: openGame.id,
+              gameId: openGame.game_id,
+              homeTeam: openGame.home_team,
+              awayTeam: openGame.away_team,
+              round: openGame.round,
+            });
+          }
+        }
+      } catch {}
+      setChecked(true);
+    });
+  }, []);
+
+  if (!checked || !card) return null;
+
+  const href = `/match/${card.gameId}?tab=duels`;
+
+  const borderColor = card.type === "available" ? "#3b82f6"
+    : card.type === "active"    ? "#4ade80"
+    : card.type === "waiting"   ? "#f59e0b"
+    : card.won ? "#4ade80" : card.isDraw ? "#f59e0b" : "#ef4444";
+
+  const badge = card.type === "available" ? "⚔ DUEL AVAILABLE"
+    : card.type === "active"   ? "⚔ ACTIVE DUEL"
+    : card.type === "waiting"  ? "⚔ WAITING FOR OPPONENT"
+    : card.won ? "⚔ DUEL WON" : card.isDraw ? "⚔ DUEL DRAW" : "⚔ DUEL LOST";
+
+  const badgeColor = borderColor;
+
+  return (
+    <Link href={href} style={{
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+      margin: "0 12px 10px", padding: "12px 14px", borderRadius: 14,
+      background: `${borderColor}12`, border: `1.5px solid ${borderColor}40`,
+      textDecoration: "none", color: "var(--text-1)", gap: 10,
+    }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: badgeColor, letterSpacing: "0.06em", marginBottom: 3 }}>
+          {badge}
+        </div>
+        <div style={{ fontWeight: 700, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {card.homeTeam} vs {card.awayTeam}
+        </div>
+        <div style={{ fontSize: 12, color: "#64748b", marginTop: 1 }}>Round {card.round}</div>
+      </div>
+
+      {card.type === "result" && (
+        <div style={{ textAlign: "right", flexShrink: 0 }}>
+          <div style={{ fontSize: 22, fontWeight: 900, color: borderColor, lineHeight: 1 }}>
+            {card.myScore ?? 0}–{card.oppScore ?? 0}
+          </div>
+          {card.opponentName && (
+            <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>vs {card.opponentName}</div>
+          )}
+        </div>
+      )}
+
+      {(card.type === "active" || card.type === "waiting") && card.opponentName && (
+        <div style={{ textAlign: "right", flexShrink: 0 }}>
+          <div style={{ fontSize: 12, color: "#64748b" }}>vs</div>
+          <div style={{ fontSize: 13, fontWeight: 700 }}>{card.opponentName}</div>
+        </div>
+      )}
+
+      {card.type === "available" && (
+        <div style={{ padding: "7px 14px", borderRadius: 10, background: "#3b82f6", color: "#fff", fontWeight: 800, fontSize: 13, flexShrink: 0 }}>
+          Enter
+        </div>
+      )}
+    </Link>
+  );
+}
 

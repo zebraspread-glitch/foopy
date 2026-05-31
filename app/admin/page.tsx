@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 export default function AdminPage() {
   const [unlocked, setUnlocked] = useState(false);
@@ -49,8 +50,13 @@ export default function AdminPage() {
         <span className="pill">Admin</span>
         <h1>Foopy Admin Panel</h1>
         <p className="muted">
-          Control matches, scores, live feed and users. (Later connect to Supabase)
+          Control matches, scores, live feed and users.
         </p>
+        <div style={{ marginTop: 16 }}>
+          <Link href="/admin/duels" style={{ display: "inline-block", padding: "9px 18px", borderRadius: 10, background: "rgba(59,130,246,0.15)", border: "1px solid rgba(59,130,246,0.3)", color: "#60a5fa", fontWeight: 700, fontSize: 14, textDecoration: "none" }}>
+            ⚔ Manage Duels →
+          </Link>
+        </div>
       </section>
 
       <section

@@ -424,6 +424,7 @@ export default function PublicProfilePage() {
   const [playerStatsMap, setPlayerStatsMap] = useState<Map<string, { rating: string; gb: string; d: string; k: string; h: string; m: string; t: string; ho: string }>>(new Map());
   const [playerPasses,   setPlayerPasses]   = useState<PlayerPass[]>([]);
   const [teamPasses,     setTeamPasses]     = useState<TeamPass[]>([]);
+  const [duelStats,      setDuelStats]      = useState<{ wins: number; losses: number; total: number; winRate: number; winStreak: number } | null>(null);
 
   // Fetch player stats for all player_ event key comments so we can embed them in the URL
   useEffect(() => {
@@ -575,6 +576,12 @@ export default function PublicProfilePage() {
       ]);
       setPlayerPasses(dedupePlayerPasses((ppData ?? []) as PlayerPass[]));
       setTeamPasses((tpData ?? []) as TeamPass[]);
+
+      // Fetch duel stats
+      fetch(`/api/duels/profile?user_id=${p.id}`)
+        .then((r) => r.ok ? r.json() : null)
+        .then((d) => { if (d) setDuelStats(d); })
+        .catch(() => {});
 
       setLoading(false);
     }
@@ -736,6 +743,31 @@ export default function PublicProfilePage() {
               {profile.bio || "No bio yet."}
             </p>
           </div>
+
+          {/* Duel stats */}
+          {duelStats && duelStats.total > 0 && (
+            <div style={{ margin: "0 14px", padding: "14px 16px", borderRadius: 16, background: "var(--surface-2)", border: "1px solid var(--border-2)" }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: "#64748b", letterSpacing: "0.06em", marginBottom: 12 }}>⚔ DUELS</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: "#4ade80", lineHeight: 1 }}>{duelStats.wins}</div>
+                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>Wins</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: "#ef4444", lineHeight: 1 }}>{duelStats.losses}</div>
+                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>Losses</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: "#3b82f6", lineHeight: 1 }}>{duelStats.winRate}%</div>
+                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>Win Rate</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: "#f59e0b", lineHeight: 1 }}>{duelStats.winStreak}</div>
+                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>Streak</div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Add Friend + Message buttons (only when viewing another user's profile) */}
           {!isOwnProfile && currentUserId && (

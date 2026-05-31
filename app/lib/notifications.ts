@@ -10,7 +10,9 @@ export type NotifType =
   | "level_up"
   | "trade_offer"
   | "trade_accepted"
-  | "trade_declined";
+  | "trade_declined"
+  | "duel_matched"
+  | "duel_result";
 
 export interface NotifData {
   comment_body?: string;

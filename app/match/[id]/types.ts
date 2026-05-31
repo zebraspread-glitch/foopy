@@ -1,4 +1,4 @@
-export type TabKey = "feed" | "game" | "home" | "away" | "chat" | "polls";
+export type TabKey = "feed" | "game" | "home" | "away" | "chat" | "polls" | "duels";
 
 export type SortKey =
   | "foopy"
