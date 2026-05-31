@@ -191,28 +191,32 @@ async function runResolution() {
   let cancelled = 0;
 
   // Cancel waiting duels whose game has already started
-  const { data: staleWaiting } = await db
-    .from("duels")
-    .select("id, duel_game:duel_games(game_date)")
-    .eq("status", "waiting")
-    .is("opponent_id", null);
-
-  for (const d of staleWaiting ?? []) {
-    const gameDate = (d.duel_game as any)?.game_date;
-    if (gameDate && new Date(gameDate) <= new Date()) {
-      await db.from("duels").update({ status: "cancelled" }).eq("id", d.id);
-      cancelled++;
+  const { data: staleWaiting } = await db.from("duels").select("id, duel_game_id").eq("status", "waiting").is("opponent_id", null);
+  if ((staleWaiting ?? []).length > 0) {
+    const waitIds = [...new Set(staleWaiting!.map((d: any) => d.duel_game_id).filter(Boolean))];
+    const { data: waitGames } = await db.from("duel_games").select("id, game_date").in("id", waitIds);
+    const waitGameMap = new Map((waitGames ?? []).map((g: any) => [g.id, g]));
+    for (const d of staleWaiting ?? []) {
+      const gameDate = waitGameMap.get((d as any).duel_game_id)?.game_date;
+      if (gameDate && new Date(gameDate) <= new Date()) {
+        await db.from("duels").update({ status: "cancelled" }).eq("id", d.id);
+        cancelled++;
+      }
     }
   }
 
-  // Find active duels for games that are now complete
-  const { data: activeDuels } = await db
-    .from("duels")
-    .select("*, duel_game:duel_games(id, game_id, home_team, away_team, status)")
-    .eq("status", "active");
+  // Find active duels — fetch duel_game separately to avoid FK join issues
+  const { data: activeDuels } = await db.from("duels").select("*").eq("status", "active");
+
+  // Prefetch all relevant duel_game rows in one query
+  const duelGameIds = [...new Set((activeDuels ?? []).map((d: any) => d.duel_game_id).filter(Boolean))];
+  const { data: duelGameRows } = duelGameIds.length
+    ? await db.from("duel_games").select("id, game_id, home_team, away_team, status").in("id", duelGameIds)
+    : { data: [] };
+  const duelGameMap = new Map((duelGameRows ?? []).map((g: any) => [g.id, g]));
 
   for (const duel of activeDuels ?? []) {
-    const duelGame = duel.duel_game as any;
+    const duelGame = duelGameMap.get(duel.duel_game_id);
     if (!duelGame) continue;
 
     // Fetch score from Squiggle — also used to auto-complete duel_game when
