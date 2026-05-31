@@ -1192,12 +1192,12 @@ function LockedPickRow({ question, myPick, oppPick, isTiebreaker, index = 0, liv
             </div>
           </div>
           {myPick && (
-            <div className="pick-badge-pos" style={{ marginTop: 10, display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+            <div className="pick-badge-pos" style={{ marginTop: 10 }}>
               <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.07em", color: "#3b82f6", background: "#3b82f614", padding: "2px 7px", borderRadius: 999 }}>YOU</span>
               {myStat && (
-                <div style={{ textAlign: "right", lineHeight: 1 }}>
-                  <div style={{ fontSize: 28, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em" }}>{myStat.value}</div>
-                  <div style={{ fontSize: 9, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 2 }}>{myStat.label}</div>
+                <div style={{ marginTop: 4, lineHeight: 1 }}>
+                  <div style={{ fontSize: 56, fontWeight: 900, color: "#fff", letterSpacing: "-0.04em", lineHeight: 0.9 }}>{myStat.value}</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.08em", marginTop: 5 }}>{myStat.label}</div>
                 </div>
               )}
             </div>
@@ -1232,14 +1232,14 @@ function LockedPickRow({ question, myPick, oppPick, isTiebreaker, index = 0, liv
             </div>
           </div>
           {oppPick && (
-            <div className="pick-badge-pos-right" style={{ marginTop: 10, display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+            <div className="pick-badge-pos-right" style={{ marginTop: 10, textAlign: "right" }}>
+              <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.07em", color: "#64748b", background: "#64748b14", padding: "2px 7px", borderRadius: 999 }}>OPP</span>
               {oppStat && (
-                <div style={{ textAlign: "left", lineHeight: 1 }}>
-                  <div style={{ fontSize: 28, fontWeight: 900, color: "#94a3b8", letterSpacing: "-0.03em" }}>{oppStat.value}</div>
-                  <div style={{ fontSize: 9, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 2 }}>{oppStat.label}</div>
+                <div style={{ marginTop: 4, lineHeight: 1 }}>
+                  <div style={{ fontSize: 56, fontWeight: 900, color: "#94a3b8", letterSpacing: "-0.04em", lineHeight: 0.9 }}>{oppStat.value}</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.08em", marginTop: 5 }}>{oppStat.label}</div>
                 </div>
               )}
-              <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.07em", color: "#64748b", background: "#64748b14", padding: "2px 7px", borderRadius: 999 }}>OPP</span>
             </div>
           )}
         </div>
