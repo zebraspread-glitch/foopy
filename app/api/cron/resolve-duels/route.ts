@@ -379,7 +379,6 @@ async function runResolution() {
 
   return NextResponse.json({ resolved, cancelled });
 }
-}
 
 async function finaliseDuel(
   db: ReturnType<typeof adminSupabase>,
