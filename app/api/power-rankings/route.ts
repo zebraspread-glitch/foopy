@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
@@ -213,15 +214,74 @@ export async function GET() {
     import("@/app/data/players.json"),
   ]);
 
+  // Start with the static game-stats.json and supplement with recent match_cache
+  // entries so the current round is always included in rankings.
+  const gameStats: GameStats = { ...(gameStatsMod.default as GameStats) };
+  const staticIds = new Set(Object.keys(gameStats));
+
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    const yesterdayStr = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+
+    const [{ data: finalRows }, { data: recentRows }] = await Promise.all([
+      supabase.from("match_cache").select("game_id, payload").eq("data_type", "player_stats").eq("is_final", true),
+      supabase.from("match_cache").select("game_id, payload").eq("data_type", "player_stats").eq("is_final", false).gte("fetched_at", yesterdayStr),
+    ]);
+
+    const allRows = [
+      ...(finalRows ?? []),
+      ...(recentRows ?? []).filter(r => !(finalRows ?? []).some(f => String(f.game_id) === String(r.game_id))),
+    ];
+
+    for (const row of allRows) {
+      const gameId = String(row.game_id);
+      if (staticIds.has(gameId)) continue; // already covered by static JSON
+      const payload = row.payload as any;
+      const responseItems: any[] = payload?.response ?? [];
+      const rawTeams: any[] = responseItems[0]?.teams ?? [];
+      if (!rawTeams.length) continue;
+      const date = (responseItems[0]?.game?.date ?? "").slice(0, 10);
+      if (!date) continue;
+
+      // Normalise match_cache format (stats under .statistics) to the same
+      // flat shape that game-stats.json uses so buildRoundRankings can read it.
+      const teams = rawTeams.map((td: any) => ({
+        team: td.team,
+        players: (td.players ?? []).map((pe: any) => {
+          const s = pe.statistics ?? pe;
+          return {
+            player: pe.player,
+            goals: { total: num(s.goals?.total ?? s.goals), assists: num(s.goals?.assists ?? s.goalAssists ?? 0) },
+            behinds:    num(s.behinds),
+            disposals:  num(s.disposals) || (num(s.kicks) + num(s.handballs)),
+            kicks:      num(s.kicks),
+            handballs:  num(s.handballs),
+            marks:      num(s.marks),
+            tackles:    num(s.tackles),
+            hitouts:    num(s.hitouts),
+            clearances: num(s.clearances),
+            free_kicks: {
+              for:     num(s.freesFor     ?? s.free_kicks?.for     ?? 0),
+              against: num(s.freesAgainst ?? s.free_kicks?.against ?? 0),
+            },
+          };
+        }),
+      }));
+
+      gameStats[gameId] = { gameId: Number(gameId), date, teams };
+    }
+  } catch { /* fall back to static data only */ }
+
   // Build player API-Sports ID → {id, name, team} lookup
   const playerLookup = new Map<number, { id: string; name: string; team: string }>();
   for (const p of playersMod.default as { id: string; name: string; team: string; apiSportsId?: number | null }[]) {
     if (p.apiSportsId) playerLookup.set(Number(p.apiSportsId), { id: p.id, name: p.name, team: p.team ?? "" });
   }
 
-  const gameStats = gameStatsMod.default as GameStats;
-
-  // Build round-group map entirely from game-stats.json (no external dependencies)
+  // Build round-group map from ALL games (static + recent Supabase)
   const { map: dateRoundMap } = buildDateRoundMap(gameStats);
 
   const season = buildSeasonRankings(seasonMod.default as Parameters<typeof buildSeasonRankings>[0]);
