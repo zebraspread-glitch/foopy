@@ -28,19 +28,17 @@ export async function POST(req: Request) {
 
     const db = adminSupabase();
 
-    if (user_id) {
-      // Authenticated: key on (game_id, user_id)
-      await db.from("match_viewers").upsert(
-        { game_id: Number(game_id), user_id, session_id, viewed_at: new Date().toISOString() },
-        { onConflict: "game_id,user_id" }
-      );
-    } else {
-      // Anonymous: key on (game_id, session_id)
-      await db.from("match_viewers").upsert(
-        { game_id: Number(game_id), session_id, viewed_at: new Date().toISOString() },
-        { onConflict: "game_id,session_id" }
-      );
-    }
+    // session_id is always set (stable per-browser per-game ID).
+    // user_id is stored as metadata but session_id is the conflict key.
+    await db.from("match_viewers").upsert(
+      {
+        game_id:    Number(game_id),
+        session_id,
+        user_id:    user_id ?? null,
+        viewed_at:  new Date().toISOString(),
+      },
+      { onConflict: "game_id,session_id" }
+    );
 
     return NextResponse.json({ ok: true });
   } catch (err: any) {
