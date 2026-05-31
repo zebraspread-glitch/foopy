@@ -15,11 +15,14 @@ async function getCachedSeasonStats(): Promise<any[] | null> {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
+    // Try both string "0" and integer 0 to handle column type differences
     const { data } = await supabase
       .from("match_cache")
       .select("payload, fetched_at")
-      .eq("game_id", "0")
+      .or(`game_id.eq.0,game_id.eq."0"`)
       .eq("data_type", `player_season_${SEASON}`)
+      .order("fetched_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
 
     if (!data?.payload) return null;
@@ -47,23 +50,39 @@ function n(v: any) {
 }
 
 export async function GET() {
-  // Prefer the authoritative season stats from the hourly cron (same data
-  // as the manual script). Fall back to per-game aggregation if unavailable.
+  const dataDir = path.join(process.cwd(), "app", "data");
+
+  // 1. Try the Supabase cache (written by sync-player-season-stats cron after each game)
   const cached = await getCachedSeasonStats();
   if (cached) {
     return NextResponse.json(cached, {
-      headers: { "Cache-Control": "public, max-age=300, stale-while-revalidate=600" },
+      headers: { "Cache-Control": "public, max-age=60, stale-while-revalidate=120" },
     });
   }
 
-  const dataDir = path.join(process.cwd(), "app", "data");
+  // 2. Fall back to the static player-season-stats.json (updated by running
+  //    scripts/fetchSeasonStats.cjs and committed to the repo).
+  //    This is always correct — do NOT fall back to per-game aggregation which
+  //    can produce different numbers than the official API-Sports season endpoint.
+  try {
+    const staticPlayers = JSON.parse(
+      fs.readFileSync(path.join(dataDir, "player-season-stats.json"), "utf8")
+    );
+    return NextResponse.json(staticPlayers, {
+      headers: { "Cache-Control": "public, max-age=60, stale-while-revalidate=300" },
+    });
+  } catch {}
 
-  // 1. Load static game stats
+  // 3. Last resort: per-game aggregation (may differ from official totals)
+  //    Only reached if player-season-stats.json is somehow unreadable.
+  // eslint-disable-next-line no-console
+  console.warn("[player-season-stats] falling back to per-game aggregation");
+
+  // Per-game aggregation fallback
   const staticStats: Record<string, any> = JSON.parse(
     fs.readFileSync(path.join(dataDir, "game-stats.json"), "utf8")
   );
 
-  // 2. Load players.json — apiSportsId → { id, name, team }
   const playersArr: any[] = JSON.parse(
     fs.readFileSync(path.join(dataDir, "players.json"), "utf8")
   );
