@@ -139,7 +139,7 @@ type DraftPick = {
   pick_margin?: string | null;
 };
 
-export default function DuelsTab({ gameId, gameStarted, onDuelGameFound }: { gameId: number; gameStarted: boolean; onDuelGameFound?: (found: boolean) => void }) {
+export default function DuelsTab({ gameId, gameStarted, apiSportsGameId, onDuelGameFound }: { gameId: number; gameStarted: boolean; apiSportsGameId?: string; onDuelGameFound?: (found: boolean) => void }) {
   const [token, setToken] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
 
@@ -217,21 +217,31 @@ export default function DuelsTab({ gameId, gameStarted, onDuelGameFound }: { gam
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [duel?.status]);
 
-  // Fetch live player stats while game is in progress so PicksLockedScreen can show them
+  // Fetch live player stats while game is in progress so PicksLockedScreen can show them.
+  // Re-runs whenever the resolved API Sports ID, game liveness, or duelGame changes.
   useEffect(() => {
-    if (!duelGame) return;
-    const started = gameStarted || new Date(duelGame.game_date) <= new Date();
-    if (!started) return;
-    const apiId = API_SPORTS_MATCH_IDS[String(duelGame.game_id)];
+    // Prefer the apiSportsGameId prop (computed by parent with full fallback logic).
+    // Fall back to the static mapping if prop not provided.
+    const apiId =
+      (apiSportsGameId && apiSportsGameId !== "undefined" && apiSportsGameId !== "null")
+        ? apiSportsGameId
+        : (duelGame ? API_SPORTS_MATCH_IDS[String(duelGame.game_id)] ?? "" : "");
+
     if (!apiId) return;
 
+    const started = gameStarted || (duelGame ? new Date(duelGame.game_date) <= new Date() : false);
+    if (!started) return;
+
     let cancelled = false;
+
     async function fetchStats() {
       try {
-        const res = await fetch(`/api/afl/player-stats?id=${apiId}`);
+        const res = await fetch(`/api/afl/player-stats?id=${apiId}`, { cache: "no-store" });
         if (!res.ok || cancelled) return;
         const data = await res.json();
         const teams: any[] = data?.response?.[0]?.teams ?? [];
+        if (!teams.length) return;
+
         const players: LiveStat[] = [];
         for (let ti = 0; ti < teams.length; ti++) {
           const isHome = ti === 0;
@@ -257,14 +267,20 @@ export default function DuelsTab({ gameId, gameStarted, onDuelGameFound }: { gam
             });
           }
         }
-        if (!cancelled) setLiveGameStats({ players, homeTeam: duelGame!.home_team, awayTeam: duelGame!.away_team });
+        if (!cancelled && players.length > 0) {
+          setLiveGameStats({
+            players,
+            homeTeam: duelGame?.home_team ?? "",
+            awayTeam: duelGame?.away_team ?? "",
+          });
+        }
       } catch {}
     }
 
     fetchStats();
-    const iv = setInterval(fetchStats, 30_000);
+    const iv = setInterval(fetchStats, 15_000);
     return () => { cancelled = true; clearInterval(iv); };
-  }, [duelGame?.game_id, gameStarted]);
+  }, [apiSportsGameId, duelGame?.game_id, gameStarted]);
 
   async function enterDuel() {
     if (!duelGame) { setEnterError("Duel not loaded yet — try again"); return; }
@@ -1042,8 +1058,13 @@ function LockedPickRow({ question, myPick, oppPick, isTiebreaker, index = 0, liv
   function getStatDisplay(optName: string): string | null {
     if (!liveGameStats || !cat || !optName || optName === "—") return null;
     const norm = (s: string) => s.toLowerCase().replace(/[^a-z]/g, "");
+    const lastName = (s: string) => s.trim().split(/\s+/).pop()?.toLowerCase() ?? "";
+
     if (cat.type === "player") {
-      const p = liveGameStats.players.find(pl => norm(pl.name) === norm(optName));
+      // Primary: full normalised name match
+      let p = liveGameStats.players.find(pl => norm(pl.name) === norm(optName));
+      // Fallback: last-name only (handles middle-initial differences like "Bailey J. Williams" vs "Bailey Williams")
+      if (!p) p = liveGameStats.players.find(pl => lastName(pl.name) === lastName(optName) && pl.name.length > 0);
       if (!p) return null;
       if (cat.key === "foopy") return `${liveStatFoopy(p)} foopy`;
       const val = (p as any)[cat.key] as number ?? 0;

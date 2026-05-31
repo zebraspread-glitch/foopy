@@ -3868,7 +3868,7 @@ function MatchPageInner() {
 
         {activeTab === "duels" && (
           <section style={sectionStyle}>
-            <DuelsTab gameId={Number(id)} gameStarted={status === "LIVE" || status === "FINAL"} onDuelGameFound={setHasDuelGame} />
+            <DuelsTab gameId={Number(id)} gameStarted={status === "LIVE" || status === "FINAL"} apiSportsGameId={apiSportsGameId} onDuelGameFound={setHasDuelGame} />
           </section>
         )}
       </section>
