@@ -122,14 +122,27 @@ export async function GET(req: Request) {
     })
   );
 
-  const liveCount = results.filter((r) => r.status === "LIVE").length;
-  const finalCount = results.filter((r) => r.status === "COMPLETED").length;
+  const liveCount      = results.filter((r) => r.status === "LIVE").length;
+  const finalCount     = results.filter((r) => r.status === "COMPLETED").length;
+  const newlyFinalised = results.filter((r) => r.status === "COMPLETED" && r.stats_ok && !r.stats_cached);
+
+  // When a game's final stats were just written (cache miss on a completed game)
+  // it means the game recently finished — trigger a player season stats refresh
+  // so the /stats page updates without anyone having to run a script.
+  if (newlyFinalised.length > 0) {
+    const CRON_SECRET = process.env.CRON_SECRET ?? "foopy-cron";
+    fetch(`${origin}/api/cron/sync-player-season-stats`, {
+      headers: { authorization: `Bearer ${CRON_SECRET}` },
+      cache: "no-store",
+    }).catch(() => {});
+  }
 
   return NextResponse.json({
     ok: true,
     round: currentRound,
     live: liveCount,
     completed: finalCount,
+    triggered_season_sync: newlyFinalised.length > 0,
     results,
   });
 }

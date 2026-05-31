@@ -41,8 +41,6 @@ const TEAM_BY_ID: Record<number, string> = {
   17:"Gold Coast",18:"GWS",
 };
 
-const SEASON = new Date().getFullYear().toString(); // "2026"
-
 function n(v: any) {
   const x = Number(v ?? 0);
   return Number.isFinite(x) ? x : 0;
