@@ -198,17 +198,12 @@ export async function POST(req: Request) {
 
   for (const duel of activeDuels ?? []) {
     const duelGame = duel.duel_game as any;
-    if (!duelGame || duelGame.status !== "complete") continue;
+    if (!duelGame) continue;
 
-    // Fetch player stats from API-Sports
-    const apiSportsId = API_SPORTS_MATCH_IDS[String(duelGame.game_id)];
-    let allStats: StatRow[] = [];
-    if (apiSportsId) allStats = await fetchPlayerStats(String(apiSportsId));
-    const homeStats = allStats.filter(p => p.isHome);
-    const awayStats = allStats.filter(p => !p.isHome);
-
-    // Fetch score from Squiggle for team_winner / tiebreaker
+    // Fetch score from Squiggle — also used to auto-complete duel_game when
+    // the AFL game finishes (complete=100) and stats have had time to settle
     let hScore = 0, aScore = 0;
+    let gameIsComplete = duelGame.status === "complete";
     try {
       const sq = await fetch(`https://api.squiggle.com.au/?q=games;game=${duelGame.game_id}`, {
         headers: { "User-Agent": "Foopy AFL App" }, cache: "no-store",
@@ -216,9 +211,30 @@ export async function POST(req: Request) {
       if (sq.ok) {
         const sqData = await sq.json();
         const g = sqData.games?.[0];
-        if (g) { hScore = num(g.hscore); aScore = num(g.ascore); }
+        if (g) {
+          hScore = num(g.hscore);
+          aScore = num(g.ascore);
+          // Auto-complete: Squiggle shows 100% done AND the last update was
+          // at least 7 minutes ago (enough time for API-Sports stats to publish)
+          if (!gameIsComplete && num(g.complete) >= 100 && g.updated) {
+            const msSinceUpdate = Date.now() - new Date(g.updated).getTime();
+            if (msSinceUpdate >= 7 * 60 * 1000) {
+              gameIsComplete = true;
+              await db.from("duel_games").update({ status: "complete" }).eq("id", duelGame.id);
+            }
+          }
+        }
       }
     } catch {}
+
+    if (!gameIsComplete) continue;
+
+    // Fetch player stats from API-Sports
+    const apiSportsId = API_SPORTS_MATCH_IDS[String(duelGame.game_id)];
+    let allStats: StatRow[] = [];
+    if (apiSportsId) allStats = await fetchPlayerStats(String(apiSportsId));
+    const homeStats = allStats.filter(p => p.isHome);
+    const awayStats = allStats.filter(p => !p.isHome);
 
     // Get questions and auto-resolve correct answers
     const { data: questions } = await db
