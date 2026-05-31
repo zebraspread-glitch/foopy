@@ -3221,10 +3221,11 @@ function MatchPageInner() {
     };
   }, [mounted, apiSportsGameId, game, processSupabaseEvents]);
 
-  // Track live viewers via Supabase Realtime Presence
-  // Also persists this user in match_viewers so completed-game totals are accurate.
+  // Track live viewers via Supabase Realtime Presence + persist to match_viewers
   useEffect(() => {
     if (!id) return;
+
+    // Presence for live count
     const presenceChannel = supabase.channel(`match-viewers-${id}`, {
       config: { presence: { key: typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `${Date.now()}-${Math.random()}` } },
     });
@@ -3234,28 +3235,35 @@ function MatchPageInner() {
         setLiveViewerCount(Object.keys(state).length);
       })
       .subscribe(async (status) => {
-        if (status === "SUBSCRIBED") {
-          await presenceChannel.track({ joined_at: Date.now() });
-          // Persist this viewer so the total count survives after the game ends
-          try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-              await supabase
-                .from("match_viewers")
-                .upsert(
-                  { game_id: Number(id), user_id: user.id },
-                  { onConflict: "game_id,user_id" }
-                );
-            }
-          } catch {}
-        }
+        if (status !== "SUBSCRIBED") return;
+        await presenceChannel.track({ joined_at: Date.now() });
       });
+
+    // Persist this view via the server-side endpoint (bypasses RLS, works for
+    // both signed-in and anonymous visitors).
+    // Use a stable session ID so repeated page loads don't inflate the count.
+    try {
+      const sessionKey = `foopy_viewer_${id}`;
+      let sessionId = sessionStorage.getItem(sessionKey);
+      if (!sessionId) {
+        sessionId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        sessionStorage.setItem(sessionKey, sessionId);
+      }
+      supabase.auth.getUser().then(({ data }) => {
+        fetch("/api/afl/record-view", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ game_id: Number(id), user_id: data.user?.id ?? null, session_id: sessionId }),
+        }).catch(() => {});
+      });
+    } catch {}
+
     return () => { supabase.removeChannel(presenceChannel); };
   }, [id]);
 
-  // For completed games, fetch the total unique viewer count via server route (bypasses RLS)
+  // Fetch total unique viewer count — for live games every 60s, for FINAL once.
   useEffect(() => {
-    if (!id || status !== "FINAL") return;
+    if (!id) return;
     async function fetchTotalViewers() {
       try {
         const res = await fetch(`/api/afl/viewer-count?id=${id}`, { cache: "no-store" });
@@ -3265,6 +3273,9 @@ function MatchPageInner() {
       } catch {}
     }
     fetchTotalViewers();
+    if (status === "FINAL") return; // no polling needed
+    const iv = setInterval(fetchTotalViewers, 60_000);
+    return () => clearInterval(iv);
   }, [id, status]);
 
   // Award +10 aura once per live game viewed
@@ -3540,7 +3551,9 @@ function MatchPageInner() {
                   <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-2)" }}>
                     {status === "FINAL"
                       ? (totalViewerCount ?? "—")
-                      : Math.max(1, liveViewerCount)}
+                      : totalViewerCount != null
+                        ? totalViewerCount          // total unique visitors
+                        : Math.max(1, liveViewerCount)} {/* fallback to presence */}
                   </span>
                 </div>
               )}
