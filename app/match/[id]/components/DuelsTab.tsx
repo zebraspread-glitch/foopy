@@ -809,19 +809,38 @@ function PicksLockedScreen({
         </div>
       </div>
 
-      {/* ── Pick cards ── */}
-      <div style={{ padding: "12px 12px 0", display: "flex", flexDirection: "column", gap: 8 }}>
-        {regularQs.map((q, i) => {
-          const mp = myPicks.find(p => p.question_id === q.id);
-          const op = oppPicks.find(p => p.question_id === q.id);
-          return <LockedPickRow key={q.id} question={q} myPick={mp ?? null} oppPick={op ?? null} index={i} />;
-        })}
-        {tbQuestion && (() => {
-          const mp = myPicks.find(p => p.question_id === tbQuestion.id);
-          const op = oppPicks.find(p => p.question_id === tbQuestion.id);
-          return <LockedPickRow key={tbQuestion.id} question={tbQuestion} myPick={mp ?? null} oppPick={op ?? null} isTiebreaker index={regularQs.length} />;
-        })()}
-      </div>
+      {/* ── Pick cards: different picks → tiebreaker → same picks ── */}
+      {(() => {
+        const withPicks = regularQs.map(q => ({
+          q,
+          mp: myPicks.find(p => p.question_id === q.id) ?? null,
+          op: oppPicks.find(p => p.question_id === q.id) ?? null,
+        }));
+
+        const different = withPicks.filter(({ mp, op }) => !mp || !op || mp.pick !== op.pick);
+        const same      = withPicks.filter(({ mp, op }) => mp && op && mp.pick === op.pick);
+
+        const tbMp = tbQuestion ? myPicks.find(p => p.question_id === tbQuestion.id) ?? null : null;
+        const tbOp = tbQuestion ? oppPicks.find(p => p.question_id === tbQuestion.id) ?? null : null;
+
+        const allRows = [
+          ...different.map(({ q, mp, op }, i) => (
+            <LockedPickRow key={q.id} question={q} myPick={mp} oppPick={op} index={i} />
+          )),
+          ...(tbQuestion ? [
+            <LockedPickRow key={tbQuestion.id} question={tbQuestion} myPick={tbMp} oppPick={tbOp} isTiebreaker index={different.length} />
+          ] : []),
+          ...same.map(({ q, mp, op }, i) => (
+            <LockedPickRow key={q.id} question={q} myPick={mp} oppPick={op} index={different.length + 1 + i} />
+          )),
+        ];
+
+        return (
+          <div style={{ padding: "12px 12px 0", display: "flex", flexDirection: "column", gap: 8 }}>
+            {allRows}
+          </div>
+        );
+      })()}
     </div>
   );
 }
