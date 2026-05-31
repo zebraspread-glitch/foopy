@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
 import { teamColors } from "../utils";
@@ -139,7 +139,21 @@ type DraftPick = {
   pick_margin?: string | null;
 };
 
-export default function DuelsTab({ gameId, gameStarted, apiSportsGameId, onDuelGameFound }: { gameId: number; gameStarted: boolean; apiSportsGameId?: string; onDuelGameFound?: (found: boolean) => void }) {
+export default function DuelsTab({
+  gameId, gameStarted, apiSportsGameId,
+  matchHomeStats, matchAwayStats, matchHomeTeam, matchAwayTeam,
+  onDuelGameFound,
+}: {
+  gameId: number;
+  gameStarted: boolean;
+  apiSportsGameId?: string;
+  /** Live player stats piped in directly from the match page (same data as the stats tab) */
+  matchHomeStats?: any[];
+  matchAwayStats?: any[];
+  matchHomeTeam?: string;
+  matchAwayTeam?: string;
+  onDuelGameFound?: (found: boolean) => void;
+}) {
   const [token, setToken] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
 
@@ -156,6 +170,41 @@ export default function DuelsTab({ gameId, gameStarted, apiSportsGameId, onDuelG
   const [submitting, setSubmitting] = useState(false);
   const [pollInterval, setPollInterval] = useState<ReturnType<typeof setInterval> | null>(null);
   const [liveGameStats, setLiveGameStats] = useState<LiveGameStats | null>(null);
+
+  // Build LiveGameStats from the stats the match page already fetches (same data as the stats tab).
+  // Prefer this over the internally-fetched copy so we never have ID-mapping or caching issues.
+  const matchDerivedStats = useMemo((): LiveGameStats | null => {
+    if (!matchHomeStats?.length && !matchAwayStats?.length) return null;
+    const num = (v: any) => { const x = Number(v ?? 0); return Number.isFinite(x) ? x : 0; };
+    const toStat = (p: any, isHome: boolean): LiveStat => ({
+      name:         p.player || p.name || "",
+      isHome,
+      goals:        num(p.goals),
+      disposals:    num(p.disposals),
+      marks:        num(p.marks),
+      kicks:        num(p.kicks),
+      handballs:    num(p.handballs),
+      tackles:      num(p.tackles),
+      hitouts:      num(p.hitouts),
+      clearances:   num(p.clearances),
+      behinds:      num(p.behinds),
+      goalAssists:  num(p.goalAssists ?? (p as any).goalAssists),
+      freesFor:     num(p.freesFor   ?? (p as any).freesFor),
+      freesAgainst: num(p.freesAgainst ?? (p as any).freesAgainst),
+      inside50s:    num(p.inside50s  ?? (p as any).inside50s),
+    });
+    return {
+      players: [
+        ...(matchHomeStats ?? []).map(p => toStat(p, true)),
+        ...(matchAwayStats ?? []).map(p => toStat(p, false)),
+      ],
+      homeTeam: matchHomeTeam ?? "",
+      awayTeam: matchAwayTeam ?? "",
+    };
+  }, [matchHomeStats, matchAwayStats, matchHomeTeam, matchAwayTeam]);
+
+  // Use match-page-derived stats when available; fall back to DuelsTab's own fetch
+  const effectiveLiveStats = matchDerivedStats ?? liveGameStats;
 
   // Get auth token
   useEffect(() => {
@@ -477,7 +526,7 @@ export default function DuelsTab({ gameId, gameStarted, apiSportsGameId, onDuelG
         questions={questions}
         myPicks={myPicks}
         oppPicks={oppPicks}
-        liveGameStats={liveGameStats}
+        liveGameStats={effectiveLiveStats}
       />
     );
   }
