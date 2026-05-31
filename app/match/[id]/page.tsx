@@ -835,7 +835,7 @@ function QuarterScoresTable({
           <div key={i} style={{ textAlign: "center", padding: "12px 6px", borderBottom: sep, borderLeft: sep }}>
             {c.home
               ? <span style={{ fontWeight: 800, fontSize: 17, color: "var(--text-1)", letterSpacing: "-0.02em" }}>
-                  {c.home.goals}.{c.home.behinds}
+                  {c.home.total}
                 </span>
               : <span style={{ color: "var(--text-3)", fontSize: 14 }}>—</span>
             }
@@ -852,7 +852,7 @@ function QuarterScoresTable({
           <div key={i} style={{ textAlign: "center", padding: "12px 6px", borderLeft: sep }}>
             {c.away
               ? <span style={{ fontWeight: 800, fontSize: 17, color: "var(--text-1)", letterSpacing: "-0.02em" }}>
-                  {c.away.goals}.{c.away.behinds}
+                  {c.away.total}
                 </span>
               : <span style={{ color: "var(--text-3)", fontSize: 14 }}>—</span>
             }
