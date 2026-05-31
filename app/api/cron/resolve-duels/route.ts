@@ -167,9 +167,24 @@ async function fetchPlayerStats(apiSportsId: string): Promise<StatRow[]> {
   } catch { return []; }
 }
 
+// Vercel cron jobs send GET with "Authorization: Bearer <secret>"
+// Keep POST for backward compat (manual triggers)
+export async function GET(req: Request) {
+  const auth = req.headers.get("authorization");
+  if (auth !== `Bearer ${CRON_SECRET}`) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  return runResolution();
+}
+
 export async function POST(req: Request) {
   const secret = req.headers.get("x-cron-secret");
-  if (secret !== CRON_SECRET) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const auth   = req.headers.get("authorization");
+  if (secret !== CRON_SECRET && auth !== `Bearer ${CRON_SECRET}`) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  return runResolution();
+}
+
+async function runResolution() {
 
   const db = adminSupabase();
   let resolved = 0;
@@ -359,6 +374,7 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json({ resolved, cancelled });
+}
 }
 
 async function finaliseDuel(
