@@ -2659,7 +2659,12 @@ function MatchPageInner() {
       const period = Number(e.period ?? 0);
       if (period < 1 || period > 4) continue;
       const type = String(e.type ?? "").toUpperCase();
-      if (type !== "GOAL" && type !== "BEHIND") continue;
+      // GOAL and BEHIND are regular scores; anything else containing "BEHIND"
+      // or "RUSHED" is a rushed/forced behind (still 1 point, opposing team)
+      const isGoal   = type === "GOAL";
+      const isBehind = type === "BEHIND";
+      const isRushed = !isGoal && !isBehind && (type.includes("BEHIND") || type.includes("RUSHED"));
+      if (!isGoal && !isBehind && !isRushed) continue;
 
       // teamName is added during event normalisation (not in the LiveEvent type def)
       const teamName = (e as any).teamName ?? "";
@@ -2668,8 +2673,15 @@ function MatchPageInner() {
       if (!isHome && !isAway) continue;
 
       const inc = (m: Map<number,number>) => m.set(period, (m.get(period) ?? 0) + 1);
-      if (type === "GOAL")   { isHome ? inc(hg) : inc(ag); }
-      else                   { isHome ? inc(hb) : inc(ab); }
+      if (isGoal) {
+        isHome ? inc(hg) : inc(ag);
+      } else if (isBehind) {
+        isHome ? inc(hb) : inc(ab);
+      } else {
+        // Rushed behind: event is attributed to the CONCEDING (rushing) team
+        // but the OPPOSING team scores the 1 point — reverse attribution
+        isHome ? inc(ab) : inc(hb);
+      }
     }
 
     const maxPeriod = Math.max(...[hg, hb, ag, ab].flatMap(m => [...m.keys()]), 0);
