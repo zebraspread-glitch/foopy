@@ -2642,27 +2642,57 @@ function MatchPageInner() {
   const [totalViewerCount, setTotalViewerCount] = useState<number | null>(null);
   const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
 
-  // Derive quarter-by-quarter scores from the live events already in state.
-  // Events have period + cumulative homeScore/awayScore so the max score seen
-  // in each period is the period's final score.
+  // Derive quarter-by-quarter scores by counting GOAL/BEHIND events per period.
+  // API-Sports events don't carry a running homeScore/awayScore, but each event
+  // has a type ("GOAL"/"BEHIND") and a teamName (derived during normalisation).
+  // Counting those per period and computing the cumulative total gives the
+  // scoreboard at the end of each quarter.
   const quarterScores = useMemo(() => {
-    if (!liveEvents.length) return null;
-    const periodMax = new Map<number, { home: number; away: number }>();
+    if (!liveEvents.length || !game) return null;
+    const hteam = game.hteam;
+    const ateam = game.ateam;
+
+    const hg = new Map<number,number>(), hb = new Map<number,number>();
+    const ag = new Map<number,number>(), ab = new Map<number,number>();
+
     for (const e of liveEvents) {
       const period = Number(e.period ?? 0);
       if (period < 1 || period > 4) continue;
-      const h = Number(e.homeScore ?? 0);
-      const a = Number(e.awayScore ?? 0);
-      if (h === 0 && a === 0) continue;
-      const cur = periodMax.get(period);
-      if (!cur || h + a > cur.home + cur.away) periodMax.set(period, { home: h, away: a });
+      const type = String(e.type ?? "").toUpperCase();
+      if (type !== "GOAL" && type !== "BEHIND") continue;
+
+      // teamName is added during event normalisation (not in the LiveEvent type def)
+      const teamName = (e as any).teamName ?? "";
+      const isHome = sameTeam(teamName, hteam);
+      const isAway = !isHome && sameTeam(teamName, ateam);
+      if (!isHome && !isAway) continue;
+
+      const inc = (m: Map<number,number>) => m.set(period, (m.get(period) ?? 0) + 1);
+      if (type === "GOAL")   { isHome ? inc(hg) : inc(ag); }
+      else                   { isHome ? inc(hb) : inc(ab); }
     }
-    if (!periodMax.size) return null;
-    return {
-      home: [1, 2, 3, 4].map(q => { const s = periodMax.get(q); return s ? { total: s.home, goals: 0, behinds: 0 } : null; }),
-      away: [1, 2, 3, 4].map(q => { const s = periodMax.get(q); return s ? { total: s.away, goals: 0, behinds: 0 } : null; }),
-    };
-  }, [liveEvents]);
+
+    const maxPeriod = Math.max(...[hg, hb, ag, ab].flatMap(m => [...m.keys()]), 0);
+    if (maxPeriod === 0) return null;
+
+    let cHome = 0, cAway = 0;
+    const home: ({goals:number;behinds:number;total:number}|null)[] = [];
+    const away: ({goals:number;behinds:number;total:number}|null)[] = [];
+    for (let q = 1; q <= 4; q++) {
+      const hgq = hg.get(q)??0, hbq = hb.get(q)??0;
+      const agq = ag.get(q)??0, abq = ab.get(q)??0;
+      cHome += hgq*6 + hbq;
+      cAway += agq*6 + abq;
+      if (q <= maxPeriod) {
+        home.push({ goals: hgq, behinds: hbq, total: cHome });
+        away.push({ goals: agq, behinds: abq, total: cAway });
+      } else {
+        home.push(null);
+        away.push(null);
+      }
+    }
+    return { home, away };
+  }, [liveEvents, game]);
 
   const apiSportsGameId = useMemo(() => {
     const mapped = (API_SPORTS_MATCH_IDS as Record<string, any>)[id];
