@@ -3325,19 +3325,18 @@ function DuelHomepageCard() {
           </div>
 
           {/* Matchup row */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-            {homeLogo && (
-              <img src={homeLogo} alt={card.homeTeam} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0, background: "rgba(255,255,255,0.06)" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-            )}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+            {/* Overlapping logos */}
+            <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
+              {homeLogo && <img src={homeLogo} alt={card.homeTeam} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", border: "2px solid #0f1117", background: "rgba(255,255,255,0.06)", zIndex: 2, position: "relative" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+              {awayLogo && <img src={awayLogo} alt={card.awayTeam} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", border: "2px solid #0f1117", background: "rgba(255,255,255,0.06)", marginLeft: -8, zIndex: 1, position: "relative" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+            </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 900, fontSize: 16, lineHeight: 1.15, letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {card.homeTeam} <span style={{ color: "#334155", fontWeight: 500 }}>vs</span> {card.awayTeam}
               </div>
               <div style={{ fontSize: 11, color: "#475569", marginTop: 2, fontWeight: 600 }}>Round {card.round}</div>
             </div>
-            {awayLogo && (
-              <img src={awayLogo} alt={card.awayTeam} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0, background: "rgba(255,255,255,0.06)" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-            )}
           </div>
 
           {/* Bottom row: opponent + CTA */}
