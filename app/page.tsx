@@ -3159,33 +3159,7 @@ function DuelHomepageCard() {
           return;
         }
 
-        // Priority 2: recent unread result
-        const recentResult = duels.find((d: any) => d.status === "complete");
-        if (recentResult) {
-          const dg = recentResult.duel_game;
-          const isChallenger = recentResult.challenger_id === userId;
-          const opp = isChallenger ? recentResult.opponent : recentResult.challenger;
-          const myScore  = isChallenger ? recentResult.challenger_score : recentResult.opponent_score;
-          const oppScore = isChallenger ? recentResult.opponent_score   : recentResult.challenger_score;
-          setCard({
-            type: "result",
-            duelGameId: dg.id,
-            gameId: dg.game_id,
-            homeTeam: dg.home_team,
-            awayTeam: dg.away_team,
-            round: dg.round,
-            opponentName: opp?.display_name || opp?.username || undefined,
-            opponentAvatar: opp?.avatar_url ?? null,
-            myScore,
-            oppScore,
-            won: recentResult.winner_id === userId,
-            isDraw: recentResult.is_draw,
-          });
-          setChecked(true);
-          return;
-        }
-
-        // Priority 3: available duel game (fetch open duel games)
+        // Priority 2: available duel game (fetch open duel games)
         const gamesRes = await fetch("/api/duels/open");
         if (gamesRes.ok) {
           const gamesJson = await gamesRes.json();

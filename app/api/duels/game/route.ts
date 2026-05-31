@@ -61,7 +61,6 @@ export async function GET(req: Request) {
     .from("duel_games")
     .select("*")
     .eq("game_id", Number(gameId))
-    .neq("status", "complete")
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
