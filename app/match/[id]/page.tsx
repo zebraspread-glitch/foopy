@@ -5053,6 +5053,70 @@ function MatchPolls({
 
   const isAdmin = !!ADMIN_USER_ID && userId === ADMIN_USER_ID;
   const showResults = status === "FINAL";
+  const [autoCreating, setAutoCreating] = useState<"idle" | "creating" | "done">("idle");
+
+  async function autoCreatePoll() {
+    if (!userId || autoCreating !== "idle") return;
+
+    const all = [...homeStats, ...awayStats].filter(p => !!(p.player || p.name));
+    const pname = (p: PlayerStat) => p.player || p.name || "";
+
+    // Score potential polls and pick the best one not already created
+    type Candidate = { question: string; key: string; type: string; options: string[]; score: number };
+    const candidates: Candidate[] = [];
+
+    const addPlayer = (sorted: PlayerStat[], statKey: keyof PlayerStat, minVal: number, catKey: string, question: string) => {
+      const top = sorted.filter(p => Number((p as any)[statKey] ?? 0) >= minVal).slice(0, 2);
+      if (top.length < 2) return;
+      const va = Number((top[0] as any)[statKey] ?? 0);
+      const vb = Number((top[1] as any)[statKey] ?? 0);
+      const diff = Math.abs(va - vb);
+      const score = diff === 0 ? 100 : diff / Math.max(va, 1) < 0.15 ? 85 : diff / Math.max(va, 1) < 0.35 ? 65 : diff / Math.max(va, 1) < 0.6 ? 45 : 20;
+      candidates.push({ question, key: catKey, type: "player", options: [pname(top[0]), pname(top[1])], score });
+    };
+
+    // Foopy rating
+    const byFoopy = [...all].sort((a, b) => foopyRating(b) - foopyRating(a));
+    if (byFoopy.length >= 2) {
+      const [a, b] = byFoopy;
+      const fa = foopyRating(a), fb = foopyRating(b);
+      if (fa > 2) {
+        const diff = Math.abs(fa - fb);
+        candidates.push({ question: POLL_CATEGORIES.player_foopy.label, key: "player_foopy", type: "player", options: [pname(a), pname(b)], score: diff < 0.3 ? 100 : diff < 0.8 ? 85 : diff < 1.5 ? 65 : 40 });
+      }
+    }
+    addPlayer([...all].sort((a,b)=>(b.goals??0)-(a.goals??0)), "goals", 1, "player_goals", POLL_CATEGORIES.player_goals.label);
+    addPlayer([...all].sort((a,b)=>(b.disposals??0)-(a.disposals??0)), "disposals", 15, "player_disposals", POLL_CATEGORIES.player_disposals.label);
+    addPlayer([...all].sort((a,b)=>(b.marks??0)-(a.marks??0)), "marks", 3, "player_marks", POLL_CATEGORIES.player_marks.label);
+    addPlayer([...all].sort((a,b)=>(b.clearances??0)-(a.clearances??0)), "clearances", 3, "player_clearances", POLL_CATEGORIES.player_clearances.label);
+    addPlayer([...all].sort((a,b)=>(b.hitouts??0)-(a.hitouts??0)), "hitouts", 5, "player_hitouts", POLL_CATEGORIES.player_hitouts.label);
+    addPlayer([...all].sort((a,b)=>(b.tackles??0)-(a.tackles??0)), "tackles", 4, "player_tackles", POLL_CATEGORIES.player_tackles.label);
+    candidates.push({ question: POLL_CATEGORIES.team_disposals.label, key: "team_disposals", type: "team", options: [homeTeam, awayTeam], score: 28 });
+    candidates.push({ question: POLL_CATEGORIES.team_goals.label,     key: "team_goals",     type: "team", options: [homeTeam, awayTeam], score: 22 });
+    candidates.push({ question: POLL_CATEGORIES.team_winner.label,    key: "team_winner",    type: "team", options: [homeTeam, awayTeam], score: 15 });
+
+    // Avoid duplicating a poll category already on this game
+    const usedKeys = new Set(polls.map(p => p.category_key));
+    const available = candidates.filter(c => !usedKeys.has(c.key)).sort((a, b) => b.score - a.score);
+    if (available.length === 0) return;
+
+    // Pick randomly from top 3 for variety
+    const top = available.slice(0, Math.min(3, available.length));
+    const pick = top[Math.floor(Math.random() * top.length)];
+
+    setAutoCreating("creating");
+    try {
+      const { data: poll, error } = await supabase
+        .from("match_polls")
+        .insert({ game_id: gameId, user_id: userId, question: pick.question, poll_type: pick.type, category_key: pick.key, quarter: currentPeriod > 0 ? currentPeriod : null })
+        .select("id").single();
+      if (error || !poll) { setAutoCreating("idle"); return; }
+      await supabase.from("match_poll_options").insert(pick.options.map((label, i) => ({ poll_id: (poll as any).id, label, position: i })));
+      await loadPolls();
+      setAutoCreating("done");
+      setTimeout(() => setAutoCreating("idle"), 2000);
+    } catch { setAutoCreating("idle"); }
+  }
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setUserId(data.session?.user.id ?? null));
@@ -5177,9 +5241,25 @@ function MatchPolls({
   return (
     <div style={{ padding: "16px 0" }}>
       {isAdmin && !creating && (
-        <button onClick={() => setCreating(true)} style={createPollBtnStyle}>
-          + New Poll
-        </button>
+        <div style={{ display: "flex", gap: 8, margin: "0 16px 16px" }}>
+          <button onClick={() => setCreating(true)} style={{ ...createPollBtnStyle, margin: 0, flex: 1 }}>
+            + New Poll
+          </button>
+          <button
+            onClick={autoCreatePoll}
+            disabled={autoCreating !== "idle"}
+            style={{
+              flex: 1, padding: "10px 16px", borderRadius: 12,
+              background: autoCreating === "done" ? "rgba(74,222,128,.15)" : "rgba(168,85,247,.15)",
+              border: `1px solid ${autoCreating === "done" ? "rgba(74,222,128,.4)" : "rgba(168,85,247,.4)"}`,
+              color: autoCreating === "done" ? "#4ade80" : "#c084fc",
+              fontWeight: 800, fontSize: 14, cursor: autoCreating !== "idle" ? "default" : "pointer",
+              opacity: autoCreating === "creating" ? 0.6 : 1, transition: "all 0.2s",
+            }}
+          >
+            {autoCreating === "creating" ? "Creating…" : autoCreating === "done" ? "✓ Created!" : "⚡ Auto Poll"}
+          </button>
+        </div>
       )}
 
       {creating && (
