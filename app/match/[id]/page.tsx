@@ -2642,9 +2642,27 @@ function MatchPageInner() {
   const [totalViewerCount, setTotalViewerCount] = useState<number | null>(null);
   const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
 
-  type QScore = { goals: number; behinds: number; total: number };
-  type QuarterScores = { home: (QScore | null)[]; away: (QScore | null)[] };
-  const [quarterScores, setQuarterScores] = useState<QuarterScores | null>(null);
+  // Derive quarter-by-quarter scores from the live events already in state.
+  // Events have period + cumulative homeScore/awayScore so the max score seen
+  // in each period is the period's final score.
+  const quarterScores = useMemo(() => {
+    if (!liveEvents.length) return null;
+    const periodMax = new Map<number, { home: number; away: number }>();
+    for (const e of liveEvents) {
+      const period = Number(e.period ?? 0);
+      if (period < 1 || period > 4) continue;
+      const h = Number(e.homeScore ?? 0);
+      const a = Number(e.awayScore ?? 0);
+      if (h === 0 && a === 0) continue;
+      const cur = periodMax.get(period);
+      if (!cur || h + a > cur.home + cur.away) periodMax.set(period, { home: h, away: a });
+    }
+    if (!periodMax.size) return null;
+    return {
+      home: [1, 2, 3, 4].map(q => { const s = periodMax.get(q); return s ? { total: s.home, goals: 0, behinds: 0 } : null; }),
+      away: [1, 2, 3, 4].map(q => { const s = periodMax.get(q); return s ? { total: s.away, goals: 0, behinds: 0 } : null; }),
+    };
+  }, [liveEvents]);
 
   const apiSportsGameId = useMemo(() => {
     const mapped = (API_SPORTS_MATCH_IDS as Record<string, any>)[id];
@@ -2913,70 +2931,6 @@ function MatchPageInner() {
       .catch(() => {});
   }, [id]);
 
-  // Fetch quarter-by-quarter scores when the Stats tab is open
-  useEffect(() => {
-    if (activeTab !== "game") return;
-    if (!apiSportsGameId) return;
-    const isFinal = (game && getStatus(game) === "FINAL") ? "&final=true" : "";
-    fetch(`/api/afl/quarters?id=${apiSportsGameId}${isFinal}`, { cache: "no-store" })
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (!data) return;
-        // Defensive parser — handles the various shapes API-Sports uses
-        const resp = data?.response?.[0];
-        if (!resp) return;
-
-        const n = (v: any) => { const x = Number(v ?? 0); return Number.isFinite(x) ? x : 0; };
-        const KEYS = [
-          ["first",     "quarter_1", "1"],
-          ["second",    "quarter_2", "2"],
-          ["third",     "quarter_3", "3"],
-          ["fourth",    "quarter_4", "4"],
-        ];
-
-        function extractTeamQuarters(teamObj: any): (QScore | null)[] {
-          // Try resp.teams[i].scores.{first|quarter_1|1}
-          const scores = teamObj?.scores ?? teamObj?.quarters ?? teamObj?.periods ?? {};
-          return KEYS.map(keys => {
-            const entry = keys.reduce<any>((found, k) => found ?? scores[k], undefined);
-            if (entry == null) return null;
-            // entry might be a number (just total) or an object {total, goals, behinds}
-            if (typeof entry === "number") return { total: entry, goals: 0, behinds: 0 };
-            const total   = n(entry.total ?? entry.score ?? entry.points);
-            const goals   = n(entry.goals);
-            const behinds = n(entry.behinds);
-            // total might be 0 legitimately, but if all are 0 and no goals/behinds, treat as unavailable
-            if (total === 0 && goals === 0 && behinds === 0) return null;
-            return { total, goals, behinds };
-          });
-        }
-
-        // Shape A: resp.teams is an array [{team,scores},{team,scores}]
-        if (Array.isArray(resp.teams) && resp.teams.length >= 2) {
-          setQuarterScores({
-            home: extractTeamQuarters(resp.teams[0]),
-            away: extractTeamQuarters(resp.teams[1]),
-          });
-          return;
-        }
-        // Shape B: resp.teams is an object {home:{…}, away:{…}}
-        if (resp.teams?.home && resp.teams?.away) {
-          setQuarterScores({
-            home: extractTeamQuarters(resp.teams.home),
-            away: extractTeamQuarters(resp.teams.away),
-          });
-          return;
-        }
-        // Shape C: resp has top-level home/away keys
-        if (resp.home || resp.away) {
-          setQuarterScores({
-            home: extractTeamQuarters(resp.home),
-            away: extractTeamQuarters(resp.away),
-          });
-        }
-      })
-      .catch(() => {});
-  }, [activeTab, apiSportsGameId, game]);
 
   useEffect(() => {
     if (!mounted || !game || !apiSportsGameId) return;
