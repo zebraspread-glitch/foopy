@@ -2187,8 +2187,10 @@ function LadderPositionsBox({ homeTeam, awayTeam, allGames }: { homeTeam: string
   const compact = useCompactViewport();
   if (rows.length === 0) return null;
 
+  // On compact (mobile) use narrower stat columns so the team name has room
+  const sw = compact ? { P: 32, WLD: 54, PTS: 38, PCT: 50 } : { P: 68, WLD: 68, PTS: 68, PCT: 68 };
   const statCell: React.CSSProperties = {
-    width: 68, textAlign: "right", fontSize: 15, fontWeight: 700,
+    textAlign: "right", fontSize: compact ? 13 : 15, fontWeight: 700,
     fontVariantNumeric: "tabular-nums", color: "var(--text-1)", flexShrink: 0,
   };
 
@@ -2206,8 +2208,8 @@ function LadderPositionsBox({ homeTeam, awayTeam, allGames }: { homeTeam: string
         <div style={{ width: 26, flexShrink: 0 }} />
         <div style={{ width: 36, flexShrink: 0 }} />
         <div style={{ flex: 1 }} />
-        {(["P", "W-L-D", "PTS", "%"] as const).map(h => (
-          <div key={h} style={{ width: 68, textAlign: "right", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: "0.05em", flexShrink: 0 }}>{h}</div>
+        {(["P", "W-L-D", "PTS", "%"] as const).map((h, hi) => (
+          <div key={h} style={{ width: [sw.P, sw.WLD, sw.PTS, sw.PCT][hi], textAlign: "right", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: "0.05em", flexShrink: 0 }}>{h}</div>
         ))}
       </div>
 
@@ -2226,13 +2228,13 @@ function LadderPositionsBox({ homeTeam, awayTeam, allGames }: { homeTeam: string
             <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)" }}>
               <img src={logo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
             </div>
-            <div style={{ flex: 1, fontSize: 15, fontWeight: 800, color: "var(--text-1)", paddingLeft: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontFamily: '"Druk Wide", "Arial Black", Impact, sans-serif' }}>
+            <div style={{ flex: 1, minWidth: 0, fontSize: compact ? 14 : 15, fontWeight: 800, color: "var(--text-1)", paddingLeft: 10, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontFamily: '"Druk Wide", "Arial Black", Impact, sans-serif' }}>
               {teamLabel}
             </div>
-            <div style={statCell}>{t.played}</div>
-            <div style={statCell}>{wdl}</div>
-            <div style={{ ...statCell, fontWeight: 900 }}>{t.points}</div>
-            <div style={statCell}>{pct}</div>
+            <div style={{ ...statCell, width: sw.P }}>{t.played}</div>
+            <div style={{ ...statCell, width: sw.WLD }}>{wdl}</div>
+            <div style={{ ...statCell, width: sw.PTS, fontWeight: 900 }}>{t.points}</div>
+            <div style={{ ...statCell, width: sw.PCT }}>{pct}</div>
           </div>
         );
       })}
