@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
 import { teamColors } from "../utils";
+import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 
 function teamLogoUrl(name: string): string {
   const k = name.toLowerCase().replace(/[^a-z]/g, "");
@@ -23,6 +24,57 @@ function teamLogoUrl(name: string): string {
 }
 
 const MARGIN_RANGES = ["1-12", "13-24", "25-36", "37-48", "49+"];
+
+const DUEL_STAT_CATS: Record<string, { key: string; label: string; type: "player" | "team" }> = {
+  player_goals:      { key: "goals",      label: "goals",   type: "player" },
+  player_disposals:  { key: "disposals",  label: "disp",    type: "player" },
+  player_marks:      { key: "marks",      label: "marks",   type: "player" },
+  player_kicks:      { key: "kicks",      label: "kicks",   type: "player" },
+  player_handballs:  { key: "handballs",  label: "HBs",     type: "player" },
+  player_tackles:    { key: "tackles",    label: "tackles", type: "player" },
+  player_hitouts:    { key: "hitouts",    label: "hitouts", type: "player" },
+  player_clearances: { key: "clearances", label: "clears",  type: "player" },
+  player_foopy:      { key: "foopy",      label: "foopy",   type: "player" },
+  team_winner:       { key: "score",      label: "pts",     type: "team"   },
+  team_goals:        { key: "goals",      label: "goals",   type: "team"   },
+  team_disposals:    { key: "disposals",  label: "disp",    type: "team"   },
+  team_marks:        { key: "marks",      label: "marks",   type: "team"   },
+  team_free_kicks:   { key: "freesFor",   label: "frees",   type: "team"   },
+  team_hitouts:      { key: "hitouts",    label: "hitouts", type: "team"   },
+  team_clearances:   { key: "clearances", label: "clears",  type: "team"   },
+  team_inside50s:    { key: "inside50s",  label: "i50s",    type: "team"   },
+};
+
+type LiveStat = {
+  name: string; isHome: boolean;
+  goals: number; disposals: number; marks: number; kicks: number;
+  handballs: number; tackles: number; hitouts: number; clearances: number;
+  behinds: number; goalAssists: number; freesFor: number; freesAgainst: number;
+  inside50s: number;
+};
+
+type LiveGameStats = {
+  players: LiveStat[];
+  homeTeam: string;
+  awayTeam: string;
+};
+
+function liveStatFoopy(p: LiveStat): number {
+  let score = p.goals * 5.5 + p.goalAssists * 1.5 + p.behinds * 1.2 +
+    p.kicks * 0.75 + p.handballs * 0.55 + p.marks * 1.0 +
+    p.tackles * 1.8 + p.hitouts * 0.35 + p.clearances * 0.5 +
+    p.freesFor * 0.3 - p.freesAgainst * 0.4;
+  if (p.goals >= 3)      score += 3;
+  if (p.goals >= 5)      score += 5;
+  if (p.goals >= 7)      score += 10;
+  if (p.goals >= 10)     score += 18;
+  if (p.disposals >= 25) score += 3;
+  if (p.disposals >= 30) score += 4;
+  if (p.tackles >= 8)    score += 4;
+  if (p.marks >= 10)     score += 3;
+  if (score <= 0) return 0;
+  return Math.round(Math.max(1, Math.min(10, 10 * (1 - Math.exp(-score / 36)))) * 10) / 10;
+}
 
 type DuelQuestion = {
   id: string;
@@ -103,6 +155,7 @@ export default function DuelsTab({ gameId, gameStarted, onDuelGameFound }: { gam
   const [enterError, setEnterError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [pollInterval, setPollInterval] = useState<ReturnType<typeof setInterval> | null>(null);
+  const [liveGameStats, setLiveGameStats] = useState<LiveGameStats | null>(null);
 
   // Get auth token
   useEffect(() => {
@@ -133,13 +186,18 @@ export default function DuelsTab({ gameId, gameStarted, onDuelGameFound }: { gam
     setLoading(false);
     onDuelGameFound?.(!!json.duelGame);
 
-    // Initialise draft picks when we have questions but no picks yet
+    // Initialise draft picks when we have questions but no picks yet.
+    // Use functional update so polling never overwrites picks the user has already made.
     if ((json.questions ?? []).length > 0 && (json.picks ?? []).length === 0 && json.duel) {
-      setDraftPicks((json.questions as DuelQuestion[]).map((q) => ({
-        question_id: q.id,
-        pick: null,
-        pick_margin: null,
-      })));
+      setDraftPicks((prev) =>
+        prev.length > 0
+          ? prev
+          : (json.questions as DuelQuestion[]).map((q) => ({
+              question_id: q.id,
+              pick: null,
+              pick_margin: null,
+            }))
+      );
     }
   }, [gameId, token]);
 
@@ -158,6 +216,55 @@ export default function DuelsTab({ gameId, gameStarted, onDuelGameFound }: { gam
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [duel?.status]);
+
+  // Fetch live player stats while game is in progress so PicksLockedScreen can show them
+  useEffect(() => {
+    if (!duelGame) return;
+    const started = gameStarted || new Date(duelGame.game_date) <= new Date();
+    if (!started) return;
+    const apiId = API_SPORTS_MATCH_IDS[String(duelGame.game_id)];
+    if (!apiId) return;
+
+    let cancelled = false;
+    async function fetchStats() {
+      try {
+        const res = await fetch(`/api/afl/player-stats?id=${apiId}`);
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        const teams: any[] = data?.response?.[0]?.teams ?? [];
+        const players: LiveStat[] = [];
+        for (let ti = 0; ti < teams.length; ti++) {
+          const isHome = ti === 0;
+          for (const pe of teams[ti]?.players ?? []) {
+            const s = pe.statistics ?? pe;
+            const n = (v: any) => { const x = Number(v ?? 0); return Number.isFinite(x) ? x : 0; };
+            const kicks = n(s.kicks ?? s.Kicks);
+            const hb    = n(s.handballs ?? s.Handballs);
+            players.push({
+              name:         pe.player?.name ?? "",
+              isHome,
+              kicks, handballs: hb, disposals: kicks + hb,
+              marks:        n(s.marks        ?? s.Marks),
+              tackles:      n(s.tackles      ?? s.Tackles),
+              hitouts:      n(s.hitouts      ?? s.Hitouts),
+              goals:        n(s.goals?.total ?? s.goals   ?? s.Goals),
+              behinds:      n(s.behinds      ?? s.Behinds),
+              clearances:   n(s.clearances   ?? s.Clearances),
+              goalAssists:  n(s.goalAssists  ?? s.goal_assists ?? 0),
+              freesFor:     n(s.freesFor     ?? s.frees_for    ?? s.FreesFor    ?? 0),
+              freesAgainst: n(s.freesAgainst ?? s.frees_against ?? s.FreesAgainst ?? 0),
+              inside50s:    n(s.inside50s    ?? s.insides50    ?? s.Inside50s   ?? 0),
+            });
+          }
+        }
+        if (!cancelled) setLiveGameStats({ players, homeTeam: duelGame!.home_team, awayTeam: duelGame!.away_team });
+      } catch {}
+    }
+
+    fetchStats();
+    const iv = setInterval(fetchStats, 30_000);
+    return () => { cancelled = true; clearInterval(iv); };
+  }, [duelGame?.game_id, gameStarted]);
 
   async function enterDuel() {
     if (!duelGame) { setEnterError("Duel not loaded yet — try again"); return; }
@@ -354,6 +461,7 @@ export default function DuelsTab({ gameId, gameStarted, onDuelGameFound }: { gam
         questions={questions}
         myPicks={myPicks}
         oppPicks={oppPicks}
+        liveGameStats={liveGameStats}
       />
     );
   }
@@ -696,7 +804,7 @@ function DuelUserCard({ user, label, accentColor }: {
 }
 
 function PicksLockedScreen({
-  opponent, me, duelGame, questions, myPicks, oppPicks,
+  opponent, me, duelGame, questions, myPicks, oppPicks, liveGameStats,
 }: {
   opponent: Duel["opponent"];
   me: Duel["challenger"];
@@ -704,6 +812,7 @@ function PicksLockedScreen({
   questions: DuelQuestion[];
   myPicks: Pick[];
   oppPicks: Pick[];
+  liveGameStats?: LiveGameStats | null;
 }) {
   const regularQs  = questions.filter(q => !q.is_tiebreaker);
   const tbQuestion = questions.find(q => q.is_tiebreaker);
@@ -723,11 +832,17 @@ function PicksLockedScreen({
         .lpr-card:hover  { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(0,0,0,0.5); }
         .lpr-card:active { transform: scale(0.984); box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
         @media (max-width: 500px) {
+          .pick-col { position: relative !important; padding: 0 !important; height: 130px !important; overflow: hidden !important; }
+          .pick-col-inner { position: absolute !important; inset: 0 !important; }
+          .pick-avatar-wrap { position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; border-radius: 0 !important; border: none !important; flex-shrink: 0 !important; }
+          .pick-avatar-img { object-position: top center !important; }
           .pick-name { display: none !important; }
           .pick-team { display: none !important; }
-          .pick-avatar { width: 52px !important; height: 52px !important; }
-          .pick-col { padding: 12px 10px 10px !important; }
+          .pick-gradient { display: block !important; }
+          .pick-badge-pos { position: absolute !important; bottom: 8px !important; left: 8px !important; margin: 0 !important; z-index: 3 !important; }
+          .pick-badge-pos-right { position: absolute !important; bottom: 8px !important; right: 8px !important; margin: 0 !important; z-index: 3 !important; }
         }
+        .pick-gradient { display: none; position: absolute; inset: 0; z-index: 2; pointer-events: none; }
       `}</style>
 
       {/* ── Matchup header ── */}
@@ -841,7 +956,7 @@ function PicksLockedScreen({
                 <PickSection label="CONTESTED" type="contested" count={different.length} color="#ef4444" index={animIdx} />
                 <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 16 }}>
                   {different.map(({ q, mp, op }) => (
-                    <LockedPickRow key={q.id} question={q} myPick={mp} oppPick={op} index={animIdx++} />
+                    <LockedPickRow key={q.id} question={q} myPick={mp} oppPick={op} index={animIdx++} liveGameStats={liveGameStats} />
                   ))}
                 </div>
               </>
@@ -852,7 +967,7 @@ function PicksLockedScreen({
               <>
                 <PickSection label="TIEBREAKER" type="tiebreaker" count={null} color="#f59e0b" index={animIdx} />
                 <div style={{ marginBottom: 16 }}>
-                  <LockedPickRow question={tbQuestion} myPick={tbMp} oppPick={tbOp} isTiebreaker index={animIdx++} />
+                  <LockedPickRow question={tbQuestion} myPick={tbMp} oppPick={tbOp} isTiebreaker index={animIdx++} liveGameStats={liveGameStats} />
                 </div>
               </>
             )}
@@ -863,7 +978,7 @@ function PicksLockedScreen({
                 <PickSection label="AGREED" type="agreed" count={same.length} color="#22c55e" index={animIdx} />
                 <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 16 }}>
                   {same.map(({ q, mp, op }) => (
-                    <LockedPickRow key={q.id} question={q} myPick={mp} oppPick={op} index={animIdx++} />
+                    <LockedPickRow key={q.id} question={q} myPick={mp} oppPick={op} index={animIdx++} liveGameStats={liveGameStats} />
                   ))}
                 </div>
               </>
@@ -911,15 +1026,45 @@ function PickSection({ label, type, count, color, index }: {
   );
 }
 
-function LockedPickRow({ question, myPick, oppPick, isTiebreaker, index = 0 }: {
+function LockedPickRow({ question, myPick, oppPick, isTiebreaker, index = 0, liveGameStats }: {
   question: DuelQuestion;
   myPick: Pick | null;
   oppPick: Pick | null;
   isTiebreaker?: boolean;
   index?: number;
+  liveGameStats?: LiveGameStats | null;
 }) {
   const myLabel  = myPick  ? (myPick.pick  === "a" ? question.option_a : question.option_b) : "—";
   const oppLabel = oppPick ? (oppPick.pick === "a" ? question.option_a : question.option_b) : "—";
+
+  // Live stat display
+  const cat = !isTiebreaker && question.category_key ? DUEL_STAT_CATS[question.category_key] : null;
+  function getStatDisplay(optName: string): string | null {
+    if (!liveGameStats || !cat || !optName || optName === "—") return null;
+    const norm = (s: string) => s.toLowerCase().replace(/[^a-z]/g, "");
+    if (cat.type === "player") {
+      const p = liveGameStats.players.find(pl => norm(pl.name) === norm(optName));
+      if (!p) return null;
+      if (cat.key === "foopy") return `${liveStatFoopy(p)} foopy`;
+      const val = (p as any)[cat.key] as number ?? 0;
+      return `${val} ${cat.label}`;
+    }
+    if (cat.type === "team" && cat.key !== "score") {
+      const normOpt = norm(optName);
+      const isHome = normOpt === norm(liveGameStats.homeTeam);
+      const isAway = !isHome && normOpt === norm(liveGameStats.awayTeam);
+      if (!isHome && !isAway) return null;
+      const total = liveGameStats.players
+        .filter(p => isHome ? p.isHome : !p.isHome)
+        .reduce((sum, p) => sum + ((p as any)[cat.key] as number ?? 0), 0);
+      return `${total} ${cat.label}`;
+    }
+    return null;
+  }
+  const myOptName  = myPick  ? (myPick.pick  === "a" ? question.option_a : question.option_b) : null;
+  const oppOptName = oppPick ? (oppPick.pick === "a" ? question.option_a : question.option_b) : null;
+  const myStat  = myOptName  ? getStatDisplay(myOptName)  : null;
+  const oppStat = oppOptName ? getStatDisplay(oppOptName) : null;
   const myImage  = myPick  ? (myPick.pick  === "a" ? question.option_a_image : question.option_b_image) : null;
   const oppImage = oppPick ? (oppPick.pick === "a" ? question.option_a_image : question.option_b_image) : null;
   const myTeam   = myPick  ? (myPick.pick  === "a" ? question.option_a_team  : question.option_b_team)  : null;
@@ -979,8 +1124,11 @@ function LockedPickRow({ question, myPick, oppPick, isTiebreaker, index = 0 }: {
             </div>
           </div>
           {myPick && (
-            <div style={{ marginTop: 9 }}>
+            <div className="pick-badge-pos" style={{ marginTop: 9, display: "flex", alignItems: "center", gap: 5 }}>
               <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.07em", color: "#3b82f6", background: "#3b82f614", padding: "2px 7px", borderRadius: 999 }}>YOU</span>
+              {myStat !== null && (
+                <span style={{ fontSize: 9, fontWeight: 700, color: "#22c55e", background: "#22c55e14", padding: "2px 7px", borderRadius: 999 }}>{myStat}</span>
+              )}
             </div>
           )}
         </div>
@@ -1013,7 +1161,10 @@ function LockedPickRow({ question, myPick, oppPick, isTiebreaker, index = 0 }: {
             </div>
           </div>
           {oppPick && (
-            <div style={{ marginTop: 9, display: "flex", justifyContent: "flex-end" }}>
+            <div className="pick-badge-pos-right" style={{ marginTop: 9, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 5 }}>
+              {oppStat !== null && (
+                <span style={{ fontSize: 9, fontWeight: 700, color: "#22c55e", background: "#22c55e14", padding: "2px 7px", borderRadius: 999 }}>{oppStat}</span>
+              )}
               <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.07em", color: "#64748b", background: "#64748b14", padding: "2px 7px", borderRadius: 999 }}>OPP</span>
             </div>
           )}
