@@ -31,12 +31,25 @@ export async function GET() {
 
     const staticIds = new Set(Object.keys(staticStats));
 
-    // Grab all final player_stats rows not already in static JSON
-    const { data: rows } = await supabase
-      .from("match_cache")
-      .select("game_id, payload")
-      .eq("data_type", "player_stats")
-      .eq("is_final", true);
+    // Grab all player_stats rows not already in static JSON.
+    // Include both is_final=true (permanently locked) and is_final=false rows
+    // that are recent (today/yesterday) so completed games on the day are
+    // included in streak calculations even if sync-round-stats hasn't
+    // permanently locked them yet.
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const yesterdayStr = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+    const [{ data: finalRows }, { data: recentRows }] = await Promise.all([
+      supabase.from("match_cache").select("game_id, payload").eq("data_type", "player_stats").eq("is_final", true),
+      supabase.from("match_cache").select("game_id, payload").eq("data_type", "player_stats").eq("is_final", false)
+        .gte("fetched_at", yesterdayStr),
+    ]);
+
+    const rows = [
+      ...(finalRows ?? []),
+      // Include recent non-final rows only if we don't already have a final row for that game
+      ...(recentRows ?? []).filter(r => !(finalRows ?? []).some(f => String(f.game_id) === String(r.game_id))),
+    ];
 
     for (const row of rows ?? []) {
       const gameId = String(row.game_id);

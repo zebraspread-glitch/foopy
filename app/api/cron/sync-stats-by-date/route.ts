@@ -79,9 +79,21 @@ export async function GET(req: Request) {
       };
 
       try {
-        // Only permanently lock stats for past dates — today's games may
-        // still be live, so leave is_final=false so the TTL still applies.
-        const isFinalGame = date < todayStr;
+        // Past dates are always final.
+        // For today's games: sync-round-stats may have already marked the row
+        // is_final=true (once complete=100 in Squiggle). Preserve that — never
+        // downgrade is_final from true to false, otherwise completed games get
+        // excluded from /api/game-stats and streak calculations break.
+        let isFinalGame = date < todayStr;
+        if (!isFinalGame) {
+          const { data: existing } = await supabase
+            .from("match_cache")
+            .select("is_final")
+            .eq("game_id", gameId)
+            .eq("data_type", "player_stats")
+            .maybeSingle();
+          if (existing?.is_final === true) isFinalGame = true;
+        }
 
         await supabase
           .from("match_cache")
@@ -95,7 +107,7 @@ export async function GET(req: Request) {
             },
             { onConflict: "game_id,data_type" }
           );
-        results.push({ date, game_id: gameId, status: "saved" });
+        results.push({ date, game_id: gameId, status: "saved", is_final: isFinalGame });
       } catch (err: any) {
         results.push({ date, game_id: gameId, error: err.message });
       }
