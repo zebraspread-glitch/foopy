@@ -62,7 +62,10 @@ export async function withCache<T>(
   const cached = await readRow(gameId, dataType);
 
   if (cached) {
-    if (cached.is_final || isFresh(cached, ttlSeconds)) {
+    // Only treat a row as permanently cached when the *caller* confirms it's
+    // final too. If isFinalHint is false (live game), always fall back to the
+    // TTL — this prevents sync-stats-by-date from locking live-game stats.
+    if ((isFinalHint && cached.is_final) || isFresh(cached, ttlSeconds)) {
       return { data: cached.payload as T, fromCache: true };
     }
   }

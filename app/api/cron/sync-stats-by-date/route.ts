@@ -51,10 +51,10 @@ export async function GET(req: Request) {
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
 
-  const dates = [
-    yesterday.toISOString().slice(0, 10),
-    today.toISOString().slice(0, 10),
-  ];
+  const todayStr     = today.toISOString().slice(0, 10);
+  const yesterdayStr = yesterday.toISOString().slice(0, 10);
+
+  const dates = [yesterdayStr, todayStr];
 
   const supabase = adminSupabase();
   const results: any[] = [];
@@ -79,6 +79,10 @@ export async function GET(req: Request) {
       };
 
       try {
+        // Only permanently lock stats for past dates — today's games may
+        // still be live, so leave is_final=false so the TTL still applies.
+        const isFinalGame = date < todayStr;
+
         await supabase
           .from("match_cache")
           .upsert(
@@ -87,7 +91,7 @@ export async function GET(req: Request) {
               data_type: "player_stats",
               payload,
               fetched_at: new Date().toISOString(),
-              is_final: true, // stats fetched by date are always post-game
+              is_final: isFinalGame,
             },
             { onConflict: "game_id,data_type" }
           );
