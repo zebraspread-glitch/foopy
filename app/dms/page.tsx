@@ -1007,30 +1007,26 @@ function DMsPageInner() {
               const sn = m.sender?.username ?? "unknown";
               const senderName = m.sender?.display_name || m.sender?.username || "User";
               return (
-                <div key={m.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: `${samePrev ? 3 : 10}px 16px ${sameNext ? 2 : 6}px` }}>
-                  <div style={{ width: 34, height: 34, borderRadius: "50%", background: "var(--surface-2)", border: "1px solid var(--border-2)", flexShrink: 0, overflow: "hidden", visibility: samePrev ? "hidden" : "visible" }}>
+                <div key={m.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: `${samePrev ? 2 : 12}px 14px ${sameNext ? 1 : 10}px`, background: mine ? "rgba(96,165,250,0.06)" : "transparent", borderLeft: mine ? "2px solid rgba(96,165,250,0.25)" : "2px solid transparent" }}>
+                  <div style={{ width: 36, height: 36, borderRadius: "50%", flexShrink: 0, overflow: "hidden", visibility: samePrev ? "hidden" : "visible" }}>
                     <button onClick={() => !mine && router.push(`/profile/${sn}`)} style={{ background: "none", border: "none", padding: 0, cursor: mine ? "default" : "pointer", width: "100%", height: "100%", display: "block" }}>
-                      <Avatar name={sn} url={m.sender?.avatar_url} size={34} />
+                      <Avatar name={sn} url={m.sender?.avatar_url} size={36} />
                     </button>
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ margin: 0, fontSize: 14, color: "var(--text-1)", lineHeight: 1.5, wordBreak: "break-word", opacity: m.id.startsWith("t") || groupDeletingIds.has(m.id) ? 0.55 : 1 }}>
-                      {!samePrev && (
-                        <span onClick={() => !mine && router.push(`/profile/${sn}`)} style={{ fontWeight: 900, marginRight: 6, color: mine ? "#60a5fa" : "var(--text-1)", cursor: mine ? "default" : "pointer" }}>
+                  <div style={{ flex: 1, minWidth: 0, opacity: m.id.startsWith("t") || groupDeletingIds.has(m.id) ? 0.55 : 1 }}>
+                    {!samePrev && (
+                      <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 3 }}>
+                        <span onClick={() => !mine && router.push(`/profile/${sn}`)} style={{ fontSize: 13, fontWeight: 800, color: mine ? "#60a5fa" : "var(--text-1)", cursor: mine ? "default" : "pointer" }}>
                           {mine ? "You" : senderName}
                         </span>
-                      )}
-                      {m.content}
-                    </p>
-                    {!sameNext && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
-                        <span style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 600 }}>{fmtTime(m.created_at)}</span>
-                        {mine && !m.id.startsWith("t") && (
-                          <button onClick={() => deleteGroupMessage(m)} disabled={groupDeletingIds.has(m.id)} style={{ background: "none", border: "none", padding: 0, fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#ef4444" }}>
-                            Delete
-                          </button>
-                        )}
+                        <span style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 500 }}>{fmtTime(m.created_at)}</span>
                       </div>
+                    )}
+                    <p style={{ margin: 0, fontSize: 14, color: "var(--text-1)", lineHeight: 1.55, wordBreak: "break-word" }}>{m.content}</p>
+                    {!sameNext && mine && !m.id.startsWith("t") && (
+                      <button onClick={() => deleteGroupMessage(m)} disabled={groupDeletingIds.has(m.id)} style={{ background: "none", border: "none", padding: "4px 0 0", fontSize: 11, fontWeight: 700, cursor: "pointer", color: "#ef4444" }}>
+                        Delete
+                      </button>
                     )}
                   </div>
                 </div>
@@ -1104,33 +1100,29 @@ function DMsPageInner() {
               const otherName = activeConv.other?.display_name || activeConv.other?.username || "User";
               const otherUser = activeConv.other?.username ?? "?";
               return (
-                <div key={m.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: `${samePrev ? 3 : 10}px 16px ${sameNext ? 2 : 6}px` }}>
-                  <div style={{ width: 34, height: 34, borderRadius: "50%", background: "var(--surface-2)", border: "1px solid var(--border-2)", flexShrink: 0, overflow: "hidden", visibility: samePrev ? "hidden" : "visible" }}>
+                <div key={m.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: `${samePrev ? 2 : 12}px 14px ${sameNext ? 1 : 10}px`, background: mine ? "rgba(96,165,250,0.06)" : "transparent", borderLeft: mine ? "2px solid rgba(96,165,250,0.25)" : "2px solid transparent" }}>
+                  <div style={{ width: 36, height: 36, borderRadius: "50%", flexShrink: 0, overflow: "hidden", visibility: samePrev ? "hidden" : "visible" }}>
                     {mine
-                      ? <Avatar name={myProfile.username} url={myProfile.avatar_url ?? null} size={34} />
+                      ? <Avatar name={myProfile.username} url={myProfile.avatar_url ?? null} size={36} />
                       : <button onClick={() => router.push(`/profile/${otherUser}`)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", width: "100%", height: "100%", display: "block" }}>
-                          <Avatar name={otherUser} url={activeConv.other?.avatar_url} size={34} />
+                          <Avatar name={otherUser} url={activeConv.other?.avatar_url} size={36} />
                         </button>
                     }
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ margin: 0, fontSize: 14, color: "var(--text-1)", lineHeight: 1.5, wordBreak: "break-word", opacity: m.id.startsWith("t") || deletingIds.has(m.id) ? 0.55 : 1 }}>
-                      {!samePrev && (
-                        <span onClick={() => !mine && router.push(`/profile/${otherUser}`)} style={{ fontWeight: 900, marginRight: 6, color: mine ? "#60a5fa" : "var(--text-1)", cursor: mine ? "default" : "pointer" }}>
+                  <div style={{ flex: 1, minWidth: 0, opacity: m.id.startsWith("t") || deletingIds.has(m.id) ? 0.55 : 1 }}>
+                    {!samePrev && (
+                      <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 3 }}>
+                        <span onClick={() => !mine && router.push(`/profile/${otherUser}`)} style={{ fontSize: 13, fontWeight: 800, color: mine ? "#60a5fa" : "var(--text-1)", cursor: mine ? "default" : "pointer" }}>
                           {mine ? "You" : otherName}
                         </span>
-                      )}
-                      {m.content}
-                    </p>
-                    {!sameNext && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
-                        <span style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 600 }}>{fmtTime(m.created_at)}</span>
-                        {mine && !m.id.startsWith("t") && (
-                          <button onClick={() => deleteMessage(m)} disabled={deletingIds.has(m.id)} style={{ background: "none", border: "none", padding: 0, fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#ef4444" }}>
-                            Delete
-                          </button>
-                        )}
+                        <span style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 500 }}>{fmtTime(m.created_at)}</span>
                       </div>
+                    )}
+                    <p style={{ margin: 0, fontSize: 14, color: "var(--text-1)", lineHeight: 1.55, wordBreak: "break-word" }}>{m.content}</p>
+                    {!sameNext && mine && !m.id.startsWith("t") && (
+                      <button onClick={() => deleteMessage(m)} disabled={deletingIds.has(m.id)} style={{ background: "none", border: "none", padding: "4px 0 0", fontSize: 11, fontWeight: 700, cursor: "pointer", color: "#ef4444" }}>
+                        Delete
+                      </button>
                     )}
                   </div>
                 </div>
