@@ -2664,8 +2664,9 @@ function MatchPageInner() {
         const resp = data?.response?.[0];
         const quarters: any[] = resp?.quarters ?? [];
         if (!quarters.length) return;
+        // goals, behinds, and points are all CUMULATIVE in the API response
+        // (Q2 shows total through Q2, Q3 through Q3, etc.) — use directly, no summing
         const n = (v: any) => { const x = Number(v ?? 0); return Number.isFinite(x) ? x : 0; };
-        let cHome = 0, cAway = 0;
         const home: ({ goals: number; behinds: number; total: number } | null)[] = [];
         const away: ({ goals: number; behinds: number; total: number } | null)[] = [];
         for (let q = 1; q <= 4; q++) {
@@ -2673,10 +2674,8 @@ function MatchPageInner() {
           if (!qd) { home.push(null); away.push(null); continue; }
           const hg = n(qd.teams?.home?.goals), hb = n(qd.teams?.home?.behinds), hp = n(qd.teams?.home?.points);
           const ag = n(qd.teams?.away?.goals), ab = n(qd.teams?.away?.behinds), ap = n(qd.teams?.away?.points);
-          cHome += hp || (hg * 6 + hb);
-          cAway += ap || (ag * 6 + ab);
-          home.push({ goals: hg, behinds: hb, total: cHome });
-          away.push({ goals: ag, behinds: ab, total: cAway });
+          home.push({ goals: hg, behinds: hb, total: hp || (hg * 6 + hb) });
+          away.push({ goals: ag, behinds: ab, total: ap || (ag * 6 + ab) });
         }
         if (home.some(Boolean) || away.some(Boolean)) setQuarterScores({ home, away });
       })
