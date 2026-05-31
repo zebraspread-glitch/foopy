@@ -715,12 +715,13 @@ function PicksLockedScreen({
     <div style={{ paddingBottom: 60 }}>
       <style>{`
         @keyframes lpr-in {
-          from { opacity:0; transform:translateY(14px) scale(0.97); }
+          from { opacity:0; transform:translateY(18px) scale(0.96); }
           to   { opacity:1; transform:translateY(0)    scale(1);    }
         }
         @keyframes lpr-pulse { 0%,100%{opacity:1}50%{opacity:0.35} }
-        .lpr-card { transition: transform 0.18s cubic-bezier(0.2,0,0,1), box-shadow 0.18s; cursor: default; }
-        .lpr-card:active { transform: scale(0.982); }
+        .lpr-card { transition: transform 0.2s cubic-bezier(0.16,1,0.3,1), box-shadow 0.2s; }
+        .lpr-card:hover  { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(0,0,0,0.5); }
+        .lpr-card:active { transform: scale(0.984); box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
       `}</style>
 
       {/* ── Matchup header ── */}
@@ -873,19 +874,13 @@ function PickSection({ label, icon, count, color, index }: {
 }) {
   return (
     <div style={{
-      display: "flex", alignItems: "center", gap: 10,
-      marginBottom: 10,
-      animation: `lpr-in 0.28s ${Math.min(index * 0.05, 0.35)}s ease both`,
+      display: "flex", alignItems: "center", gap: 8, padding: "2px 0 10px",
+      animation: `lpr-in 0.24s ${Math.min(index * 0.04, 0.3)}s ease both`,
     }}>
-      <div style={{ flex: 1, height: 1, background: `linear-gradient(to right, ${color}30, transparent)` }} />
-      <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
-        <span style={{ fontSize: 11 }}>{icon}</span>
-        <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.1em", color }}>{label}</span>
-        {count !== null && (
-          <span style={{ fontSize: 9, fontWeight: 700, color: `${color}80`, background: `${color}18`, padding: "1px 5px", borderRadius: 999 }}>{count}</span>
-        )}
-      </div>
-      <div style={{ flex: 1, height: 1, background: `linear-gradient(to left, ${color}30, transparent)` }} />
+      <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", color: `${color}bb` }}>{icon} {label}</span>
+      {count !== null && (
+        <span style={{ fontSize: 10, fontWeight: 700, color: `${color}70` }}>· {count}</span>
+      )}
     </div>
   );
 }
@@ -908,131 +903,120 @@ function LockedPickRow({ question, myPick, oppPick, isTiebreaker, index = 0 }: {
   const myColor  = safeTeamColor(myTeam,  "#3b82f6");
   const oppColor = safeTeamColor(oppTeam, "#475569");
 
-  const delay = `${Math.min(index * 0.05, 0.4)}s`;
+  const delay = `${Math.min(index * 0.045, 0.38)}s`;
+  const statusColor = agree ? "#22c55e" : isTiebreaker ? "#f59e0b" : "#ef4444";
+  const statusLabel = agree ? "Agreed" : isTiebreaker ? "Tiebreaker" : "Contested";
 
   return (
     <div
       className="lpr-card"
       style={{
-        borderRadius: 14,
+        borderRadius: 18,
         overflow: "hidden",
-        background: agree
-          ? "linear-gradient(135deg,#111820,#0f1a10)"
-          : "linear-gradient(135deg,#0f131a,#111521)",
-        border: agree
-          ? "1px solid rgba(34,197,94,0.15)"
-          : isTiebreaker
-            ? "1px solid rgba(245,158,11,0.2)"
-            : "1px solid rgba(255,255,255,0.07)",
-        animation: `lpr-in 0.32s ${delay} cubic-bezier(0.2,0,0,1) both`,
-        boxShadow: agree
-          ? "0 2px 16px rgba(34,197,94,0.06)"
-          : "0 2px 12px rgba(0,0,0,0.3)",
+        background: "#0e1118",
+        border: "1px solid rgba(255,255,255,0.07)",
+        animation: `lpr-in 0.3s ${delay} cubic-bezier(0.16,1,0.3,1) both`,
+        boxShadow: "0 4px 20px rgba(0,0,0,0.35)",
       }}
     >
-      {/* Question text bar */}
+      {/* Question row */}
       <div style={{
-        padding: "10px 14px 9px",
-        background: isTiebreaker
-          ? "linear-gradient(135deg,rgba(245,158,11,0.08),rgba(245,158,11,0.02))"
-          : agree
-            ? "rgba(34,197,94,0.04)"
-            : "rgba(255,255,255,0.025)",
-        borderBottom: `1px solid ${isTiebreaker ? "rgba(245,158,11,0.12)" : "rgba(255,255,255,0.05)"}`,
+        padding: "13px 16px 12px",
+        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
+        borderBottom: "1px solid rgba(255,255,255,0.05)",
       }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: isTiebreaker ? "#f59e0b" : agree ? "#86efac" : "#e2e8f0", lineHeight: 1.3 }}>
+        <span style={{ fontSize: 14, fontWeight: 700, color: "#cbd5e1", lineHeight: 1.3, flex: 1 }}>
           {question.question_text}
-        </div>
+        </span>
+        <span style={{
+          fontSize: 10, fontWeight: 700, letterSpacing: "0.04em",
+          color: statusColor,
+          background: `${statusColor}15`,
+          padding: "3px 8px", borderRadius: 999, flexShrink: 0,
+        }}>
+          {statusLabel}
+        </span>
       </div>
 
-      {/* Player columns */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 40px 1fr" }}>
+      {/* Two option tiles */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1px 1fr" }}>
 
         {/* My pick */}
         <div style={{
-          padding: "14px 14px 11px",
-          background: `linear-gradient(135deg, ${myColor}18 0%, transparent 70%)`,
-          borderLeft: `3px solid ${myColor}90`,
+          padding: "14px 16px 12px",
+          background: myPick ? `${myColor}0c` : "transparent",
+          boxShadow: myPick ? `inset 2px 0 0 ${myColor}` : undefined,
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
             <div style={{
-              width: 48, height: 48, borderRadius: "50%", overflow: "hidden", flexShrink: 0,
-              background: `${myColor}25`, border: `2px solid ${myColor}70`,
-              boxShadow: `0 0 12px ${myColor}20`,
+              width: 46, height: 46, borderRadius: "50%", overflow: "hidden", flexShrink: 0,
+              background: `${myColor}18`,
+              border: myPick ? `2px solid ${myColor}60` : "2px solid rgba(255,255,255,0.08)",
             }}>
               {myImage
                 ? <img src={myImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, color: myColor }}>◉</div>
+                : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.2)", fontSize: 20 }}>?</div>
               }
             </div>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontWeight: 900, fontSize: 15, color: "#f8fafc", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{myLabel}</div>
-              {myTeam && <div style={{ fontSize: 10, fontWeight: 700, color: myColor, marginTop: 3, letterSpacing: "0.03em", textTransform: "uppercase" }}>{myTeam}</div>}
+              <div style={{ fontWeight: 800, fontSize: 14, color: "#f1f5f9", lineHeight: 1.25, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{myLabel}</div>
+              {myTeam && <div style={{ fontSize: 10, fontWeight: 600, color: myPick ? myColor : "#475569", marginTop: 2 }}>{myTeam}</div>}
             </div>
           </div>
-          <div style={{ fontSize: 8, fontWeight: 900, letterSpacing: "0.12em", color: "#3b82f680" }}>YOU</div>
+          {myPick && (
+            <div style={{ marginTop: 8 }}>
+              <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.08em", color: "#3b82f6", background: "#3b82f618", padding: "2px 7px", borderRadius: 999 }}>YOU</span>
+            </div>
+          )}
         </div>
 
-        {/* Centre divider */}
-        <div style={{
-          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4,
-          background: agree ? "rgba(34,197,94,0.04)" : "rgba(0,0,0,0.2)",
-          borderLeft: "1px solid rgba(255,255,255,0.04)",
-          borderRight: "1px solid rgba(255,255,255,0.04)",
-        }}>
-          <div style={{ width: 1, flex: 1, background: "rgba(255,255,255,0.04)" }} />
-          <span style={{
-            fontSize: agree ? 18 : 14,
-            color: agree ? "#22c55e" : isTiebreaker ? "#f59e0b" : "#1e293b",
-            fontWeight: 900, userSelect: "none", lineHeight: 1,
-          }}>
-            {agree ? "✓" : "⚔"}
-          </span>
-          <div style={{ width: 1, flex: 1, background: "rgba(255,255,255,0.04)" }} />
-        </div>
+        {/* Thin separator */}
+        <div style={{ background: "rgba(255,255,255,0.05)", width: 1 }} />
 
         {/* Opponent pick */}
         <div style={{
-          padding: "14px 14px 11px",
-          background: `linear-gradient(225deg, ${oppColor}14 0%, transparent 70%)`,
-          borderRight: `3px solid ${oppColor}70`,
-          display: "flex", flexDirection: "column", alignItems: "flex-end",
+          padding: "14px 16px 12px",
+          background: oppPick ? `${oppColor}0a` : "transparent",
+          boxShadow: oppPick ? `inset -2px 0 0 ${oppColor}` : undefined,
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, flexDirection: "row-reverse", marginBottom: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 11, flexDirection: "row-reverse" }}>
             <div style={{
-              width: 48, height: 48, borderRadius: "50%", overflow: "hidden", flexShrink: 0,
-              background: `${oppColor}20`, border: `2px solid ${oppColor}60`,
-              boxShadow: `0 0 12px ${oppColor}15`,
+              width: 46, height: 46, borderRadius: "50%", overflow: "hidden", flexShrink: 0,
+              background: `${oppColor}15`,
+              border: oppPick ? `2px solid ${oppColor}55` : "2px solid rgba(255,255,255,0.08)",
             }}>
               {oppImage
                 ? <img src={oppImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, color: oppColor }}>◉</div>
+                : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.2)", fontSize: 20 }}>?</div>
               }
             </div>
             <div style={{ minWidth: 0, textAlign: "right" }}>
-              <div style={{ fontWeight: 900, fontSize: 15, color: "#94a3b8", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {oppPick ? oppLabel : <span style={{ color: "#1e293b", fontSize: 13, fontStyle: "italic", fontWeight: 500 }}>Pending</span>}
+              <div style={{ fontWeight: 800, fontSize: 14, color: "#94a3b8", lineHeight: 1.25, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {oppPick ? oppLabel : <span style={{ color: "#334155", fontStyle: "italic", fontWeight: 400, fontSize: 13 }}>Pending…</span>}
               </div>
-              {oppTeam && <div style={{ fontSize: 10, fontWeight: 700, color: oppColor, marginTop: 3, letterSpacing: "0.03em", textTransform: "uppercase" }}>{oppTeam}</div>}
+              {oppTeam && <div style={{ fontSize: 10, fontWeight: 600, color: oppPick ? oppColor : "#334155", marginTop: 2 }}>{oppTeam}</div>}
             </div>
           </div>
-          <div style={{ fontSize: 8, fontWeight: 900, letterSpacing: "0.12em", color: "#47556980" }}>OPP</div>
+          {oppPick && (
+            <div style={{ marginTop: 8, display: "flex", justifyContent: "flex-end" }}>
+              <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.08em", color: "#64748b", background: "#64748b18", padding: "2px 7px", borderRadius: 999 }}>OPP</span>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Tiebreaker margin strip */}
       {isTiebreaker && (myPick?.pick_margin || oppPick?.pick_margin) && (
         <div style={{
-          display: "grid", gridTemplateColumns: "1fr 40px 1fr",
-          borderTop: "1px solid rgba(245,158,11,0.1)",
-          background: "rgba(245,158,11,0.04)",
+          display: "grid", gridTemplateColumns: "1fr 1px 1fr",
+          borderTop: "1px solid rgba(255,255,255,0.05)",
         }}>
-          <div style={{ padding: "6px 14px", fontSize: 11, fontWeight: 700, color: "#78716c" }}>
-            by <span style={{ color: "#d4a96a" }}>{myPick?.pick_margin ?? "—"}</span>
+          <div style={{ padding: "7px 16px", fontSize: 11, fontWeight: 600, color: "#64748b" }}>
+            by <span style={{ color: "#a78bfa" }}>{myPick?.pick_margin ?? "—"}</span>
           </div>
-          <div />
-          <div style={{ padding: "6px 14px", fontSize: 11, fontWeight: 700, color: "#78716c", textAlign: "right" }}>
-            <span style={{ color: "#d4a96a" }}>{oppPick?.pick_margin ?? "—"}</span> pts
+          <div style={{ background: "rgba(255,255,255,0.05)" }} />
+          <div style={{ padding: "7px 16px", fontSize: 11, fontWeight: 600, color: "#64748b", textAlign: "right" }}>
+            by <span style={{ color: "#a78bfa" }}>{oppPick?.pick_margin ?? "—"}</span>
           </div>
         </div>
       )}
