@@ -2642,69 +2642,46 @@ function MatchPageInner() {
   const [totalViewerCount, setTotalViewerCount] = useState<number | null>(null);
   const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
 
-  // Derive quarter-by-quarter scores by counting GOAL/BEHIND events per period.
-  // API-Sports events don't carry a running homeScore/awayScore, but each event
-  // has a type ("GOAL"/"BEHIND") and a teamName (derived during normalisation).
-  // Counting those per period and computing the cumulative total gives the
-  // scoreboard at the end of each quarter.
-  const quarterScores = useMemo(() => {
-    if (!liveEvents.length || !game) return null;
-    const hteam = game.hteam;
-    const ateam = game.ateam;
+  // Quarter-by-quarter scores from the games/quarters API endpoint.
+  // Structure: response[0].quarters = [{ quarter:1, teams:{ home:{goals,behinds,points}, away:{...} } }, ...]
+  // `points` is per-quarter (not cumulative) and already includes rushed behinds.
+  const [quarterScores, setQuarterScores] = useState<{
+    home: ({ goals: number; behinds: number; total: number } | null)[];
+    away: ({ goals: number; behinds: number; total: number } | null)[];
+  } | null>(null);
 
-    const hg = new Map<number,number>(), hb = new Map<number,number>();
-    const ag = new Map<number,number>(), ab = new Map<number,number>();
+  useEffect(() => {
+    if (activeTab !== "game") return;
+    if (!apiSportsGameId) return;
+    const isFinal = game && getStatus(game) === "FINAL";
+    fetch(`/api/afl/quarters?id=${apiSportsGameId}${isFinal ? "&final=true" : ""}`, { cache: "no-store" })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data) return;
+        const resp = data?.response?.[0];
+        const quarters: any[] = resp?.quarters ?? [];
+        if (!quarters.length) return;
 
-    for (const e of liveEvents) {
-      const period = Number(e.period ?? 0);
-      if (period < 1 || period > 4) continue;
-      const type = String(e.type ?? "").toUpperCase();
-      // GOAL and BEHIND are regular scores; anything else containing "BEHIND"
-      // or "RUSHED" is a rushed/forced behind (still 1 point, opposing team)
-      const isGoal   = type === "GOAL";
-      const isBehind = type === "BEHIND";
-      const isRushed = !isGoal && !isBehind && (type.includes("BEHIND") || type.includes("RUSHED"));
-      if (!isGoal && !isBehind && !isRushed) continue;
+        const n = (v: any) => { const x = Number(v ?? 0); return Number.isFinite(x) ? x : 0; };
+        let cHome = 0, cAway = 0;
+        const home: ({ goals: number; behinds: number; total: number } | null)[] = [];
+        const away: ({ goals: number; behinds: number; total: number } | null)[] = [];
 
-      // teamName is added during event normalisation (not in the LiveEvent type def)
-      const teamName = (e as any).teamName ?? "";
-      const isHome = teamsMatch(teamName, hteam);
-      const isAway = !isHome && teamsMatch(teamName, ateam);
-      if (!isHome && !isAway) continue;
+        for (let q = 1; q <= 4; q++) {
+          const qd = quarters.find((qt: any) => Number(qt.quarter) === q);
+          if (!qd) { home.push(null); away.push(null); continue; }
+          const hg = n(qd.teams?.home?.goals),  hb = n(qd.teams?.home?.behinds), hp = n(qd.teams?.home?.points);
+          const ag = n(qd.teams?.away?.goals),  ab = n(qd.teams?.away?.behinds), ap = n(qd.teams?.away?.points);
+          cHome += hp || (hg * 6 + hb);
+          cAway += ap || (ag * 6 + ab);
+          home.push({ goals: hg, behinds: hb, total: cHome });
+          away.push({ goals: ag, behinds: ab, total: cAway });
+        }
 
-      const inc = (m: Map<number,number>) => m.set(period, (m.get(period) ?? 0) + 1);
-      if (isGoal) {
-        isHome ? inc(hg) : inc(ag);
-      } else if (isBehind) {
-        isHome ? inc(hb) : inc(ab);
-      } else {
-        // Rushed behind: event is attributed to the CONCEDING (rushing) team
-        // but the OPPOSING team scores the 1 point — reverse attribution
-        isHome ? inc(ab) : inc(hb);
-      }
-    }
-
-    const maxPeriod = Math.max(...[hg, hb, ag, ab].flatMap(m => [...m.keys()]), 0);
-    if (maxPeriod === 0) return null;
-
-    let cHome = 0, cAway = 0;
-    const home: ({goals:number;behinds:number;total:number}|null)[] = [];
-    const away: ({goals:number;behinds:number;total:number}|null)[] = [];
-    for (let q = 1; q <= 4; q++) {
-      const hgq = hg.get(q)??0, hbq = hb.get(q)??0;
-      const agq = ag.get(q)??0, abq = ab.get(q)??0;
-      cHome += hgq*6 + hbq;
-      cAway += agq*6 + abq;
-      if (q <= maxPeriod) {
-        home.push({ goals: hgq, behinds: hbq, total: cHome });
-        away.push({ goals: agq, behinds: abq, total: cAway });
-      } else {
-        home.push(null);
-        away.push(null);
-      }
-    }
-    return { home, away };
-  }, [liveEvents, game]);
+        if (home.some(Boolean) || away.some(Boolean)) setQuarterScores({ home, away });
+      })
+      .catch(() => {});
+  }, [activeTab, apiSportsGameId, game]);
 
   const apiSportsGameId = useMemo(() => {
     const mapped = (API_SPORTS_MATCH_IDS as Record<string, any>)[id];
