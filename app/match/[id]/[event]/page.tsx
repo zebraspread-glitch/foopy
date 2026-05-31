@@ -679,9 +679,7 @@ function EventCommentsPageInner() {
         </div>
       </header>
 
-      {matchGame && !eventKey.startsWith("poll_") && (
-        <MatchScoreBar game={matchGame} gameId={gameId} />
-      )}
+{/* MatchScoreBar removed — score shown in main match page header */}
 
       {eventKey.startsWith("poll_") && searchParams.get("stats") && (
         <PollStatCard
