@@ -806,18 +806,19 @@ function QuarterScoresTable({
 
   if (!cols.length) return null;
 
-  const sep = "1px solid rgba(255,255,255,0.08)";
+  const sep = "1px solid var(--border-2)";
 
   return (
-    <div style={{ background: "#000", borderRadius: 14, overflow: "hidden", marginBottom: 14 }}>
-      <div style={{ display: "grid", gridTemplateColumns: `52px repeat(${cols.length}, 1fr)` }}>
+    <div style={{ background: "var(--surface-2)", border: "1px solid var(--border-2)", borderRadius: 12, overflow: "hidden", marginBottom: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: `44px repeat(${cols.length}, 1fr)` }}>
 
         {/* Header row */}
         <div style={{ borderBottom: sep }} />
         {cols.map(c => (
           <div key={c.lbl} style={{
-            textAlign: "center", padding: "18px 0 14px",
-            fontWeight: 900, fontSize: 22, color: "#fff", letterSpacing: "-0.01em",
+            textAlign: "center", padding: "10px 0 8px",
+            fontWeight: 800, fontSize: 12, color: "var(--text-3)",
+            letterSpacing: "0.05em", textTransform: "uppercase",
             borderBottom: sep, borderLeft: sep,
           }}>
             {c.lbl}
@@ -825,31 +826,35 @@ function QuarterScoresTable({
         ))}
 
         {/* Home row */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "20px 0", borderBottom: sep }}>
-          <img src={getLogo(hteam)} alt={hteam} style={{ width: 32, height: 32, objectFit: "contain" }} />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "12px 0", borderBottom: sep }}>
+          <div style={{ width: 28, height: 28, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
+            <img src={getLogo(hteam)} alt={hteam} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          </div>
         </div>
         {cols.map((c, i) => (
-          <div key={i} style={{ textAlign: "center", padding: "20px 8px", borderBottom: sep, borderLeft: sep }}>
+          <div key={i} style={{ textAlign: "center", padding: "12px 6px", borderBottom: sep, borderLeft: sep }}>
             {c.home
-              ? <span style={{ fontWeight: 900, fontSize: 32, color: "#fff", letterSpacing: "-0.02em" }}>
+              ? <span style={{ fontWeight: 800, fontSize: 17, color: "var(--text-1)", letterSpacing: "-0.02em" }}>
                   {c.home.goals}.{c.home.behinds}
                 </span>
-              : <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 20 }}>—</span>
+              : <span style={{ color: "var(--text-3)", fontSize: 14 }}>—</span>
             }
           </div>
         ))}
 
         {/* Away row */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "20px 0" }}>
-          <img src={getLogo(ateam)} alt={ateam} style={{ width: 32, height: 32, objectFit: "contain" }} />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "12px 0" }}>
+          <div style={{ width: 28, height: 28, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
+            <img src={getLogo(ateam)} alt={ateam} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          </div>
         </div>
         {cols.map((c, i) => (
-          <div key={i} style={{ textAlign: "center", padding: "20px 8px", borderLeft: sep }}>
+          <div key={i} style={{ textAlign: "center", padding: "12px 6px", borderLeft: sep }}>
             {c.away
-              ? <span style={{ fontWeight: 900, fontSize: 32, color: "#fff", letterSpacing: "-0.02em" }}>
+              ? <span style={{ fontWeight: 800, fontSize: 17, color: "var(--text-1)", letterSpacing: "-0.02em" }}>
                   {c.away.goals}.{c.away.behinds}
                 </span>
-              : <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 20 }}>—</span>
+              : <span style={{ color: "var(--text-3)", fontSize: 14 }}>—</span>
             }
           </div>
         ))}
