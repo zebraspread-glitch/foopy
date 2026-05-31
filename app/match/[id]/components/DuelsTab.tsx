@@ -1175,31 +1175,83 @@ function ResultScreen({
   const resultLabel = iWon ? "YOU WON" : isDraw ? "DRAW" : "YOU LOST";
 
   return (
-    <div style={{ padding: "16px 16px 40px" }}>
-      {/* Result banner */}
-      <div style={{ ...resultBannerStyle, borderColor: resultColor }}>
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", color: resultColor }}>
+    <div style={{ padding: "12px 12px 40px", display: "flex", flexDirection: "column", gap: 12 }}>
+      <style>{`
+        @keyframes res-in   { from { opacity:0; transform:scale(0.9) translateY(10px); } to { opacity:1; transform:none; } }
+        @keyframes reward-pop { from { opacity:0; transform:scale(0.4) translateY(6px); } to { opacity:1; transform:none; } }
+        @keyframes res-glow { 0%,100% { opacity:.6; } 50% { opacity:1; } }
+        @keyframes score-in { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
+      `}</style>
+
+      {/* ── Result banner ── */}
+      <div style={{
+        background: `linear-gradient(160deg, ${resultColor}12, ${resultColor}04)`,
+        border: `1.5px solid ${resultColor}50`,
+        borderRadius: 18,
+        padding: "22px 20px 20px",
+        display: "flex", flexDirection: "column", alignItems: "center", gap: 0,
+        animation: "res-in 0.45s cubic-bezier(0.16,1,0.3,1) both",
+        boxShadow: `0 0 40px ${resultColor}18`,
+      }}>
+        {/* YOU WON label */}
+        <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: "0.14em", color: resultColor, marginBottom: 14, animation: "res-glow 2s ease-in-out infinite" }}>
           {resultLabel}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 20, marginTop: 8 }}>
-          <ScoreBubble score={myScore ?? 0} label="You" color={resultColor} />
-          <span style={{ fontSize: 22, fontWeight: 900, color: "#475569" }}>–</span>
-          <ScoreBubble score={oppScore ?? 0} label={opponent?.display_name || opponent?.username || "Opponent"} color="#475569" />
+
+        {/* Score */}
+        <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 18 }}>
+          <div style={{ textAlign: "center", animation: "score-in 0.4s 0.1s ease both" }}>
+            <div style={{ fontSize: 60, fontWeight: 900, color: resultColor, lineHeight: 1, letterSpacing: "-0.04em" }}>{myScore ?? 0}</div>
+            <div style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 600, marginTop: 5 }}>You</div>
+          </div>
+          <div style={{ fontSize: 26, fontWeight: 900, color: "var(--text-3)" }}>–</div>
+          <div style={{ textAlign: "center", animation: "score-in 0.4s 0.15s ease both" }}>
+            <div style={{ fontSize: 60, fontWeight: 900, color: "var(--text-3)", lineHeight: 1, letterSpacing: "-0.04em" }}>{oppScore ?? 0}</div>
+            <div style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 600, marginTop: 5, maxWidth: 90, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {opponent?.display_name || opponent?.username || "Opponent"}
+            </div>
+          </div>
         </div>
+
+        {/* Reward pills */}
+        {!isDraw && (myAura > 0 || myCoins > 0) && (
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
+            {myAura > 0 && (
+              <div style={{
+                display: "flex", alignItems: "center", gap: 8,
+                background: "linear-gradient(135deg, #6d28d9 0%, #9333ea 50%, #7c3aed 100%)",
+                borderRadius: 999, padding: "11px 20px",
+                boxShadow: "0 4px 24px rgba(109,40,217,0.55), 0 0 0 1px rgba(167,139,250,0.25)",
+                animation: "reward-pop 0.55s 0.3s cubic-bezier(0.34,1.56,0.64,1) both",
+              }}>
+                <span style={{ fontSize: 18, lineHeight: 1 }}>✨</span>
+                <span style={{ fontSize: 17, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em" }}>+{myAura} Aura</span>
+              </div>
+            )}
+            {myCoins > 0 && (
+              <div style={{
+                display: "flex", alignItems: "center", gap: 8,
+                background: "linear-gradient(135deg, #b45309 0%, #d97706 50%, #f59e0b 100%)",
+                borderRadius: 999, padding: "11px 20px",
+                boxShadow: "0 4px 24px rgba(217,119,6,0.55), 0 0 0 1px rgba(251,191,36,0.25)",
+                animation: "reward-pop 0.55s 0.45s cubic-bezier(0.34,1.56,0.64,1) both",
+              }}>
+                <span style={{ fontSize: 18, lineHeight: 1 }}>🪙</span>
+                <span style={{ fontSize: 17, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em" }}>+{myCoins} Coins</span>
+              </div>
+            )}
+          </div>
+        )}
+
         {isPerfect && (
-          <div style={{ marginTop: 8, fontSize: 13, fontWeight: 700, color: "#f59e0b" }}>
+          <div style={{ marginTop: 12, fontSize: 14, fontWeight: 800, color: "#f59e0b", display: "flex", alignItems: "center", gap: 6 }}>
             ⭐ Perfect Duellist — 10/10!
           </div>
         )}
-        {!isDraw && (myAura > 0 || myCoins > 0) && (
-          <div style={{ marginTop: 8, display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
-            {myAura  > 0 && <span style={rewardPillStyle}>+{myAura} aura</span>}
-            {myCoins > 0 && <span style={{ ...rewardPillStyle, background: "#f59e0b22", color: "#f59e0b" }}>+{myCoins} coins</span>}
-          </div>
-        )}
+
         {isDraw && (
-          <div style={{ marginTop: 8, fontSize: 13, color: "#64748b" }}>
-            No rewards — tiebreaker couldn't decide a winner
+          <div style={{ fontSize: 13, color: "var(--text-3)", marginTop: 4 }}>
+            Tiebreaker tied — no rewards for either player
           </div>
         )}
       </div>
