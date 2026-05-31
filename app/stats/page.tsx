@@ -200,11 +200,21 @@ export default function StatsPage() {
   const [showPicker, setShowPicker] = useState(false);
   const [page, setPage]         = useState(0);
   const [mounted, setMounted]   = useState(false);
+  const [liveStats, setLiveStats] = useState<PlayerStat[] | null>(null);
   const PAGE_SIZE = 25;
 
   useEffect(() => { setMounted(true); }, []);
 
-  const players  = rawStats as PlayerStat[];
+  // Fetch fresh season stats from the dynamic endpoint on mount
+  useEffect(() => {
+    fetch("/api/player-season-stats")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (Array.isArray(data) && data.length > 0) setLiveStats(data); })
+      .catch(() => {});
+  }, []);
+
+  // Use live API data when available, fall back to static JSON while loading
+  const players  = (liveStats ?? rawStats) as PlayerStat[];
   const catMeta  = CATEGORIES.find(c => c.key === cat)!;
   const displayUnit: "avg" | "tot" = mode === "total" ? "tot" : "avg";
 
