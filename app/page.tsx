@@ -1585,7 +1585,7 @@ free_kicks?: {
                       style={{
                         ...cardStyle,
                         gridColumn: group.games.length === 1 ? "1 / -1" : undefined,
-                        ...(isFavGame ? {
+                        ...(isFavGame && status !== "LIVE" ? {
                           border: `3px solid ${teamBorderColor}`,
                           boxShadow: "none",
                         } : {}),
@@ -2060,7 +2060,7 @@ function MobileRoundPanel({
                 style={{
                   ...mobileMatchStyle,
                   gridColumn: group.games.length === 1 ? "1 / -1" : undefined,
-                  ...(isFavGame ? {
+                  ...(isFavGame && status !== "LIVE" ? {
                     border: `3px solid ${teamBorderColor}`,
                     boxShadow: "none",
                   } : {}),
