@@ -2514,6 +2514,7 @@ function MatchPageInner() {
     (searchParams?.get("tab") as TabKey) ?? "feed"
   );
   const [unansweredPollCount, setUnansweredPollCount] = useState(0);
+  const [hasDuelGame, setHasDuelGame] = useState(false);
   const [game, setGame] = useState<MatchGame | null>(null);
   const [savedMatch, setSavedMatch] = useState<SavedMatchStats | null>(null);
   const [homeStats, setHomeStats] = useState<PlayerStat[]>([]);
@@ -2793,8 +2794,12 @@ function MatchPageInner() {
 
 
   useEffect(() => {
-    if (!showStatsTabs && activeTab !== "feed" && activeTab !== "chat" && activeTab !== "polls") setActiveTab("feed");
+    if (!showStatsTabs && activeTab !== "feed" && activeTab !== "chat" && activeTab !== "polls" && activeTab !== "duels") setActiveTab("feed");
   }, [showStatsTabs, activeTab]);
+
+  useEffect(() => {
+    if (activeTab === "duels" && hasDuelGame === false) setActiveTab("feed");
+  }, [hasDuelGame, activeTab]);
 
   useEffect(() => {
     if (!mounted || !game || !apiSportsGameId) return;
@@ -3531,7 +3536,7 @@ function MatchPageInner() {
           borderBottom: "1px solid var(--border-2)",
         }}>
           <nav style={{ display: "flex", width: "100%" }}>
-            {(["feed","chat","polls","duels"] as const).map(t => (
+            {(["feed","chat","polls", ...(hasDuelGame ? ["duels" as const] : [])] as const).map(t => (
               <button key={t} type="button" onClick={() => setActiveTab(t)} style={{
                 flex: 1, padding: "13px 4px 11px",
                 background: "none", border: "none",
@@ -3850,7 +3855,7 @@ function MatchPageInner() {
 
         {activeTab === "duels" && (
           <section style={sectionStyle}>
-            <DuelsTab gameId={Number(id)} gameStarted={status === "LIVE" || status === "FINAL"} />
+            <DuelsTab gameId={Number(id)} gameStarted={status === "LIVE" || status === "FINAL"} onDuelGameFound={setHasDuelGame} />
           </section>
         )}
       </section>

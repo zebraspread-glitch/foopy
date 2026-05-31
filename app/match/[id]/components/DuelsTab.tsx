@@ -63,7 +63,7 @@ type DraftPick = {
   pick_margin?: string | null;
 };
 
-export default function DuelsTab({ gameId, gameStarted }: { gameId: number; gameStarted: boolean }) {
+export default function DuelsTab({ gameId, gameStarted, onDuelGameFound }: { gameId: number; gameStarted: boolean; onDuelGameFound?: (found: boolean) => void }) {
   const [token, setToken] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
 
@@ -101,6 +101,7 @@ export default function DuelsTab({ gameId, gameStarted }: { gameId: number; game
     setMyPicks(json.picks ?? []);
     setOppPicks(json.opponentPicks ?? []);
     setLoading(false);
+    onDuelGameFound?.(!!json.duelGame);
 
     // Initialise draft picks when we have questions but no picks yet
     if ((json.questions ?? []).length > 0 && (json.picks ?? []).length === 0 && json.duel) {
