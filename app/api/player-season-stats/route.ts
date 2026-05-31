@@ -5,6 +5,33 @@ import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
+const SEASON = new Date().getFullYear().toString();
+
+// Try the Supabase cache written by the hourly sync-player-season-stats cron.
+// Returns the cached array if it's less than 90 minutes old, else null.
+async function getCachedSeasonStats(): Promise<any[] | null> {
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    const { data } = await supabase
+      .from("match_cache")
+      .select("payload, fetched_at")
+      .eq("game_id", "0")
+      .eq("data_type", `player_season_${SEASON}`)
+      .maybeSingle();
+
+    if (!data?.payload) return null;
+    const ageMins = (Date.now() - new Date(data.fetched_at).getTime()) / 60000;
+    if (ageMins > 90) return null; // stale — let the cron refresh it
+    const players = (data.payload as any).players;
+    return Array.isArray(players) && players.length > 0 ? players : null;
+  } catch {
+    return null;
+  }
+}
+
 // API-Sports team ID → display name
 const TEAM_BY_ID: Record<number, string> = {
   1:"Adelaide",2:"Brisbane",3:"Carlton",4:"Collingwood",
@@ -22,6 +49,15 @@ function n(v: any) {
 }
 
 export async function GET() {
+  // Prefer the authoritative season stats from the hourly cron (same data
+  // as the manual script). Fall back to per-game aggregation if unavailable.
+  const cached = await getCachedSeasonStats();
+  if (cached) {
+    return NextResponse.json(cached, {
+      headers: { "Cache-Control": "public, max-age=300, stale-while-revalidate=600" },
+    });
+  }
+
   const dataDir = path.join(process.cwd(), "app", "data");
 
   // 1. Load static game stats
