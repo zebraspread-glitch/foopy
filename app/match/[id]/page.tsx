@@ -2663,8 +2663,8 @@ function MatchPageInner() {
 
       // teamName is added during event normalisation (not in the LiveEvent type def)
       const teamName = (e as any).teamName ?? "";
-      const isHome = sameTeam(teamName, hteam);
-      const isAway = !isHome && sameTeam(teamName, ateam);
+      const isHome = teamsMatch(teamName, hteam);
+      const isAway = !isHome && teamsMatch(teamName, ateam);
       if (!isHome && !isAway) continue;
 
       const inc = (m: Map<number,number>) => m.set(period, (m.get(period) ?? 0) + 1);
