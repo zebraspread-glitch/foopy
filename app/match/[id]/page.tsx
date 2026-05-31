@@ -2643,12 +2643,15 @@ function MatchPageInner() {
   const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
 
   // Quarter-by-quarter scores from the games/quarters API endpoint.
-  // Structure: response[0].quarters = [{ quarter:1, teams:{ home:{goals,behinds,points}, away:{...} } }, ...]
-  // `points` is per-quarter (not cumulative) and already includes rushed behinds.
   const [quarterScores, setQuarterScores] = useState<{
     home: ({ goals: number; behinds: number; total: number } | null)[];
     away: ({ goals: number; behinds: number; total: number } | null)[];
   } | null>(null);
+
+  const apiSportsGameId = useMemo(() => {
+    const mapped = (API_SPORTS_MATCH_IDS as Record<string, any>)[id];
+    return String(mapped || getApiSportsGameId(savedMatch, id));
+  }, [savedMatch, id]);
 
   useEffect(() => {
     if (activeTab !== "game") return;
@@ -2661,32 +2664,24 @@ function MatchPageInner() {
         const resp = data?.response?.[0];
         const quarters: any[] = resp?.quarters ?? [];
         if (!quarters.length) return;
-
         const n = (v: any) => { const x = Number(v ?? 0); return Number.isFinite(x) ? x : 0; };
         let cHome = 0, cAway = 0;
         const home: ({ goals: number; behinds: number; total: number } | null)[] = [];
         const away: ({ goals: number; behinds: number; total: number } | null)[] = [];
-
         for (let q = 1; q <= 4; q++) {
           const qd = quarters.find((qt: any) => Number(qt.quarter) === q);
           if (!qd) { home.push(null); away.push(null); continue; }
-          const hg = n(qd.teams?.home?.goals),  hb = n(qd.teams?.home?.behinds), hp = n(qd.teams?.home?.points);
-          const ag = n(qd.teams?.away?.goals),  ab = n(qd.teams?.away?.behinds), ap = n(qd.teams?.away?.points);
+          const hg = n(qd.teams?.home?.goals), hb = n(qd.teams?.home?.behinds), hp = n(qd.teams?.home?.points);
+          const ag = n(qd.teams?.away?.goals), ab = n(qd.teams?.away?.behinds), ap = n(qd.teams?.away?.points);
           cHome += hp || (hg * 6 + hb);
           cAway += ap || (ag * 6 + ab);
           home.push({ goals: hg, behinds: hb, total: cHome });
           away.push({ goals: ag, behinds: ab, total: cAway });
         }
-
         if (home.some(Boolean) || away.some(Boolean)) setQuarterScores({ home, away });
       })
       .catch(() => {});
   }, [activeTab, apiSportsGameId, game]);
-
-  const apiSportsGameId = useMemo(() => {
-    const mapped = (API_SPORTS_MATCH_IDS as Record<string, any>)[id];
-    return String(mapped || getApiSportsGameId(savedMatch, id));
-  }, [savedMatch, id]);
 
   useEffect(() => {
     if (!apiSportsGameId) return;
