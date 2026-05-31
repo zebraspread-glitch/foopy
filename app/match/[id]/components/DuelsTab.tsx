@@ -94,8 +94,13 @@ export default function DuelsTab({ gameId, gameStarted, onDuelGameFound }: { gam
   }, []);
 
   const load = useCallback(async () => {
+    // Always get a fresh token — stale tokens cause the API to return duel:null
+    // which would reset state and send the user back to the Enter Duel screen
+    const { data: sessionData } = await supabase.auth.getSession();
+    const freshToken = sessionData.session?.access_token;
+
     const headers: Record<string, string> = {};
-    if (token) headers["authorization"] = `Bearer ${token}`;
+    if (freshToken) headers["authorization"] = `Bearer ${freshToken}`;
 
     const res = await fetch(`/api/duels/game?game_id=${gameId}`, { headers });
     if (!res.ok) { setLoading(false); return; }
