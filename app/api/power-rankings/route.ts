@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 
 export const dynamic = "force-dynamic";
 
@@ -208,11 +209,34 @@ function buildRoundRankings(
 }
 
 export async function GET() {
+  const year = new Date().getFullYear();
+
   const [seasonMod, gameStatsMod, playersMod] = await Promise.all([
     import("@/app/data/player-season-stats.json"),
     import("@/app/data/game-stats.json"),
     import("@/app/data/players.json"),
   ]);
+
+  // Build apiSportsId → date map via Squiggle (the payload from match_cache doesn't include dates)
+  const apiSportsDateMap = new Map<string, string>(); // apiSportsId → YYYY-MM-DD
+  try {
+    // Reverse the API_SPORTS_MATCH_IDS map: squiggleId → apiSportsId
+    const bySquiggle = Object.fromEntries(
+      Object.entries(API_SPORTS_MATCH_IDS as Record<string, string>)
+    ); // squiggleId → apiSportsId
+
+    const sq = await fetch(`https://api.squiggle.com.au/?q=games;year=${year}`, {
+      headers: { "User-Agent": "Foopy AFL App" },
+      next: { revalidate: 600 }, // cache for 10 min
+    });
+    if (sq.ok) {
+      const sqData = await sq.json();
+      for (const g of sqData.games ?? sqData ?? []) {
+        const apiId = bySquiggle[String(g.id)];
+        if (apiId && g.date) apiSportsDateMap.set(apiId, String(g.date).slice(0, 10));
+      }
+    }
+  } catch {}
 
   // Start with the static game-stats.json and supplement with recent match_cache
   // entries so the current round is always included in rankings.
@@ -243,7 +267,11 @@ export async function GET() {
       const responseItems: any[] = payload?.response ?? [];
       const rawTeams: any[] = responseItems[0]?.teams ?? [];
       if (!rawTeams.length) continue;
-      const date = (responseItems[0]?.game?.date ?? "").slice(0, 10);
+
+      // Payload rarely includes a date — fall back to the Squiggle-derived map
+      const date = (responseItems[0]?.game?.date ?? "").slice(0, 10)
+        || apiSportsDateMap.get(gameId)
+        || "";
       if (!date) continue;
 
       // Normalise match_cache format (stats under .statistics) to the same
