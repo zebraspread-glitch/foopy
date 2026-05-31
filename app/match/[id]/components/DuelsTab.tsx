@@ -12,6 +12,11 @@ type DuelQuestion = {
   question_text: string;
   option_a: string;
   option_b: string;
+  option_a_image: string | null;
+  option_b_image: string | null;
+  option_a_team: string | null;
+  option_b_team: string | null;
+  category_key: string | null;
   correct_answer: "a" | "b" | null;
   correct_margin: string | null;
 };
@@ -452,6 +457,19 @@ function PicksForm({
   );
 }
 
+function OptionAvatar({ image, label, size = 44 }: { image: string | null; label: string; size?: number }) {
+  const [failed, setFailed] = useState(false);
+  const initials = label.split(" ").map(w => w[0] ?? "").slice(0, 2).join("").toUpperCase();
+  return (
+    <div style={{ width: size, height: size, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: size * 0.33, fontWeight: 800, color: "#fff" }}>
+      {!failed && image
+        ? <img src={image} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={() => setFailed(true)} />
+        : initials
+      }
+    </div>
+  );
+}
+
 function QuestionCard({
   question, pick, onPick,
 }: {
@@ -459,6 +477,8 @@ function QuestionCard({
   pick: "a" | "b" | null;
   onPick: (pick: "a" | "b") => void;
 }) {
+  const hasImages = !!(question.option_a_image || question.option_b_image);
+
   return (
     <div style={questionCardStyle}>
       <div style={{ fontSize: 12, color: "#64748b", fontWeight: 700, marginBottom: 6 }}>
@@ -470,6 +490,7 @@ function QuestionCard({
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         {(["a", "b"] as const).map((opt) => {
           const label = opt === "a" ? question.option_a : question.option_b;
+          const image = opt === "a" ? question.option_a_image : question.option_b_image;
           const active = pick === opt;
           return (
             <button
@@ -481,9 +502,11 @@ function QuestionCard({
                 border: active ? "2px solid #3b82f6" : "2px solid var(--border-2)",
                 color: active ? "#fff" : "var(--text-1)",
                 fontWeight: active ? 800 : 600,
+                display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
               }}
             >
-              {label}
+              {hasImages && <OptionAvatar image={image ?? null} label={label} size={48} />}
+              <span style={{ fontSize: 13, lineHeight: 1.2, textAlign: "center" }}>{label}</span>
             </button>
           );
         })}
@@ -729,8 +752,10 @@ function PickRow({
   oppPick: Pick | null;
   isTiebreaker?: boolean;
 }) {
-  const myLabel  = myPick  ? (myPick.pick  === "a" ? question.option_a : question.option_b) : "—";
-  const oppLabel = oppPick ? (oppPick.pick === "a" ? question.option_a : question.option_b) : "—";
+  const myLabel    = myPick  ? (myPick.pick  === "a" ? question.option_a : question.option_b) : "—";
+  const oppLabel   = oppPick ? (oppPick.pick === "a" ? question.option_a : question.option_b) : "—";
+  const myImage    = myPick  ? (myPick.pick  === "a" ? question.option_a_image : question.option_b_image) : null;
+  const oppImage   = oppPick ? (oppPick.pick === "a" ? question.option_a_image : question.option_b_image) : null;
 
   return (
     <div style={pickRowStyle}>
@@ -738,17 +763,18 @@ function PickRow({
         {isTiebreaker ? "TIEBREAKER" : `Q${question.question_order}`} · {question.question_text}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-        <PickResultCell label={myLabel} correct={myPick?.is_correct ?? null} suffix={myPick?.pick_margin} />
-        <PickResultCell label={oppLabel} correct={oppPick?.is_correct ?? null} suffix={oppPick?.pick_margin} side="opp" />
+        <PickResultCell label={myLabel} image={myImage} correct={myPick?.is_correct ?? null} suffix={myPick?.pick_margin} />
+        <PickResultCell label={oppLabel} image={oppImage} correct={oppPick?.is_correct ?? null} suffix={oppPick?.pick_margin} side="opp" />
       </div>
     </div>
   );
 }
 
 function PickResultCell({
-  label, correct, suffix, side,
+  label, image, correct, suffix, side,
 }: {
   label: string;
+  image?: string | null;
   correct: boolean | null;
   suffix?: string | null;
   side?: "opp";
@@ -758,9 +784,14 @@ function PickResultCell({
   const iconColor = correct === true ? "#4ade80" : "#ef4444";
 
   return (
-    <div style={{ background: bg, border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "8px 10px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
-      <div>
-        <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.2 }}>{label}</div>
+    <div style={{ background: bg, border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "8px 10px", display: "flex", alignItems: "center", gap: 8 }}>
+      {image && (
+        <div style={{ width: 32, height: 32, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.1)" }}>
+          <img src={image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+        </div>
+      )}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</div>
         {suffix && <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>by {suffix}</div>}
         {side === "opp" && <div style={{ fontSize: 10, color: "#475569", marginTop: 2 }}>Opponent</div>}
       </div>

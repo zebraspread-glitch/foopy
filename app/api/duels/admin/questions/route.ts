@@ -18,6 +18,11 @@ type QuestionInput = {
   question_text: string;
   option_a: string;
   option_b: string;
+  category_key?: string;
+  option_a_image?: string;
+  option_a_team?: string;
+  option_b_image?: string;
+  option_b_team?: string;
 };
 
 // POST /api/duels/admin/questions — upsert all 11 questions for a duel game
@@ -44,11 +49,16 @@ export async function POST(req: Request) {
 
   const rows = questions.map((q) => ({
     duel_game_id,
-    question_order: q.question_order,
-    is_tiebreaker:  q.is_tiebreaker ?? false,
-    question_text:  q.question_text,
-    option_a:       q.option_a,
-    option_b:       q.option_b,
+    question_order:  q.question_order,
+    is_tiebreaker:   q.is_tiebreaker ?? false,
+    question_text:   q.question_text,
+    option_a:        q.option_a,
+    option_b:        q.option_b,
+    category_key:    q.category_key    ?? null,
+    option_a_image:  q.option_a_image  ?? null,
+    option_a_team:   q.option_a_team   ?? null,
+    option_b_image:  q.option_b_image  ?? null,
+    option_b_team:   q.option_b_team   ?? null,
   }));
 
   const { data, error } = await db

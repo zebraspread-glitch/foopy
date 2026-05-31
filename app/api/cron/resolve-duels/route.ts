@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import { awardAura } from "@/app/lib/aura";
 
 export const dynamic = "force-dynamic";
 
 const CRON_SECRET = process.env.CRON_SECRET ?? "foopy-cron";
+const API_BASE    = "https://v1.afl.api-sports.io";
 
 const MARGIN_RANGES = [
   { label: "1-12",  mid: 6  },
@@ -14,7 +16,103 @@ const MARGIN_RANGES = [
   { label: "49+",   mid: 56 },
 ];
 
-function closestMarginRange(margin: number): string {
+// Same categories as polls
+const POLL_CATEGORIES: Record<string, { stat: string; type: string }> = {
+  team_winner:       { stat: "winner",     type: "team" },
+  team_goals:        { stat: "goals",      type: "team" },
+  team_disposals:    { stat: "disposals",  type: "team" },
+  team_marks:        { stat: "marks",      type: "team" },
+  team_free_kicks:   { stat: "freesFor",   type: "team" },
+  team_hitouts:      { stat: "hitouts",    type: "team" },
+  team_clearances:   { stat: "clearances", type: "team" },
+  team_inside50s:    { stat: "inside50s",  type: "team" },
+  player_goals:      { stat: "goals",      type: "player" },
+  player_disposals:  { stat: "disposals",  type: "player" },
+  player_marks:      { stat: "marks",      type: "player" },
+  player_kicks:      { stat: "kicks",      type: "player" },
+  player_handballs:  { stat: "handballs",  type: "player" },
+  player_tackles:    { stat: "tackles",    type: "player" },
+  player_hitouts:    { stat: "hitouts",    type: "player" },
+  player_clearances: { stat: "clearances", type: "player" },
+  player_foopy:      { stat: "foopy",      type: "player" },
+};
+
+type StatRow = {
+  name: string;
+  isHome: boolean;
+  kicks: number; handballs: number; disposals: number; marks: number;
+  tackles: number; hitouts: number; goals: number; behinds: number;
+  clearances: number; goalAssists: number; freesFor: number; freesAgainst: number;
+};
+
+function num(v: any) { const n = Number(v ?? 0); return Number.isFinite(n) ? n : 0; }
+function norm(s: string) { return s.toLowerCase().replace(/[^a-z]/g, ""); }
+
+function foopyRating(p: StatRow) {
+  const { goals, goalAssists: ga, behinds, kicks, handballs, marks, tackles, hitouts, clearances, freesFor, freesAgainst } = p;
+  const disp = kicks + handballs;
+  let score = goals * 5.5 + ga * 1.5 + behinds * 1.2 + kicks * 0.75 +
+    handballs * 0.55 + marks * 1.0 + tackles * 1.8 + hitouts * 0.35 +
+    clearances * 0.5 + freesFor * 0.3 - freesAgainst * 0.4;
+  if (goals >= 3) score += 3; if (goals >= 5) score += 5;
+  if (goals >= 7) score += 10; if (goals >= 10) score += 18;
+  if (disp >= 25) score += 3; if (disp >= 30) score += 4;
+  if (tackles >= 8) score += 4; if (marks >= 10) score += 3;
+  if (score <= 0) return 0;
+  return Number(Math.max(1, Math.min(10, 10 * (1 - Math.exp(-score / 36)))).toFixed(1));
+}
+
+// Returns 'a' or 'b' (the winning option), or null for a tie
+function resolveQuestion(
+  categoryKey: string,
+  optionA: string,
+  optionB: string,
+  homeStats: StatRow[],
+  awayStats: StatRow[],
+  homeTeam: string,
+  awayTeam: string,
+  hScore: number,
+  aScore: number
+): "a" | "b" | null {
+  const cat = POLL_CATEGORIES[categoryKey];
+  if (!cat) return null;
+
+  if (cat.type === "team") {
+    if (cat.stat === "winner") {
+      if (hScore === aScore) return null;
+      const winTeam = hScore > aScore ? homeTeam : awayTeam;
+      if (norm(optionA) === norm(winTeam)) return "a";
+      if (norm(optionB) === norm(winTeam)) return "b";
+      return null;
+    }
+    const stat = cat.stat as keyof StatRow;
+    const homeTotal = homeStats.reduce((s, p) => s + num(p[stat]), 0);
+    const awayTotal = awayStats.reduce((s, p) => s + num(p[stat]), 0);
+    if (homeTotal === awayTotal) return null;
+    const winTeam = homeTotal > awayTotal ? homeTeam : awayTeam;
+    if (norm(optionA) === norm(winTeam)) return "a";
+    if (norm(optionB) === norm(winTeam)) return "b";
+    return null;
+  }
+
+  if (cat.type === "player") {
+    const allStats = [...homeStats, ...awayStats];
+    const stat = cat.stat;
+    const findStat = (name: string) => {
+      const p = allStats.find(s => norm(s.name) === norm(name));
+      if (!p) return -1;
+      return stat === "foopy" ? foopyRating(p) : num(p[stat as keyof StatRow]);
+    };
+    const valA = findStat(optionA);
+    const valB = findStat(optionB);
+    if (valA === valB) return null;
+    return valA > valB ? "a" : "b";
+  }
+
+  return null;
+}
+
+function marginRange(margin: number): string {
   let best = MARGIN_RANGES[0];
   let bestDist = Math.abs(margin - best.mid);
   for (const r of MARGIN_RANGES) {
@@ -31,8 +129,44 @@ function adminSupabase() {
   );
 }
 
-// POST /api/cron/resolve-duels
-// Called after games complete. Scores all active duels for completed games.
+async function fetchPlayerStats(apiSportsId: string): Promise<StatRow[]> {
+  try {
+    const res = await fetch(
+      `${API_BASE}/games/statistics/players?id=${apiSportsId}`,
+      { headers: { "x-apisports-key": process.env.API_SPORTS_AFL_KEY ?? "" }, cache: "no-store" }
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    const teams: any[] = data?.response?.[0]?.teams ?? [];
+    const rows: StatRow[] = [];
+    for (let ti = 0; ti < teams.length; ti++) {
+      const isHome = ti === 0;
+      for (const pe of teams[ti].players ?? []) {
+        const s = pe.statistics ?? pe;
+        const n = (v: any) => Number(v ?? 0) || 0;
+        const kicks = n(s.kicks ?? s.Kicks);
+        const handballs = n(s.handballs ?? s.Handballs);
+        rows.push({
+          name: pe.player?.name ?? "",
+          isHome,
+          kicks, handballs,
+          disposals:   kicks + handballs,
+          marks:       n(s.marks ?? s.Marks),
+          tackles:     n(s.tackles ?? s.Tackles),
+          hitouts:     n(s.hitouts ?? s.Hitouts),
+          goals:       n(s.goals ?? s.Goals),
+          behinds:     n(s.behinds ?? s.Behinds),
+          clearances:  n(s.clearances ?? s.Clearances),
+          goalAssists: n(s.goalAssists ?? s.goal_assists ?? 0),
+          freesFor:    n(s.freesFor ?? s.frees_for ?? s.FreesFor ?? 0),
+          freesAgainst:n(s.freesAgainst ?? s.frees_against ?? s.FreesAgainst ?? 0),
+        });
+      }
+    }
+    return rows;
+  } catch { return []; }
+}
+
 export async function POST(req: Request) {
   const secret = req.headers.get("x-cron-secret");
   if (secret !== CRON_SECRET) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -41,100 +175,52 @@ export async function POST(req: Request) {
   let resolved = 0;
   let cancelled = 0;
 
-  // 1. Cancel unmatched waiting duels whose game has started
+  // Cancel waiting duels whose game has already started
   const { data: staleWaiting } = await db
     .from("duels")
-    .select("id")
+    .select("id, duel_game:duel_games(game_date)")
     .eq("status", "waiting")
     .is("opponent_id", null);
 
-  if (staleWaiting?.length) {
-    for (const d of staleWaiting) {
-      const { data: duelFull } = await db
-        .from("duels")
-        .select("id, duel_game_id, duel_game:duel_games(game_date)")
-        .eq("id", d.id)
-        .single();
-
-      const gameDate = (duelFull?.duel_game as any)?.game_date;
-      if (gameDate && new Date(gameDate) <= new Date()) {
-        await db.from("duels").update({ status: "cancelled" }).eq("id", d.id);
-        cancelled++;
-      }
+  for (const d of staleWaiting ?? []) {
+    const gameDate = (d.duel_game as any)?.game_date;
+    if (gameDate && new Date(gameDate) <= new Date()) {
+      await db.from("duels").update({ status: "cancelled" }).eq("id", d.id);
+      cancelled++;
     }
   }
 
-  // 2. Find active duels whose game is complete (duel_games.status = 'complete')
+  // Find active duels for games that are now complete
   const { data: activeDuels } = await db
     .from("duels")
-    .select(`
-      *,
-      duel_game:duel_games(id, home_team, away_team, status)
-    `)
+    .select("*, duel_game:duel_games(id, game_id, home_team, away_team, status)")
     .eq("status", "active");
 
-  if (!activeDuels?.length) {
-    return NextResponse.json({ resolved, cancelled, message: "No active duels to resolve" });
-  }
-
-  for (const duel of activeDuels) {
+  for (const duel of activeDuels ?? []) {
     const duelGame = duel.duel_game as any;
     if (!duelGame || duelGame.status !== "complete") continue;
 
-    // Check both players submitted picks
-    const { data: allPicks } = await db
-      .from("duel_picks")
-      .select("*")
-      .eq("duel_id", duel.id);
+    // Fetch player stats from API-Sports
+    const apiSportsId = API_SPORTS_MATCH_IDS[String(duelGame.game_id)];
+    let allStats: StatRow[] = [];
+    if (apiSportsId) allStats = await fetchPlayerStats(String(apiSportsId));
+    const homeStats = allStats.filter(p => p.isHome);
+    const awayStats = allStats.filter(p => !p.isHome);
 
-    const challengerPicks = (allPicks ?? []).filter((p) => p.user_id === duel.challenger_id);
-    const opponentPicks   = (allPicks ?? []).filter((p) => p.user_id === duel.opponent_id);
-
-    // Handle forfeit: opponent never submitted
-    if (opponentPicks.length === 0 && challengerPicks.length > 0) {
-      await db.from("duels").update({
-        status: "complete",
-        winner_id: duel.challenger_id,
-        opponent_forfeited: true,
-        challenger_score: challengerPicks.length,
-        opponent_score: 0,
-        aura_awarded_challenger: 100,
-        coins_awarded_challenger: 50,
-        completed_at: new Date().toISOString(),
-      }).eq("id", duel.id);
-      await awardAura(duel.challenger_id, "duel_win", duel.id, 100);
-      await awardCoins(db, duel.challenger_id, 50);
-      await sendDuelNotification(db, duel.challenger_id, duel.opponent_id, "duel_result", {
-        duel_id: duel.id, result: "win", forfeited: true,
+    // Fetch score from Squiggle for team_winner / tiebreaker
+    let hScore = 0, aScore = 0;
+    try {
+      const sq = await fetch(`https://api.squiggle.com.au/?q=games;game=${duelGame.game_id}`, {
+        headers: { "User-Agent": "Foopy AFL App" }, cache: "no-store",
       });
-      resolved++;
-      continue;
-    }
+      if (sq.ok) {
+        const sqData = await sq.json();
+        const g = sqData.games?.[0];
+        if (g) { hScore = num(g.hscore); aScore = num(g.ascore); }
+      }
+    } catch {}
 
-    // Handle forfeit: challenger never submitted
-    if (challengerPicks.length === 0 && opponentPicks.length > 0) {
-      await db.from("duels").update({
-        status: "complete",
-        winner_id: duel.opponent_id,
-        challenger_forfeited: true,
-        challenger_score: 0,
-        opponent_score: opponentPicks.length,
-        aura_awarded_opponent: 100,
-        coins_awarded_opponent: 50,
-        completed_at: new Date().toISOString(),
-      }).eq("id", duel.id);
-      await awardAura(duel.opponent_id, "duel_win", duel.id, 100);
-      await awardCoins(db, duel.opponent_id, 50);
-      await sendDuelNotification(db, duel.opponent_id, duel.challenger_id, "duel_result", {
-        duel_id: duel.id, result: "win", forfeited: true,
-      });
-      resolved++;
-      continue;
-    }
-
-    if (challengerPicks.length === 0 && opponentPicks.length === 0) continue;
-
-    // Get questions with correct answers
+    // Get questions and auto-resolve correct answers
     const { data: questions } = await db
       .from("duel_questions")
       .select("*")
@@ -142,18 +228,63 @@ export async function POST(req: Request) {
 
     if (!questions?.length) continue;
 
-    const regularQs  = questions.filter((q) => !q.is_tiebreaker);
-    const tbQuestion = questions.find((q) => q.is_tiebreaker);
+    // Set correct_answer on each question from stats
+    for (const q of questions) {
+      if (q.correct_answer) continue; // already resolved
 
-    // Score regular questions
-    let challengerScore = 0;
-    let opponentScore   = 0;
+      if (q.is_tiebreaker) {
+        // Tiebreaker: team pick is team_winner, margin from score
+        const winTeam = hScore > aScore ? duelGame.home_team : hScore < aScore ? duelGame.away_team : null;
+        const correctAnswer = winTeam
+          ? (norm(q.option_a) === norm(winTeam) ? "a" : "b")
+          : null;
+        const correctMargin = Math.abs(hScore - aScore) > 0
+          ? marginRange(Math.abs(hScore - aScore))
+          : null;
+        if (correctAnswer) {
+          await db.from("duel_questions").update({ correct_answer: correctAnswer, correct_margin: correctMargin }).eq("id", q.id);
+          q.correct_answer = correctAnswer;
+          q.correct_margin = correctMargin;
+        }
+        continue;
+      }
+
+      if (!q.category_key) continue;
+
+      const correctAnswer = resolveQuestion(
+        q.category_key, q.option_a, q.option_b,
+        homeStats, awayStats, duelGame.home_team, duelGame.away_team, hScore, aScore
+      );
+      if (correctAnswer) {
+        await db.from("duel_questions").update({ correct_answer: correctAnswer }).eq("id", q.id);
+        q.correct_answer = correctAnswer;
+      }
+    }
+
+    // Score picks
+    const { data: allPicks } = await db.from("duel_picks").select("*").eq("duel_id", duel.id);
+    const challengerPicks = (allPicks ?? []).filter(p => p.user_id === duel.challenger_id);
+    const opponentPicks   = (allPicks ?? []).filter(p => p.user_id === duel.opponent_id);
+
+    // Handle forfeits
+    if (challengerPicks.length === 0 && opponentPicks.length > 0) {
+      await finaliseDuel(db, duel, duel.opponent_id, false, false, true, false);
+      resolved++; continue;
+    }
+    if (opponentPicks.length === 0 && challengerPicks.length > 0) {
+      await finaliseDuel(db, duel, duel.challenger_id, false, false, false, true);
+      resolved++; continue;
+    }
+    if (challengerPicks.length === 0 && opponentPicks.length === 0) continue;
+
+    const regularQs = questions.filter(q => !q.is_tiebreaker && q.correct_answer);
+    const tbQuestion = questions.find(q => q.is_tiebreaker && q.correct_answer);
+
+    let challengerScore = 0, opponentScore = 0;
 
     for (const q of regularQs) {
-      if (!q.correct_answer) continue;
-      const cp = challengerPicks.find((p) => p.question_id === q.id);
-      const op = opponentPicks.find((p) => p.question_id === q.id);
-
+      const cp = challengerPicks.find(p => p.question_id === q.id);
+      const op = opponentPicks.find(p   => p.question_id === q.id);
       if (cp) {
         const correct = cp.pick === q.correct_answer;
         await db.from("duel_picks").update({ is_correct: correct }).eq("id", cp.id);
@@ -166,8 +297,8 @@ export async function POST(req: Request) {
       }
     }
 
-    const challengerPerfect = challengerScore === regularQs.filter((q) => q.correct_answer).length;
-    const opponentPerfect   = opponentScore   === regularQs.filter((q) => q.correct_answer).length;
+    const challengerPerfect = challengerScore === regularQs.length && regularQs.length === 10;
+    const opponentPerfect   = opponentScore   === regularQs.length && regularQs.length === 10;
 
     // Determine winner
     let winnerId: string | null = null;
@@ -177,113 +308,115 @@ export async function POST(req: Request) {
       winnerId = duel.challenger_id;
     } else if (opponentScore > challengerScore) {
       winnerId = duel.opponent_id;
-    } else if (tbQuestion && tbQuestion.correct_answer && tbQuestion.correct_margin) {
-      // Tiebreaker
-      const cp = challengerPicks.find((p) => p.question_id === tbQuestion.id);
-      const op = opponentPicks.find((p)   => p.question_id === tbQuestion.id);
+    } else if (tbQuestion) {
+      // Tiebreaker: compare team pick then margin
+      const cp = challengerPicks.find(p => p.question_id === tbQuestion.id);
+      const op = opponentPicks.find(p   => p.question_id === tbQuestion.id);
+      const cTeamRight = cp?.pick === tbQuestion.correct_answer;
+      const oTeamRight = op?.pick === tbQuestion.correct_answer;
 
-      const challengerTeamRight = cp?.pick === tbQuestion.correct_answer;
-      const opponentTeamRight   = op?.pick === tbQuestion.correct_answer;
+      if (cp) await db.from("duel_picks").update({ is_correct: cTeamRight }).eq("id", cp.id);
+      if (op) await db.from("duel_picks").update({ is_correct: oTeamRight }).eq("id", op.id);
 
-      if (challengerTeamRight && !opponentTeamRight) {
+      if (cTeamRight && !oTeamRight) {
         winnerId = duel.challenger_id;
-      } else if (opponentTeamRight && !challengerTeamRight) {
+      } else if (oTeamRight && !cTeamRight) {
         winnerId = duel.opponent_id;
-      } else if (challengerTeamRight && opponentTeamRight) {
-        // Both picked the right team — compare margins
-        const correctMid = MARGIN_RANGES.find((r) => r.label === tbQuestion.correct_margin)?.mid ?? 0;
-        const cpMid = MARGIN_RANGES.find((r) => r.label === cp?.pick_margin)?.mid ?? -999;
-        const opMid = MARGIN_RANGES.find((r) => r.label === op?.pick_margin)?.mid ?? -999;
+      } else if (cTeamRight && oTeamRight && tbQuestion.correct_margin) {
+        const correctMid = MARGIN_RANGES.find(r => r.label === tbQuestion.correct_margin)?.mid ?? 0;
+        const cpMid = MARGIN_RANGES.find(r => r.label === cp?.pick_margin)?.mid ?? -999;
+        const opMid = MARGIN_RANGES.find(r => r.label === op?.pick_margin)?.mid ?? -999;
         const cpDist = Math.abs(cpMid - correctMid);
         const opDist = Math.abs(opMid - correctMid);
-
         if (cpDist < opDist)      winnerId = duel.challenger_id;
         else if (opDist < cpDist) winnerId = duel.opponent_id;
         else isDraw = true;
       } else {
-        // Neither picked the right team
         isDraw = true;
       }
-
-      // Mark tiebreaker correctness
-      if (cp) await db.from("duel_picks").update({ is_correct: challengerTeamRight }).eq("id", cp.id);
-      if (op) await db.from("duel_picks").update({ is_correct: opponentTeamRight   }).eq("id", op.id);
     } else {
       isDraw = true;
     }
 
-    // Calculate rewards
-    let challengerAura = 0, challengerCoins = 0;
-    let opponentAura   = 0, opponentCoins   = 0;
-
-    if (isDraw) {
-      // Draw: no rewards
-    } else if (winnerId === duel.challenger_id) {
-      challengerAura  = challengerPerfect ? 200 : 100;
-      challengerCoins = challengerPerfect ? 100 : 50;
-      opponentAura    = 20;
-    } else {
-      opponentAura  = opponentPerfect ? 200 : 100;
-      opponentCoins = opponentPerfect ? 100 : 50;
-      challengerAura = 20;
-    }
-
-    // Save final state
-    await db.from("duels").update({
-      status: "complete",
-      winner_id: winnerId,
-      is_draw: isDraw,
-      challenger_score: challengerScore,
-      opponent_score: opponentScore,
-      challenger_perfect: challengerPerfect,
-      opponent_perfect: opponentPerfect,
-      aura_awarded_challenger:  challengerAura,
-      coins_awarded_challenger: challengerCoins,
-      aura_awarded_opponent:  opponentAura,
-      coins_awarded_opponent: opponentCoins,
-      completed_at: new Date().toISOString(),
-    }).eq("id", duel.id);
-
-    // Award aura and coins
-    if (winnerId === duel.challenger_id) {
-      await awardAura(duel.challenger_id, "duel_win",  duel.id, challengerAura);
-      await awardAura(duel.opponent_id,   "duel_loss", duel.id, opponentAura);
-    } else if (winnerId === duel.opponent_id) {
-      await awardAura(duel.opponent_id,   "duel_win",  duel.id, opponentAura);
-      await awardAura(duel.challenger_id, "duel_loss", duel.id, challengerAura);
-    }
-
-    if (challengerCoins > 0) await awardCoins(db, duel.challenger_id, challengerCoins);
-    if (opponentCoins   > 0) await awardCoins(db, duel.opponent_id,   opponentCoins);
-
-    // Check and award badges
-    if (winnerId) {
-      await checkAndAwardBadge(db, winnerId, "first_blood", duel.id);
-    }
-    if (challengerPerfect) await checkAndAwardBadge(db, duel.challenger_id, "perfect_duellist", duel.id);
-    if (opponentPerfect)   await checkAndAwardBadge(db, duel.opponent_id,   "perfect_duellist", duel.id);
-
-    // Notify both players
-    const challengerResult = isDraw ? "draw" : winnerId === duel.challenger_id ? "win" : "loss";
-    const opponentResult   = isDraw ? "draw" : winnerId === duel.opponent_id   ? "win" : "loss";
-
-    await sendDuelNotification(db, duel.challenger_id, duel.opponent_id, "duel_result", {
-      duel_id: duel.id, result: challengerResult,
-      aura: challengerAura, coins: challengerCoins,
-    });
-    await sendDuelNotification(db, duel.opponent_id, duel.challenger_id, "duel_result", {
-      duel_id: duel.id, result: opponentResult,
-      aura: opponentAura, coins: opponentCoins,
-    });
-
+    await finaliseDuel(db, duel, winnerId, isDraw, challengerPerfect, false, false, challengerScore, opponentScore, opponentPerfect);
     resolved++;
   }
 
   return NextResponse.json({ resolved, cancelled });
 }
 
+async function finaliseDuel(
+  db: ReturnType<typeof adminSupabase>,
+  duel: any,
+  winnerId: string | null,
+  isDraw: boolean,
+  challengerPerfect: boolean,
+  challengerForfeited: boolean,
+  opponentForfeited: boolean,
+  challengerScore = 0,
+  opponentScore = 0,
+  opponentPerfect = false,
+) {
+  let challengerAura = 0, challengerCoins = 0;
+  let opponentAura   = 0, opponentCoins   = 0;
+
+  if (!isDraw) {
+    if (winnerId === duel.challenger_id) {
+      challengerAura  = challengerPerfect ? 200 : 100;
+      challengerCoins = challengerPerfect ? 100 : 50;
+      if (!challengerForfeited) opponentAura = 20;
+    } else if (winnerId === duel.opponent_id) {
+      opponentAura  = opponentPerfect ? 200 : 100;
+      opponentCoins = opponentPerfect ? 100 : 50;
+      if (!opponentForfeited) challengerAura = 20;
+    }
+  }
+
+  await db.from("duels").update({
+    status: "complete",
+    winner_id: winnerId,
+    is_draw: isDraw,
+    challenger_score: challengerScore,
+    opponent_score:   opponentScore,
+    challenger_perfect: challengerPerfect,
+    opponent_perfect:   opponentPerfect,
+    challenger_forfeited: challengerForfeited,
+    opponent_forfeited:   opponentForfeited,
+    aura_awarded_challenger:  challengerAura,
+    coins_awarded_challenger: challengerCoins,
+    aura_awarded_opponent:  opponentAura,
+    coins_awarded_opponent: opponentCoins,
+    completed_at: new Date().toISOString(),
+  }).eq("id", duel.id);
+
+  if (winnerId === duel.challenger_id) {
+    await awardAura(duel.challenger_id, "duel_win",  duel.id, challengerAura);
+    if (opponentAura > 0) await awardAura(duel.opponent_id, "duel_loss", duel.id, opponentAura);
+  } else if (winnerId === duel.opponent_id) {
+    await awardAura(duel.opponent_id,   "duel_win",  duel.id, opponentAura);
+    if (challengerAura > 0) await awardAura(duel.challenger_id, "duel_loss", duel.id, challengerAura);
+  }
+
+  if (challengerCoins > 0) await awardCoins(db, duel.challenger_id, challengerCoins);
+  if (opponentCoins   > 0) await awardCoins(db, duel.opponent_id,   opponentCoins);
+
+  if (winnerId) await checkBadge(db, winnerId, "first_blood", duel.id);
+  if (challengerPerfect) await checkBadge(db, duel.challenger_id, "perfect_duellist", duel.id);
+  if (opponentPerfect)   await checkBadge(db, duel.opponent_id,   "perfect_duellist", duel.id);
+
+  await notify(db, duel.challenger_id, duel.opponent_id, "duel_result", {
+    duel_id: duel.id,
+    result:  isDraw ? "draw" : winnerId === duel.challenger_id ? "win" : "loss",
+    aura:    challengerAura, coins: challengerCoins,
+  });
+  await notify(db, duel.opponent_id, duel.challenger_id, "duel_result", {
+    duel_id: duel.id,
+    result:  isDraw ? "draw" : winnerId === duel.opponent_id ? "win" : "loss",
+    aura:    opponentAura, coins: opponentCoins,
+  });
+}
+
 async function awardCoins(db: ReturnType<typeof adminSupabase>, userId: string, amount: number) {
-  // Fetch current balance then increment — user_currency has no RPC for this
   const { data } = await db.from("user_currency").select("coins, total_earned").eq("user_id", userId).maybeSingle();
   if (data) {
     await db.from("user_currency").update({
@@ -296,40 +429,14 @@ async function awardCoins(db: ReturnType<typeof adminSupabase>, userId: string, 
   }
 }
 
-async function checkAndAwardBadge(
-  db: ReturnType<typeof adminSupabase>,
-  userId: string,
-  badge: string,
-  relatedId: string
-) {
-  const { data: existing } = await db
-    .from("aura_events")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("event_type", `badge_${badge}`)
-    .limit(1)
-    .maybeSingle();
-
-  if (!existing) {
-    await awardAura(userId, `badge_${badge}`, relatedId, 50);
-  }
+async function checkBadge(db: ReturnType<typeof adminSupabase>, userId: string, badge: string, relatedId: string) {
+  const { data } = await db.from("aura_events").select("id").eq("user_id", userId).eq("event_type", `badge_${badge}`).limit(1).maybeSingle();
+  if (!data) await awardAura(userId, `badge_${badge}`, relatedId, 50);
 }
 
-async function sendDuelNotification(
-  db: ReturnType<typeof adminSupabase>,
-  recipientId: string,
-  actorId: string | null,
-  type: string,
-  data: Record<string, unknown>
-) {
+async function notify(db: ReturnType<typeof adminSupabase>, recipientId: string, actorId: string | null, type: string, data: Record<string, unknown>) {
   if (!recipientId) return;
   try {
-    await db.from("notifications").insert({
-      user_id:  recipientId,
-      type,
-      actor_id: actorId ?? null,
-      data,
-      read: false,
-    });
+    await db.from("notifications").insert({ user_id: recipientId, type, actor_id: actorId ?? null, data, read: false });
   } catch {}
 }
