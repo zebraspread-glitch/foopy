@@ -182,7 +182,7 @@ export default function DuelsTab({ gameId, gameStarted, onDuelGameFound }: { gam
   }
 
   async function submitPicks() {
-    if (!token || !duel) return;
+    if (!duel) return;
     // Validate all picks set
     const regularPicks = draftPicks.filter((p) => {
       const q = questions.find((q) => q.id === p.question_id);
@@ -207,9 +207,14 @@ export default function DuelsTab({ gameId, gameStarted, onDuelGameFound }: { gam
       .map((p) => ({ question_id: p.question_id, pick: p.pick!, pick_margin: p.pick_margin ?? undefined }));
 
     setSubmitting(true);
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    const freshToken = sessionData.session?.access_token;
+    if (!freshToken) { setSubmitting(false); alert("Not signed in"); return; }
+
     const res = await fetch("/api/duels/picks", {
       method: "POST",
-      headers: { "content-type": "application/json", "authorization": `Bearer ${token}` },
+      headers: { "content-type": "application/json", "authorization": `Bearer ${freshToken}` },
       body: JSON.stringify({ duel_id: duel.id, picks }),
     });
     setSubmitting(false);
@@ -217,8 +222,13 @@ export default function DuelsTab({ gameId, gameStarted, onDuelGameFound }: { gam
     if (res.ok) {
       await load();
     } else {
-      const json = await res.json();
-      alert(json.error ?? "Failed to submit picks");
+      const json = await res.json().catch(() => ({}));
+      // Picks already submitted — refresh to show correct waiting state
+      if ((json.error ?? "").includes("already submitted")) {
+        await load();
+      } else {
+        alert(json.error ?? "Failed to submit picks");
+      }
     }
   }
 
