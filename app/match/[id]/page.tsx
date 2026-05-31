@@ -5085,12 +5085,13 @@ function MatchPolls({
         candidates.push({ question: POLL_CATEGORIES.player_foopy.label, key: "player_foopy", type: "player", options: [pname(a), pname(b)], score: diff < 0.3 ? 100 : diff < 0.8 ? 85 : diff < 1.5 ? 65 : 40 });
       }
     }
-    addPlayer([...all].sort((a,b)=>(b.goals??0)-(a.goals??0)), "goals", 1, "player_goals", POLL_CATEGORIES.player_goals.label);
-    addPlayer([...all].sort((a,b)=>(b.disposals??0)-(a.disposals??0)), "disposals", 15, "player_disposals", POLL_CATEGORIES.player_disposals.label);
-    addPlayer([...all].sort((a,b)=>(b.marks??0)-(a.marks??0)), "marks", 3, "player_marks", POLL_CATEGORIES.player_marks.label);
-    addPlayer([...all].sort((a,b)=>(b.clearances??0)-(a.clearances??0)), "clearances", 3, "player_clearances", POLL_CATEGORIES.player_clearances.label);
-    addPlayer([...all].sort((a,b)=>(b.hitouts??0)-(a.hitouts??0)), "hitouts", 5, "player_hitouts", POLL_CATEGORIES.player_hitouts.label);
-    addPlayer([...all].sort((a,b)=>(b.tackles??0)-(a.tackles??0)), "tackles", 4, "player_tackles", POLL_CATEGORIES.player_tackles.label);
+    const ns = (p: PlayerStat, k: keyof PlayerStat) => Number((p as any)[k] ?? 0);
+    addPlayer([...all].sort((a,b)=>ns(b,"goals")-ns(a,"goals")), "goals", 1, "player_goals", POLL_CATEGORIES.player_goals.label);
+    addPlayer([...all].sort((a,b)=>ns(b,"disposals")-ns(a,"disposals")), "disposals", 15, "player_disposals", POLL_CATEGORIES.player_disposals.label);
+    addPlayer([...all].sort((a,b)=>ns(b,"marks")-ns(a,"marks")), "marks", 3, "player_marks", POLL_CATEGORIES.player_marks.label);
+    addPlayer([...all].sort((a,b)=>ns(b,"clearances")-ns(a,"clearances")), "clearances", 3, "player_clearances", POLL_CATEGORIES.player_clearances.label);
+    addPlayer([...all].sort((a,b)=>ns(b,"hitouts")-ns(a,"hitouts")), "hitouts", 5, "player_hitouts", POLL_CATEGORIES.player_hitouts.label);
+    addPlayer([...all].sort((a,b)=>ns(b,"tackles")-ns(a,"tackles")), "tackles", 4, "player_tackles", POLL_CATEGORIES.player_tackles.label);
     candidates.push({ question: POLL_CATEGORIES.team_disposals.label, key: "team_disposals", type: "team", options: [homeTeam, awayTeam], score: 28 });
     candidates.push({ question: POLL_CATEGORIES.team_goals.label,     key: "team_goals",     type: "team", options: [homeTeam, awayTeam], score: 22 });
     candidates.push({ question: POLL_CATEGORIES.team_winner.label,    key: "team_winner",    type: "team", options: [homeTeam, awayTeam], score: 15 });
