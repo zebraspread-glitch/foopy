@@ -1524,7 +1524,9 @@ free_kicks?: {
       </div>
 
       <div style={{ height: "calc(92px + env(safe-area-inset-top))" }} />
-      <DuelHomepageCard />
+      <div style={{ padding: "10px 12px 0" }}>
+        <DuelHomepageCard />
+      </div>
       <section style={wrapStyle}>
         <div style={listStyle} className={loading ? undefined : "stagger"}>
           {loading &&
@@ -3210,146 +3212,175 @@ function DuelHomepageCard() {
 
   const href = `/match/${card.gameId}?tab=duels`;
 
-  // Colours per state
-  const accent =
-    card.type === "available" ? "#6366f1"
-    : card.type === "active"  ? "#22c55e"
-    : card.type === "waiting" ? "#f59e0b"
-    : card.won                ? "#22c55e"
-    : card.isDraw             ? "#f59e0b"
-    :                           "#ef4444";
-
   const isActive    = card.type === "active";
   const isWaiting   = card.type === "waiting";
   const isAvailable = card.type === "available";
   const isResult    = card.type === "result";
 
-  const statusLabel =
-    isAvailable ? "DUEL AVAILABLE"
-    : isActive   ? "ACTIVE DUEL"
-    : isWaiting  ? "FINDING OPPONENT"
-    : card.won   ? "DUEL WON"
-    : card.isDraw? "DUEL DRAW"
-    :              "DUEL LOST";
+  const accent = isAvailable ? "#818cf8"
+    : isActive  ? "#22c55e"
+    : isWaiting ? "#f59e0b"
+    : card.won  ? "#22c55e"
+    : card.isDraw ? "#f59e0b"
+    : "#ef4444";
+
+  const accent2 = isAvailable ? "#6366f1"
+    : isActive  ? "#16a34a"
+    : isWaiting ? "#d97706"
+    : card.won  ? "#16a34a"
+    : card.isDraw ? "#d97706"
+    : "#dc2626";
+
+  const statusLabel = isAvailable ? "DUEL AVAILABLE"
+    : isActive  ? "ACTIVE DUEL"
+    : isWaiting ? "FINDING OPPONENT"
+    : card.won  ? "DUEL WON"
+    : card.isDraw ? "DRAW"
+    : "DUEL LOST";
+
+  const teamLogoUrl = (name: string) => {
+    const k = name.toLowerCase().replace(/[^a-z]/g, "");
+    const map: Record<string, string> = {
+      adelaide:"crows",adelaidecrows:"crows",brisbane:"lions",brisbanelions:"lions",
+      carlton:"blues",collingwood:"magpies",essendon:"bombers",fremantle:"dockers",
+      geelong:"cats",geelongcats:"cats",goldcoast:"suns",goldcoastsuns:"suns",
+      gws:"giants",gwsgiants:"giants",greaterwesternsydney:"giants",
+      hawthorn:"hawks",hawthornhawks:"hawks",melbourne:"demons",melbournedemons:"demons",
+      northmelbourne:"kangaroos",northmelbournekangaroos:"kangaroos",
+      portadelaide:"power",portadelaidepower:"power",richmond:"tigers",richmondtigers:"tigers",
+      stkilda:"saints",stkildasaints:"saints",sydney:"swans",sydneyswans:"swans",
+      westcoast:"eagles",westcoasteagles:"eagles",westernbulldogs:"bulldogs",
+    };
+    const slug = map[k];
+    return slug ? `/team-logos/${slug}.png` : "";
+  };
+
+  const homeLogo = teamLogoUrl(card.homeTeam);
+  const awayLogo = teamLogoUrl(card.awayTeam);
 
   return (
     <>
       <style>{`
-        @keyframes duel-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.55;transform:scale(1.18)} }
-        @keyframes duel-shimmer { 0%{background-position:-200% center} 100%{background-position:200% center} }
-        @keyframes duel-spin { to{transform:rotate(360deg)} }
-        @keyframes duel-fadein { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
-        .duel-card:hover .duel-arrow { transform: translateX(3px); }
-        .duel-card:active { transform: scale(0.985); }
+        @keyframes dc-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.3)}}
+        @keyframes dc-sweep{0%{background-position:-200% 0}100%{background-position:200% 0}}
+        @keyframes dc-spin{to{transform:rotate(360deg)}}
+        @keyframes dc-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        .dc-root{transition:transform .14s,box-shadow .14s}
+        .dc-root:active{transform:scale(.975)}
       `}</style>
 
-      <Link
-        href={href}
-        className="duel-card"
-        style={{
-          display: "block",
-          margin: "0 12px 10px",
-          borderRadius: 18,
-          textDecoration: "none",
-          color: "var(--text-1)",
-          overflow: "hidden",
-          position: "relative",
-          boxShadow: `0 4px 24px ${accent}22`,
-          border: `1px solid ${accent}30`,
-          animation: "duel-fadein 0.35s ease both",
-          transition: "transform 0.12s, box-shadow 0.12s",
-        }}
-      >
-        {/* Gradient background */}
-        <div style={{
-          position: "absolute", inset: 0,
-          background: `linear-gradient(135deg, ${accent}18 0%, ${accent}06 60%, transparent 100%)`,
-          pointerEvents: "none",
-        }} />
+      <Link href={href} className="dc-root" style={{
+        display: "block", borderRadius: 20, textDecoration: "none",
+        color: "var(--text-1)", overflow: "hidden", position: "relative",
+        background: `linear-gradient(145deg,#0f1117 0%,#13161e 100%)`,
+        border: `1px solid ${accent}35`,
+        boxShadow: `0 2px 20px ${accent}18, 0 1px 0 ${accent}20 inset`,
+        animation: "dc-in .3s ease both",
+        marginBottom: 4,
+      }}>
 
-        {/* Shimmer line at top */}
+        {/* Top accent bar with sweep animation for available */}
         <div style={{
-          position: "absolute", top: 0, left: 0, right: 0, height: 2,
+          height: 3,
           background: isAvailable
-            ? `linear-gradient(90deg, transparent, ${accent}, transparent)`
-            : `${accent}60`,
+            ? `linear-gradient(90deg,transparent 0%,${accent} 40%,${accent2} 60%,transparent 100%)`
+            : `linear-gradient(90deg,${accent2},${accent},${accent2})`,
           backgroundSize: "200% 100%",
-          animation: isAvailable ? "duel-shimmer 2s linear infinite" : undefined,
+          animation: isAvailable ? "dc-sweep 2.4s linear infinite" : undefined,
         }} />
 
-        <div style={{ position: "relative", padding: "13px 16px 14px", display: "flex", alignItems: "center", gap: 12 }}>
+        {/* Glow orb */}
+        <div style={{
+          position: "absolute", top: -30, right: -20, width: 120, height: 120,
+          borderRadius: "50%", background: `${accent}10`,
+          filter: "blur(28px)", pointerEvents: "none",
+        }} />
 
-          {/* Left: icon */}
-          <div style={{
-            width: 40, height: 40, borderRadius: 12, flexShrink: 0,
-            background: `${accent}20`,
-            border: `1px solid ${accent}35`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 18,
-          }}>
-            {isAvailable ? "⚔" : isWaiting ? (
-              <div style={{ width: 16, height: 16, borderRadius: "50%", border: `2.5px solid ${accent}40`, borderTopColor: accent, animation: "duel-spin 0.8s linear infinite" }} />
-            ) : isResult && card.won ? "🏆" : isResult && card.isDraw ? "🤝" : isResult ? "💀" : "⚔"}
-          </div>
+        <div style={{ padding: "12px 14px 14px", position: "relative" }}>
 
-          {/* Middle: text */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-              {/* Live pulse dot */}
-              {isActive && (
-                <div style={{ width: 7, height: 7, borderRadius: "50%", background: accent, animation: "duel-pulse 1.4s ease-in-out infinite", flexShrink: 0 }} />
-              )}
-              <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", color: accent }}>
-                {statusLabel}
+          {/* Status row */}
+          <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 10 }}>
+            {isActive && (
+              <div style={{ width: 8, height: 8, borderRadius: "50%", background: accent, flexShrink: 0, animation: "dc-pulse 1.6s ease-in-out infinite" }} />
+            )}
+            {isWaiting && (
+              <div style={{ width: 12, height: 12, borderRadius: "50%", border: `2px solid ${accent}40`, borderTopColor: accent, flexShrink: 0, animation: "dc-spin .9s linear infinite" }} />
+            )}
+            {(isAvailable || isResult) && (
+              <span style={{ fontSize: 14 }}>
+                {isAvailable ? "⚔" : card.won ? "🏆" : card.isDraw ? "🤝" : "💀"}
               </span>
-            </div>
+            )}
+            <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.1em", color: accent }}>
+              {statusLabel}
+            </span>
 
-            <div style={{ fontWeight: 800, fontSize: 15, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {card.homeTeam} vs {card.awayTeam}
-            </div>
-
-            <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
-              Round {card.round}
-              {(isActive || isWaiting) && card.opponentName && (
-                <span style={{ color: "#94a3b8" }}> · vs {card.opponentName}</span>
-              )}
-            </div>
+            {isResult && (
+              <div style={{ marginLeft: "auto", fontSize: 22, fontWeight: 900, color: accent, letterSpacing: "-0.02em", lineHeight: 1 }}>
+                {card.myScore ?? 0}
+                <span style={{ fontSize: 14, color: "#334155", margin: "0 3px" }}>–</span>
+                {card.oppScore ?? 0}
+              </div>
+            )}
           </div>
 
-          {/* Right: CTA / score / avatar */}
-          {isAvailable && (
-            <div style={{
-              flexShrink: 0, padding: "7px 14px", borderRadius: 10,
-              background: accent, color: "#fff", fontWeight: 800, fontSize: 13,
-              display: "flex", alignItems: "center", gap: 5,
-            }}>
-              Enter
-              <span className="duel-arrow" style={{ transition: "transform 0.15s" }}>→</span>
-            </div>
-          )}
-
-          {(isActive || isWaiting) && card.opponentAvatar && (
-            <div style={{ flexShrink: 0, width: 36, height: 36, borderRadius: "50%", overflow: "hidden", border: `2px solid ${accent}50` }}>
-              <img src={card.opponentAvatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            </div>
-          )}
-
-          {(isActive || isWaiting) && !card.opponentAvatar && card.opponentName && (
-            <div style={{ flexShrink: 0, width: 36, height: 36, borderRadius: "50%", background: `${accent}20`, border: `2px solid ${accent}50`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: accent }}>
-              {card.opponentName.slice(0, 1).toUpperCase()}
-            </div>
-          )}
-
-          {isResult && (
-            <div style={{ flexShrink: 0, textAlign: "right" }}>
-              <div style={{ fontSize: 24, fontWeight: 900, color: accent, lineHeight: 1, letterSpacing: "-0.02em" }}>
-                {card.myScore ?? 0}<span style={{ fontSize: 16, color: "#475569", margin: "0 2px" }}>–</span>{card.oppScore ?? 0}
+          {/* Matchup row */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+            {homeLogo && (
+              <img src={homeLogo} alt={card.homeTeam} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0, background: "rgba(255,255,255,0.06)" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+            )}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 900, fontSize: 16, lineHeight: 1.15, letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {card.homeTeam} <span style={{ color: "#334155", fontWeight: 500 }}>vs</span> {card.awayTeam}
               </div>
-              {card.opponentName && (
-                <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>vs {card.opponentName}</div>
-              )}
+              <div style={{ fontSize: 11, color: "#475569", marginTop: 2, fontWeight: 600 }}>Round {card.round}</div>
             </div>
-          )}
+            {awayLogo && (
+              <img src={awayLogo} alt={card.awayTeam} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0, background: "rgba(255,255,255,0.06)" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+            )}
+          </div>
+
+          {/* Bottom row: opponent + CTA */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+
+            {/* Opponent */}
+            {(isActive || isWaiting || isResult) && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {card.opponentAvatar ? (
+                  <img src={card.opponentAvatar} alt="" style={{ width: 26, height: 26, borderRadius: "50%", objectFit: "cover", border: `1.5px solid ${accent}50` }} />
+                ) : (
+                  <div style={{ width: 26, height: 26, borderRadius: "50%", background: `${accent}20`, border: `1.5px solid ${accent}40`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: accent, flexShrink: 0 }}>
+                    {card.opponentName ? card.opponentName[0].toUpperCase() : "?"}
+                  </div>
+                )}
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#94a3b8" }}>
+                  vs {card.opponentName || (isWaiting ? "searching..." : "opponent")}
+                </span>
+              </div>
+            )}
+
+            {/* CTA */}
+            {isAvailable && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                <span style={{ fontSize: 13, color: "#475569", fontWeight: 600 }}>Challenge a random opponent</span>
+                <div style={{ padding: "6px 14px", borderRadius: 10, background: `linear-gradient(135deg,${accent},${accent2})`, color: "#fff", fontWeight: 800, fontSize: 13, letterSpacing: "0.01em", flexShrink: 0 }}>
+                  Enter →
+                </div>
+              </div>
+            )}
+
+            {(isActive || isWaiting) && (
+              <div style={{ padding: "5px 12px", borderRadius: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", fontSize: 12, fontWeight: 700, color: "#64748b" }}>
+                View picks →
+              </div>
+            )}
+
+            {isResult && (
+              <div style={{ padding: "5px 12px", borderRadius: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", fontSize: 12, fontWeight: 700, color: "#64748b" }}>
+                See result →
+              </div>
+            )}
+          </div>
         </div>
       </Link>
     </>
