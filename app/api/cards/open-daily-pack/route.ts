@@ -59,13 +59,32 @@ export async function POST(req: NextRequest) {
   const user = await getUserFromRequest(req);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // Daily pack resets at UTC midnight.
-  // Compute start-of-today in UTC for the WHERE filter.
-  const todayStart = new Date();
-  todayStart.setUTCHours(0, 0, 0, 0);
+  // Daily pack resets at midnight AEDT/AEST (Australia/Sydney time).
+  // AEDT = UTC+11 (Oct–Apr), AEST = UTC+10 (Apr–Oct).
+  // We derive the UTC instant of midnight-Sydney for the current Sydney date
+  // using the Intl API so DST transitions are handled automatically.
+  const todayStart = (() => {
+    const now = new Date();
+    // Get year/month/day and the UTC offset string in the Sydney timezone
+    const parts = new Intl.DateTimeFormat("en-AU", {
+      timeZone: "Australia/Sydney",
+      year: "numeric", month: "2-digit", day: "2-digit",
+      timeZoneName: "shortOffset",
+    }).formatToParts(now);
+    const year   = parts.find(p => p.type === "year")?.value  ?? "2026";
+    const month  = parts.find(p => p.type === "month")?.value ?? "01";
+    const day    = parts.find(p => p.type === "day")?.value   ?? "01";
+    const tzName = parts.find(p => p.type === "timeZoneName")?.value ?? "GMT+10";
+    // "GMT+10" → "+10:00",  "GMT+11" → "+11:00"
+    const m = tzName.match(/GMT([+-]\d+)/);
+    const h = m ? Number(m[1]) : 10;
+    const offset = `${h >= 0 ? "+" : "-"}${String(Math.abs(h)).padStart(2, "0")}:00`;
+    // Midnight Sydney expressed as a UTC instant
+    return new Date(`${year}-${month}-${day}T00:00:00${offset}`);
+  })();
 
   // ── 1. Atomic claim ──────────────────────────────────────────────────────
-  // Update last_daily_pack_at only when it's NULL or before today (UTC).
+  // Update last_daily_pack_at only when it's NULL or before midnight AEDT today.
   // If 0 rows are updated, the user already claimed today → reject.
   // This is race-condition safe: two rapid taps will only ever produce one success.
   const { data: claimResult, error: claimError } = await supabaseAdmin
