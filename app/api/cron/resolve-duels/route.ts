@@ -1,7 +1,16 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
+import playersJson from "@/app/data/players.json";
 import { awardAura } from "@/app/lib/aura";
+
+// Build apiSportsId → name lookup so match_cache stats (ID-keyed) can be
+// matched against question option_a/option_b (name-keyed).
+const PLAYER_NAME_BY_ID = new Map<number, string>(
+  (playersJson as { apiSportsId?: number | null; name?: string }[])
+    .filter(p => p.apiSportsId && p.name)
+    .map(p => [Number(p.apiSportsId), p.name!])
+);
 
 export const dynamic = "force-dynamic";
 
@@ -130,6 +139,23 @@ function adminSupabase() {
 }
 
 async function fetchPlayerStats(apiSportsId: string): Promise<StatRow[]> {
+  // Prefer match_cache (populated by sync-round-stats every minute) to avoid
+  // hitting the API-Sports rate limit during batch resolution of multiple duels.
+  try {
+    const db = adminSupabase();
+    const { data: cached } = await db
+      .from("match_cache")
+      .select("payload")
+      .eq("game_id", apiSportsId)
+      .eq("data_type", "player_stats")
+      .maybeSingle();
+    if (cached?.payload) {
+      const teams: any[] = (cached.payload as any)?.response?.[0]?.teams ?? [];
+      if (teams.length > 0) return parseTeams(teams);
+    }
+  } catch {}
+
+  // Fall back to direct API-Sports call if cache miss
   try {
     const res = await fetch(
       `${API_BASE}/games/statistics/players?id=${apiSportsId}`,
@@ -138,33 +164,40 @@ async function fetchPlayerStats(apiSportsId: string): Promise<StatRow[]> {
     if (!res.ok) return [];
     const data = await res.json();
     const teams: any[] = data?.response?.[0]?.teams ?? [];
-    const rows: StatRow[] = [];
-    for (let ti = 0; ti < teams.length; ti++) {
-      const isHome = ti === 0;
-      for (const pe of teams[ti].players ?? []) {
-        const s = pe.statistics ?? pe;
-        const n = (v: any) => Number(v ?? 0) || 0;
-        const kicks = n(s.kicks ?? s.Kicks);
-        const handballs = n(s.handballs ?? s.Handballs);
-        rows.push({
-          name: pe.player?.name ?? "",
-          isHome,
-          kicks, handballs,
-          disposals:   kicks + handballs,
-          marks:       n(s.marks ?? s.Marks),
-          tackles:     n(s.tackles ?? s.Tackles),
-          hitouts:     n(s.hitouts ?? s.Hitouts),
-          goals:       n(s.goals ?? s.Goals),
-          behinds:     n(s.behinds ?? s.Behinds),
-          clearances:  n(s.clearances ?? s.Clearances),
-          goalAssists: n(s.goalAssists ?? s.goal_assists ?? 0),
-          freesFor:    n(s.freesFor ?? s.frees_for ?? s.FreesFor ?? 0),
-          freesAgainst:n(s.freesAgainst ?? s.frees_against ?? s.FreesAgainst ?? 0),
-        });
-      }
-    }
-    return rows;
+    return parseTeams(teams);
   } catch { return []; }
+}
+
+function parseTeams(teams: any[]): StatRow[] {
+  const rows: StatRow[] = [];
+  for (let ti = 0; ti < teams.length; ti++) {
+    const isHome = ti === 0;
+    for (const pe of teams[ti].players ?? []) {
+      const s = pe.statistics ?? pe;
+      const n = (v: any) => Number(v ?? 0) || 0;
+      const kicks = n(s.kicks ?? s.Kicks);
+      const handballs = n(s.handballs ?? s.Handballs);
+      // Prefer the name from players.json mapping (match_cache may omit it)
+      const pid = Number(pe.player?.id ?? 0);
+      const playerName = pe.player?.name || PLAYER_NAME_BY_ID.get(pid) || "";
+      rows.push({
+        name: playerName,
+        isHome,
+        kicks, handballs,
+        disposals:    kicks + handballs,
+        marks:        n(s.marks      ?? s.Marks),
+        tackles:      n(s.tackles    ?? s.Tackles),
+        hitouts:      n(s.hitouts    ?? s.Hitouts),
+        goals:        n(s.goals      ?? s.Goals),
+        behinds:      n(s.behinds    ?? s.Behinds),
+        clearances:   n(s.clearances ?? s.Clearances),
+        goalAssists:  n(s.goalAssists ?? s.goal_assists ?? 0),
+        freesFor:     n(s.freesFor   ?? s.frees_for    ?? s.FreesFor    ?? 0),
+        freesAgainst: n(s.freesAgainst ?? s.frees_against ?? s.FreesAgainst ?? 0),
+      });
+    }
+  }
+  return rows;
 }
 
 // Vercel cron jobs send GET with "Authorization: Bearer <secret>"
