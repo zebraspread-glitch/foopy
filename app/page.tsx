@@ -3324,59 +3324,55 @@ function DuelHomepageCard() {
             )}
           </div>
 
-          {/* Matchup row */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-            {/* Overlapping logos */}
+          {/* Matchup row — game info left, opponent/CTA right */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {/* Team logos */}
             <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
               {homeLogo && <img src={homeLogo} alt={card.homeTeam} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", border: "2px solid #0f1117", background: "rgba(255,255,255,0.06)", zIndex: 2, position: "relative" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
               {awayLogo && <img src={awayLogo} alt={card.awayTeam} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", border: "2px solid #0f1117", background: "rgba(255,255,255,0.06)", marginLeft: -8, zIndex: 1, position: "relative" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
             </div>
+
+            {/* Game text */}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 900, fontSize: 16, lineHeight: 1.15, letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <div style={{ fontWeight: 900, fontSize: 15, lineHeight: 1.15, letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {card.homeTeam} <span style={{ color: "#334155", fontWeight: 500 }}>vs</span> {card.awayTeam}
               </div>
               <div style={{ fontSize: 11, color: "#475569", marginTop: 2, fontWeight: 600 }}>Round {card.round}</div>
             </div>
-          </div>
 
-          {/* Bottom row: opponent + CTA */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-
-            {/* Opponent */}
-            {(isActive || isWaiting || isResult) && (
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {/* Right: opponent for active/waiting, score for result, CTA for available */}
+            {(isActive || isWaiting) && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#64748b" }}>vs</div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#94a3b8" }}>
+                    {card.opponentName || (isWaiting ? "searching..." : "opponent")}
+                  </div>
+                </div>
                 {card.opponentAvatar ? (
-                  <img src={card.opponentAvatar} alt="" style={{ width: 26, height: 26, borderRadius: "50%", objectFit: "cover", border: `1.5px solid ${accent}50` }} />
+                  <img src={card.opponentAvatar} alt="" style={{ width: 34, height: 34, borderRadius: "50%", objectFit: "cover", border: `2px solid ${accent}50`, flexShrink: 0 }} />
                 ) : (
-                  <div style={{ width: 26, height: 26, borderRadius: "50%", background: `${accent}20`, border: `1.5px solid ${accent}40`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: accent, flexShrink: 0 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: "50%", background: `${accent}20`, border: `2px solid ${accent}40`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800, color: accent, flexShrink: 0 }}>
                     {card.opponentName ? card.opponentName[0].toUpperCase() : "?"}
                   </div>
                 )}
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#94a3b8" }}>
-                  vs {card.opponentName || (isWaiting ? "searching..." : "opponent")}
-                </span>
-              </div>
-            )}
-
-            {/* CTA */}
-            {isAvailable && (
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
-                <span style={{ fontSize: 13, color: "#475569", fontWeight: 600 }}>Challenge a random opponent</span>
-                <div style={{ padding: "6px 14px", borderRadius: 10, background: `linear-gradient(135deg,${accent},${accent2})`, color: "#fff", fontWeight: 800, fontSize: 13, letterSpacing: "0.01em", flexShrink: 0 }}>
-                  Enter →
-                </div>
-              </div>
-            )}
-
-            {(isActive || isWaiting) && (
-              <div style={{ padding: "5px 12px", borderRadius: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", fontSize: 12, fontWeight: 700, color: "#64748b" }}>
-                View picks →
               </div>
             )}
 
             {isResult && (
-              <div style={{ padding: "5px 12px", borderRadius: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", fontSize: 12, fontWeight: 700, color: "#64748b" }}>
-                See result →
+              <div style={{ flexShrink: 0, textAlign: "right" }}>
+                <div style={{ fontSize: 22, fontWeight: 900, color: accent, lineHeight: 1, letterSpacing: "-0.02em" }}>
+                  {card.myScore ?? 0}<span style={{ fontSize: 14, color: "#334155", margin: "0 2px" }}>–</span>{card.oppScore ?? 0}
+                </div>
+                {card.opponentName && (
+                  <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>vs {card.opponentName}</div>
+                )}
+              </div>
+            )}
+
+            {isAvailable && (
+              <div style={{ padding: "7px 14px", borderRadius: 10, background: `linear-gradient(135deg,${accent},${accent2})`, color: "#fff", fontWeight: 800, fontSize: 13, letterSpacing: "0.01em", flexShrink: 0 }}>
+                Enter →
               </div>
             )}
           </div>
