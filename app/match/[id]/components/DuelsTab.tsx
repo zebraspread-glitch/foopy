@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/app/lib/supabase";
+import { teamColors } from "../utils";
 
 const MARGIN_RANGES = ["1-12", "13-24", "25-36", "37-48", "49+"];
 
@@ -50,8 +51,8 @@ type Duel = {
   coins_awarded_challenger: number;
   aura_awarded_opponent: number;
   coins_awarded_opponent: number;
-  challenger: { id: string; username: string; display_name: string; avatar_url: string | null } | null;
-  opponent:   { id: string; username: string; display_name: string; avatar_url: string | null } | null;
+  challenger: { id: string; username: string; display_name: string; avatar_url: string | null; aura?: number; favourite_team?: string | null; duelRecord?: { wins: number; losses: number; draws: number } } | null;
+  opponent:   { id: string; username: string; display_name: string; avatar_url: string | null; aura?: number; favourite_team?: string | null; duelRecord?: { wins: number; losses: number; draws: number } } | null;
 };
 
 type Pick = {
@@ -655,103 +656,172 @@ function WaitingScreen({ duelGame, picksSubmitted }: { duelGame: DuelGame; picks
   );
 }
 
+function DuelUserCard({ user, label, accentColor }: {
+  user: { username: string; display_name: string; avatar_url: string | null; aura?: number; favourite_team?: string | null; duelRecord?: { wins: number; losses: number; draws: number } } | null;
+  label: string;
+  accentColor: string;
+}) {
+  const name = user?.display_name || user?.username || label;
+  const record = user?.duelRecord;
+  const colours = user?.favourite_team ? teamColors(user.favourite_team) : null;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, flex: 1 }}>
+      <div style={{ position: "relative" }}>
+        <UserAvatar user={user ?? { username: label, display_name: label, avatar_url: null }} size={54} />
+        {colours && (
+          <div style={{ position: "absolute", inset: -3, borderRadius: "50%", border: `2.5px solid ${colours.primary}`, pointerEvents: "none" }} />
+        )}
+      </div>
+      <div style={{ fontSize: 13, fontWeight: 800, color: accentColor, letterSpacing: "0.04em" }}>{label}</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 100 }}>{name}</div>
+      {user?.aura != null && (
+        <div style={{ fontSize: 12, fontWeight: 700, background: "linear-gradient(135deg,#c084fc,#818cf8,#fbbf24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+          ✦ {(user.aura).toLocaleString()}
+        </div>
+      )}
+      {colours && user?.favourite_team && (
+        <div style={{ fontSize: 11, color: colours.primary, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: `${colours.primary}22`, border: `1px solid ${colours.primary}40` }}>
+          {user.favourite_team}
+        </div>
+      )}
+      {record && (
+        <div style={{ fontSize: 11, color: "#64748b", fontWeight: 700 }}>
+          {record.wins}W–{record.draws}D–{record.losses}L
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PicksLockedScreen({
   opponent, me, duelGame, questions, myPicks, oppPicks,
 }: {
-  opponent: { id: string; username: string; display_name: string; avatar_url: string | null } | null;
-  me: { id: string; username: string; display_name: string; avatar_url: string | null } | null;
+  opponent: Duel["opponent"];
+  me: Duel["challenger"];
   duelGame: DuelGame;
   questions: DuelQuestion[];
   myPicks: Pick[];
   oppPicks: Pick[];
 }) {
-  const regularQs = questions.filter(q => !q.is_tiebreaker);
+  const regularQs  = questions.filter(q => !q.is_tiebreaker);
   const tbQuestion = questions.find(q => q.is_tiebreaker);
 
   return (
-    <div style={{ padding: "16px 16px 40px" }}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 20 }}>
-        <span style={{ fontSize: 22 }}>🔒</span>
-        <span style={{ fontWeight: 900, fontSize: 20 }}>Picks Locked!</span>
-      </div>
+    <div style={{ padding: "16px 16px 48px" }}>
+      <style>{`
+        @keyframes lpr-in { from { opacity:0; transform:translateY(10px) } to { opacity:1; transform:translateY(0) } }
+      `}</style>
 
-      {/* VS bar */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 8, marginBottom: 20, padding: "12px 14px", borderRadius: 14, background: "var(--surface-2)", border: "1px solid var(--border-2)" }}>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-          <UserAvatar user={me ?? { username: "You", display_name: "You", avatar_url: null }} size={40} />
-          <span style={{ fontSize: 12, fontWeight: 700, color: "#3b82f6" }}>YOU</span>
+      {/* VS matchup card */}
+      <div style={{
+        borderRadius: 18, overflow: "hidden", marginBottom: 20,
+        background: "linear-gradient(145deg,#0d1117,#131920)",
+        border: "1px solid rgba(255,255,255,0.08)",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
+      }}>
+        <div style={{ height: 3, background: "linear-gradient(90deg,#3b82f6,#6366f1,#3b82f6)", backgroundSize: "200% 100%", animation: "dc-sweep 3s linear infinite" }} />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 8, padding: "20px 16px 18px" }}>
+          <DuelUserCard user={me} label="YOU" accentColor="#3b82f6" />
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+            <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.12em", color: "#334155" }}>VS</span>
+            <div style={{ width: 1, height: 40, background: "linear-gradient(to bottom,transparent,rgba(255,255,255,0.08),transparent)" }} />
+          </div>
+          <DuelUserCard user={opponent} label={opponent?.display_name || opponent?.username || "Opponent"} accentColor="#94a3b8" />
         </div>
-        <span style={{ fontSize: 13, fontWeight: 800, color: "#475569" }}>VS</span>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-          <UserAvatar user={opponent ?? { username: "?", display_name: "?", avatar_url: null }} size={40} />
-          <span style={{ fontSize: 12, fontWeight: 700, color: "#94a3b8", textAlign: "center", maxWidth: 80, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {opponent ? (opponent.display_name || opponent.username) : "Waiting..."}
-          </span>
-        </div>
       </div>
 
-      <div style={{ fontSize: 12, color: "#475569", textAlign: "center", marginBottom: 20 }}>
-        Results after the final siren · {duelGame.home_team} vs {duelGame.away_team}
-      </div>
-
-      {/* Pick comparison */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {regularQs.map((q) => {
+      {/* Pick rows */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {regularQs.map((q, i) => {
           const mp = myPicks.find(p => p.question_id === q.id);
           const op = oppPicks.find(p => p.question_id === q.id);
-          return <LockedPickRow key={q.id} question={q} myPick={mp ?? null} oppPick={op ?? null} />;
+          return <LockedPickRow key={q.id} question={q} myPick={mp ?? null} oppPick={op ?? null} index={i} />;
         })}
         {tbQuestion && (() => {
           const mp = myPicks.find(p => p.question_id === tbQuestion.id);
           const op = oppPicks.find(p => p.question_id === tbQuestion.id);
-          return <LockedPickRow key={tbQuestion.id} question={tbQuestion} myPick={mp ?? null} oppPick={op ?? null} isTiebreaker />;
+          return <LockedPickRow key={tbQuestion.id} question={tbQuestion} myPick={mp ?? null} oppPick={op ?? null} isTiebreaker index={regularQs.length} />;
         })()}
       </div>
     </div>
   );
 }
 
-function LockedPickRow({ question, myPick, oppPick, isTiebreaker }: {
+function LockedPickRow({ question, myPick, oppPick, isTiebreaker, index = 0 }: {
   question: DuelQuestion;
   myPick: Pick | null;
   oppPick: Pick | null;
   isTiebreaker?: boolean;
+  index?: number;
 }) {
   const myLabel  = myPick  ? (myPick.pick  === "a" ? question.option_a : question.option_b) : "—";
   const oppLabel = oppPick ? (oppPick.pick === "a" ? question.option_a : question.option_b) : "—";
   const myImage  = myPick  ? (myPick.pick  === "a" ? question.option_a_image : question.option_b_image) : null;
   const oppImage = oppPick ? (oppPick.pick === "a" ? question.option_a_image : question.option_b_image) : null;
+  const myTeam   = myPick  ? (myPick.pick  === "a" ? question.option_a_team  : question.option_b_team)  : null;
+  const oppTeam  = oppPick ? (oppPick.pick === "a" ? question.option_a_team  : question.option_b_team)  : null;
   const agree    = myPick && oppPick && myPick.pick === oppPick.pick;
 
+  const myColor  = myTeam  ? teamColors(myTeam).primary  : "#3b82f6";
+  const oppColor = oppTeam ? teamColors(oppTeam).primary : "#475569";
+
   return (
-    <div style={{ padding: "10px 12px", borderRadius: 12, background: "var(--surface-2)", border: `1px solid ${agree ? "rgba(251,191,36,0.3)" : "var(--border-2)"}` }}>
-      <div style={{ fontSize: 11, color: isTiebreaker ? "#f59e0b" : "#64748b", fontWeight: 700, marginBottom: 6 }}>
-        {isTiebreaker ? "TIEBREAKER" : `Q${question.question_order}`} · {question.question_text}
+    <div style={{
+      borderRadius: 14, overflow: "hidden",
+      border: agree ? "1px solid rgba(251,191,36,0.25)" : "1px solid rgba(255,255,255,0.06)",
+      animation: `lpr-in 0.3s ${index * 0.04}s ease both`,
+    }}>
+      {/* Question label */}
+      <div style={{ padding: "8px 12px 6px", background: "rgba(255,255,255,0.03)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+        <span style={{ fontSize: 10, fontWeight: 800, color: isTiebreaker ? "#f59e0b" : "#475569", letterSpacing: "0.06em" }}>
+          {isTiebreaker ? "TIEBREAKER" : `Q${question.question_order}`}
+        </span>
+        <span style={{ fontSize: 12, fontWeight: 700, color: "#64748b", marginLeft: 6 }}>{question.question_text}</span>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 6 }}>
+
+      {/* Picks */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 28px 1fr", background: "rgba(0,0,0,0.2)" }}>
         {/* My pick */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 8px", borderRadius: 8, background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.25)" }}>
-          {myImage && <div style={{ width: 28, height: 28, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}><img src={myImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} /></div>}
-          <span style={{ fontSize: 12, fontWeight: 700, lineHeight: 1.2, color: "#93c5fd" }}>{myLabel}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", background: `${myColor}14`, borderRight: "1px solid rgba(255,255,255,0.04)" }}>
+          {myImage && (
+            <div style={{ width: 32, height: 32, borderRadius: "50%", overflow: "hidden", flexShrink: 0, border: `1.5px solid ${myColor}50` }}>
+              <img src={myImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+            </div>
+          )}
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "#f1f5f9", lineHeight: 1.2 }}>{myLabel}</div>
+            {myTeam && <div style={{ fontSize: 10, color: myColor, fontWeight: 700, marginTop: 1 }}>{myTeam}</div>}
+          </div>
         </div>
 
-        {/* Middle */}
-        <div style={{ fontSize: 11, fontWeight: 800, color: agree ? "#fbbf24" : "#475569", textAlign: "center" }}>
-          {agree ? "🤝" : "vs"}
+        {/* Divider */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.15)" }}>
+          <span style={{ fontSize: agree ? 14 : 10, color: agree ? "#fbbf24" : "#1e293b", fontWeight: 900 }}>
+            {agree ? "=" : "⚔"}
+          </span>
         </div>
 
         {/* Opp pick */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 6, padding: "6px 8px", borderRadius: 8, background: "rgba(148,163,184,0.08)", border: "1px solid rgba(148,163,184,0.15)" }}>
-          <span style={{ fontSize: 12, fontWeight: 700, lineHeight: 1.2, color: "#94a3b8", textAlign: "right" }}>{oppPick ? oppLabel : "Pending"}</span>
-          {oppImage && <div style={{ width: 28, height: 28, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}><img src={oppImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} /></div>}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8, padding: "10px 12px", background: `${oppColor}10`, borderLeft: "1px solid rgba(255,255,255,0.04)" }}>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "#94a3b8", lineHeight: 1.2 }}>{oppPick ? oppLabel : "Pending"}</div>
+            {oppTeam && <div style={{ fontSize: 10, color: oppColor, fontWeight: 700, marginTop: 1 }}>{oppTeam}</div>}
+          </div>
+          {oppImage && (
+            <div style={{ width: 32, height: 32, borderRadius: "50%", overflow: "hidden", flexShrink: 0, border: `1.5px solid ${oppColor}50` }}>
+              <img src={oppImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Tiebreaker margins */}
       {isTiebreaker && (myPick?.pick_margin || oppPick?.pick_margin) && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 6, marginTop: 6 }}>
-          <span style={{ fontSize: 11, color: "#64748b" }}>{myPick?.pick_margin ?? "—"}</span>
-          <span />
-          <span style={{ fontSize: 11, color: "#64748b", textAlign: "right" }}>{oppPick?.pick_margin ?? "—"}</span>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 28px 1fr", borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(0,0,0,0.15)" }}>
+          <div style={{ padding: "5px 12px", fontSize: 11, color: "#64748b", fontWeight: 700 }}>{myPick?.pick_margin ?? "—"} pts</div>
+          <div />
+          <div style={{ padding: "5px 12px", fontSize: 11, color: "#64748b", fontWeight: 700, textAlign: "right" }}>{oppPick?.pick_margin ?? "—"} pts</div>
         </div>
       )}
     </div>

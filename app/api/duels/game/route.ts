@@ -15,15 +15,35 @@ async function attachProfiles(db: ReturnType<typeof adminSupabase>, duel: any) {
   if (!duel) return duel;
   const ids = [duel.challenger_id, duel.opponent_id].filter(Boolean);
   if (!ids.length) return duel;
+
   const { data: profiles } = await db
     .from("profiles")
-    .select("id, username, display_name, avatar_url")
+    .select("id, username, display_name, avatar_url, aura, favourite_team")
     .in("id", ids);
   const map = Object.fromEntries((profiles ?? []).map((p: any) => [p.id, p]));
+
+  // Fetch duel record for each participant
+  const records: Record<string, { wins: number; losses: number; draws: number }> = {};
+  for (const userId of ids) {
+    const { data: past } = await db
+      .from("duels")
+      .select("winner_id, is_draw")
+      .or(`challenger_id.eq.${userId},opponent_id.eq.${userId}`)
+      .eq("status", "complete");
+    const w = (past ?? []).filter((d: any) => d.winner_id === userId).length;
+    const dr = (past ?? []).filter((d: any) => d.is_draw).length;
+    const l  = (past ?? []).filter((d: any) => d.winner_id !== null && d.winner_id !== userId && !d.is_draw).length;
+    records[userId] = { wins: w, losses: l, draws: dr };
+  }
+
+  const enrich = (id: string) => id && map[id]
+    ? { ...map[id], duelRecord: records[id] ?? { wins: 0, losses: 0, draws: 0 } }
+    : null;
+
   return {
     ...duel,
-    challenger: map[duel.challenger_id] ?? null,
-    opponent:   duel.opponent_id ? (map[duel.opponent_id] ?? null) : null,
+    challenger: enrich(duel.challenger_id),
+    opponent:   duel.opponent_id ? enrich(duel.opponent_id) : null,
   };
 }
 
