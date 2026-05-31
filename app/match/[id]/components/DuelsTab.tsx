@@ -136,7 +136,7 @@ export default function DuelsTab({ gameId, gameStarted, onDuelGameFound }: { gam
   }, [duel?.status]);
 
   async function enterDuel() {
-    if (!duelGame) return;
+    if (!duelGame) { setEnterError("Duel not loaded yet — try again"); return; }
     if (!token) { setEnterError("You need to be signed in to enter a duel."); return; }
     setEntering(true);
     setEnterError("");
@@ -148,7 +148,20 @@ export default function DuelsTab({ gameId, gameStarted, onDuelGameFound }: { gam
       });
       const json = await res.json().catch(() => ({}));
       if (res.ok) {
-        await load();
+        // Immediately set duel state from the response so the UI transitions
+        // without waiting on a second round-trip (avoids race conditions)
+        if (json.duel) {
+          setDuel(json.duel);
+          if (questions.length > 0) {
+            setDraftPicks(questions.map(q => ({
+              question_id: q.id,
+              pick: null,
+              pick_margin: null,
+            })));
+          }
+        }
+        // Also reload for full consistency
+        load().catch(() => {});
       } else {
         setEnterError(json.error ?? `Server error (${res.status})`);
       }
