@@ -976,6 +976,7 @@ const teamNameStyle: CSSProperties = {
   whiteSpace: "nowrap",
   overflow: "hidden",
   textOverflow: "ellipsis",
+  fontFamily: '"Druk Wide", "Arial Black", Impact, sans-serif',
 };
 
 const legendStyle: CSSProperties = {
