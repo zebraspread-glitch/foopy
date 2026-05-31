@@ -3210,59 +3210,149 @@ function DuelHomepageCard() {
 
   const href = `/match/${card.gameId}?tab=duels`;
 
-  const borderColor = card.type === "available" ? "#3b82f6"
-    : card.type === "active"    ? "#4ade80"
-    : card.type === "waiting"   ? "#f59e0b"
-    : card.won ? "#4ade80" : card.isDraw ? "#f59e0b" : "#ef4444";
+  // Colours per state
+  const accent =
+    card.type === "available" ? "#6366f1"
+    : card.type === "active"  ? "#22c55e"
+    : card.type === "waiting" ? "#f59e0b"
+    : card.won                ? "#22c55e"
+    : card.isDraw             ? "#f59e0b"
+    :                           "#ef4444";
 
-  const badge = card.type === "available" ? "⚔ DUEL AVAILABLE"
-    : card.type === "active"   ? "⚔ ACTIVE DUEL"
-    : card.type === "waiting"  ? "⚔ WAITING FOR OPPONENT"
-    : card.won ? "⚔ DUEL WON" : card.isDraw ? "⚔ DUEL DRAW" : "⚔ DUEL LOST";
+  const isActive    = card.type === "active";
+  const isWaiting   = card.type === "waiting";
+  const isAvailable = card.type === "available";
+  const isResult    = card.type === "result";
 
-  const badgeColor = borderColor;
+  const statusLabel =
+    isAvailable ? "DUEL AVAILABLE"
+    : isActive   ? "ACTIVE DUEL"
+    : isWaiting  ? "FINDING OPPONENT"
+    : card.won   ? "DUEL WON"
+    : card.isDraw? "DUEL DRAW"
+    :              "DUEL LOST";
 
   return (
-    <Link href={href} style={{
-      display: "flex", alignItems: "center", justifyContent: "space-between",
-      margin: "0 12px 10px", padding: "12px 14px", borderRadius: 14,
-      background: `${borderColor}12`, border: `1.5px solid ${borderColor}40`,
-      textDecoration: "none", color: "var(--text-1)", gap: 10,
-    }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 11, fontWeight: 800, color: badgeColor, letterSpacing: "0.06em", marginBottom: 3 }}>
-          {badge}
-        </div>
-        <div style={{ fontWeight: 700, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {card.homeTeam} vs {card.awayTeam}
-        </div>
-        <div style={{ fontSize: 12, color: "#64748b", marginTop: 1 }}>Round {card.round}</div>
-      </div>
+    <>
+      <style>{`
+        @keyframes duel-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.55;transform:scale(1.18)} }
+        @keyframes duel-shimmer { 0%{background-position:-200% center} 100%{background-position:200% center} }
+        @keyframes duel-spin { to{transform:rotate(360deg)} }
+        @keyframes duel-fadein { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+        .duel-card:hover .duel-arrow { transform: translateX(3px); }
+        .duel-card:active { transform: scale(0.985); }
+      `}</style>
 
-      {card.type === "result" && (
-        <div style={{ textAlign: "right", flexShrink: 0 }}>
-          <div style={{ fontSize: 22, fontWeight: 900, color: borderColor, lineHeight: 1 }}>
-            {card.myScore ?? 0}–{card.oppScore ?? 0}
+      <Link
+        href={href}
+        className="duel-card"
+        style={{
+          display: "block",
+          margin: "0 12px 10px",
+          borderRadius: 18,
+          textDecoration: "none",
+          color: "var(--text-1)",
+          overflow: "hidden",
+          position: "relative",
+          boxShadow: `0 4px 24px ${accent}22`,
+          border: `1px solid ${accent}30`,
+          animation: "duel-fadein 0.35s ease both",
+          transition: "transform 0.12s, box-shadow 0.12s",
+        }}
+      >
+        {/* Gradient background */}
+        <div style={{
+          position: "absolute", inset: 0,
+          background: `linear-gradient(135deg, ${accent}18 0%, ${accent}06 60%, transparent 100%)`,
+          pointerEvents: "none",
+        }} />
+
+        {/* Shimmer line at top */}
+        <div style={{
+          position: "absolute", top: 0, left: 0, right: 0, height: 2,
+          background: isAvailable
+            ? `linear-gradient(90deg, transparent, ${accent}, transparent)`
+            : `${accent}60`,
+          backgroundSize: "200% 100%",
+          animation: isAvailable ? "duel-shimmer 2s linear infinite" : undefined,
+        }} />
+
+        <div style={{ position: "relative", padding: "13px 16px 14px", display: "flex", alignItems: "center", gap: 12 }}>
+
+          {/* Left: icon */}
+          <div style={{
+            width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+            background: `${accent}20`,
+            border: `1px solid ${accent}35`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 18,
+          }}>
+            {isAvailable ? "⚔" : isWaiting ? (
+              <div style={{ width: 16, height: 16, borderRadius: "50%", border: `2.5px solid ${accent}40`, borderTopColor: accent, animation: "duel-spin 0.8s linear infinite" }} />
+            ) : isResult && card.won ? "🏆" : isResult && card.isDraw ? "🤝" : isResult ? "💀" : "⚔"}
           </div>
-          {card.opponentName && (
-            <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>vs {card.opponentName}</div>
+
+          {/* Middle: text */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+              {/* Live pulse dot */}
+              {isActive && (
+                <div style={{ width: 7, height: 7, borderRadius: "50%", background: accent, animation: "duel-pulse 1.4s ease-in-out infinite", flexShrink: 0 }} />
+              )}
+              <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", color: accent }}>
+                {statusLabel}
+              </span>
+            </div>
+
+            <div style={{ fontWeight: 800, fontSize: 15, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {card.homeTeam} vs {card.awayTeam}
+            </div>
+
+            <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
+              Round {card.round}
+              {(isActive || isWaiting) && card.opponentName && (
+                <span style={{ color: "#94a3b8" }}> · vs {card.opponentName}</span>
+              )}
+            </div>
+          </div>
+
+          {/* Right: CTA / score / avatar */}
+          {isAvailable && (
+            <div style={{
+              flexShrink: 0, padding: "7px 14px", borderRadius: 10,
+              background: accent, color: "#fff", fontWeight: 800, fontSize: 13,
+              display: "flex", alignItems: "center", gap: 5,
+            }}>
+              Enter
+              <span className="duel-arrow" style={{ transition: "transform 0.15s" }}>→</span>
+            </div>
+          )}
+
+          {(isActive || isWaiting) && card.opponentAvatar && (
+            <div style={{ flexShrink: 0, width: 36, height: 36, borderRadius: "50%", overflow: "hidden", border: `2px solid ${accent}50` }}>
+              <img src={card.opponentAvatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            </div>
+          )}
+
+          {(isActive || isWaiting) && !card.opponentAvatar && card.opponentName && (
+            <div style={{ flexShrink: 0, width: 36, height: 36, borderRadius: "50%", background: `${accent}20`, border: `2px solid ${accent}50`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: accent }}>
+              {card.opponentName.slice(0, 1).toUpperCase()}
+            </div>
+          )}
+
+          {isResult && (
+            <div style={{ flexShrink: 0, textAlign: "right" }}>
+              <div style={{ fontSize: 24, fontWeight: 900, color: accent, lineHeight: 1, letterSpacing: "-0.02em" }}>
+                {card.myScore ?? 0}<span style={{ fontSize: 16, color: "#475569", margin: "0 2px" }}>–</span>{card.oppScore ?? 0}
+              </div>
+              {card.opponentName && (
+                <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>vs {card.opponentName}</div>
+              )}
+            </div>
           )}
         </div>
-      )}
-
-      {(card.type === "active" || card.type === "waiting") && card.opponentName && (
-        <div style={{ textAlign: "right", flexShrink: 0 }}>
-          <div style={{ fontSize: 12, color: "#64748b" }}>vs</div>
-          <div style={{ fontSize: 13, fontWeight: 700 }}>{card.opponentName}</div>
-        </div>
-      )}
-
-      {card.type === "available" && (
-        <div style={{ padding: "7px 14px", borderRadius: 10, background: "#3b82f6", color: "#fff", fontWeight: 800, fontSize: 13, flexShrink: 0 }}>
-          Enter
-        </div>
-      )}
-    </Link>
+      </Link>
+    </>
   );
 }
 
