@@ -81,6 +81,7 @@ export default function DuelsTab({ gameId, gameStarted, onDuelGameFound }: { gam
   const [draftPicks, setDraftPicks] = useState<DraftPick[]>([]);
   const [loading, setLoading]       = useState(true);
   const [entering, setEntering]     = useState(false);
+  const [enterError, setEnterError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [pollInterval, setPollInterval] = useState<ReturnType<typeof setInterval> | null>(null);
 
@@ -135,19 +136,26 @@ export default function DuelsTab({ gameId, gameStarted, onDuelGameFound }: { gam
   }, [duel?.status]);
 
   async function enterDuel() {
-    if (!token || !duelGame) return;
+    if (!duelGame) return;
+    if (!token) { setEnterError("You need to be signed in to enter a duel."); return; }
     setEntering(true);
-    const res = await fetch("/api/duels/enter", {
-      method: "POST",
-      headers: { "content-type": "application/json", "authorization": `Bearer ${token}` },
-      body: JSON.stringify({ duel_game_id: duelGame.id }),
-    });
-    setEntering(false);
-    if (res.ok) {
-      await load();
-    } else {
-      const json = await res.json();
-      alert(json.error ?? "Failed to enter duel");
+    setEnterError("");
+    try {
+      const res = await fetch("/api/duels/enter", {
+        method: "POST",
+        headers: { "content-type": "application/json", "authorization": `Bearer ${token}` },
+        body: JSON.stringify({ duel_game_id: duelGame.id }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok) {
+        await load();
+      } else {
+        setEnterError(json.error ?? `Server error (${res.status})`);
+      }
+    } catch (err: any) {
+      setEnterError(err?.message ?? "Network error — please try again");
+    } finally {
+      setEntering(false);
     }
   }
 
@@ -229,7 +237,7 @@ export default function DuelsTab({ gameId, gameStarted, onDuelGameFound }: { gam
         </div>
       );
     }
-    return <EnterDuelScreen duelGame={duelGame} onEnter={enterDuel} entering={entering} />;
+    return <EnterDuelScreen duelGame={duelGame} onEnter={enterDuel} entering={entering} error={enterError} />;
   }
 
   // ── Cancelled ──
@@ -308,11 +316,12 @@ export default function DuelsTab({ gameId, gameStarted, onDuelGameFound }: { gam
 // ── Sub-components ─────────────────────────────────��──────────────────────────
 
 function EnterDuelScreen({
-  duelGame, onEnter, entering,
+  duelGame, onEnter, entering, error,
 }: {
   duelGame: DuelGame;
   onEnter: () => void;
   entering: boolean;
+  error?: string;
 }) {
   return (
     <div style={{ padding: "24px 16px", display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
@@ -343,6 +352,11 @@ function EnterDuelScreen({
       >
         {entering ? "Entering..." : "⚔ Enter Duel"}
       </button>
+      {error && (
+        <div style={{ maxWidth: 360, width: "100%", padding: "10px 14px", borderRadius: 10, background: "rgba(239,68,68,0.15)", color: "#f87171", fontSize: 14, textAlign: "center" }}>
+          {error}
+        </div>
+      )}
     </div>
   );
 }
