@@ -137,13 +137,17 @@ export default function DuelsTab({ gameId, gameStarted, onDuelGameFound }: { gam
 
   async function enterDuel() {
     if (!duelGame) { setEnterError("Duel not loaded yet — try again"); return; }
-    if (!token) { setEnterError("You need to be signed in to enter a duel."); return; }
     setEntering(true);
     setEnterError("");
     try {
+      // Always get a fresh token at click time — stored token may have expired
+      const { data: sessionData } = await supabase.auth.getSession();
+      const freshToken = sessionData.session?.access_token;
+      if (!freshToken) { setEnterError("You need to be signed in to enter a duel."); setEntering(false); return; }
+
       const res = await fetch("/api/duels/enter", {
         method: "POST",
-        headers: { "content-type": "application/json", "authorization": `Bearer ${token}` },
+        headers: { "content-type": "application/json", "authorization": `Bearer ${freshToken}` },
         body: JSON.stringify({ duel_game_id: duelGame.id }),
       });
       const json = await res.json().catch(() => ({}));
