@@ -2226,7 +2226,7 @@ function LadderPositionsBox({ homeTeam, awayTeam, allGames }: { homeTeam: string
             <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)" }}>
               <img src={logo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
             </div>
-            <div style={{ flex: 1, fontSize: 15, fontWeight: 800, color: "var(--text-1)", paddingLeft: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            <div style={{ flex: 1, fontSize: 15, fontWeight: 800, color: "var(--text-1)", paddingLeft: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontFamily: '"Druk Wide", "Arial Black", Impact, sans-serif' }}>
               {teamLabel}
             </div>
             <div style={statCell}>{t.played}</div>
@@ -5092,9 +5092,7 @@ function MatchPolls({
     addPlayer([...all].sort((a,b)=>ns(b,"clearances")-ns(a,"clearances")), "clearances", 3, "player_clearances", POLL_CATEGORIES.player_clearances.label);
     addPlayer([...all].sort((a,b)=>ns(b,"hitouts")-ns(a,"hitouts")), "hitouts", 5, "player_hitouts", POLL_CATEGORIES.player_hitouts.label);
     addPlayer([...all].sort((a,b)=>ns(b,"tackles")-ns(a,"tackles")), "tackles", 4, "player_tackles", POLL_CATEGORIES.player_tackles.label);
-    candidates.push({ question: POLL_CATEGORIES.team_disposals.label, key: "team_disposals", type: "team", options: [homeTeam, awayTeam], score: 28 });
-    candidates.push({ question: POLL_CATEGORIES.team_goals.label,     key: "team_goals",     type: "team", options: [homeTeam, awayTeam], score: 22 });
-    candidates.push({ question: POLL_CATEGORIES.team_winner.label,    key: "team_winner",    type: "team", options: [homeTeam, awayTeam], score: 15 });
+    // Team polls intentionally excluded — auto polls are always player matchups
 
     // Avoid duplicating a poll category already on this game
     const usedKeys = new Set(polls.map(p => p.category_key));
