@@ -7,6 +7,27 @@ import { supabase } from "@/app/lib/supabase";
 
 type Mode = "login" | "signup";
 
+const AFL_TEAMS = [
+  { name: "Adelaide Crows",   slug: "crows"     },
+  { name: "Brisbane Lions",   slug: "lions"     },
+  { name: "Carlton",          slug: "blues"     },
+  { name: "Collingwood",      slug: "magpies"   },
+  { name: "Essendon",         slug: "bombers"   },
+  { name: "Fremantle",        slug: "dockers"   },
+  { name: "Geelong",          slug: "cats"      },
+  { name: "Gold Coast",       slug: "suns"      },
+  { name: "GWS Giants",       slug: "giants"    },
+  { name: "Hawthorn",         slug: "hawks"     },
+  { name: "Melbourne",        slug: "demons"    },
+  { name: "North Melbourne",  slug: "kangaroos" },
+  { name: "Port Adelaide",    slug: "power"     },
+  { name: "Richmond",         slug: "tigers"    },
+  { name: "St Kilda",         slug: "saints"    },
+  { name: "Sydney Swans",     slug: "swans"     },
+  { name: "West Coast",       slug: "eagles"    },
+  { name: "Western Bulldogs", slug: "bulldogs"  },
+];
+
 export default function LoginPage() {
   return (
     <Suspense fallback={<LoginFallback />}>
@@ -44,6 +65,7 @@ function LoginPageInner() {
   const [loading, setLoading]           = useState(false);
   const [error, setError]               = useState("");
   const [checkEmail, setCheckEmail]     = useState(false);
+  const [favouriteTeam, setFavouriteTeam] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -72,17 +94,24 @@ function LoginPageInner() {
     if (!data.user?.identities?.length) { setError("An account with this email already exists. Try signing in."); setLoading(false); return; }
 
     if (data.session && data.user) {
-      const { error: upsertErr } = await supabase.from("profiles").upsert({ id: data.user.id, username: cleanUsername, display_name: cleanUsername, username_updated_at: new Date().toISOString() }, { onConflict: "id" });
+      const { error: upsertErr } = await supabase.from("profiles").upsert({
+        id: data.user.id,
+        username: cleanUsername,
+        display_name: cleanUsername,
+        username_updated_at: new Date().toISOString(),
+        ...(favouriteTeam ? { favourite_team: favouriteTeam } : {}),
+      }, { onConflict: "id" });
       if (upsertErr) localStorage.setItem("foopy_pending_username", cleanUsername);
       router.push("/profile");
     } else {
       localStorage.setItem("foopy_pending_username", cleanUsername);
+      if (favouriteTeam) localStorage.setItem("foopy_pending_team", favouriteTeam);
       setCheckEmail(true);
     }
     setLoading(false);
   }
 
-  function switchMode(m: Mode) { setMode(m); setError(""); setUsername(""); }
+  function switchMode(m: Mode) { setMode(m); setError(""); setUsername(""); setFavouriteTeam(""); }
 
   if (checkEmail) {
     return (
@@ -155,6 +184,47 @@ function LoginPageInner() {
                 type="text" value={username} onChange={e => setUsername(e.target.value)}
                 placeholder="yourname" maxLength={20} autoComplete="off" required style={input}
               />
+            </div>
+          )}
+
+          {mode === "signup" && (
+            <div style={fieldGroup}>
+              <label style={label}>
+                My Team <span style={{ opacity: 0.35, fontWeight: 500, textTransform: "none" }}>(optional)</span>
+              </label>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 6 }}>
+                {AFL_TEAMS.map(team => {
+                  const selected = favouriteTeam === team.name;
+                  return (
+                    <button
+                      key={team.name}
+                      type="button"
+                      title={team.name}
+                      onClick={() => setFavouriteTeam(selected ? "" : team.name)}
+                      style={{
+                        display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+                        padding: "7px 2px 5px",
+                        border: selected ? "2px solid #5865f2" : "2px solid rgba(255,255,255,0.08)",
+                        borderRadius: 10,
+                        background: selected ? "rgba(88,101,242,0.18)" : "rgba(255,255,255,0.03)",
+                        cursor: "pointer",
+                        transition: "all 0.12s",
+                      }}
+                    >
+                      <img
+                        src={`/team-logos/${team.slug}.png`}
+                        alt={team.name}
+                        style={{ width: 28, height: 28, objectFit: "contain" }}
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+              {favouriteTeam && (
+                <div style={{ fontSize: 12, color: "#5865f2", fontWeight: 600, marginTop: 2 }}>
+                  {favouriteTeam}
+                </div>
+              )}
             </div>
           )}
 

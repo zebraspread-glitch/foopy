@@ -2545,6 +2545,7 @@ function MatchPageInner() {
 
   const [liveViewerCount, setLiveViewerCount] = useState(0);
   const [totalViewerCount, setTotalViewerCount] = useState<number | null>(null);
+  const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
 
   const apiSportsGameId = useMemo(() => {
     const mapped = (API_SPORTS_MATCH_IDS as Record<string, any>)[id];
@@ -2794,8 +2795,16 @@ function MatchPageInner() {
 
 
   useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setIsSignedIn(!!data.session));
+  }, []);
+
+  useEffect(() => {
     if (!showStatsTabs && activeTab !== "feed" && activeTab !== "chat" && activeTab !== "polls" && activeTab !== "duels") setActiveTab("feed");
   }, [showStatsTabs, activeTab]);
+
+  useEffect(() => {
+    if (isSignedIn === false && activeTab !== "feed") setActiveTab("feed");
+  }, [isSignedIn, activeTab]);
 
   useEffect(() => {
     if (!id) return;
@@ -3540,7 +3549,7 @@ function MatchPageInner() {
           borderBottom: "1px solid var(--border-2)",
         }}>
           <nav style={{ display: "flex", width: "100%" }}>
-            {(["feed","chat","polls", ...(hasDuelGame ? ["duels" as const] : [])] as const).map(t => (
+            {(isSignedIn ? ["feed","chat","polls", ...(hasDuelGame ? ["duels" as const] : [])] as const : ["feed"] as const).map(t => (
               <button key={t} type="button" onClick={() => setActiveTab(t)} style={{
                 flex: 1, padding: "13px 4px 11px",
                 background: "none", border: "none",
@@ -3565,7 +3574,7 @@ function MatchPageInner() {
                 )}
               </button>
             ))}
-            {showStatsTabs && (
+            {showStatsTabs && isSignedIn && (
               <>
                 {(["game","home","away"] as const).map((t) => {
                   const label = t === "game" ? "Stats" : t === "home" ? homeAbbr : awayAbbr;
