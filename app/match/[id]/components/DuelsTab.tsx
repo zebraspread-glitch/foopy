@@ -1,8 +1,26 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
 import { teamColors } from "../utils";
+
+function teamLogoUrl(name: string): string {
+  const k = name.toLowerCase().replace(/[^a-z]/g, "");
+  const map: Record<string, string> = {
+    adelaide:"crows",adelaidecrows:"crows",brisbane:"lions",brisbanelions:"lions",
+    carlton:"blues",collingwood:"magpies",essendon:"bombers",fremantle:"dockers",
+    geelong:"cats",geelongcats:"cats",goldcoast:"suns",goldcoastsuns:"suns",
+    gws:"giants",gwsgiants:"giants",greaterwesternsydney:"giants",
+    hawthorn:"hawks",hawthornhawks:"hawks",melbourne:"demons",melbournedemons:"demons",
+    northmelbourne:"kangaroos",northmelbournekangaroos:"kangaroos",
+    portadelaide:"power",portadelaidepower:"power",richmond:"tigers",richmondtigers:"tigers",
+    stkilda:"saints",stkildasaints:"saints",sydney:"swans",sydneyswans:"swans",
+    westcoast:"eagles",westcoasteagles:"eagles",westernbulldogs:"bulldogs",
+  };
+  const slug = map[k];
+  return slug ? `/team-logos/${slug}.png` : "";
+}
 
 const MARGIN_RANGES = ["1-12", "13-24", "25-36", "37-48", "49+"];
 
@@ -724,18 +742,21 @@ function PicksLockedScreen({
 
           {/* Me */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, paddingRight: 12 }}>
-            <div style={{ position: "relative" }}>
+            <Link href={me?.username ? `/profile/${me.username}` : "#"} style={{ textDecoration: "none", display: "block" }}>
               <div style={{ width: 64, height: 64, borderRadius: "50%", overflow: "hidden", border: `3px solid ${meColor}`, flexShrink: 0 }}>
                 <UserAvatar user={me ?? { username: "You", display_name: "You", avatar_url: null }} size={64} />
               </div>
-              <div style={{ position: "absolute", bottom: -2, left: "50%", transform: "translateX(-50%)", background: "#3b82f6", fontSize: 8, fontWeight: 900, letterSpacing: "0.06em", color: "#fff", padding: "2px 7px", borderRadius: 999, whiteSpace: "nowrap", border: "2px solid #0b0e14" }}>YOU</div>
-            </div>
+            </Link>
             <div style={{ textAlign: "center" }}>
               <div style={{ fontWeight: 800, fontSize: 15, color: "#f1f5f9", lineHeight: 1.2 }}>{me?.display_name || me?.username || "You"}</div>
               {me?.favourite_team && (
-                <div style={{ fontSize: 11, fontWeight: 700, color: meColor, marginTop: 5, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: meColor, flexShrink: 0 }} />
-                  {me.favourite_team}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, marginTop: 6 }}>
+                  {teamLogoUrl(me.favourite_team) && (
+                    <div style={{ width: 18, height: 18, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${meColor}18` }}>
+                      <img src={teamLogoUrl(me.favourite_team)} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                    </div>
+                  )}
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-3)", letterSpacing: "-0.01em" }}>{me.favourite_team}</span>
                 </div>
               )}
               {me?.aura != null && (
@@ -758,17 +779,21 @@ function PicksLockedScreen({
 
           {/* Opponent */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, paddingLeft: 12 }}>
-            <div style={{ position: "relative" }}>
+            <Link href={opponent?.username ? `/profile/${opponent.username}` : "#"} style={{ textDecoration: "none", display: "block" }}>
               <div style={{ width: 64, height: 64, borderRadius: "50%", overflow: "hidden", border: `3px solid ${oppColor}`, flexShrink: 0 }}>
                 <UserAvatar user={opponent ?? { username: "?", display_name: "?", avatar_url: null }} size={64} />
               </div>
-            </div>
+            </Link>
             <div style={{ textAlign: "center" }}>
               <div style={{ fontWeight: 800, fontSize: 15, color: "#94a3b8", lineHeight: 1.2 }}>{opponent?.display_name || opponent?.username || "Opponent"}</div>
               {opponent?.favourite_team && (
-                <div style={{ fontSize: 11, fontWeight: 700, color: oppColor, marginTop: 5, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: oppColor, flexShrink: 0 }} />
-                  {opponent.favourite_team}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, marginTop: 6 }}>
+                  {teamLogoUrl(opponent.favourite_team) && (
+                    <div style={{ width: 18, height: 18, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${oppColor}18` }}>
+                      <img src={teamLogoUrl(opponent.favourite_team)} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                    </div>
+                  )}
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-3)", letterSpacing: "-0.01em" }}>{opponent.favourite_team}</span>
                 </div>
               )}
               {opponent?.aura != null && (
