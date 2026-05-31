@@ -11,8 +11,23 @@ function adminSupabase() {
   );
 }
 
+async function attachProfiles(db: ReturnType<typeof adminSupabase>, duel: any) {
+  if (!duel) return duel;
+  const ids = [duel.challenger_id, duel.opponent_id].filter(Boolean);
+  if (!ids.length) return duel;
+  const { data: profiles } = await db
+    .from("profiles")
+    .select("id, username, display_name, avatar_url")
+    .in("id", ids);
+  const map = Object.fromEntries((profiles ?? []).map((p: any) => [p.id, p]));
+  return {
+    ...duel,
+    challenger: map[duel.challenger_id] ?? null,
+    opponent:   duel.opponent_id ? (map[duel.opponent_id] ?? null) : null,
+  };
+}
+
 // GET /api/duels/game?game_id=123
-// Returns the duel game config, questions, and the current user's duel (if any)
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const gameId = searchParams.get("game_id");
@@ -45,18 +60,14 @@ export async function GET(req: Request) {
     return NextResponse.json({ duelGame, duel: null, questions: questions ?? [], picks: [] });
   }
 
-  // Get the authenticated user
+  // Authenticate user
   const { data: { user } } = await supabaseServer.auth.getUser(token);
   if (!user) return NextResponse.json({ duelGame, duel: null, questions: questions ?? [], picks: [] });
 
-  // Get this user's duel for this game
-  const { data: duel } = await db
+  // Get this user's duel — plain select, no FK joins to profiles
+  const { data: rawDuel, error: duelErr } = await db
     .from("duels")
-    .select(`
-      *,
-      challenger:profiles!duels_challenger_id_fkey(id, username, display_name, avatar_url),
-      opponent:profiles!duels_opponent_id_fkey(id, username, display_name, avatar_url)
-    `)
+    .select("*")
     .eq("duel_game_id", duelGame.id)
     .or(`challenger_id.eq.${user.id},opponent_id.eq.${user.id}`)
     .neq("status", "cancelled")
@@ -64,7 +75,11 @@ export async function GET(req: Request) {
     .limit(1)
     .maybeSingle();
 
-  // Get user's picks for this duel
+  if (duelErr) console.error("[duels/game] duel query error:", duelErr.message);
+
+  const duel = await attachProfiles(db, rawDuel ?? null);
+
+  // Get user's picks
   let picks: any[] = [];
   if (duel) {
     const { data: pickData } = await db
@@ -74,7 +89,7 @@ export async function GET(req: Request) {
       .eq("user_id", user.id);
     picks = pickData ?? [];
 
-    // If duel is complete, also fetch opponent picks for result screen
+    // For completed duels, also fetch opponent picks
     if (duel.status === "complete") {
       const opponentId = duel.challenger_id === user.id ? duel.opponent_id : duel.challenger_id;
       if (opponentId) {
@@ -83,13 +98,7 @@ export async function GET(req: Request) {
           .select("*")
           .eq("duel_id", duel.id)
           .eq("user_id", opponentId);
-        return NextResponse.json({
-          duelGame,
-          duel,
-          questions: questions ?? [],
-          picks,
-          opponentPicks: oppPickData ?? [],
-        });
+        return NextResponse.json({ duelGame, duel, questions: questions ?? [], picks, opponentPicks: oppPickData ?? [] });
       }
     }
   }

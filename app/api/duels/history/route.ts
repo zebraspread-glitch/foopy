@@ -11,7 +11,6 @@ function adminSupabase() {
   );
 }
 
-// GET /api/duels/history — get the authenticated user's duel history
 export async function GET(req: Request) {
   const token = req.headers.get("authorization")?.slice(7) ?? null;
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -21,13 +20,12 @@ export async function GET(req: Request) {
 
   const db = adminSupabase();
 
-  const { data: duels, error } = await db
+  // Plain select — no FK joins to profiles (those FKs point to auth.users, not profiles)
+  const { data: rawDuels, error } = await db
     .from("duels")
     .select(`
       *,
-      duel_game:duel_games(id, game_id, round, season, home_team, away_team, game_date),
-      challenger:profiles!duels_challenger_id_fkey(id, username, display_name, avatar_url),
-      opponent:profiles!duels_opponent_id_fkey(id, username, display_name, avatar_url)
+      duel_game:duel_games(id, game_id, round, season, home_team, away_team, game_date)
     `)
     .or(`challenger_id.eq.${user.id},opponent_id.eq.${user.id}`)
     .neq("status", "cancelled")
@@ -36,21 +34,40 @@ export async function GET(req: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Attach win streak
+  // Attach profiles separately
+  const duels = rawDuels ?? [];
+  const profileIds = [...new Set(
+    duels.flatMap((d: any) => [d.challenger_id, d.opponent_id].filter(Boolean))
+  )];
+
+  let profileMap: Record<string, any> = {};
+  if (profileIds.length) {
+    const { data: profiles } = await db
+      .from("profiles")
+      .select("id, username, display_name, avatar_url")
+      .in("id", profileIds);
+    profileMap = Object.fromEntries((profiles ?? []).map((p: any) => [p.id, p]));
+  }
+
+  const duelsWithProfiles = duels.map((d: any) => ({
+    ...d,
+    challenger: profileMap[d.challenger_id] ?? null,
+    opponent:   d.opponent_id ? (profileMap[d.opponent_id] ?? null) : null,
+  }));
+
   const { data: streakData } = await db.rpc("get_duel_win_streak", { p_user_id: user.id });
   const winStreak = streakData ?? 0;
 
-  // Compute summary stats
-  const completed = (duels ?? []).filter((d) => d.status === "complete");
-  const wins   = completed.filter((d) => d.winner_id === user.id).length;
-  const losses = completed.filter((d) => d.winner_id !== null && d.winner_id !== user.id && !d.is_draw).length;
-  const draws  = completed.filter((d) => d.is_draw).length;
-  const winRate = completed.filter((d) => d.winner_id !== null).length > 0
-    ? Math.round(wins / completed.filter((d) => d.winner_id !== null).length * 100)
+  const completed = duelsWithProfiles.filter((d: any) => d.status === "complete");
+  const wins      = completed.filter((d: any) => d.winner_id === user.id).length;
+  const losses    = completed.filter((d: any) => d.winner_id !== null && d.winner_id !== user.id && !d.is_draw).length;
+  const draws     = completed.filter((d: any) => d.is_draw).length;
+  const winRate   = completed.filter((d: any) => d.winner_id !== null).length > 0
+    ? Math.round(wins / completed.filter((d: any) => d.winner_id !== null).length * 100)
     : 0;
 
   return NextResponse.json({
-    duels: duels ?? [],
+    duels: duelsWithProfiles,
     stats: { wins, losses, draws, total: completed.length, winRate, winStreak },
     userId: user.id,
   });
