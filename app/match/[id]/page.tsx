@@ -796,12 +796,7 @@ function QuarterScoresTable({
   currentPeriod: number;
 }) {
   const labels = ["Q1", "Q2", "Q3", "Q4"];
-  const homeColor = teamColor(hteam, "home");
-  const awayColor = teamColor(ateam, "away");
-  const hAbbr = getAbbr(hteam);
-  const aAbbr = getAbbr(ateam);
 
-  // Only show quarters that have data or have been played
   const cols = labels.map((lbl, i) => ({
     lbl,
     home: quarterScores.home[i] ?? null,
@@ -811,72 +806,53 @@ function QuarterScoresTable({
 
   if (!cols.length) return null;
 
-  const cellStyle: React.CSSProperties = {
-    textAlign: "center", padding: "10px 0", minWidth: 52,
-  };
+  const sep = "1px solid rgba(255,255,255,0.08)";
 
   return (
-    <div style={{ background: "var(--surface-2)", border: "1px solid var(--border-2)", borderRadius: 12, overflow: "hidden", marginBottom: 14 }}>
-      <div style={{ padding: "10px 14px 8px", fontSize: 12, fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
-        Quarter by Quarter
-      </div>
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-          <thead>
-            <tr style={{ borderTop: "1px solid var(--border-2)" }}>
-              <th style={{ padding: "7px 14px", textAlign: "left", fontWeight: 600, color: "var(--text-3)", fontSize: 12, width: 52 }} />
-              {cols.map(c => (
-                <th key={c.lbl} style={{ ...cellStyle, fontWeight: 700, color: "var(--text-3)", fontSize: 11, letterSpacing: "0.05em", padding: "7px 0" }}>{c.lbl}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {/* Home row */}
-            <tr style={{ borderTop: "1px solid var(--border-2)" }}>
-              <td style={{ padding: "10px 14px", fontWeight: 800, fontSize: 13, color: homeColor, whiteSpace: "nowrap" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <img src={getLogo(hteam)} alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />
-                  {hAbbr}
-                </div>
-              </td>
-              {cols.map((c, i) => (
-                <td key={i} style={{ ...cellStyle }}>
-                  {c.home ? (
-                    <>
-                      <div style={{ fontWeight: 900, fontSize: 18, color: "var(--text-1)", lineHeight: 1, letterSpacing: "-0.02em" }}>{c.home.total}</div>
-                      {c.home.goals > 0 || c.home.behinds > 0
-                        ? <div style={{ fontSize: 10, fontWeight: 600, color: "var(--text-3)", marginTop: 2 }}>{c.home.goals}.{c.home.behinds}</div>
-                        : null
-                      }
-                    </>
-                  ) : <span style={{ color: "var(--text-3)", fontSize: 12 }}>—</span>}
-                </td>
-              ))}
-            </tr>
-            {/* Away row */}
-            <tr style={{ borderTop: "1px solid var(--border-2)" }}>
-              <td style={{ padding: "10px 14px", fontWeight: 800, fontSize: 13, color: awayColor, whiteSpace: "nowrap" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <img src={getLogo(ateam)} alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />
-                  {aAbbr}
-                </div>
-              </td>
-              {cols.map((c, i) => (
-                <td key={i} style={{ ...cellStyle }}>
-                  {c.away ? (
-                    <>
-                      <div style={{ fontWeight: 900, fontSize: 18, color: "var(--text-1)", lineHeight: 1, letterSpacing: "-0.02em" }}>{c.away.total}</div>
-                      {c.away.goals > 0 || c.away.behinds > 0
-                        ? <div style={{ fontSize: 10, fontWeight: 600, color: "var(--text-3)", marginTop: 2 }}>{c.away.goals}.{c.away.behinds}</div>
-                        : null
-                      }
-                    </>
-                  ) : <span style={{ color: "var(--text-3)", fontSize: 12 }}>—</span>}
-                </td>
-              ))}
-            </tr>
-          </tbody>
-        </table>
+    <div style={{ background: "#000", borderRadius: 14, overflow: "hidden", marginBottom: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: `52px repeat(${cols.length}, 1fr)` }}>
+
+        {/* Header row */}
+        <div style={{ borderBottom: sep }} />
+        {cols.map(c => (
+          <div key={c.lbl} style={{
+            textAlign: "center", padding: "18px 0 14px",
+            fontWeight: 900, fontSize: 22, color: "#fff", letterSpacing: "-0.01em",
+            borderBottom: sep, borderLeft: sep,
+          }}>
+            {c.lbl}
+          </div>
+        ))}
+
+        {/* Home row */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "20px 0", borderBottom: sep }}>
+          <img src={getLogo(hteam)} alt={hteam} style={{ width: 32, height: 32, objectFit: "contain" }} />
+        </div>
+        {cols.map((c, i) => (
+          <div key={i} style={{ textAlign: "center", padding: "20px 8px", borderBottom: sep, borderLeft: sep }}>
+            {c.home
+              ? <span style={{ fontWeight: 900, fontSize: 32, color: "#fff", letterSpacing: "-0.02em" }}>
+                  {c.home.goals}.{c.home.behinds}
+                </span>
+              : <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 20 }}>—</span>
+            }
+          </div>
+        ))}
+
+        {/* Away row */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "20px 0" }}>
+          <img src={getLogo(ateam)} alt={ateam} style={{ width: 32, height: 32, objectFit: "contain" }} />
+        </div>
+        {cols.map((c, i) => (
+          <div key={i} style={{ textAlign: "center", padding: "20px 8px", borderLeft: sep }}>
+            {c.away
+              ? <span style={{ fontWeight: 900, fontSize: 32, color: "#fff", letterSpacing: "-0.02em" }}>
+                  {c.away.goals}.{c.away.behinds}
+                </span>
+              : <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 20 }}>—</span>
+            }
+          </div>
+        ))}
       </div>
     </div>
   );
