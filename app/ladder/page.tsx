@@ -571,8 +571,8 @@ export default function LadderPage() {
 
           .ladder-team-cell {
             padding: 0 4px !important;
-            width: 90px !important;
-            min-width: 90px !important;
+            width: 110px !important;
+            min-width: 110px !important;
           }
 
           .ladder-team-inner {
@@ -610,8 +610,11 @@ export default function LadderPage() {
             display: inline !important;
             font-size: 13px !important;
             font-weight: 950 !important;
-            letter-spacing: 0.02em !important;
+            letter-spacing: -0.01em !important;
             white-space: nowrap !important;
+            overflow: visible !important;
+            text-overflow: clip !important;
+            max-width: none !important;
           }
 
           .ladder-row {
