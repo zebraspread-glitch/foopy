@@ -159,9 +159,9 @@ export default function DuelsTab({ gameId, gameStarted, onDuelGameFound }: { gam
               pick_margin: null,
             })));
           }
+          // Don't call load() here — it races the DB write and can return null,
+          // resetting duel state. The polling interval handles refresh.
         }
-        // Also reload for full consistency
-        load().catch(() => {});
       } else {
         setEnterError(json.error ?? `Server error (${res.status})`);
       }
