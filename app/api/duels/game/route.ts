@@ -81,6 +81,7 @@ export async function GET(req: Request) {
 
   // Get user's picks
   let picks: any[] = [];
+  let opponentPicks: any[] = [];
   if (duel) {
     const { data: pickData } = await db
       .from("duel_picks")
@@ -89,19 +90,17 @@ export async function GET(req: Request) {
       .eq("user_id", user.id);
     picks = pickData ?? [];
 
-    // For completed duels, also fetch opponent picks
-    if (duel.status === "complete") {
-      const opponentId = duel.challenger_id === user.id ? duel.opponent_id : duel.challenger_id;
-      if (opponentId) {
-        const { data: oppPickData } = await db
-          .from("duel_picks")
-          .select("*")
-          .eq("duel_id", duel.id)
-          .eq("user_id", opponentId);
-        return NextResponse.json({ duelGame, duel, questions: questions ?? [], picks, opponentPicks: oppPickData ?? [] });
-      }
+    // Fetch opponent picks for active + complete duels so locked screen can show both
+    const opponentId = duel.challenger_id === user.id ? duel.opponent_id : duel.challenger_id;
+    if (opponentId && (duel.status === "active" || duel.status === "complete")) {
+      const { data: oppPickData } = await db
+        .from("duel_picks")
+        .select("*")
+        .eq("duel_id", duel.id)
+        .eq("user_id", opponentId);
+      opponentPicks = oppPickData ?? [];
     }
   }
 
-  return NextResponse.json({ duelGame, duel, questions: questions ?? [], picks });
+  return NextResponse.json({ duelGame, duel, questions: questions ?? [], picks, opponentPicks });
 }
