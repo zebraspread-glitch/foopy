@@ -23,7 +23,7 @@ function teamLogoUrl(name: string): string {
   return slug ? `/team-logos/${slug}.png` : "";
 }
 
-const MARGIN_RANGES = ["1-12", "13-24", "25-36", "37-48", "49+"];
+// Exact margin is now stored as a numeric string e.g. "30"
 
 const DUEL_STAT_CATS: Record<string, { key: string; label: string; type: "player" | "team" }> = {
   player_goals:      { key: "goals",      label: "goals",   type: "player" },
@@ -804,28 +804,27 @@ function TiebreakerCard({
       </div>
 
       <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 8, fontWeight: 600 }}>
-        Winning margin:
+        Winning margin (exact points):
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-        {MARGIN_RANGES.map((r) => {
-          const active = margin === r;
-          return (
-            <button
-              key={r}
-              onClick={() => onMargin(r)}
-              style={{
-                padding: "6px 12px", borderRadius: 8, fontSize: 13, fontWeight: 700,
-                background: active ? "#f59e0b" : "var(--surface-2)",
-                border: active ? "2px solid #f59e0b" : "2px solid var(--border-2)",
-                color: active ? "#000" : "var(--text-1)",
-                cursor: "pointer",
-              }}
-            >
-              {r}
-            </button>
-          );
-        })}
-      </div>
+      <input
+        type="number"
+        min={1}
+        max={300}
+        value={margin ?? ""}
+        onChange={e => {
+          const v = e.target.value.replace(/[^0-9]/g, "");
+          if (v === "" || (Number(v) >= 1 && Number(v) <= 300)) onMargin(v);
+        }}
+        placeholder="e.g. 30"
+        style={{
+          width: "100%", padding: "12px 16px", borderRadius: 10,
+          border: `2px solid ${margin ? "#f59e0b" : "var(--border-2)"}`,
+          background: margin ? "rgba(245,158,11,0.08)" : "var(--surface-2)",
+          color: "var(--text-1)", fontSize: 22, fontWeight: 800,
+          textAlign: "center", outline: "none", boxSizing: "border-box",
+          fontFamily: "inherit",
+        }}
+      />
     </div>
   );
 }
@@ -1050,8 +1049,12 @@ function LockedPickRow({ question, myPick, oppPick, isTiebreaker, index = 0, liv
 
   const myOptName  = myPick  ? (myPick.pick  === "a" ? question.option_a : question.option_b) : null;
   const oppOptName = oppPick ? (oppPick.pick === "a" ? question.option_a : question.option_b) : null;
-  const myStat  = myOptName  ? getStatDisplay(myOptName)  : null;
-  const oppStat = oppOptName ? getStatDisplay(oppOptName) : null;
+
+  // Result indicators (✓/✗) take priority over live stat chips
+  const myCorrect  = myPick?.is_correct  ?? null;
+  const oppCorrect = oppPick?.is_correct ?? null;
+  const myStat  = myCorrect  === null ? (myOptName  ? getStatDisplay(myOptName)  : null) : null;
+  const oppStat = oppCorrect === null ? (oppOptName ? getStatDisplay(oppOptName) : null) : null;
 
   const myImage  = myPick  ? (myPick.pick === "a" ? question.option_a_image : question.option_b_image) : null;
   const oppImage = oppPick ? (oppPick.pick === "a" ? question.option_a_image : question.option_b_image) : null;
@@ -1090,12 +1093,15 @@ function LockedPickRow({ question, myPick, oppPick, isTiebreaker, index = 0, liv
           {myTeam && <div style={{ fontSize: 11, fontWeight: 600, color: myColor, marginTop: 1 }}>{myTeam}</div>}
         </div>
         <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.07em", color: "#3b82f6", background: "#3b82f618", padding: "2px 7px", borderRadius: 999, flexShrink: 0 }}>YOU</span>
-        {myStat && (
-          <div style={{ textAlign: "right", minWidth: 44, flexShrink: 0 }}>
-            <div style={{ fontSize: 34, fontWeight: 900, color: "var(--text-1)", lineHeight: 1, letterSpacing: "-0.04em" }}>{myStat.value}</div>
-            <div style={{ fontSize: 9, fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.07em", marginTop: 1 }}>{myStat.label}</div>
-          </div>
-        )}
+        {myCorrect !== null
+          ? <span style={{ fontSize: 20, fontWeight: 900, flexShrink: 0, color: myCorrect ? "#4ade80" : "#ef4444" }}>{myCorrect ? "✓" : "✗"}</span>
+          : myStat && (
+            <div style={{ textAlign: "right", minWidth: 44, flexShrink: 0 }}>
+              <div style={{ fontSize: 28, fontWeight: 900, color: "var(--text-1)", lineHeight: 1, letterSpacing: "-0.04em" }}>{myStat.value}</div>
+              <div style={{ fontSize: 9, fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.07em", marginTop: 1 }}>{myStat.label}</div>
+            </div>
+          )
+        }
       </div>
 
       {/* Divider */}
@@ -1119,12 +1125,15 @@ function LockedPickRow({ question, myPick, oppPick, isTiebreaker, index = 0, liv
           }
         </div>
         <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.07em", color: "#64748b", background: "#64748b18", padding: "2px 7px", borderRadius: 999, flexShrink: 0 }}>OPP</span>
-        {oppStat && (
-          <div style={{ textAlign: "right", minWidth: 44, flexShrink: 0 }}>
-            <div style={{ fontSize: 34, fontWeight: 900, color: "var(--text-3)", lineHeight: 1, letterSpacing: "-0.04em" }}>{oppStat.value}</div>
-            <div style={{ fontSize: 9, fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.07em", marginTop: 1 }}>{oppStat.label}</div>
-          </div>
-        )}
+        {oppCorrect !== null
+          ? <span style={{ fontSize: 20, fontWeight: 900, flexShrink: 0, color: oppCorrect ? "#4ade80" : "#ef4444" }}>{oppCorrect ? "✓" : "✗"}</span>
+          : oppStat && (
+            <div style={{ textAlign: "right", minWidth: 44, flexShrink: 0 }}>
+              <div style={{ fontSize: 28, fontWeight: 900, color: "var(--text-3)", lineHeight: 1, letterSpacing: "-0.04em" }}>{oppStat.value}</div>
+              <div style={{ fontSize: 9, fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.07em", marginTop: 1 }}>{oppStat.label}</div>
+            </div>
+          )
+        }
       </div>
 
       {/* Tiebreaker margin strip */}
@@ -1208,34 +1217,18 @@ function ResultScreen({
         </div>
       )}
 
-      {/* Side-by-side picks */}
+      {/* Pick breakdown — reuse the same card layout as the live screen */}
       <div style={{ fontWeight: 700, fontSize: 15, margin: "20px 0 12px" }}>Pick breakdown</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {regularQs.map((q) => {
-          const mp = myPicks.find((p)  => p.question_id === q.id);
-          const op = oppPicks.find((p) => p.question_id === q.id);
-          return (
-            <PickRow
-              key={q.id}
-              question={q}
-              myPick={mp ?? null}
-              oppPick={op ?? null}
-            />
-          );
+        {regularQs.map((q, i) => {
+          const mp = myPicks.find(p => p.question_id === q.id);
+          const op = oppPicks.find(p => p.question_id === q.id);
+          return <LockedPickRow key={q.id} question={q} myPick={mp ?? null} oppPick={op ?? null} index={i} />;
         })}
-
         {tbQuestion && (() => {
-          const mp = myPicks.find((p)  => p.question_id === tbQuestion.id);
-          const op = oppPicks.find((p) => p.question_id === tbQuestion.id);
-          return (
-            <PickRow
-              key={tbQuestion.id}
-              question={tbQuestion}
-              myPick={mp ?? null}
-              oppPick={op ?? null}
-              isTiebreaker
-            />
-          );
+          const mp = myPicks.find(p => p.question_id === tbQuestion.id);
+          const op = oppPicks.find(p => p.question_id === tbQuestion.id);
+          return <LockedPickRow key={tbQuestion.id} question={tbQuestion} myPick={mp ?? null} oppPick={op ?? null} isTiebreaker index={regularQs.length} />;
         })()}
       </div>
     </div>

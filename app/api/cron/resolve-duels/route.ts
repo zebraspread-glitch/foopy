@@ -17,13 +17,23 @@ export const dynamic = "force-dynamic";
 const CRON_SECRET = process.env.CRON_SECRET ?? "foopy-cron";
 const API_BASE    = "https://v1.afl.api-sports.io";
 
-const MARGIN_RANGES = [
+// Margins are now stored as exact numeric strings (e.g. "30")
+// Kept for backward compat with any old range-format picks still in the DB
+const LEGACY_MARGIN_RANGES = [
   { label: "1-12",  mid: 6  },
   { label: "13-24", mid: 18 },
   { label: "25-36", mid: 30 },
   { label: "37-48", mid: 42 },
   { label: "49+",   mid: 56 },
 ];
+function pickMarginNum(m: string | null | undefined): number {
+  if (!m) return -999;
+  // New format: exact number
+  const direct = Number(m);
+  if (Number.isFinite(direct) && direct > 0) return direct;
+  // Legacy format: range label
+  return LEGACY_MARGIN_RANGES.find(r => r.label === m)?.mid ?? -999;
+}
 
 // Same categories as polls
 const POLL_CATEGORIES: Record<string, { stat: string; type: string }> = {
@@ -121,15 +131,6 @@ function resolveQuestion(
   return null;
 }
 
-function marginRange(margin: number): string {
-  let best = MARGIN_RANGES[0];
-  let bestDist = Math.abs(margin - best.mid);
-  for (const r of MARGIN_RANGES) {
-    const d = Math.abs(margin - r.mid);
-    if (d < bestDist) { best = r; bestDist = d; }
-  }
-  return best.label;
-}
 
 function adminSupabase() {
   return createClient(
@@ -307,7 +308,7 @@ async function runResolution() {
           ? (norm(q.option_a) === norm(winTeam) ? "a" : "b")
           : null;
         const correctMargin = Math.abs(hScore - aScore) > 0
-          ? marginRange(Math.abs(hScore - aScore))
+          ? String(Math.abs(hScore - aScore))
           : null;
         if (correctAnswer) {
           await db.from("duel_questions").update({ correct_answer: correctAnswer, correct_margin: correctMargin }).eq("id", q.id);
@@ -391,14 +392,12 @@ async function runResolution() {
       } else if (oTeamRight && !cTeamRight) {
         winnerId = duel.opponent_id;
       } else if (cTeamRight && oTeamRight && tbQuestion.correct_margin) {
-        const correctMid = MARGIN_RANGES.find(r => r.label === tbQuestion.correct_margin)?.mid ?? 0;
-        const cpMid = MARGIN_RANGES.find(r => r.label === cp?.pick_margin)?.mid ?? -999;
-        const opMid = MARGIN_RANGES.find(r => r.label === op?.pick_margin)?.mid ?? -999;
-        const cpDist = Math.abs(cpMid - correctMid);
-        const opDist = Math.abs(opMid - correctMid);
+        const correctMid = pickMarginNum(tbQuestion.correct_margin);
+        const cpDist = Math.abs(pickMarginNum(cp?.pick_margin) - correctMid);
+        const opDist = Math.abs(pickMarginNum(op?.pick_margin) - correctMid);
         if (cpDist < opDist)      winnerId = duel.challenger_id;
         else if (opDist < cpDist) winnerId = duel.opponent_id;
-        else isDraw = true;
+        else isDraw = true; // same distance → draw, no rewards
       } else {
         isDraw = true;
       }
