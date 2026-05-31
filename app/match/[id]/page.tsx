@@ -2798,8 +2798,12 @@ function MatchPageInner() {
   }, [showStatsTabs, activeTab]);
 
   useEffect(() => {
-    if (activeTab === "duels" && hasDuelGame === false) setActiveTab("feed");
-  }, [hasDuelGame, activeTab]);
+    if (!id) return;
+    fetch(`/api/duels/game?game_id=${id}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) setHasDuelGame(!!d.duelGame); })
+      .catch(() => {});
+  }, [id]);
 
   useEffect(() => {
     if (!mounted || !game || !apiSportsGameId) return;
