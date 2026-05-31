@@ -1004,17 +1004,34 @@ function DMsPageInner() {
               const mine = m.sender_id === myProfile.id;
               const samePrev = g.msgs[i - 1]?.sender_id === m.sender_id;
               const sameNext = g.msgs[i + 1]?.sender_id === m.sender_id;
-              const r = 18, s = 5;
-              const br = mine ? `${r}px ${samePrev ? s : r}px ${sameNext ? r : s}px ${r}px` : `${samePrev ? s : r}px ${r}px ${r}px ${sameNext ? r : s}px`;
               const sn = m.sender?.username ?? "unknown";
+              const senderName = m.sender?.display_name || m.sender?.username || "User";
               return (
-                <div key={m.id} style={{ display: "flex", flexDirection: mine ? "row-reverse" : "row", alignItems: "flex-end", gap: 8, paddingInline: 12, marginBottom: sameNext ? 2 : 8 }}>
-                  {!mine && <div style={{ width: 28, flexShrink: 0 }}>{!sameNext && <button onClick={() => router.push(`/profile/${sn}`)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}><Avatar name={sn} url={m.sender?.avatar_url} size={28} /></button>}</div>}
-                  <div style={{ maxWidth: "75%", display: "flex", flexDirection: "column", alignItems: mine ? "flex-end" : "flex-start" }}>
-                    {!mine && !samePrev && <button onClick={() => router.push(`/profile/${sn}`)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", marginBottom: 3, alignSelf: "flex-start" }}><span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-3)" }}>@{sn}</span></button>}
-                    <div onClick={() => { if (!mine || m.id.startsWith("t")) return; setGroupSelectedMsgId(prev => prev === m.id ? null : m.id); }} role={mine && !m.id.startsWith("t") ? "button" : undefined} tabIndex={mine && !m.id.startsWith("t") ? 0 : undefined} onKeyDown={e => { if (mine && !m.id.startsWith("t") && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setGroupSelectedMsgId(prev => prev === m.id ? null : m.id); } }} style={{ padding: "10px 14px", borderRadius: br, background: mine ? bubbleColor : "var(--surface-2)", color: mine ? bubbleTextColor : "var(--text-1)", fontSize: 15, lineHeight: 1.5, wordBreak: "break-word", opacity: m.id.startsWith("t") || groupDeletingIds.has(m.id) ? 0.55 : 1, cursor: mine && !m.id.startsWith("t") ? "pointer" : "default" }}>{m.content}</div>
-                    {mine && groupSelectedMsgId === m.id && !m.id.startsWith("t") && <div style={{ marginTop: 6, padding: 4, borderRadius: 12, background: "var(--surface-1)", border: "1px solid var(--border-2)", boxShadow: "0 8px 24px rgba(0,0,0,.35)" }}><button onClick={e => { e.stopPropagation(); deleteGroupMessage(m); }} disabled={groupDeletingIds.has(m.id)} style={{ border: "none", background: "transparent", color: groupDeletingIds.has(m.id) ? "#64748b" : "#f87171", fontWeight: 700, fontSize: 13, padding: "7px 10px", cursor: "pointer", fontFamily: "inherit" }}>Delete</button></div>}
-                    {!sameNext && <span style={{ fontSize: 11, color: "var(--text-4)", fontWeight: 400, marginTop: 4, paddingInline: 4 }}>{fmtTime(m.created_at)}</span>}
+                <div key={m.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: `${samePrev ? 3 : 10}px 16px ${sameNext ? 2 : 6}px` }}>
+                  <div style={{ width: 34, height: 34, borderRadius: "50%", background: "var(--surface-2)", border: "1px solid var(--border-2)", flexShrink: 0, overflow: "hidden", visibility: samePrev ? "hidden" : "visible" }}>
+                    <button onClick={() => !mine && router.push(`/profile/${sn}`)} style={{ background: "none", border: "none", padding: 0, cursor: mine ? "default" : "pointer", width: "100%", height: "100%", display: "block" }}>
+                      <Avatar name={sn} url={m.sender?.avatar_url} size={34} />
+                    </button>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ margin: 0, fontSize: 14, color: "var(--text-1)", lineHeight: 1.5, wordBreak: "break-word", opacity: m.id.startsWith("t") || groupDeletingIds.has(m.id) ? 0.55 : 1 }}>
+                      {!samePrev && (
+                        <span onClick={() => !mine && router.push(`/profile/${sn}`)} style={{ fontWeight: 900, marginRight: 6, color: mine ? "#60a5fa" : "var(--text-1)", cursor: mine ? "default" : "pointer" }}>
+                          {mine ? "You" : senderName}
+                        </span>
+                      )}
+                      {m.content}
+                    </p>
+                    {!sameNext && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
+                        <span style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 600 }}>{fmtTime(m.created_at)}</span>
+                        {mine && !m.id.startsWith("t") && (
+                          <button onClick={() => deleteGroupMessage(m)} disabled={groupDeletingIds.has(m.id)} style={{ background: "none", border: "none", padding: 0, fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#ef4444" }}>
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -1084,15 +1101,37 @@ function DMsPageInner() {
               const mine = m.sender_id === myProfile.id;
               const samePrev = g.msgs[i - 1]?.sender_id === m.sender_id;
               const sameNext = g.msgs[i + 1]?.sender_id === m.sender_id;
-              const r = 18, s = 5;
-              const br = mine ? `${r}px ${samePrev ? s : r}px ${sameNext ? r : s}px ${r}px` : `${samePrev ? s : r}px ${r}px ${r}px ${sameNext ? r : s}px`;
+              const otherName = activeConv.other?.display_name || activeConv.other?.username || "User";
+              const otherUser = activeConv.other?.username ?? "?";
               return (
-                <div key={m.id} style={{ display: "flex", flexDirection: mine ? "row-reverse" : "row", alignItems: "flex-end", gap: 8, paddingInline: 12, marginBottom: sameNext ? 2 : 8 }}>
-                  {!mine && <div style={{ width: 28, flexShrink: 0 }}>{!sameNext && <Avatar name={activeConv.other?.username ?? "?"} url={activeConv.other?.avatar_url} size={28} />}</div>}
-                  <div style={{ maxWidth: "75%", display: "flex", flexDirection: "column", alignItems: mine ? "flex-end" : "flex-start" }}>
-                    <div onClick={() => { if (!mine || m.id.startsWith("t")) return; setSelectedMsgId(prev => prev === m.id ? null : m.id); }} role={mine && !m.id.startsWith("t") ? "button" : undefined} tabIndex={mine && !m.id.startsWith("t") ? 0 : undefined} onKeyDown={e => { if (mine && !m.id.startsWith("t") && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setSelectedMsgId(prev => prev === m.id ? null : m.id); } }} style={{ padding: "10px 14px", borderRadius: br, background: mine ? bubbleColor : "var(--surface-2)", color: mine ? bubbleTextColor : "var(--text-1)", fontSize: 15, lineHeight: 1.5, wordBreak: "break-word", opacity: m.id.startsWith("t") || deletingIds.has(m.id) ? 0.55 : 1, cursor: mine && !m.id.startsWith("t") ? "pointer" : "default" }}>{m.content}</div>
-                    {mine && selectedMsgId === m.id && !m.id.startsWith("t") && <div style={{ marginTop: 6, padding: 4, borderRadius: 12, background: "var(--surface-1)", border: "1px solid var(--border-2)", boxShadow: "0 8px 24px rgba(0,0,0,.35)" }}><button onClick={e => { e.stopPropagation(); deleteMessage(m); }} disabled={deletingIds.has(m.id)} style={{ border: "none", background: "transparent", color: deletingIds.has(m.id) ? "#64748b" : "#f87171", fontWeight: 700, fontSize: 13, padding: "7px 10px", cursor: "pointer", fontFamily: "inherit" }}>Delete</button></div>}
-                    {!sameNext && <span style={{ fontSize: 11, color: "var(--text-4)", fontWeight: 400, marginTop: 4, paddingInline: 4 }}>{fmtTime(m.created_at)}</span>}
+                <div key={m.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: `${samePrev ? 3 : 10}px 16px ${sameNext ? 2 : 6}px` }}>
+                  <div style={{ width: 34, height: 34, borderRadius: "50%", background: "var(--surface-2)", border: "1px solid var(--border-2)", flexShrink: 0, overflow: "hidden", visibility: samePrev ? "hidden" : "visible" }}>
+                    {mine
+                      ? <Avatar name={myProfile.username} url={myProfile.avatar_url ?? null} size={34} />
+                      : <button onClick={() => router.push(`/profile/${otherUser}`)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", width: "100%", height: "100%", display: "block" }}>
+                          <Avatar name={otherUser} url={activeConv.other?.avatar_url} size={34} />
+                        </button>
+                    }
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ margin: 0, fontSize: 14, color: "var(--text-1)", lineHeight: 1.5, wordBreak: "break-word", opacity: m.id.startsWith("t") || deletingIds.has(m.id) ? 0.55 : 1 }}>
+                      {!samePrev && (
+                        <span onClick={() => !mine && router.push(`/profile/${otherUser}`)} style={{ fontWeight: 900, marginRight: 6, color: mine ? "#60a5fa" : "var(--text-1)", cursor: mine ? "default" : "pointer" }}>
+                          {mine ? "You" : otherName}
+                        </span>
+                      )}
+                      {m.content}
+                    </p>
+                    {!sameNext && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
+                        <span style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 600 }}>{fmtTime(m.created_at)}</span>
+                        {mine && !m.id.startsWith("t") && (
+                          <button onClick={() => deleteMessage(m)} disabled={deletingIds.has(m.id)} style={{ background: "none", border: "none", padding: 0, fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#ef4444" }}>
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
