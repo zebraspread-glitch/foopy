@@ -1104,20 +1104,18 @@ function LockedPickRow({ question, myPick, oppPick, isTiebreaker, index = 0, liv
 
   // Live stat display
   const cat = !isTiebreaker && question.category_key ? DUEL_STAT_CATS[question.category_key] : null;
-  function getStatDisplay(optName: string): string | null {
+  function getStatDisplay(optName: string): { value: string; label: string } | null {
     if (!liveGameStats || !cat || !optName || optName === "—") return null;
     const norm = (s: string) => s.toLowerCase().replace(/[^a-z]/g, "");
     const lastName = (s: string) => s.trim().split(/\s+/).pop()?.toLowerCase() ?? "";
 
     if (cat.type === "player") {
-      // Primary: full normalised name match
       let p = liveGameStats.players.find(pl => norm(pl.name) === norm(optName));
-      // Fallback: last-name only (handles middle-initial differences like "Bailey J. Williams" vs "Bailey Williams")
       if (!p) p = liveGameStats.players.find(pl => lastName(pl.name) === lastName(optName) && pl.name.length > 0);
       if (!p) return null;
-      if (cat.key === "foopy") return `${liveStatFoopy(p)} foopy`;
+      if (cat.key === "foopy") return { value: String(liveStatFoopy(p)), label: "foopy" };
       const val = (p as any)[cat.key] as number ?? 0;
-      return `${val} ${cat.label}`;
+      return { value: String(val), label: cat.label };
     }
     if (cat.type === "team" && cat.key !== "score") {
       const normOpt = norm(optName);
@@ -1127,7 +1125,7 @@ function LockedPickRow({ question, myPick, oppPick, isTiebreaker, index = 0, liv
       const total = liveGameStats.players
         .filter(p => isHome ? p.isHome : !p.isHome)
         .reduce((sum, p) => sum + ((p as any)[cat.key] as number ?? 0), 0);
-      return `${total} ${cat.label}`;
+      return { value: String(total), label: cat.label };
     }
     return null;
   }
@@ -1194,10 +1192,13 @@ function LockedPickRow({ question, myPick, oppPick, isTiebreaker, index = 0, liv
             </div>
           </div>
           {myPick && (
-            <div className="pick-badge-pos" style={{ marginTop: 9, display: "flex", alignItems: "center", gap: 5 }}>
+            <div className="pick-badge-pos" style={{ marginTop: 10, display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
               <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.07em", color: "#3b82f6", background: "#3b82f614", padding: "2px 7px", borderRadius: 999 }}>YOU</span>
-              {myStat !== null && (
-                <span style={{ fontSize: 9, fontWeight: 700, color: "#22c55e", background: "#22c55e14", padding: "2px 7px", borderRadius: 999 }}>{myStat}</span>
+              {myStat && (
+                <div style={{ textAlign: "right", lineHeight: 1 }}>
+                  <div style={{ fontSize: 28, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em" }}>{myStat.value}</div>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 2 }}>{myStat.label}</div>
+                </div>
               )}
             </div>
           )}
@@ -1231,9 +1232,12 @@ function LockedPickRow({ question, myPick, oppPick, isTiebreaker, index = 0, liv
             </div>
           </div>
           {oppPick && (
-            <div className="pick-badge-pos-right" style={{ marginTop: 9, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 5 }}>
-              {oppStat !== null && (
-                <span style={{ fontSize: 9, fontWeight: 700, color: "#22c55e", background: "#22c55e14", padding: "2px 7px", borderRadius: 999 }}>{oppStat}</span>
+            <div className="pick-badge-pos-right" style={{ marginTop: 10, display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+              {oppStat && (
+                <div style={{ textAlign: "left", lineHeight: 1 }}>
+                  <div style={{ fontSize: 28, fontWeight: 900, color: "#94a3b8", letterSpacing: "-0.03em" }}>{oppStat.value}</div>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 2 }}>{oppStat.label}</div>
+                </div>
               )}
               <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.07em", color: "#64748b", background: "#64748b14", padding: "2px 7px", borderRadius: 999 }}>OPP</span>
             </div>
