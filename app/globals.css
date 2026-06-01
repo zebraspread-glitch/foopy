@@ -1754,3 +1754,18 @@ textarea:focus-visible {
   max-height: 80dvh;
   overflow-y: auto;
 }
+
+/* ============================================================
+   MATCH PAGE — scroll physics and overlay helpers
+   ============================================================ */
+
+/* Smooth scrolling on iOS (belt-and-suspenders) */
+.match-scroll-container {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+/* Prevent overscroll on fixed overlays */
+.fixed-overlay {
+  overscroll-behavior: contain;
+}

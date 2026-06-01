@@ -2616,7 +2616,9 @@ function MatchPageInner() {
   const [allGames, setAllGames] = useState<MatchGame[]>([]);
   const [roundGames, setRoundGames] = useState<MatchGame[]>([]);
   const [scoreboardPassed, setScoreboardPassed] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const scoreboardRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number>(0);
   /** Prevents re-fetching final stats on every 5-second game-poll tick */
   const finalStatsFetchedRef = useRef(false);
   const gameRef = useRef(game);
@@ -2681,13 +2683,30 @@ function MatchPageInner() {
   useEffect(() => {
     const el = scoreboardRef.current;
     if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => setScoreboardPassed(!entry.isIntersecting),
-      { threshold: 0 }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
+
+    const update = () => {
+      const rect = el.getBoundingClientRect();
+      const stripHeight = 82; // safe-area + RoundGameStrip height
+      // progress: 0 = scoreboard fully visible, 1 = scoreboard fully gone
+      const progress = Math.max(0, Math.min(1,
+        (stripHeight - rect.bottom) / (rect.height * 0.4)
+      ));
+      setScrollProgress(progress);
+      setScoreboardPassed(progress >= 1);
+    };
+
+    const onScroll = () => {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(update);
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    update(); // initial call
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(rafRef.current);
+    };
+  }, [mounted]);
 
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 1000);
@@ -3365,10 +3384,53 @@ function MatchPageInner() {
       <main style={pageStyle} className="page-enter">
         <RoundGameStrip games={roundGames} activeId={id} now={now} />
         {stripSpacer}
-        <section style={emptyStyle}>
-          <h1 style={loadingTitleStyle}>Loading match...</h1>
-          <p style={mutedStyle}>Getting scores and saved player stats.</p>
-        </section>
+        {/* Scoreboard skeleton */}
+        <div style={{ padding: "24px 24px 26px", minHeight: 292, borderBottom: "1px solid var(--border-1)", background: "linear-gradient(180deg, var(--surface-1) 0%, var(--surface-2) 58%, var(--bg) 100%)" }}>
+          {/* Logo placeholder */}
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 52 }}>
+            <div className="skeleton" style={{ width: 120, height: 36, borderRadius: 8 }} />
+          </div>
+          {/* Scores row skeleton */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 180px 1fr", alignItems: "center", gap: 16 }}>
+            {/* Home team */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 10 }}>
+              <div className="skeleton" style={{ width: 52, height: 52, borderRadius: "50%" }} />
+              <div className="skeleton skeleton-line" style={{ width: "60%" }} />
+              <div className="skeleton" style={{ width: 56, height: 44, borderRadius: 8 }} />
+            </div>
+            {/* Centre badge */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+              <div className="skeleton" style={{ width: 90, height: 36, borderRadius: 999 }} />
+            </div>
+            {/* Away team */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10 }}>
+              <div className="skeleton" style={{ width: 52, height: 52, borderRadius: "50%" }} />
+              <div className="skeleton skeleton-line" style={{ width: "60%" }} />
+              <div className="skeleton" style={{ width: 56, height: 44, borderRadius: 8 }} />
+            </div>
+          </div>
+        </div>
+        {/* Tab bar skeleton */}
+        <div style={{ display: "flex", gap: 0, borderBottom: "1px solid var(--border-2)", padding: "0 8px" }}>
+          {[1,2,3].map(i => (
+            <div key={i} style={{ flex: 1, padding: "14px 4px", display: "flex", justifyContent: "center" }}>
+              <div className="skeleton skeleton-line" style={{ width: 48 }} />
+            </div>
+          ))}
+        </div>
+        {/* Feed skeleton rows */}
+        <div style={{ padding: "16px 16px 0" }}>
+          {[1,2,3,4].map(i => (
+            <div key={i} style={{ display: "flex", gap: 12, marginBottom: 18, alignItems: "flex-start" }}>
+              <div className="skeleton" style={{ width: 36, height: 36, borderRadius: "50%", flexShrink: 0 }} />
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+                <div className="skeleton skeleton-line" style={{ width: "40%" }} />
+                <div className="skeleton skeleton-line" style={{ width: "80%" }} />
+                <div className="skeleton skeleton-line" style={{ width: "60%" }} />
+              </div>
+            </div>
+          ))}
+        </div>
       </main>
     );
   }
@@ -3602,7 +3664,8 @@ function MatchPageInner() {
           position: "fixed",
           top: 0,
           left: "50%",
-          transform: scoreboardPassed ? "translateX(-50%) translateY(0)" : "translateX(-50%) translateY(-110%)",
+          transform: `translateX(-50%) translateY(${(1 - scrollProgress) * -100}%)`,
+          opacity: scrollProgress,
           width: "min(760px, 100%)",
           zIndex: 60,
           background: "rgba(10,10,15,0.97)",
@@ -3610,8 +3673,8 @@ function MatchPageInner() {
           WebkitBackdropFilter: "blur(20px)",
           borderBottom: "1px solid var(--border-2)",
           paddingTop: "env(safe-area-inset-top)",
-          transition: "transform 0.22s cubic-bezier(0.4,0,0.2,1)",
-          pointerEvents: scoreboardPassed ? "auto" : "none",
+          pointerEvents: scrollProgress > 0.5 ? "auto" : "none",
+          willChange: "transform, opacity",
         }}>
           <div style={{ display: "flex", alignItems: "center", padding: "8px 8px 8px 4px", gap: 8 }}>
             {/* Back */}
@@ -3669,60 +3732,88 @@ function MatchPageInner() {
         </div>
 
         {/* ── Tabs ── */}
-        <div style={{
-          position: "sticky", top: scoreboardPassed ? "calc(env(safe-area-inset-top) + 54px)" : "calc(env(safe-area-inset-top) + 82px)", zIndex: 10,
-          background: "rgba(10,10,15,0.97)",
-          backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
-          borderBottom: "1px solid var(--border-2)",
-        }}>
-          <nav style={{ display: "flex", width: "100%" }}>
-            {(isSignedIn ? ["feed","chat","polls", ...(hasDuelGame ? ["duels" as const] : [])] as const : ["feed"] as const).map(t => (
-              <button key={t} type="button" onClick={() => setActiveTab(t)} style={{
-                flex: 1, padding: "13px 4px 11px",
-                background: "none", border: "none",
-                borderBottom: activeTab === t ? "2px solid #fff" : "2px solid transparent",
-                color: activeTab === t ? "#fff" : "#64748b",
-                fontSize: 13, fontWeight: activeTab === t ? 700 : 500,
-                cursor: "pointer", whiteSpace: "nowrap",
-                textTransform: "capitalize",
-                transition: "color 0.12s",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
-              }}>
-                {t === "feed" && status === "UPCOMING" ? "Preview" : t === "duels" ? "⚔" : t.charAt(0).toUpperCase() + t.slice(1)}
-                {t === "polls" && unansweredPollCount > 0 && activeTab !== "polls" && (
-                  <span style={{
-                    fontSize: 10, fontWeight: 900, lineHeight: 1,
-                    background: "#ef4444", color: "var(--text-1)",
-                    borderRadius: 999, padding: "2px 5px",
-                    minWidth: 16, textAlign: "center",
+        {(() => {
+          const tabList: string[] = [
+            ...(isSignedIn ? ["feed","chat","polls", ...(hasDuelGame ? ["duels"] : [])] : ["feed"]),
+            ...(showStatsTabs && isSignedIn ? ["game", "home", "away"] : []),
+          ];
+          const activeIdx = tabList.indexOf(activeTab);
+          const tabCount = tabList.length;
+          const indicatorLeft = activeIdx >= 0 ? `${(activeIdx / tabCount) * 100}%` : "0%";
+          const indicatorWidth = `${100 / tabCount}%`;
+
+          return (
+            <div style={{
+              position: "sticky",
+              top: scoreboardPassed ? "calc(env(safe-area-inset-top) + 52px)" : "calc(env(safe-area-inset-top) + 82px)",
+              transition: "top 0.22s cubic-bezier(0.4,0,0.2,1)",
+              zIndex: 10,
+              background: "rgba(10,10,15,0.97)",
+              backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
+              borderBottom: "1px solid var(--border-2)",
+            }}>
+              <nav style={{ display: "flex", width: "100%", position: "relative" }}>
+                {/* Sliding underline indicator */}
+                <div style={{
+                  position: "absolute",
+                  bottom: 0,
+                  left: indicatorLeft,
+                  width: indicatorWidth,
+                  height: 2,
+                  background: "#fff",
+                  borderRadius: "1px 1px 0 0",
+                  transition: "left 0.2s cubic-bezier(0.4,0,0.2,1), width 0.2s cubic-bezier(0.4,0,0.2,1)",
+                  pointerEvents: "none",
+                }} />
+                {(isSignedIn ? ["feed","chat","polls", ...(hasDuelGame ? ["duels" as const] : [])] as const : ["feed"] as const).map(t => (
+                  <button key={t} type="button" onClick={() => setActiveTab(t)} style={{
+                    flex: 1, padding: "13px 4px 11px",
+                    background: "none", border: "none",
+                    borderBottom: "2px solid transparent",
+                    color: activeTab === t ? "#fff" : "#64748b",
+                    fontSize: 13, fontWeight: activeTab === t ? 700 : 500,
+                    cursor: "pointer", whiteSpace: "nowrap",
+                    textTransform: "capitalize",
+                    transition: "color 0.15s ease",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
                   }}>
-                    {unansweredPollCount}
-                  </span>
+                    {t === "feed" && status === "UPCOMING" ? "Preview" : t === "duels" ? "⚔" : t.charAt(0).toUpperCase() + t.slice(1)}
+                    {t === "polls" && unansweredPollCount > 0 && activeTab !== "polls" && (
+                      <span style={{
+                        fontSize: 10, fontWeight: 900, lineHeight: 1,
+                        background: "#ef4444", color: "var(--text-1)",
+                        borderRadius: 999, padding: "2px 5px",
+                        minWidth: 16, textAlign: "center",
+                      }}>
+                        {unansweredPollCount}
+                      </span>
+                    )}
+                  </button>
+                ))}
+                {showStatsTabs && isSignedIn && (
+                  <>
+                    {(["game","home","away"] as const).map((t) => {
+                      const label = t === "game" ? "Stats" : t === "home" ? homeAbbr : awayAbbr;
+                      return (
+                        <button key={t} type="button" onClick={() => setActiveTab(t)} style={{
+                          flex: 1, padding: "13px 4px 11px",
+                          background: "none", border: "none",
+                          borderBottom: "2px solid transparent",
+                          color: activeTab === t ? "#fff" : "#64748b",
+                          fontSize: 13, fontWeight: activeTab === t ? 700 : 500,
+                          cursor: "pointer", whiteSpace: "nowrap",
+                          transition: "color 0.15s ease",
+                        }}>
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </>
                 )}
-              </button>
-            ))}
-            {showStatsTabs && isSignedIn && (
-              <>
-                {(["game","home","away"] as const).map((t) => {
-                  const label = t === "game" ? "Stats" : t === "home" ? homeAbbr : awayAbbr;
-                  return (
-                    <button key={t} type="button" onClick={() => setActiveTab(t)} style={{
-                      flex: 1, padding: "13px 4px 11px",
-                      background: "none", border: "none",
-                      borderBottom: activeTab === t ? "2px solid #fff" : "2px solid transparent",
-                      color: activeTab === t ? "#fff" : "#3a3a3a",
-                      fontSize: 13, fontWeight: activeTab === t ? 700 : 500,
-                      cursor: "pointer", whiteSpace: "nowrap",
-                      transition: "color 0.12s",
-                    }}>
-                      {label}
-                    </button>
-                  );
-                })}
-              </>
-            )}
-          </nav>
-        </div>
+              </nav>
+            </div>
+          );
+        })()}
 
         {activeTab === "feed" && (
           <section style={sectionStyle}>
