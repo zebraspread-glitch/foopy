@@ -2682,7 +2682,10 @@ function MatchPageInner() {
     setTeamStats(savedTeamStats?.teams ?? []);
   }, [apiSportsGameId, id]);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+    window.scrollTo(0, 0); // always start match page at top, prevents scroll-restoration glitch
+  }, []);
 
   useEffect(() => {
     const el = scoreboardRef.current;
@@ -2690,11 +2693,11 @@ function MatchPageInner() {
 
     const update = () => {
       const rect = el.getBoundingClientRect();
-      const stripHeight = 82; // safe-area + RoundGameStrip height
-      // progress: 0 when scoreboard is fully visible, 1 when ~60% has scrolled past the strip.
-      // Starts from the first pixel of scroll so animations begin immediately.
-      const scrolled = stripHeight - rect.top;
-      const progress = Math.max(0, Math.min(1, scrolled / (rect.height * 0.6)));
+      // progress: 0 while scoreboard is in view, 1 once it has scrolled 80px past the top.
+      // Only starts when the scoreboard top crosses y=0 (strip bottom), so the full header
+      // is completely undisturbed during normal upward scroll.
+      const scrollPastStrip = Math.max(0, -rect.top);
+      const progress = Math.max(0, Math.min(1, scrollPastStrip / 80));
       setScrollProgress(progress);
       setScoreboardPassed(progress >= 1);
     };
@@ -3518,6 +3521,8 @@ function MatchPageInner() {
           <div style={{
             position: "relative",
             display: "grid",
+            opacity: Math.max(0, 1 - scrollProgress * 1.2),
+            willChange: "opacity",
             gridTemplateColumns: "minmax(0, 1fr) minmax(82px, 180px) minmax(0, 1fr)",
             alignItems: "center",
             gap: 16,
