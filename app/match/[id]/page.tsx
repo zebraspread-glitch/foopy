@@ -134,6 +134,21 @@ function useCompactViewport(maxWidth = 520) {
   return compact;
 }
 
+const MATCH_SCROLL_RANGE = 120;
+const MATCH_COMPACT_SCORE_HEIGHT = 60;
+
+function clamp01(value: number) {
+  return Math.max(0, Math.min(1, value));
+}
+
+function matchScrollProgress(scrollY: number) {
+  return clamp01(scrollY / MATCH_SCROLL_RANGE);
+}
+
+function lerp(from: number, to: number, progress: number) {
+  return from + (to - from) * clamp01(progress);
+}
+
 function liveFeedTeamColors(team: any) {
   const key = String(team || "").toLowerCase().trim();
 
@@ -881,17 +896,20 @@ function TeamScore({ team, score, goals, behinds, align = "left", collapse = 0 }
   }, [score]);
 
   const showGB = !isRecordScore && goals != null && behinds != null;
+  const detailOpacity = Math.max(0, 1 - collapse * 1.45);
+  const detailTranslate = -10 * collapse;
+  const logoScale = 1 - collapse * 0.34;
 
   return (
     <div style={{
       display: "flex", flexDirection: "column",
       alignItems: "center",
-      gap: 12,
+      gap: lerp(12, 6, collapse),
       minWidth: 0,
       width: "100%",
     }}>
       {/* Logo */}
-      <Link href={`/team/${toTeamSlug(safeTeam)}`} style={{ textDecoration: "none", flexShrink: 0, display: "block", transform: `scale(${1 - collapse * 0.38})`, transformOrigin: "top center", willChange: "transform" }}>
+      <Link href={`/team/${toTeamSlug(safeTeam)}`} style={{ textDecoration: "none", flexShrink: 0, display: "block", transform: `translateY(${-14 * collapse}px) scale(${logoScale})`, transformOrigin: "top center", willChange: "transform" }}>
         <div style={{
           width: "clamp(82px, 17vw, 116px)", height: "clamp(82px, 17vw, 116px)",
           borderRadius: "50%", flexShrink: 0, overflow: "hidden",
@@ -929,6 +947,9 @@ function TeamScore({ team, score, goals, behinds, align = "left", collapse = 0 }
           fontVariantNumeric: "tabular-nums",
           letterSpacing: ".02em",
           marginTop: -6,
+          opacity: detailOpacity,
+          transform: `translateY(${detailTranslate}px)`,
+          willChange: "opacity, transform",
         }}>
           {goals}.{behinds}
         </div>
@@ -943,6 +964,9 @@ function TeamScore({ team, score, goals, behinds, align = "left", collapse = 0 }
         overflow: "hidden",
         textOverflow: "ellipsis",
         textShadow: "0 2px 14px rgba(0,0,0,.65)",
+        opacity: detailOpacity,
+        transform: `translateY(${detailTranslate}px)`,
+        willChange: "opacity, transform",
       }}>
         {safeTeam}
       </div>
@@ -2615,9 +2639,7 @@ function MatchPageInner() {
   const [teamStats, setTeamStats] = useState<any[]>([]);
   const [allGames, setAllGames] = useState<MatchGame[]>([]);
   const [roundGames, setRoundGames] = useState<MatchGame[]>([]);
-  const [scoreboardPassed, setScoreboardPassed] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
-  const scoreboardRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number>(0);
   /** Prevents re-fetching final stats on every 5-second game-poll tick */
   const finalStatsFetchedRef = useRef(false);
@@ -2684,18 +2706,13 @@ function MatchPageInner() {
   }, []);
 
   useEffect(() => {
-    const el = scoreboardRef.current;
-    if (!el) return;
+    if (!mounted) return;
 
     const update = () => {
-      const rect = el.getBoundingClientRect();
-      // progress: 0 while scoreboard is in view, 1 once it has scrolled 80px past the top.
-      // Only starts when the scoreboard top crosses y=0 (strip bottom), so the full header
-      // is completely undisturbed during normal upward scroll.
-      const scrollPastStrip = Math.max(0, -rect.top);
-      const progress = Math.max(0, Math.min(1, scrollPastStrip / 80));
-      setScrollProgress(progress);
-      setScoreboardPassed(progress >= 1);
+      const progress = matchScrollProgress(window.scrollY || window.pageYOffset || 0);
+      setScrollProgress((current) => (
+        Math.abs(current - progress) < 0.004 ? current : progress
+      ));
     };
 
     const onScroll = () => {
@@ -2709,7 +2726,7 @@ function MatchPageInner() {
       window.removeEventListener("scroll", onScroll);
       cancelAnimationFrame(rafRef.current);
     };
-  }, [mounted, loading]);
+  }, [mounted]);
 
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 1000);
@@ -3379,14 +3396,10 @@ function MatchPageInner() {
       });
   }, [id, liveEvents]);
 
-  // Fixed header zone: 82px game-strip/compact-header + ~40px tab bar
-  const stripSpacer = <div style={{ height: "calc(env(safe-area-inset-top) + 122px)" }} />;
-
   if (!mounted || loading) {
     return (
       <main style={pageStyle} className="page-enter">
         <RoundGameStrip games={roundGames} activeId={id} now={now} />
-        {stripSpacer}
         {/* Scoreboard skeleton */}
         <div style={{ padding: "20px 24px 24px", minHeight: 220, borderBottom: "1px solid var(--border-1)", background: "linear-gradient(180deg, var(--surface-1) 0%, var(--surface-2) 58%, var(--bg) 100%)" }}>
           {/* Scores row skeleton */}
@@ -3438,7 +3451,6 @@ function MatchPageInner() {
     return (
       <main style={pageStyle} className="page-enter">
         <RoundGameStrip games={roundGames} activeId={id} now={now} />
-        {stripSpacer}
         <section style={emptyStyle}>
           <h1>Match not found</h1>
           <p style={mutedStyle}>{error || `No game found for ID: ${id}`}</p>
@@ -3481,26 +3493,35 @@ function MatchPageInner() {
     status === "UPCOMING" ? getTeamRecordBeforeGame(game.hteam, allGames, game) : game.hscore;
   const awayScoreDisplay =
     status === "UPCOMING" ? getTeamRecordBeforeGame(game.ateam, allGames, game) : game.ascore;
+  const compactClock = formatTimestr(game.timestr) || getLiveGameClock(liveEvents);
+  const compactStatusLabel =
+    status === "LIVE" ? (compactClock || "LIVE") :
+    status === "FINAL" ? "FT" :
+    timeUntilStart(game.date, now);
+  const expandedHeaderHeight = Math.round(lerp(268, 132, scrollProgress));
+  const expandedHeaderPaddingY = Math.round(lerp(20, 10, scrollProgress));
+  const expandedContentOpacity = Math.max(0, 1 - scrollProgress * 1.35);
+  const expandedDetailsOpacity = Math.max(0, 1 - scrollProgress * 1.65);
+  const compactHeaderTop = `calc(env(safe-area-inset-top) + ${MATCH_COMPACT_SCORE_HEIGHT}px)`;
 
   return (
     <main style={pageStyle} className="page-enter">
-      <RoundGameStrip games={roundGames} activeId={id} now={now} opacity={Math.max(0, 1 - scrollProgress * 2)} />
+      <RoundGameStrip games={roundGames} activeId={id} now={now} />
       <section style={matchCentreStyle}>
-        {stripSpacer}
-
         {/* ── Scoreboard ── */}
-        <div ref={scoreboardRef} style={{
+        <div style={{
           position: "relative", overflow: "hidden",
-          padding: "20px 24px 24px",
-          minHeight: 220,
+          boxSizing: "border-box",
+          height: expandedHeaderHeight,
+          padding: `${expandedHeaderPaddingY}px 24px ${Math.round(lerp(24, 12, scrollProgress))}px`,
           borderBottom: "1px solid var(--border-1)",
           background: "linear-gradient(180deg, var(--surface-1) 0%, var(--surface-2) 58%, var(--bg) 100%)",
-          opacity: Math.max(0, 1 - scrollProgress * 1.5),
-          willChange: "opacity",
+          willChange: "height, padding",
         }}>
           {/* Team colour glow blobs */}
           <div style={{
             position: "absolute", inset: 0, pointerEvents: "none",
+            opacity: Math.max(0.2, expandedContentOpacity),
             background: `radial-gradient(ellipse 48% 72% at 18% 56%, ${teamColor(game.hteam ?? "")}26 0%, transparent 70%),
                          radial-gradient(ellipse 48% 72% at 82% 56%, ${teamColor(game.ateam ?? "")}26 0%, transparent 70%),
                          radial-gradient(ellipse 70% 36% at 50% -4%, var(--border-1), transparent 70%)`,
@@ -3522,6 +3543,8 @@ function MatchPageInner() {
             gridTemplateColumns: "minmax(0, 1fr) minmax(82px, 180px) minmax(0, 1fr)",
             alignItems: "center",
             gap: 16,
+            transform: `translateY(${-18 * scrollProgress}px)`,
+            willChange: "transform",
           }}>
             <TeamScore
               team={game.hteam}
@@ -3533,7 +3556,13 @@ function MatchPageInner() {
             />
 
             {/* Centre */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, minWidth: 0, alignSelf: "end", paddingBottom: 19 }}>
+            <div style={{
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 10, minWidth: 0, alignSelf: "end",
+              paddingBottom: lerp(19, 4, scrollProgress),
+              opacity: expandedContentOpacity,
+              transform: `translateY(${-12 * scrollProgress}px)`,
+              willChange: "opacity, transform",
+            }}>
               {/* Status badge */}
               {status === "LIVE" ? (
                 <div style={{
@@ -3609,6 +3638,9 @@ function MatchPageInner() {
               position: "relative",
               marginTop: 26,
               display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              opacity: expandedDetailsOpacity,
+              transform: `translateY(${-12 * scrollProgress}px)`,
+              willChange: "opacity, transform",
             }}>
               <div style={{
                 display: "flex", alignItems: "center", gap: 6,
@@ -3634,70 +3666,54 @@ function MatchPageInner() {
           position: "fixed",
           top: 0,
           left: "50%",
-          transform: `translateX(-50%) translateY(${(1 - scrollProgress) * -100}%)`,
+          transform: `translateX(-50%) translateY(${lerp(-10, 0, scrollProgress)}px)`,
           opacity: scrollProgress,
           width: "min(760px, 100%)",
-          zIndex: 60,
-          background: "rgba(10,10,15,0.97)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
+          zIndex: 70,
+          background: "rgba(10,10,15,0.94)",
+          backdropFilter: "blur(22px) saturate(180%)",
+          WebkitBackdropFilter: "blur(22px) saturate(180%)",
           borderBottom: "1px solid var(--border-2)",
           paddingTop: "env(safe-area-inset-top)",
-          pointerEvents: scrollProgress > 0.5 ? "auto" : "none",
+          boxShadow: "0 12px 34px rgba(0,0,0,0.32)",
+          pointerEvents: scrollProgress > 0.15 ? "auto" : "none",
           willChange: "transform, opacity",
         }}>
-          <div style={{ display: "flex", alignItems: "center", padding: "9px 8px 9px 4px", gap: 8 }}>
-            {/* Back */}
-            <button
-              onClick={() => router.back()}
-              style={{ width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", cursor: "pointer", color: "var(--text-1)", flexShrink: 0, padding: 0 }}
-            >
-              <ChevronLeft size={28} strokeWidth={2.4} />
-            </button>
-
+          <div style={{ height: MATCH_COMPACT_SCORE_HEIGHT, display: "flex", alignItems: "center", padding: "0 14px", gap: 8 }}>
             {/* Scores */}
             <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
               {/* Home */}
               <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, justifyContent: "flex-end" }}>
+                <div style={{ width: 34, height: 34, borderRadius: "50%", overflow: "hidden", background: `${teamColor(game.hteam ?? "")}22`, border: "1px solid var(--border-3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <img src={getLogo(game.hteam)} alt={game.hteam ?? ""} style={{ width: "88%", height: "88%", objectFit: "contain" }} />
+                </div>
                 <span style={{ fontSize: 20, fontWeight: 1000, color: "var(--text-1)", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em" }}>
                   {typeof homeScoreDisplay === "string" ? homeScoreDisplay : scoreText(homeScoreDisplay)}
                 </span>
-                <div style={{ width: 38, height: 38, borderRadius: "50%", overflow: "hidden", background: `${teamColor(game.hteam ?? "")}22`, border: "1px solid var(--border-3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <img src={getLogo(game.hteam)} alt={game.hteam ?? ""} style={{ width: "88%", height: "88%", objectFit: "contain" }} />
-                </div>
               </div>
 
               {/* Status badge */}
               {status === "LIVE" ? (
-                <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", borderRadius: 999, background: "#166534", border: "1px solid #4ade80", flexShrink: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 999, background: "rgba(22,101,52,0.72)", border: "1px solid rgba(74,222,128,0.65)", flexShrink: 0, minWidth: 0, maxWidth: 112 }}>
                   <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 0 2px rgba(34,197,94,.25)", animation: "livePulse 1.8s ease-in-out infinite", flexShrink: 0 }} />
-                  <span style={{ fontSize: 12, fontWeight: 900, color: "#4ade80" }}>Live</span>
-                  {(game.timestr || getLiveGameClock(liveEvents)) && (
-                    <>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(74,222,128,0.5)" }}>·</span>
-                      <span style={{ fontSize: 12, fontWeight: 800, color: "#4ade80" }}>{formatTimestr(game.timestr) || getLiveGameClock(liveEvents)}</span>
-                    </>
-                  )}
+                  <span style={{ fontSize: 12, fontWeight: 900, color: "#4ade80", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{compactStatusLabel}</span>
                 </div>
               ) : (
-                <div style={{ padding: "4px 8px", borderRadius: 999, background: statusBadgeTone.bg, border: `1px solid ${statusBadgeTone.border}`, color: statusBadgeTone.color, fontSize: 11, fontWeight: 900, flexShrink: 0, whiteSpace: "nowrap" }}>
-                  {status === "FINAL" ? "FT" : "vs"}
+                <div style={{ padding: "5px 9px", borderRadius: 999, background: statusBadgeTone.bg, border: `1px solid ${statusBadgeTone.border}`, color: statusBadgeTone.color, fontSize: 11, fontWeight: 900, flexShrink: 0, whiteSpace: "nowrap", maxWidth: 118, overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {compactStatusLabel}
                 </div>
               )}
 
               {/* Away */}
               <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, justifyContent: "flex-start" }}>
-                <div style={{ width: 38, height: 38, borderRadius: "50%", overflow: "hidden", background: `${teamColor(game.ateam ?? "")}22`, border: "1px solid var(--border-3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <img src={getLogo(game.ateam)} alt={game.ateam ?? ""} style={{ width: "88%", height: "88%", objectFit: "contain" }} />
-                </div>
                 <span style={{ fontSize: 20, fontWeight: 1000, color: "var(--text-1)", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em" }}>
                   {typeof awayScoreDisplay === "string" ? awayScoreDisplay : scoreText(awayScoreDisplay)}
                 </span>
+                <div style={{ width: 34, height: 34, borderRadius: "50%", overflow: "hidden", background: `${teamColor(game.ateam ?? "")}22`, border: "1px solid var(--border-3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <img src={getLogo(game.ateam)} alt={game.ateam ?? ""} style={{ width: "88%", height: "88%", objectFit: "contain" }} />
+                </div>
               </div>
             </div>
-
-            {/* Spacer to balance back button */}
-            <div style={{ width: 36, flexShrink: 0 }} />
           </div>
         </div>
 
@@ -3714,15 +3730,14 @@ function MatchPageInner() {
 
           return (
             <div style={{
-              position: "fixed",
-              top: "calc(env(safe-area-inset-top) + 82px)",
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: "min(760px, 100%)",
-              zIndex: 55,
-              background: "rgba(10,10,15,0.97)",
-              backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
+              position: "sticky",
+              top: compactHeaderTop,
+              width: "100%",
+              zIndex: 65,
+              background: "rgba(10,10,15,0.94)",
+              backdropFilter: "blur(18px) saturate(180%)", WebkitBackdropFilter: "blur(18px) saturate(180%)",
               borderBottom: "1px solid var(--border-2)",
+              boxShadow: scrollProgress > 0.05 ? "0 10px 24px rgba(0,0,0,0.22)" : "none",
             }}>
               <nav style={{ display: "flex", width: "100%", position: "relative" }}>
                 {/* Sliding underline indicator */}
@@ -6048,11 +6063,8 @@ const createFormStyle: CSSProperties = { margin: "0 16px 16px", padding: "16px",
 const pollTypeToggleStyle: CSSProperties = { flex: 1, padding: "8px 0", borderRadius: 8, border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer" };
 
 const roundStripShellStyle: CSSProperties = {
-  position: "fixed",
-  top: 0,
-  left: 0,
-  right: 0,
-  zIndex: 50,
+  position: "relative",
+  zIndex: 20,
   display: "flex",
   alignItems: "center",
   paddingTop: "env(safe-area-inset-top)",

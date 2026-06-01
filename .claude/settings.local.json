@@ -74,7 +74,10 @@
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\" -Recurse -Force -ErrorAction SilentlyContinue)",
       "Bash(Head -30)",
       "Bash(del \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\\\\app\\\\lib\\\\auraTier.ts\")",
-      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\\\\app\\\\aura\")"
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\\\\app\\\\aura\")",
+      "Bash(taskkill /PID 9292 /F)",
+      "PowerShell(Stop-Process -Id 9292 -Force -ErrorAction SilentlyContinue)",
+      "Bash(node -e \"const g=require\\('./app/data/game-stats.json'\\); console.log\\(Object.keys\\(g\\).slice\\(0,5\\)\\)\")"
     ]
   }
 }
