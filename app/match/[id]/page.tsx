@@ -3502,7 +3502,7 @@ function MatchPageInner() {
   const expandedHeaderPaddingY = Math.round(lerp(20, 0, scrollProgress));
   const expandedContentOpacity = Math.max(0, 1 - scrollProgress * 1.35);
   const expandedDetailsOpacity = Math.max(0, 1 - scrollProgress * 1.65);
-  const compactHeaderTop = `calc(env(safe-area-inset-top) + ${MATCH_COMPACT_SCORE_HEIGHT}px)`;
+  const compactHeaderVisibleHeight = Math.round(lerp(0, MATCH_COMPACT_SCORE_HEIGHT, scrollProgress));
 
   return (
     <main style={pageStyle} className="page-enter">
@@ -3662,63 +3662,7 @@ function MatchPageInner() {
           )}
         </div>
 
-        {/* ── Compact sticky scoreboard (appears when main scoreboard scrolls off) ── */}
-        <div style={{
-          position: "fixed",
-          top: 0,
-          left: "50%",
-          transform: `translateX(-50%) translateY(${lerp(-10, 0, scrollProgress)}px)`,
-          opacity: scrollProgress,
-          width: "min(760px, 100%)",
-          zIndex: 70,
-          background: "rgba(10,10,15,0.94)",
-          backdropFilter: "blur(22px) saturate(180%)",
-          WebkitBackdropFilter: "blur(22px) saturate(180%)",
-          borderBottom: "1px solid var(--border-2)",
-          paddingTop: "env(safe-area-inset-top)",
-          boxShadow: "0 12px 34px rgba(0,0,0,0.32)",
-          pointerEvents: scrollProgress > 0.15 ? "auto" : "none",
-          willChange: "transform, opacity",
-        }}>
-          <div style={{ height: MATCH_COMPACT_SCORE_HEIGHT, display: "flex", alignItems: "center", padding: "0 14px", gap: 8 }}>
-            {/* Scores */}
-            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
-              {/* Home */}
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, justifyContent: "flex-end" }}>
-                <div style={{ width: 34, height: 34, borderRadius: "50%", overflow: "hidden", background: `${teamColor(game.hteam ?? "")}22`, border: "1px solid var(--border-3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <img src={getLogo(game.hteam)} alt={game.hteam ?? ""} style={{ width: "88%", height: "88%", objectFit: "contain" }} />
-                </div>
-                <span style={{ fontSize: 20, fontWeight: 1000, color: "var(--text-1)", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em" }}>
-                  {typeof homeScoreDisplay === "string" ? homeScoreDisplay : scoreText(homeScoreDisplay)}
-                </span>
-              </div>
-
-              {/* Status badge */}
-              {status === "LIVE" ? (
-                <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 999, background: "rgba(22,101,52,0.72)", border: "1px solid rgba(74,222,128,0.65)", flexShrink: 0, minWidth: 0, maxWidth: 112 }}>
-                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 0 2px rgba(34,197,94,.25)", animation: "livePulse 1.8s ease-in-out infinite", flexShrink: 0 }} />
-                  <span style={{ fontSize: 12, fontWeight: 900, color: "#4ade80", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{compactStatusLabel}</span>
-                </div>
-              ) : (
-                <div style={{ padding: "5px 9px", borderRadius: 999, background: statusBadgeTone.bg, border: `1px solid ${statusBadgeTone.border}`, color: statusBadgeTone.color, fontSize: 11, fontWeight: 900, flexShrink: 0, whiteSpace: "nowrap", maxWidth: 118, overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {compactStatusLabel}
-                </div>
-              )}
-
-              {/* Away */}
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, justifyContent: "flex-start" }}>
-                <span style={{ fontSize: 20, fontWeight: 1000, color: "var(--text-1)", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em" }}>
-                  {typeof awayScoreDisplay === "string" ? awayScoreDisplay : scoreText(awayScoreDisplay)}
-                </span>
-                <div style={{ width: 34, height: 34, borderRadius: "50%", overflow: "hidden", background: `${teamColor(game.ateam ?? "")}22`, border: "1px solid var(--border-3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <img src={getLogo(game.ateam)} alt={game.ateam ?? ""} style={{ width: "88%", height: "88%", objectFit: "contain" }} />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Tabs ── */}
+        {/* ── Sticky score + tabs ── */}
         {(() => {
           const tabList: string[] = [
             ...(isSignedIn ? ["feed","chat","polls", ...(hasDuelGame ? ["duels"] : [])] : ["feed"]),
@@ -3732,14 +3676,61 @@ function MatchPageInner() {
           return (
             <div style={{
               position: "sticky",
-              top: compactHeaderTop,
+              top: 0,
               width: "100%",
-              zIndex: 65,
+              zIndex: 70,
               background: "rgba(10,10,15,0.94)",
-              backdropFilter: "blur(18px) saturate(180%)", WebkitBackdropFilter: "blur(18px) saturate(180%)",
+              backdropFilter: "blur(22px) saturate(180%)", WebkitBackdropFilter: "blur(22px) saturate(180%)",
               borderBottom: "1px solid var(--border-2)",
               boxShadow: scrollProgress > 0.05 ? "0 10px 24px rgba(0,0,0,0.22)" : "none",
             }}>
+              <div style={{
+                height: compactHeaderVisibleHeight > 0 ? `calc(env(safe-area-inset-top) + ${compactHeaderVisibleHeight}px)` : 0,
+                paddingTop: compactHeaderVisibleHeight > 0 ? "env(safe-area-inset-top)" : 0,
+                boxSizing: "border-box",
+                opacity: scrollProgress,
+                overflow: "hidden",
+                pointerEvents: scrollProgress > 0.15 ? "auto" : "none",
+                willChange: "height, opacity",
+              }}>
+                <div style={{ height: MATCH_COMPACT_SCORE_HEIGHT, display: "flex", alignItems: "center", padding: "0 14px", gap: 8, transform: `translateY(${lerp(-10, 0, scrollProgress)}px)`, willChange: "transform" }}>
+                  {/* Scores */}
+                  <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+                    {/* Home */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, justifyContent: "flex-end" }}>
+                      <div style={{ width: 34, height: 34, borderRadius: "50%", overflow: "hidden", background: `${teamColor(game.hteam ?? "")}22`, border: "1px solid var(--border-3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <img src={getLogo(game.hteam)} alt={game.hteam ?? ""} style={{ width: "88%", height: "88%", objectFit: "contain" }} />
+                      </div>
+                      <span style={{ fontSize: 20, fontWeight: 1000, color: "var(--text-1)", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em" }}>
+                        {typeof homeScoreDisplay === "string" ? homeScoreDisplay : scoreText(homeScoreDisplay)}
+                      </span>
+                    </div>
+
+                    {/* Status badge */}
+                    {status === "LIVE" ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 999, background: "rgba(22,101,52,0.72)", border: "1px solid rgba(74,222,128,0.65)", flexShrink: 0, minWidth: 0, maxWidth: 112 }}>
+                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 0 2px rgba(34,197,94,.25)", animation: "livePulse 1.8s ease-in-out infinite", flexShrink: 0 }} />
+                        <span style={{ fontSize: 12, fontWeight: 900, color: "#4ade80", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{compactStatusLabel}</span>
+                      </div>
+                    ) : (
+                      <div style={{ padding: "5px 9px", borderRadius: 999, background: statusBadgeTone.bg, border: `1px solid ${statusBadgeTone.border}`, color: statusBadgeTone.color, fontSize: 11, fontWeight: 900, flexShrink: 0, whiteSpace: "nowrap", maxWidth: 118, overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {compactStatusLabel}
+                      </div>
+                    )}
+
+                    {/* Away */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, justifyContent: "flex-start" }}>
+                      <span style={{ fontSize: 20, fontWeight: 1000, color: "var(--text-1)", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em" }}>
+                        {typeof awayScoreDisplay === "string" ? awayScoreDisplay : scoreText(awayScoreDisplay)}
+                      </span>
+                      <div style={{ width: 34, height: 34, borderRadius: "50%", overflow: "hidden", background: `${teamColor(game.ateam ?? "")}22`, border: "1px solid var(--border-3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <img src={getLogo(game.ateam)} alt={game.ateam ?? ""} style={{ width: "88%", height: "88%", objectFit: "contain" }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <nav style={{ display: "flex", width: "100%", position: "relative" }}>
                 {/* Sliding underline indicator */}
                 <div style={{
