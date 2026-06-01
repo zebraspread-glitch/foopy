@@ -3604,8 +3604,8 @@ function MatchPageInner() {
           left: "50%",
           transform: scoreboardPassed ? "translateX(-50%) translateY(0)" : "translateX(-50%) translateY(-110%)",
           width: "min(760px, 100%)",
-          zIndex: 50,
-          background: "rgba(30,30,40,0.97)",
+          zIndex: 60,
+          background: "rgba(10,10,15,0.97)",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
           borderBottom: "1px solid var(--border-2)",
@@ -3670,8 +3670,8 @@ function MatchPageInner() {
 
         {/* ── Tabs ── */}
         <div style={{
-          position: "sticky", top: scoreboardPassed ? "calc(env(safe-area-inset-top) + 55px)" : 0, zIndex: 10,
-          background: "rgba(30,30,40,0.97)",
+          position: "sticky", top: scoreboardPassed ? "calc(env(safe-area-inset-top) + 54px)" : "calc(env(safe-area-inset-top) + 82px)", zIndex: 10,
+          background: "rgba(10,10,15,0.97)",
           backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
           borderBottom: "1px solid var(--border-2)",
         }}>
