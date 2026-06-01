@@ -3498,8 +3498,8 @@ function MatchPageInner() {
     status === "LIVE" ? (compactClock || "LIVE") :
     status === "FINAL" ? "FT" :
     timeUntilStart(game.date, now);
-  const expandedHeaderHeight = Math.round(lerp(268, 132, scrollProgress));
-  const expandedHeaderPaddingY = Math.round(lerp(20, 10, scrollProgress));
+  const expandedHeaderHeight = Math.round(lerp(268, 0, scrollProgress));
+  const expandedHeaderPaddingY = Math.round(lerp(20, 0, scrollProgress));
   const expandedContentOpacity = Math.max(0, 1 - scrollProgress * 1.35);
   const expandedDetailsOpacity = Math.max(0, 1 - scrollProgress * 1.65);
   const compactHeaderTop = `calc(env(safe-area-inset-top) + ${MATCH_COMPACT_SCORE_HEIGHT}px)`;
@@ -3513,10 +3513,11 @@ function MatchPageInner() {
           position: "relative", overflow: "hidden",
           boxSizing: "border-box",
           height: expandedHeaderHeight,
-          padding: `${expandedHeaderPaddingY}px 24px ${Math.round(lerp(24, 12, scrollProgress))}px`,
-          borderBottom: "1px solid var(--border-1)",
+          padding: `${expandedHeaderPaddingY}px 24px ${Math.round(lerp(24, 0, scrollProgress))}px`,
+          borderBottom: scrollProgress < 0.98 ? "1px solid var(--border-1)" : "0 solid transparent",
           background: "linear-gradient(180deg, var(--surface-1) 0%, var(--surface-2) 58%, var(--bg) 100%)",
-          willChange: "height, padding",
+          pointerEvents: scrollProgress < 0.98 ? "auto" : "none",
+          willChange: "height, padding, border-width",
         }}>
           {/* Team colour glow blobs */}
           <div style={{
