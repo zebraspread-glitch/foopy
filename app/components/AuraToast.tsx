@@ -29,17 +29,20 @@ export default function AuraToast() {
   // Poll-win notifications from Supabase realtime
   useEffect(() => {
     let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
 
     supabase.auth.getSession().then(({ data }) => {
+      if (cancelled) return;
       const userId = data.session?.user.id;
       if (!userId) return;
 
       channel = supabase
-        .channel("aura-poll-win")
+        .channel(`aura-poll-win-${userId}`)
         .on(
           "postgres_changes",
           { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
           (payload) => {
+            if (cancelled) return;
             if (payload.new?.type === "poll_win") {
               const aura = (payload.new?.data as any)?.aura ?? 0;
               if (aura > 0) auraToastEmitter.emit(aura, "winning a poll 🎯");
@@ -50,6 +53,7 @@ export default function AuraToast() {
     });
 
     return () => {
+      cancelled = true;
       if (channel) supabase.removeChannel(channel);
     };
   }, []);

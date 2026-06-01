@@ -29,7 +29,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#14141e",
+  themeColor: "#0a0a0f",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -47,7 +47,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="dns-prefetch" href="https://api.squiggle.com.au" />
         <link rel="preconnect" href="https://footywire.com" />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         <ThemeModeBootstrap />
         <HapticsProvider />
         <NavigationEvents />

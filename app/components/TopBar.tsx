@@ -65,7 +65,9 @@ export default function TopBar() {
     }
 
     init();
-    return () => { channel?.unsubscribe(); };
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
   }, []);
 
   function handleBellClick() {

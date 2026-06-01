@@ -4,11 +4,11 @@
 
 :root {
   /* Surfaces */
-  --bg:           #14141e;
-  --surface-1:    #1e1e28;
-  --surface-2:    #222230;
-  --surface-3:    #272731;
-  --surface-4:    #2e2e3a;
+  --bg:           #0a0a0f;
+  --surface-1:    #111118;
+  --surface-2:    #18181f;
+  --surface-3:    #1e1e27;
+  --surface-4:    #252530;
 
   /* Borders */
   --border-1:     rgba(255,255,255,0.06);
@@ -23,7 +23,7 @@
 
   /* Theme-aware chrome */
   --shell-border:  rgba(255,255,255,0.07);
-  --bottom-nav-bg: rgba(18,18,26,0.97);
+  --bottom-nav-bg: rgba(10,10,15,0.97);
   --bottom-nav-border: rgba(255,255,255,0.10);
   --tab-muted:    rgba(148,163,184,0.45);
   --tab-active:   #ffffff;
@@ -138,6 +138,29 @@
   font-weight: 700;
   font-style: italic;
   font-display: swap;
+}
+
+/* ============================================================
+   UTILITY ANIMATIONS
+   ============================================================ */
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.skeleton {
+  background: var(--surface-2);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes page-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.page-enter {
+  animation: page-fade-in 0.2s ease-out both;
 }
 
 @keyframes mythic-pass-shine {

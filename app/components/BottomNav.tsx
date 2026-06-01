@@ -131,22 +131,29 @@ export default function BottomNav() {
       setUnreadDms(dmUnread + groupUnread);
     }
 
+    let cancelled = false;
+
     async function init() {
       const { data } = await supabase.auth.getSession();
+      if (cancelled) return;
       uid = data?.session?.user?.id ?? null;
       if (!uid) return;
       await countUnread(uid);
+      if (cancelled) return;
 
       channel = supabase
-        .channel("dm-badge")
-        .on("postgres_changes", { event: "INSERT", schema: "public", table: "dm_messages" }, () => countUnread(uid!))
-        .on("postgres_changes", { event: "UPDATE", schema: "public", table: "dm_messages" }, () => countUnread(uid!))
-        .on("postgres_changes", { event: "INSERT", schema: "public", table: "group_chat_messages" }, () => countUnread(uid!))
+        .channel(`dm-badge-${uid}`)
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "dm_messages" }, () => { if (!cancelled) countUnread(uid!); })
+        .on("postgres_changes", { event: "UPDATE", schema: "public", table: "dm_messages" }, () => { if (!cancelled) countUnread(uid!); })
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "group_chat_messages" }, () => { if (!cancelled) countUnread(uid!); })
         .subscribe();
     }
 
     init();
-    return () => { channel?.unsubscribe(); };
+    return () => {
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
+    };
   }, []);
 
   // Clear DM badge when on the DMs page (page itself marks messages read)
