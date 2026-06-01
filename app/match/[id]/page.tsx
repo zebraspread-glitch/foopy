@@ -3699,7 +3699,7 @@ function MatchPageInner() {
                     {/* Home */}
                     <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, justifyContent: "flex-end" }}>
                       <div style={{ width: 34, height: 34, borderRadius: "50%", overflow: "hidden", background: `${teamColor(game.hteam ?? "")}22`, border: "1px solid var(--border-3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <img src={getLogo(game.hteam)} alt={game.hteam ?? ""} style={{ width: "88%", height: "88%", objectFit: "contain" }} />
+                        <img src={getLogo(game.hteam)} alt={game.hteam ?? ""} style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover", display: "block" }} />
                       </div>
                       <span style={{ fontSize: 20, fontWeight: 1000, color: "var(--text-1)", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em" }}>
                         {typeof homeScoreDisplay === "string" ? homeScoreDisplay : scoreText(homeScoreDisplay)}
@@ -3724,7 +3724,7 @@ function MatchPageInner() {
                         {typeof awayScoreDisplay === "string" ? awayScoreDisplay : scoreText(awayScoreDisplay)}
                       </span>
                       <div style={{ width: 34, height: 34, borderRadius: "50%", overflow: "hidden", background: `${teamColor(game.ateam ?? "")}22`, border: "1px solid var(--border-3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <img src={getLogo(game.ateam)} alt={game.ateam ?? ""} style={{ width: "88%", height: "88%", objectFit: "contain" }} />
+                        <img src={getLogo(game.ateam)} alt={game.ateam ?? ""} style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover", display: "block" }} />
                       </div>
                     </div>
                   </div>
