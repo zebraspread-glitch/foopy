@@ -929,8 +929,6 @@ function TeamScore({ team, score, goals, behinds, align = "left", collapse = 0 }
           fontVariantNumeric: "tabular-nums",
           letterSpacing: ".02em",
           marginTop: -6,
-          opacity: Math.max(0, 1 - collapse * 3),
-          willChange: "opacity",
         }}>
           {goals}.{behinds}
         </div>
@@ -945,8 +943,6 @@ function TeamScore({ team, score, goals, behinds, align = "left", collapse = 0 }
         overflow: "hidden",
         textOverflow: "ellipsis",
         textShadow: "0 2px 14px rgba(0,0,0,.65)",
-        opacity: Math.max(0, 1 - collapse * 2.5),
-        willChange: "opacity",
       }}>
         {safeTeam}
       </div>
@@ -3383,8 +3379,8 @@ function MatchPageInner() {
       });
   }, [id, liveEvents]);
 
-  // Height of the fixed strip: safe-area + 10px padding + 62px pills + 10px padding
-  const stripSpacer = <div style={{ height: "calc(env(safe-area-inset-top) + 82px)" }} />;
+  // Fixed header zone: 82px game-strip/compact-header + ~40px tab bar
+  const stripSpacer = <div style={{ height: "calc(env(safe-area-inset-top) + 122px)" }} />;
 
   if (!mounted || loading) {
     return (
@@ -3499,6 +3495,8 @@ function MatchPageInner() {
           minHeight: 220,
           borderBottom: "1px solid var(--border-1)",
           background: "linear-gradient(180deg, var(--surface-1) 0%, var(--surface-2) 58%, var(--bg) 100%)",
+          opacity: Math.max(0, 1 - scrollProgress * 1.5),
+          willChange: "opacity",
         }}>
           {/* Team colour glow blobs */}
           <div style={{
@@ -3521,8 +3519,6 @@ function MatchPageInner() {
           <div style={{
             position: "relative",
             display: "grid",
-            opacity: Math.max(0, 1 - scrollProgress * 1.2),
-            willChange: "opacity",
             gridTemplateColumns: "minmax(0, 1fr) minmax(82px, 180px) minmax(0, 1fr)",
             alignItems: "center",
             gap: 16,
@@ -3537,7 +3533,7 @@ function MatchPageInner() {
             />
 
             {/* Centre */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, minWidth: 0, alignSelf: "end", paddingBottom: 19, opacity: Math.max(0, 1 - scrollProgress * 2.5), willChange: "opacity" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, minWidth: 0, alignSelf: "end", paddingBottom: 19 }}>
               {/* Status badge */}
               {status === "LIVE" ? (
                 <div style={{
@@ -3613,8 +3609,6 @@ function MatchPageInner() {
               position: "relative",
               marginTop: 26,
               display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-              opacity: Math.max(0, 1 - scrollProgress * 3),
-              willChange: "opacity",
             }}>
               <div style={{
                 display: "flex", alignItems: "center", gap: 6,
@@ -3686,8 +3680,8 @@ function MatchPageInner() {
                   )}
                 </div>
               ) : (
-                <div style={{ padding: "5px 10px", borderRadius: 999, background: statusBadgeTone.bg, border: `1px solid ${statusBadgeTone.border}`, color: statusBadgeTone.color, fontSize: 12, fontWeight: 800, flexShrink: 0, whiteSpace: "nowrap" }}>
-                  {statusBadgeTone.label}
+                <div style={{ padding: "4px 8px", borderRadius: 999, background: statusBadgeTone.bg, border: `1px solid ${statusBadgeTone.border}`, color: statusBadgeTone.color, fontSize: 11, fontWeight: 900, flexShrink: 0, whiteSpace: "nowrap" }}>
+                  {status === "FINAL" ? "FT" : "vs"}
                 </div>
               )}
 
@@ -3720,9 +3714,11 @@ function MatchPageInner() {
 
           return (
             <div style={{
-              position: "sticky",
-              top: `calc(env(safe-area-inset-top) + ${Math.round(82 - 26 * Math.min(1, scrollProgress * 1.5))}px)`,
-              transition: "none",
+              position: "fixed",
+              top: "calc(env(safe-area-inset-top) + 82px)",
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: "min(760px, 100%)",
               zIndex: 55,
               background: "rgba(10,10,15,0.97)",
               backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
