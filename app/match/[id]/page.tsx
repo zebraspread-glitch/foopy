@@ -863,7 +863,7 @@ function QuarterScoresTable({
   );
 }
 
-function TeamScore({ team, score, goals, behinds, align = "left" }: { team: any; score: any; goals?: number; behinds?: number; align?: "left" | "right" }) {
+function TeamScore({ team, score, goals, behinds, align = "left", collapse = 0 }: { team: any; score: any; goals?: number; behinds?: number; align?: "left" | "right"; collapse?: number }) {
   const safeTeam = safeText(team, "");
   const displayScore = typeof score === "string" ? score : scoreText(score);
   const isRecordScore = typeof displayScore === "string" && displayScore.includes("-");
@@ -891,7 +891,7 @@ function TeamScore({ team, score, goals, behinds, align = "left" }: { team: any;
       width: "100%",
     }}>
       {/* Logo */}
-      <Link href={`/team/${toTeamSlug(safeTeam)}`} style={{ textDecoration: "none", flexShrink: 0 }}>
+      <Link href={`/team/${toTeamSlug(safeTeam)}`} style={{ textDecoration: "none", flexShrink: 0, display: "block", transform: `scale(${1 - collapse * 0.38})`, transformOrigin: "top center", willChange: "transform" }}>
         <div style={{
           width: "clamp(82px, 17vw, 116px)", height: "clamp(82px, 17vw, 116px)",
           borderRadius: "50%", flexShrink: 0, overflow: "hidden",
@@ -929,6 +929,8 @@ function TeamScore({ team, score, goals, behinds, align = "left" }: { team: any;
           fontVariantNumeric: "tabular-nums",
           letterSpacing: ".02em",
           marginTop: -6,
+          opacity: Math.max(0, 1 - collapse * 3),
+          willChange: "opacity",
         }}>
           {goals}.{behinds}
         </div>
@@ -943,6 +945,8 @@ function TeamScore({ team, score, goals, behinds, align = "left" }: { team: any;
         overflow: "hidden",
         textOverflow: "ellipsis",
         textShadow: "0 2px 14px rgba(0,0,0,.65)",
+        opacity: Math.max(0, 1 - collapse * 2.5),
+        willChange: "opacity",
       }}>
         {safeTeam}
       </div>
@@ -980,9 +984,9 @@ function miniScoreText(game: MatchGame) {
   return `${scoreText(game.hscore)}-${scoreText(game.ascore)}`;
 }
 
-function RoundGameStrip({ games, activeId, now }: { games: MatchGame[]; activeId: string; now: number }) {
+function RoundGameStrip({ games, activeId, now, opacity = 1 }: { games: MatchGame[]; activeId: string; now: number; opacity?: number }) {
   return (
-    <div style={roundStripShellStyle}>
+    <div style={{ ...roundStripShellStyle, opacity, pointerEvents: opacity < 0.1 ? "none" : undefined }}>
       {/* Back to home — always visible, non-scrolling */}
       <Link
         href="/"
@@ -2687,10 +2691,10 @@ function MatchPageInner() {
     const update = () => {
       const rect = el.getBoundingClientRect();
       const stripHeight = 82; // safe-area + RoundGameStrip height
-      // progress: 0 = scoreboard fully visible, 1 = scoreboard fully gone
-      const progress = Math.max(0, Math.min(1,
-        (stripHeight - rect.bottom) / (rect.height * 0.4)
-      ));
+      // progress: 0 when scoreboard is fully visible, 1 when ~60% has scrolled past the strip.
+      // Starts from the first pixel of scroll so animations begin immediately.
+      const scrolled = stripHeight - rect.top;
+      const progress = Math.max(0, Math.min(1, scrolled / (rect.height * 0.6)));
       setScrollProgress(progress);
       setScoreboardPassed(progress >= 1);
     };
@@ -2706,7 +2710,7 @@ function MatchPageInner() {
       window.removeEventListener("scroll", onScroll);
       cancelAnimationFrame(rafRef.current);
     };
-  }, [mounted]);
+  }, [mounted, loading]);
 
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 1000);
@@ -3385,11 +3389,7 @@ function MatchPageInner() {
         <RoundGameStrip games={roundGames} activeId={id} now={now} />
         {stripSpacer}
         {/* Scoreboard skeleton */}
-        <div style={{ padding: "24px 24px 26px", minHeight: 292, borderBottom: "1px solid var(--border-1)", background: "linear-gradient(180deg, var(--surface-1) 0%, var(--surface-2) 58%, var(--bg) 100%)" }}>
-          {/* Logo placeholder */}
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 52 }}>
-            <div className="skeleton" style={{ width: 120, height: 36, borderRadius: 8 }} />
-          </div>
+        <div style={{ padding: "20px 24px 24px", minHeight: 220, borderBottom: "1px solid var(--border-1)", background: "linear-gradient(180deg, var(--surface-1) 0%, var(--surface-2) 58%, var(--bg) 100%)" }}>
           {/* Scores row skeleton */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 180px 1fr", alignItems: "center", gap: 16 }}>
             {/* Home team */}
@@ -3485,15 +3485,15 @@ function MatchPageInner() {
 
   return (
     <main style={pageStyle} className="page-enter">
-      <RoundGameStrip games={roundGames} activeId={id} now={now} />
+      <RoundGameStrip games={roundGames} activeId={id} now={now} opacity={Math.max(0, 1 - scrollProgress * 2)} />
       <section style={matchCentreStyle}>
         {stripSpacer}
 
         {/* ── Scoreboard ── */}
         <div ref={scoreboardRef} style={{
           position: "relative", overflow: "hidden",
-          padding: "24px 24px 26px",
-          minHeight: 292,
+          padding: "20px 24px 24px",
+          minHeight: 220,
           borderBottom: "1px solid var(--border-1)",
           background: "linear-gradient(180deg, var(--surface-1) 0%, var(--surface-2) 58%, var(--bg) 100%)",
         }}>
@@ -3512,39 +3512,6 @@ function MatchPageInner() {
             pointerEvents: "none",
           }} />
 
-          <div style={{ position: "relative", display: "flex", justifyContent: "center", marginBottom: 52 }}>
-            <Link
-              href="/"
-              aria-label="Foopy home"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 11,
-                color: "var(--text-1)",
-                fontSize: "clamp(28px, 6vw, 40px)",
-                fontFamily: "\"Borsok\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
-                fontWeight: 400,
-                letterSpacing: 0,
-                lineHeight: 1,
-              }}
-            >
-              <span style={{
-                width: "clamp(30px, 6vw, 42px)",
-                height: "clamp(30px, 6vw, 42px)",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}>
-                <img
-                  src="/footy-icon.png"
-                  alt=""
-                  aria-hidden="true"
-                  style={{ width: "100%", height: "100%", objectFit: "contain" }}
-                />
-              </span>
-              <span>foopy</span>
-            </Link>
-          </div>
 
 
           {/* Scores row */}
@@ -3561,10 +3528,11 @@ function MatchPageInner() {
               goals={status !== "UPCOMING" ? (game.hgoals ?? undefined) : undefined}
               behinds={status !== "UPCOMING" ? (game.hbehinds ?? undefined) : undefined}
               align="left"
+              collapse={scrollProgress}
             />
 
             {/* Centre */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, minWidth: 0, alignSelf: "end", paddingBottom: 19 }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, minWidth: 0, alignSelf: "end", paddingBottom: 19, opacity: Math.max(0, 1 - scrollProgress * 2.5), willChange: "opacity" }}>
               {/* Status badge */}
               {status === "LIVE" ? (
                 <div style={{
@@ -3630,6 +3598,7 @@ function MatchPageInner() {
               goals={status !== "UPCOMING" ? (game.agoals ?? undefined) : undefined}
               behinds={status !== "UPCOMING" ? (game.abehinds ?? undefined) : undefined}
               align="right"
+              collapse={scrollProgress}
             />
           </div>
 
@@ -3639,6 +3608,8 @@ function MatchPageInner() {
               position: "relative",
               marginTop: 26,
               display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              opacity: Math.max(0, 1 - scrollProgress * 3),
+              willChange: "opacity",
             }}>
               <div style={{
                 display: "flex", alignItems: "center", gap: 6,
@@ -3676,7 +3647,7 @@ function MatchPageInner() {
           pointerEvents: scrollProgress > 0.5 ? "auto" : "none",
           willChange: "transform, opacity",
         }}>
-          <div style={{ display: "flex", alignItems: "center", padding: "8px 8px 8px 4px", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", padding: "9px 8px 9px 4px", gap: 8 }}>
             {/* Back */}
             <button
               onClick={() => router.back()}
@@ -3745,9 +3716,9 @@ function MatchPageInner() {
           return (
             <div style={{
               position: "sticky",
-              top: scoreboardPassed ? "calc(env(safe-area-inset-top) + 52px)" : "calc(env(safe-area-inset-top) + 82px)",
-              transition: "top 0.22s cubic-bezier(0.4,0,0.2,1)",
-              zIndex: 10,
+              top: `calc(env(safe-area-inset-top) + ${Math.round(82 - 26 * Math.min(1, scrollProgress * 1.5))}px)`,
+              transition: "none",
+              zIndex: 55,
               background: "rgba(10,10,15,0.97)",
               backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
               borderBottom: "1px solid var(--border-2)",
