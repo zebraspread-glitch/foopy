@@ -201,7 +201,7 @@ function DMsPageInner() {
 
   /* ── Members modal state ── */
   const [membersModalOpen,    setMembersModalOpen]    = useState(false);
-  const [membersModalList,    setMembersModalList]    = useState<{ id: string; username: string; display_name: string; avatar_url: string | null }[]>([]);
+  const [membersModalList,    setMembersModalList]    = useState<{ id: string; username: string; display_name: string; avatar_url: string | null; verified?: boolean }[]>([]);
   const [membersModalLoading, setMembersModalLoading] = useState(false);
   const [membersSearch,       setMembersSearch]       = useState("");
 
