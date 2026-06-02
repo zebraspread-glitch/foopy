@@ -67,6 +67,7 @@ const CARD_NAME_OVERRIDES: Record<string, string> = {
   tomsims: "Tom Sims",
   tyanprindable: "Tyan Prindable",
   vigovisentini: "Vigo Visentini",
+  williamgreen: "Will Green",
   willsetterfield: "Will Setterfield",
   xavierwalsh: "Xavier Walsh",
   zacmccarthy: "Zac McCarthy",
@@ -99,7 +100,7 @@ export const CARD_PLAYER_ID_ALIASES: Record<string, string> = {
   roberthansenjr: "roberthansen",
   thomaslynch: "tomlynch",
   thomassims: "tomsims",
-  williamgreen: "willgreen",
+  willgreen: "williamgreen",
   zacharywilliams: "zacwilliams",
 };
 
@@ -317,7 +318,7 @@ export const CARD_PLAYERS: CardPlayer[] = [
     "alexdodson", "alixtauru", "angushastie", "anthonycaminiti", "bradleyhill", "callumwilkie", "charliebanfield", "coopersharman", "danbutler", "darcywilson", "dougalhoward", "eamonnarmstrong", "hughboxshall", "hugogarcia", "hunterclark", "isaackeeler", "jackcarroll", "jackhiggins", "jacksilvagni", "jacksinclair", "jackmacrae", "jamesbarrat", "kobemcdonald", "kyefincher", "lancecollard", "liamhenry", "liamoconnell", "liamryan", "liamstocker", "marcuswindhager", "masonwood", "mattaesphillipou", "maxhall", "maxking", "mitchowens", "nasiahwanganeenmilera", "paddydow", "patricksaid", "rowanmarshall", "ryanbyrnes", "samflanders", "tobietravaglia", "tomdekoning",
   ]),
   ...makeTeamCards("Sydney", "swans", [
-    "angussheldrick", "billycootee", "braedencampbell", "brodiegrundy", "caidencleary", "callummills", "chadwarner", "coreywarner", "danerampe", "errolgulden", "harrycunningham", "harrykyle", "haydenmclean", "isaacheeney", "jaiserong", "jakelloyd", "jamesjordon", "jamesrowbottom", "jessedattoli", "jevanphillipou", "joelamartey", "joelhamling", "justinmcinerney", "lewismelican", "liamhetherton", "loganmcdonald", "malcolmrosas", "nedbowman", "nickblakey", "noahchamberlain", "patricksnell", "peterladhams", "riakandrew", "rileybice", "samwicks", "tayloradams", "tomhanily", "tommccartin", "tompapley", "willgreen", "williamedwards",
+    "angussheldrick", "billycootee", "braedencampbell", "brodiegrundy", "caidencleary", "callummills", "chadwarner", "coreywarner", "danerampe", "errolgulden", "harrycunningham", "harrykyle", "haydenmclean", "isaacheeney", "jaiserong", "jakelloyd", "jamesjordon", "jamesrowbottom", "jessedattoli", "jevanphillipou", "joelamartey", "joelhamling", "justinmcinerney", "lewismelican", "liamhetherton", "loganmcdonald", "malcolmrosas", "nedbowman", "nickblakey", "noahchamberlain", "patricksnell", "peterladhams", "riakandrew", "rileybice", "samwicks", "tayloradams", "tomhanily", "tommccartin", "tompapley", "williamedwards", "williamgreen",
   ]),
   ...makeTeamCards("West Coast", "eagles", [
     "archerreid", "baileyjwilliams", "boallan", "bradyhough", "brandonstarcevich", "clayhall", "cooperdufftytler", "devenrobertson", "elijahhewett", "elliotyeo", "finlaymacrae", "fredrodriguez", "hamishdavis", "harleyreid", "harrybarnett", "harryedwards", "harryschoenberg", "harveyjohnston", "jackgraham", "jackhutchinson", "jackwilliams", "jacobnewton", "jakewaterman", "jamiecripps", "jobeshanahan", "joshlindsay", "liambaker", "liamduggan", "luccagrego", "malakaichampion", "mattflynn", "matthewowies", "milanmurdock", "noahlong", "reubenginbey", "rhettbazzo", "ryanmaric", "samallen", "sandybrock", "timkelly", "tomcole", "tomgross", "tommccarthy", "tylerbrockman", "tylahwilliams", "tyrelldewar", "tylaryoung", "willemduursma",
