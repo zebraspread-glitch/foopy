@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Users, Layers } from "lucide-react";
 import { supabase } from "@/app/lib/supabase";
 import AuraBadge from "@/app/components/AuraBadge";
+import { VerifiedBadge } from "@/app/components/VerifiedBadge";
 import { PlayerCard } from "@/app/components/PlayerCard";
 import { CARD_PLAYERS } from "@/app/data/cardPlayers";
 import { getPassLevel, PLAYER_PASS_LEVELS, TEAM_PASS_LEVELS, dedupePlayerPasses, type PlayerPass, type TeamPass } from "@/app/lib/passes";
@@ -29,6 +30,7 @@ type Profile = {
   display_name: string | null;
   avatar_url: string | null;
   banner_url: string | null;
+  verified?: boolean;
   bio: string | null;
   created_at: string | null;
   favourites: FavSlot[] | null;
@@ -532,7 +534,7 @@ export default function PublicProfilePage() {
 
       const { data: p } = await supabase
         .from("profiles")
-        .select("id, username, display_name, avatar_url, banner_url, bio, created_at, favourites, featured_cards, featured_passes, aura, coins, favourite_team")
+        .select("id, username, display_name, avatar_url, banner_url, bio, created_at, favourites, featured_cards, featured_passes, aura, coins, favourite_team, verified")
         .eq("username", username)
         .maybeSingle();
 
@@ -696,8 +698,9 @@ export default function PublicProfilePage() {
 
             {/* Username + pills */}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <h1 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 950, letterSpacing: "-0.04em", lineHeight: 1, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
-                @{profile.username}
+              <h1 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 950, letterSpacing: "-0.04em", lineHeight: 1, color: "var(--text-1)", display: "flex", alignItems: "center", gap: 5, overflow: "hidden" }}>
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>@{profile.username}</span>
+                {profile.verified && <VerifiedBadge size={16} />}
               </h1>
               {/* Favourite team badge */}
               {profile.favourite_team && (() => {

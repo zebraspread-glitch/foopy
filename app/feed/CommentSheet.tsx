@@ -5,12 +5,14 @@ import type { CSSProperties } from "react";
 import { supabase } from "@/app/lib/supabase";
 import { useRouter } from "next/navigation";
 import { auraToastEmitter } from "@/app/lib/auraToastEmitter";
+import { VerifiedBadge } from "@/app/components/VerifiedBadge";
 
 type Profile = {
   id: string;
   username?: string;
   display_name?: string;
   avatar_url?: string;
+  verified?: boolean;
 };
 
 type Comment = {
@@ -62,7 +64,7 @@ export default function CommentSheet({ gameId, gameLabel, eventKey, onClose }: P
       .from("feed_comments")
       .select(`
         id, game_id, user_id, parent_id, body, likes, created_at,
-        profile:profiles(id, username, display_name, avatar_url)
+        profile:profiles(id, username, display_name, avatar_url, verified)
       `)
       .eq("game_id", gameId);
 
@@ -342,7 +344,7 @@ function CommentRow({
   const time = feedRelTime(comment.created_at);
 
   return (
-    <div style={{ ...commentRowStyle, paddingLeft: isReply ? 48 : 16 }}>
+    <div style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: isReply ? "10px 16px 8px 48px" : "12px 16px 8px" }}>
       {/* Avatar */}
       <div style={avatarStyle}>
         {avatar
@@ -351,47 +353,46 @@ function CommentRow({
         }
       </div>
 
-      <div style={{ flex: 1, minWidth: 0 }}>
-        {/* Inline username + body (Instagram style) */}
-        <p style={commentBodyStyle}>
-          <span style={commentNameStyle}>{name}</span>
-          {" "}{comment.body}
-        </p>
-
-        {/* Actions row: time · like · reply · delete */}
-        <div style={commentActionsStyle}>
-          <span style={commentTimeStyle}>{time}</span>
-          <button
-            onClick={() => onLike(comment)}
-            disabled={!userId || isLiking}
-            style={{
-              ...actionBtnStyle,
-              color: isLiked ? "#f43f5e" : "var(--text-3)",
-              opacity: isLiking ? 0.5 : 1,
-              gap: 4,
-            }}
-          >
-            <HeartIcon filled={!!isLiked} />
-            {comment.likes > 0 && <span>{comment.likes}</span>}
-          </button>
-          {userId && (
-            <button onClick={() => onReply(comment)} style={{ ...actionBtnStyle, color: "var(--text-3)" }}>
-              Reply
-            </button>
-          )}
-          {isOwn && (
-            <button onClick={() => onDelete(comment.id)} style={{ ...actionBtnStyle, color: "#ef4444" }}>
-              Delete
+      <div style={{ flex: 1, minWidth: 0, display: "grid", gridTemplateColumns: "minmax(0,1fr) auto", columnGap: 10 }}>
+        <div style={{ minWidth: 0 }}>
+          {/* Username + badge */}
+          <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 2 }}>
+            <span style={commentNameStyle}>{name}</span>
+            {comment.profile?.verified && <VerifiedBadge size={13} />}
+          </div>
+          {/* Body */}
+          <p style={commentBodyStyle}>{comment.body}</p>
+          {/* Actions: time · reply · delete */}
+          <div style={commentActionsStyle}>
+            <span style={commentTimeStyle}>{time}</span>
+            {userId && (
+              <button onClick={() => onReply(comment)} style={{ ...actionBtnStyle, color: "var(--text-3)" }}>
+                Reply
+              </button>
+            )}
+            {isOwn && (
+              <button onClick={() => onDelete(comment.id)} style={{ ...actionBtnStyle, color: "#ef4444" }}>
+                Delete
+              </button>
+            )}
+          </div>
+          {/* Replies toggle */}
+          {comment.replies && comment.replies.length > 0 && (
+            <button onClick={() => onViewReplies(comment)} style={viewRepliesBtnStyle}>
+              View {comment.replies.length} {comment.replies.length === 1 ? "reply" : "replies"}
             </button>
           )}
         </div>
 
-        {/* Replies */}
-        {comment.replies && comment.replies.length > 0 && (
-          <button onClick={() => onViewReplies(comment)} style={viewRepliesBtnStyle}>
-            View {comment.replies.length} {comment.replies.length === 1 ? "reply" : "replies"}
-          </button>
-        )}
+        {/* Like — right column TikTok-style */}
+        <button
+          onClick={() => onLike(comment)}
+          disabled={!userId || isLiking}
+          style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, background: "none", border: "none", padding: "2px 0 0", cursor: userId ? "pointer" : "default", color: isLiked ? "#f43f5e" : "var(--text-3)", opacity: isLiking ? 0.5 : 1, minWidth: 28 }}
+        >
+          <HeartIcon filled={!!isLiked} />
+          {comment.likes > 0 && <span style={{ fontSize: 11, fontWeight: 800 }}>{comment.likes}</span>}
+        </button>
       </div>
     </div>
   );
@@ -547,15 +548,9 @@ const emptyStyle: CSSProperties = {
   textAlign: "center",
 };
 
-const commentRowStyle: CSSProperties = {
-  display: "flex",
-  gap: 10,
-  padding: "10px 16px 6px",
-};
-
 const avatarStyle: CSSProperties = {
-  width: 30,
-  height: 30,
+  width: 36,
+  height: 36,
   borderRadius: "50%",
   background: "#1e293b",
   flexShrink: 0,
@@ -566,16 +561,16 @@ const avatarStyle: CSSProperties = {
 };
 
 const avatarInitialStyle: CSSProperties = {
-  fontSize: 13,
+  fontSize: 14,
   fontWeight: 900,
   color: "#60a5fa",
 };
 
 const commentNameStyle: CSSProperties = {
-  fontWeight: 900,
+  fontWeight: 800,
   fontSize: 13,
   color: "var(--text-1)",
-  marginRight: 5,
+  lineHeight: 1,
 };
 
 const commentTimeStyle: CSSProperties = {
@@ -585,18 +580,18 @@ const commentTimeStyle: CSSProperties = {
 };
 
 const commentBodyStyle: CSSProperties = {
-  margin: "0 0 0 0",
+  margin: 0,
   fontSize: 14,
   color: "var(--text-1)",
-  lineHeight: 1.5,
+  lineHeight: 1.45,
   wordBreak: "break-word",
 };
 
 const commentActionsStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: 12,
-  marginTop: 5,
+  gap: 14,
+  marginTop: 6,
 };
 
 const actionBtnStyle: CSSProperties = {
@@ -614,11 +609,14 @@ const viewRepliesBtnStyle: CSSProperties = {
   marginTop: 8,
   background: "none",
   border: "none",
-  color: "#60a5fa",
+  color: "var(--text-3)",
   fontSize: 12,
   fontWeight: 800,
   cursor: "pointer",
   padding: 0,
+  display: "flex",
+  alignItems: "center",
+  gap: 6,
 };
 
 const replyModalBackdropStyle: CSSProperties = {

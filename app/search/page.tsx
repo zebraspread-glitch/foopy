@@ -6,11 +6,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { supabase } from "@/app/lib/supabase";
+import { VerifiedBadge } from "@/app/components/VerifiedBadge";
 import playersData from "@/app/data/players.json";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type Profile = { id: string; username: string | null; avatar_url: string | null };
+type Profile = { id: string; username: string | null; avatar_url: string | null; verified?: boolean };
 
 type Player = { id: string; name: string; team: string };
 
@@ -130,7 +131,7 @@ export default function SearchPage() {
       // User search — Supabase
       const { data } = await supabase
         .from("profiles")
-        .select("id, username, avatar_url")
+        .select("id, username, avatar_url, verified")
         .ilike("username", `%${q}%`)
         .limit(20);
       setUsers((data ?? []) as Profile[]);
@@ -208,7 +209,7 @@ export default function SearchPage() {
                       <Link key={u.id} href={`/profile/${u.username}`} style={rowStyle} className="pressable">
                         <UserAvatar username={uname} url={u.avatar_url} />
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontWeight: 900, fontSize: 15, color: "var(--text-1)", letterSpacing: "-0.01em" }}>@{uname}</div>
+                          <div style={{ fontWeight: 900, fontSize: 15, color: "var(--text-1)", letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: 5 }}>@{uname}{u.verified && <VerifiedBadge size={14} />}</div>
                         </div>
                         <svg width="7" height="13" viewBox="0 0 7 13" fill="none" style={{ opacity: 0.25, flexShrink: 0 }}>
                           <path d="M1 1.5l5 5-5 5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>

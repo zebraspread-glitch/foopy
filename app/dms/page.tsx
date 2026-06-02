@@ -159,6 +159,8 @@ function DMsPageInner() {
   const [myProfile, setMyProfile] = useState<Profile | null>(null);
   const [ready,     setReady]     = useState(false);
   const [inbox,     setInbox]     = useState<InboxEntry[]>([]);
+  const [inboxLoaded, setInboxLoaded] = useState(false);
+  const [groupChatsLoaded, setGroupChatsLoaded] = useState(false);
   const [search,    setSearch]    = useState("");
   const [tab,       setTab]       = useState<"users" | "groups">("users");
 
@@ -290,7 +292,7 @@ function DMsPageInner() {
     const convos = convosRes.data ?? [];
     const convoOtherIds = convos.map(r => r.participant_a === myProfile.id ? r.participant_b : r.participant_a);
     const allIds = [...new Set([...friendIds, ...convoOtherIds])];
-    if (!allIds.length) { setInbox([]); return; }
+    if (!allIds.length) { setInbox([]); setInboxLoaded(true); return; }
     const [profilesRes, unreadRes] = await Promise.all([
       supabase.from("profiles").select("id,username,display_name,avatar_url").in("id", allIds),
       convos.length
@@ -309,13 +311,14 @@ function DMsPageInner() {
       if (!seenIds.has(fid) && pm[fid]) entries.push({ id: fid, other: pm[fid], convId: null, preview: "", last_at: null, unread: 0 });
     }
     setInbox(entries);
+    setInboxLoaded(true);
   }, [myProfile]);
 
   /* ── Load group chats ── */
   const loadGroupChats = useCallback(async () => {
     if (!myProfile) return;
     const { data: memberships } = await supabase.from("group_chat_members").select("group_chat_id, last_read_at").eq("user_id", myProfile.id);
-    if (!memberships?.length) { setGroupChats([]); return; }
+    if (!memberships?.length) { setGroupChats([]); setGroupChatsLoaded(true); return; }
     const chatIds = memberships.map((m: any) => m.group_chat_id);
     const [chatsRes, allMembersRes, recentMsgsRes] = await Promise.all([
       // Try with all columns; falls back below if migration columns don't exist yet
@@ -355,6 +358,7 @@ function DMsPageInner() {
       const at = a.last_message?.created_at ?? ""; const bt = b.last_message?.created_at ?? "";
       return bt > at ? 1 : -1;
     }));
+    setGroupChatsLoaded(true);
   }, [myProfile]);
 
   /* ── Retroactive default memberships ── */
@@ -1469,7 +1473,7 @@ function DMsPageInner() {
         {/* ── USERS TAB ── */}
         {tab === "users" && (
           <>
-            {filteredInbox.length === 0 && (
+            {inboxLoaded && filteredInbox.length === 0 && (
               <div style={{ padding: "72px 24px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
                 <div style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(34,197,94,.1)", border: "1px solid rgba(34,197,94,.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32 }}>{search ? "🔍" : "👥"}</div>
                 <p style={{ fontWeight: 900, fontSize: 18, margin: "0 0 6px" }}>{search ? "No results" : "No friends yet"}</p>
@@ -1516,7 +1520,7 @@ function DMsPageInner() {
             )}
 
             {/* Group list */}
-            {filteredGroups.length === 0 && pendingInvites.length === 0 && (
+            {groupChatsLoaded && filteredGroups.length === 0 && pendingInvites.length === 0 && (
               <div style={{ padding: "60px 24px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
                 <div style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(34,197,94,.1)", border: "1px solid rgba(34,197,94,.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32 }}>{search ? "🔍" : "🏉"}</div>
                 <p style={{ fontWeight: 900, fontSize: 18, margin: "0 0 6px" }}>{search ? "No results" : "No group chats yet"}</p>

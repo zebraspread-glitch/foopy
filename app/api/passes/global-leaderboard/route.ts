@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
     const userIds = [...new Set(passes.map((p) => p.user_id))];
     const { data: profiles } = await supabaseServer
       .from("profiles")
-      .select("id, username, avatar_url")
+      .select("id, username, avatar_url, verified")
       .in("id", userIds);
 
     const pm = new Map((profiles ?? []).map((p) => [p.id, p]));
@@ -35,6 +35,7 @@ export async function GET(req: NextRequest) {
       serial_number: p.serial_number,
       username:      pm.get(p.user_id)?.username   ?? null,
       avatar_url:    pm.get(p.user_id)?.avatar_url ?? null,
+      verified:      pm.get(p.user_id)?.verified   ?? false,
     })));
   } else {
     const { data: passes, error } = await supabaseServer
@@ -50,7 +51,7 @@ export async function GET(req: NextRequest) {
     const userIds = [...new Set(passes.map((p) => p.user_id))];
     const { data: profiles } = await supabaseServer
       .from("profiles")
-      .select("id, username, avatar_url")
+      .select("id, username, avatar_url, verified")
       .in("id", userIds);
 
     const pm = new Map((profiles ?? []).map((p) => [p.id, p]));
@@ -61,6 +62,7 @@ export async function GET(req: NextRequest) {
       serial_number: p.serial_number,
       username:      pm.get(p.user_id)?.username   ?? null,
       avatar_url:    pm.get(p.user_id)?.avatar_url ?? null,
+      verified:      pm.get(p.user_id)?.verified   ?? false,
     })));
   }
 }

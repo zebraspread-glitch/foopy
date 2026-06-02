@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
+import { VerifiedBadge } from "@/app/components/VerifiedBadge";
 
 type Period  = "day" | "week" | "month" | "overall";
 type MainTab = "leaderboard" | "history";
@@ -14,6 +15,7 @@ type Entry = {
   display_name: string | null;
   avatar_url:   string | null;
   aura_total:   number;
+  verified?:    boolean;
 };
 
 type AuraEvent = {
@@ -270,8 +272,9 @@ function AuraLeaderboardInner() {
                       : <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 900, color: "#c084fc" }}>{label[0]?.toUpperCase()}</div>}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: isMe ? 900 : 800, color: isMe ? "#c084fc" : "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {e.username ? `@${e.username}` : label}
+                    <div style={{ fontSize: 14, fontWeight: isMe ? 900 : 800, color: isMe ? "#c084fc" : "var(--text-1)", display: "flex", alignItems: "center", gap: 4, overflow: "hidden" }}>
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.username ? `@${e.username}` : label}</span>
+                      {e.verified && <VerifiedBadge size={13} />}
                     </div>
                   </div>
                   <div style={{ fontSize: 15, fontWeight: 900, background: "linear-gradient(135deg, #c084fc, #818cf8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", flexShrink: 0 }}>

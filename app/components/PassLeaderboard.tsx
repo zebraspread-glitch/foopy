@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
+import { VerifiedBadge } from "@/app/components/VerifiedBadge";
 import { getPassLevel, xpProgressLabel, PLAYER_PASS_LEVELS, type PlayerPass } from "@/app/lib/passes";
 
 const TEAM_FOLDER: Record<string, string> = {
@@ -29,7 +30,7 @@ function playerImgSrc(playerName: string, teamName: string): string {
 
 type Entry = {
   id: string; user_id: string; serial_number: number | null;
-  xp: number; created_at: string; username: string | null; avatar_url: string | null;
+  xp: number; created_at: string; username: string | null; avatar_url: string | null; verified?: boolean;
 };
 
 export default function PassLeaderboard({ pass, onClose }: { pass: PlayerPass; onClose: () => void }) {
@@ -132,11 +133,12 @@ export default function PassLeaderboard({ pass, onClose }: { pass: PlayerPass; o
                     <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 40, background: `linear-gradient(to bottom,transparent,${level.gradient.match(/#[0-9a-f]{6}/i)?.[0] ?? "#0a0a14"})` }} />
                   </div>
                   <div style={{ padding: "8px 10px 10px", background: "rgba(0,0,0,0.25)", flexShrink: 0 }}>
-                    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 1 }}>
-                      <div style={{ fontWeight: 900, fontSize: 12, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>
-                        {entry.username ? `@${entry.username}` : "Unknown"}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 1, gap: 4 }}>
+                      <div style={{ fontWeight: 900, fontSize: 12, color: "#fff", display: "flex", alignItems: "center", gap: 3, overflow: "hidden", flex: 1, minWidth: 0 }}>
+                        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{entry.username ? `@${entry.username}` : "Unknown"}</span>
+                        {entry.verified && <VerifiedBadge size={10} />}
                       </div>
-                      {isMe && <span style={{ fontSize: 8, fontWeight: 900, color: level.color, flexShrink: 0, marginLeft: 4 }}>YOU</span>}
+                      {isMe && <span style={{ fontSize: 8, fontWeight: 900, color: level.color, flexShrink: 0 }}>YOU</span>}
                     </div>
                     <div style={{ fontSize: 9.5, color: "rgba(255,255,255,0.45)", marginBottom: 6 }}>{pass.team_name}</div>
                     <div>

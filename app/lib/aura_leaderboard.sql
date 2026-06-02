@@ -6,7 +6,8 @@ RETURNS TABLE(
   username text,
   display_name text,
   avatar_url text,
-  aura_total bigint
+  aura_total bigint,
+  verified boolean
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -14,7 +15,7 @@ AS $$
 BEGIN
   IF period = 'overall' THEN
     RETURN QUERY
-      SELECT p.id, p.username, p.display_name, p.avatar_url, COALESCE(p.aura, 0)::bigint
+      SELECT p.id, p.username, p.display_name, p.avatar_url, COALESCE(p.aura, 0)::bigint, COALESCE(p.verified, false)
       FROM profiles p
       WHERE COALESCE(p.aura, 0) > 0
       ORDER BY p.aura DESC
@@ -22,26 +23,26 @@ BEGIN
 
   ELSIF period = 'day' THEN
     RETURN QUERY
-      SELECT p.id, p.username, p.display_name, p.avatar_url, SUM(ae.amount)::bigint
+      SELECT p.id, p.username, p.display_name, p.avatar_url, SUM(ae.amount)::bigint, COALESCE(p.verified, false)
       FROM aura_events ae JOIN profiles p ON p.id = ae.user_id
       WHERE ae.created_at >= NOW() - INTERVAL '1 day'
-      GROUP BY p.id, p.username, p.display_name, p.avatar_url
+      GROUP BY p.id, p.username, p.display_name, p.avatar_url, p.verified
       ORDER BY SUM(ae.amount) DESC LIMIT limit_n;
 
   ELSIF period = 'week' THEN
     RETURN QUERY
-      SELECT p.id, p.username, p.display_name, p.avatar_url, SUM(ae.amount)::bigint
+      SELECT p.id, p.username, p.display_name, p.avatar_url, SUM(ae.amount)::bigint, COALESCE(p.verified, false)
       FROM aura_events ae JOIN profiles p ON p.id = ae.user_id
       WHERE ae.created_at >= NOW() - INTERVAL '7 days'
-      GROUP BY p.id, p.username, p.display_name, p.avatar_url
+      GROUP BY p.id, p.username, p.display_name, p.avatar_url, p.verified
       ORDER BY SUM(ae.amount) DESC LIMIT limit_n;
 
   ELSIF period = 'month' THEN
     RETURN QUERY
-      SELECT p.id, p.username, p.display_name, p.avatar_url, SUM(ae.amount)::bigint
+      SELECT p.id, p.username, p.display_name, p.avatar_url, SUM(ae.amount)::bigint, COALESCE(p.verified, false)
       FROM aura_events ae JOIN profiles p ON p.id = ae.user_id
       WHERE ae.created_at >= NOW() - INTERVAL '30 days'
-      GROUP BY p.id, p.username, p.display_name, p.avatar_url
+      GROUP BY p.id, p.username, p.display_name, p.avatar_url, p.verified
       ORDER BY SUM(ae.amount) DESC LIMIT limit_n;
   END IF;
 END;

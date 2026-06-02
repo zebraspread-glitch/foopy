@@ -17,6 +17,7 @@ import { supabase } from "@/app/lib/supabase";
 import { createNotification, notifyMentions } from "@/app/lib/notifications";
 import MentionTextarea from "@/app/components/MentionTextarea";
 import { auraToastEmitter } from "@/app/lib/auraToastEmitter";
+import { VerifiedBadge } from "@/app/components/VerifiedBadge";
 
 import type {
   TabKey,
@@ -134,7 +135,7 @@ function useCompactViewport(maxWidth = 520) {
   return compact;
 }
 
-const MATCH_SCROLL_RANGE = 120;
+const MATCH_SCROLL_RANGE = 200;
 const MATCH_COMPACT_SCORE_HEIGHT = 60;
 
 function clamp01(value: number) {
@@ -2679,20 +2680,28 @@ function MatchPageInner() {
   const applyScrollVars = useCallback((sp: number) => {
     const section = matchSectionRef.current;
     if (!section) return;
+
+    // Keep base vars for compact-row slide
     section.style.setProperty("--anim-eio", String(easeInOut(sp)));
     section.style.setProperty("--anim-ei",  String(easeIn(sp)));
     section.style.setProperty("--anim-eo",  String(easeOut(sp)));
-    const shadowAlpha = (clamp01((sp - 0.05) / 0.2) * 0.22).toFixed(3);
+
+    // Content-fade: starts at 20% of scroll, smooth easeInOut
+    const cf = easeInOut(clamp01((sp - 0.2) / 0.8));
+    section.style.setProperty("--anim-cf", String(cf));
+
+    const shadowAlpha = (clamp01((sp - 0.05) / 0.3) * 0.28).toFixed(3);
     if (stickyHeaderRef.current)
-      stickyHeaderRef.current.style.boxShadow = `0 10px 24px rgba(0,0,0,${shadowAlpha})`;
+      stickyHeaderRef.current.style.boxShadow = `0 8px 20px rgba(0,0,0,${shadowAlpha})`;
+
     if (compactWrapRef.current) {
-      const eo = easeOut(sp);
-      const h = lerp(0, MATCH_COMPACT_SCORE_HEIGHT, eo);
+      const compactP = clamp01((sp - 0.3) / 0.7);
+      const h = lerp(0, MATCH_COMPACT_SCORE_HEIGHT, easeOut(compactP));
       const el = compactWrapRef.current;
       el.style.height = h > 0 ? `calc(env(safe-area-inset-top) + ${h}px)` : "0";
       el.style.paddingTop = h > 0 ? "env(safe-area-inset-top)" : "0";
-      el.style.opacity = String(eo);
-      el.style.pointerEvents = sp > 0.15 ? "auto" : "none";
+      el.style.opacity = String(easeOut(clamp01((sp - 0.35) / 0.65)));
+      el.style.pointerEvents = sp > 0.45 ? "auto" : "none";
     }
   }, []);
 
@@ -3496,14 +3505,14 @@ function MatchPageInner() {
   return (
     <main style={pageStyle} className="page-enter">
       <style>{`
-        .match-anim-header { height: calc(248px - 248px * var(--anim-eio,0)); padding: calc(20px*(1 - var(--anim-eio,0))) 24px calc(24px*(1 - var(--anim-eio,0))); will-change: height, padding; }
-        .match-anim-glow { opacity: max(0.2, calc(1 - var(--anim-ei,0) * 1.35)); }
-        .match-anim-teams-row { transform: translateY(calc(-18px * var(--anim-eio,0))); will-change: transform; }
-        .match-anim-center { opacity: max(0, calc(1 - var(--anim-ei,0) * 1.35)); transform: translateY(calc(-12px * var(--anim-ei,0))); will-change: opacity, transform; }
-        .match-anim-venue { opacity: max(0, calc(1 - var(--anim-ei,0) * 1.65)); transform: translateY(calc(-12px * var(--anim-ei,0))); will-change: opacity, transform; }
-        .match-anim-team-logo { transform: translateY(calc(-14px * var(--anim-eio,0))) scale(calc(1 - 0.34 * var(--anim-eio,0))); will-change: transform; }
-        .match-anim-team-detail { opacity: max(0, calc(1 - var(--anim-eio,0) * 1.45)); transform: translateY(calc(-10px * var(--anim-eio,0))); will-change: opacity, transform; }
-        .match-anim-compact-row { transform: translateY(calc(-10px * (1 - var(--anim-eo,0)))); will-change: transform; }
+        .match-anim-header { opacity: max(0, calc(1 - var(--anim-cf,0) * 1.15)); will-change: opacity; }
+        .match-anim-glow { opacity: max(0.2, calc(1 - var(--anim-cf,0) * 1.4)); }
+        .match-anim-teams-row { transform: translateY(calc(-22px * var(--anim-cf,0))); will-change: transform; }
+        .match-anim-center { opacity: max(0, calc(1 - var(--anim-cf,0) * 1.3)); transform: translateY(calc(-14px * var(--anim-cf,0))); will-change: opacity, transform; }
+        .match-anim-venue { opacity: max(0, calc(1 - var(--anim-cf,0) * 1.6)); transform: translateY(calc(-14px * var(--anim-cf,0))); will-change: opacity, transform; }
+        .match-anim-team-logo { transform: translateY(calc(-16px * var(--anim-cf,0))) scale(calc(1 - 0.34 * var(--anim-cf,0))); will-change: transform; }
+        .match-anim-team-detail { opacity: max(0, calc(1 - var(--anim-cf,0) * 1.4)); transform: translateY(calc(-10px * var(--anim-cf,0))); will-change: opacity, transform; }
+        .match-anim-compact-row { transform: translateY(calc(-8px * (1 - var(--anim-eo,0)))); will-change: transform; }
       `}</style>
       <RoundGameStrip games={roundGames} activeId={id} now={now} />
       <section ref={matchSectionRef} style={matchCentreStyle}>
@@ -4076,7 +4085,7 @@ function MatchPageInner() {
 
 /* ================= MATCH COMMENTS ================= */
 
-type CommentProfile = { id: string; username?: string; display_name?: string; avatar_url?: string };
+type CommentProfile = { id: string; username?: string; display_name?: string; avatar_url?: string; verified?: boolean };
 type MatchComment = {
   id: string; game_id: number; user_id: string; parent_id: string | null;
   body: string; likes: number; created_at: string; event_key?: string | null;
@@ -4151,7 +4160,7 @@ function MatchComments({ gameId, highlight }: { gameId: number; highlight: strin
     const userIds = [...new Set(rows.map((r: { user_id: string }) => r.user_id))];
     const profileMap = new Map<string, CommentProfile>();
     if (userIds.length > 0) {
-      const { data: profiles } = await supabase.from("profiles").select("id, username, display_name, avatar_url").in("id", userIds);
+      const { data: profiles } = await supabase.from("profiles").select("id, username, display_name, avatar_url, verified").in("id", userIds);
       for (const p of profiles ?? []) profileMap.set(p.id, p as CommentProfile);
     }
 
@@ -4429,17 +4438,11 @@ function CommentBody({ text }: { text: string }) {
   );
 }
 
-function MCCommentBody({ name, username, text }: { name: string; username?: string; text: string }) {
+function MCCommentBody({ text }: { text: string }) {
   const router = useRouter();
   const parts = text.split(/(@\w+)/g);
   return (
-    <p style={{ margin: 0, fontSize: 14, color: "var(--text-1)", lineHeight: 1.5, wordBreak: "break-word" }}>
-      <span
-        onClick={() => username && router.push(`/profile/${username}`)}
-        style={{ fontWeight: 900, marginRight: 6, cursor: username ? "pointer" : "default" }}
-      >
-        {name}
-      </span>
+    <p style={{ margin: 0, fontSize: 14, color: "var(--text-1)", lineHeight: 1.45, wordBreak: "break-word" }}>
       {parts.map((part, i) =>
         /^@\w+$/.test(part) ? (
           <span key={i} onClick={() => router.push(`/profile/${part.slice(1)}`)} style={{ color: "#60a5fa", fontWeight: 700, cursor: "pointer" }}>
@@ -4469,7 +4472,7 @@ function MCRow({ comment, userId, onLike, onDelete, onReply, onViewReplies, liki
     <div id={`c-${comment.id}`} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: isReply ? "10px 16px 6px 54px" : "12px 16px 6px", marginBottom: 0 }}>
       <div
         onClick={() => username && router.push(`/profile/${username}`)}
-        style={{ width: 34, height: 34, borderRadius: "50%", background: "var(--surface-2)", border: "1px solid var(--border-2)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", cursor: username ? "pointer" : "default" }}
+        style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--surface-2)", border: "1px solid var(--border-2)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", cursor: username ? "pointer" : "default" }}
       >
         {avatar
           ? <img src={avatar} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -4479,9 +4482,20 @@ function MCRow({ comment, userId, onLike, onDelete, onReply, onViewReplies, liki
 
       <div style={{ flex: 1, minWidth: 0, display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", columnGap: 10 }}>
         <div style={{ minWidth: 0 }}>
-          <MCCommentBody name={name} username={username} text={comment.body} />
-
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 5 }}>
+          {/* Username + badge */}
+          <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 2 }}>
+            <span
+              onClick={() => username && router.push(`/profile/${username}`)}
+              style={{ fontWeight: 800, fontSize: 13, color: "var(--text-1)", cursor: username ? "pointer" : "default", lineHeight: 1 }}
+            >
+              {name}
+            </span>
+            {comment.profile?.verified && <VerifiedBadge size={13} />}
+          </div>
+          {/* Body */}
+          <MCCommentBody text={comment.body} />
+          {/* Actions */}
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 6 }}>
             <span style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 600 }}>{mcRelTime(comment.created_at)}</span>
             {userId && (
               <>
@@ -4496,28 +4510,28 @@ function MCRow({ comment, userId, onLike, onDelete, onReply, onViewReplies, liki
               </>
             )}
           </div>
-
           {!hideRepliesToggle && replyCount > 0 && (
             <button
               onClick={() => onViewReplies(comment)}
-              style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", padding: "8px 0 0", fontSize: 12, fontWeight: 800, color: "var(--text-3)", cursor: "pointer" }}
+              style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: "8px 0 0", fontSize: 12, fontWeight: 800, color: "var(--text-3)", cursor: "pointer" }}
             >
-              <span style={{ width: 24, height: 1, background: "var(--border-2)", display: "inline-block" }} />
+              <span style={{ width: 20, height: 1, background: "var(--border-2)", display: "inline-block" }} />
               {`View ${replyCount} ${replyCount === 1 ? "reply" : "replies"}`}
             </button>
           )}
         </div>
 
+        {/* Like — right column TikTok-style */}
         <button
           onClick={() => onLike(comment)}
           disabled={!userId || isLiking}
           aria-label={isLiked ? "Unlike comment" : "Like comment"}
-          style={{ width: 30, minHeight: 42, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", gap: 3, background: "none", border: "none", padding: "3px 0 0", fontSize: 11, fontWeight: 800, cursor: userId ? "pointer" : "default", color: isLiked ? "#f43f5e" : "var(--text-3)", opacity: isLiking ? 0.5 : 1 }}
+          style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, background: "none", border: "none", padding: "2px 0 0", cursor: userId ? "pointer" : "default", color: isLiked ? "#f43f5e" : "var(--text-3)", opacity: isLiking ? 0.5 : 1, minWidth: 30 }}
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill={isLiked ? "#f43f5e" : "none"} stroke={isLiked ? "#f43f5e" : "currentColor"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
           </svg>
-          {comment.likes > 0 && <span>{comment.likes}</span>}
+          {comment.likes > 0 && <span style={{ fontSize: 11, fontWeight: 800 }}>{comment.likes}</span>}
         </button>
       </div>
     </div>

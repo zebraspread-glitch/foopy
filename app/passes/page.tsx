@@ -871,9 +871,10 @@ function PassesPageInner() {
               </div>
             </div>
           </div>
-          <div style={{ fontSize: 13, fontWeight: 900, color: "#fbbf24", display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
-            <CoinImg size={16} />{fmtCoins(coins)}
-          </div>
+          {data
+            ? <div style={{ fontSize: 13, fontWeight: 900, color: "#fbbf24", display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}><CoinImg size={16} />{fmtCoins(coins)}</div>
+            : <div style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,.2)", borderTopColor: "#fbbf24", borderRadius: "50%", animation: "spin 0.7s linear infinite", flexShrink: 0 }} />
+          }
         </div>
         <PlayerPassPickerPage
           pendingPlayer={pendingPlayer}
@@ -1821,14 +1822,21 @@ function PlayerPassPickerPage({
             </button>
           )}
 
-          <div style={{ marginTop: 10, fontSize: 14, color: coins >= PLAYER_PASS_COST ? "var(--text-3)" : "#f87171", fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
-            <CoinImg size={15} />{fmtCoins(coins)} balance
-          </div>
-
-          {!pendingPlayerOwned && coins < PLAYER_PASS_COST && (
-            <div style={{ marginTop: 10, padding: "9px 13px", borderRadius: 999, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", fontSize: 12, fontWeight: 850, color: "#f87171" }}>
-              Need <CoinImg size={12} /> {fmtCoins(PLAYER_PASS_COST - coins)} more coins
+          {data === null ? (
+            <div style={{ marginTop: 10, display: "flex", justifyContent: "center" }}>
+              <div style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,.2)", borderTopColor: "#fbbf24", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
             </div>
+          ) : (
+            <>
+              <div style={{ marginTop: 10, fontSize: 14, color: coins >= PLAYER_PASS_COST ? "var(--text-3)" : "#f87171", fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+                <CoinImg size={15} />{fmtCoins(coins)} balance
+              </div>
+              {!pendingPlayerOwned && coins < PLAYER_PASS_COST && (
+                <div style={{ marginTop: 10, padding: "9px 13px", borderRadius: 999, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", fontSize: 12, fontWeight: 850, color: "#f87171" }}>
+                  Need <CoinImg size={12} /> {fmtCoins(PLAYER_PASS_COST - coins)} more coins
+                </div>
+              )}
+            </>
           )}
         </section>
 

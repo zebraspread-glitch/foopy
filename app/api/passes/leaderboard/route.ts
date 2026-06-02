@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
 
   const { data: profiles } = await supabaseServer
     .from("profiles")
-    .select("id, username, avatar_url")
+    .select("id, username, avatar_url, verified")
     .in("id", userIds);
 
   const profileMap = new Map((profiles ?? []).map((p) => [p.id, p]));
@@ -42,6 +42,7 @@ export async function GET(req: NextRequest) {
     created_at:    p.created_at,
     username:      profileMap.get(p.user_id)?.username   ?? null,
     avatar_url:    profileMap.get(p.user_id)?.avatar_url ?? null,
+    verified:      profileMap.get(p.user_id)?.verified   ?? false,
   }));
 
   return NextResponse.json(result);
