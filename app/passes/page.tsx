@@ -1848,49 +1848,46 @@ function PlayerPassPickerPage({
         </section>
 
         <section style={{ paddingTop: 2 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 12 }}>
-            <div>
-              <div style={{ fontSize: 16, fontWeight: 950, color: "var(--text-2)", display: "flex", alignItems: "center", gap: 6 }}>
-                Pass holders <Ticket size={14} strokeWidth={2.6} /> {holdersLoading ? "..." : holders.length}
-              </div>
-              <div style={{ marginTop: 3, fontSize: 12, color: "var(--text-3)", fontWeight: 750 }}>
-                Oldest holders
-              </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
+            <div style={{ fontSize: 16, fontWeight: 950, color: "var(--text-1)", display: "flex", alignItems: "center", gap: 6 }}>
+              Holders <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-3)" }}>{holdersLoading ? "" : holders.length}</span>
             </div>
             <button onClick={() => onOpenLeaderboard(previewPass)} style={{ border: "none", background: "transparent", color: "#38bdf8", fontSize: 13, fontWeight: 900, fontFamily: "inherit", cursor: "pointer", padding: 0, flexShrink: 0 }}>
-              View leaderboard
+              View leaderboard →
             </button>
           </div>
 
-          {holdersLoading ? (
-            <div style={{ padding: "24px 0", color: "var(--text-3)", fontSize: 13, fontWeight: 800, textAlign: "center" }}>Loading holders...</div>
-          ) : holderPreview.length === 0 ? (
-            <div style={{ padding: "24px 0", color: "var(--text-3)", fontSize: 13, fontWeight: 800, textAlign: "center" }}>No pass holders yet</div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {holderPreview.map((entry, idx) => {
+          <div style={{ borderRadius: 16, border: "1px solid var(--border-1)", overflow: "hidden", background: "var(--surface-1)" }}>
+            {holdersLoading ? (
+              <div style={{ padding: "24px 0", color: "var(--text-3)", fontSize: 13, fontWeight: 800, textAlign: "center" }}>Loading...</div>
+            ) : holderPreview.length === 0 ? (
+              <div style={{ padding: "24px 0", color: "var(--text-3)", fontSize: 13, fontWeight: 800, textAlign: "center" }}>No holders yet — be first!</div>
+            ) : (
+              holderPreview.map((entry, idx) => {
                 const rank = entry.serial_number ?? idx + 1;
                 const when = shortRelativeTime(entry.created_at);
                 const name = entry.username ? `@${entry.username}` : "Unknown";
+                const rankColor = rank === 1 ? "#fbbf24" : rank === 2 ? "#94a3b8" : rank === 3 ? "#cd7c32" : "var(--border-2)";
                 return (
-                  <div key={entry.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ width: 34, color: "#0ea5e9", fontSize: 15, fontWeight: 950 }}>#{rank}</div>
-                    <div style={{ width: 40, height: 40, borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-2)", fontWeight: 950, flexShrink: 0 }}>
+                  <div key={entry.id} style={{ display: "flex", alignItems: "center", gap: 12, borderTop: idx > 0 ? "1px solid var(--border-1)" : "none", paddingRight: 14, overflow: "hidden" }}>
+                    <div style={{ width: 3, alignSelf: "stretch", background: rankColor, flexShrink: 0 }} />
+                    <div style={{ width: 28, textAlign: "right", fontSize: 12, fontWeight: 900, color: rank <= 3 ? rankColor : "var(--text-4)", flexShrink: 0 }}>#{rank}</div>
+                    <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.07)", border: "1px solid var(--border-2)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-2)", fontWeight: 950, fontSize: 13, flexShrink: 0, margin: "10px 0" }}>
                       {entry.avatar_url ? (
                         <img src={entry.avatar_url} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                       ) : (
                         name.slice(1, 2).toUpperCase() || "?"
                       )}
                     </div>
-                    <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "baseline", gap: 8 }}>
-                      <span style={{ fontSize: 15, fontWeight: 950, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
-                      {when && <span style={{ fontSize: 13, color: "var(--text-3)", fontWeight: 750, flexShrink: 0 }}>{when}</span>}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ fontSize: 14, fontWeight: 900, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{name}</span>
+                      {when && <span style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 600 }}>{when} ago</span>}
                     </div>
                   </div>
                 );
-              })}
-            </div>
-          )}
+              })
+            )}
+          </div>
         </section>
 
         <button onClick={() => setPendingPlayer(null)} style={{ alignSelf: "center", border: "1px solid var(--border-2)", background: "rgba(255,255,255,0.05)", color: "var(--text-2)", borderRadius: 999, padding: "10px 18px", fontSize: 13, fontWeight: 900, fontFamily: "inherit", cursor: "pointer" }}>
