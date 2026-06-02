@@ -1400,7 +1400,7 @@ function PassesPageInner() {
               {confirmStep ? (
                 <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: 10 }}>
                   <div style={{ padding: "13px 16px", borderRadius: 14, background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontSize: 14, fontWeight: 800, color: "#fbbf24" }}>
-                    Are you sure? This costs <CoinImg size={15} /> {fmtCoins(PLAYER_PASS_COST)}
+                    Are you sure?
                   </div>
                   <div style={{ display: "flex", gap: 10 }}>
                     <button onClick={() => setConfirmStep(false)} style={{ flex: 1, padding: "13px 0", borderRadius: 999, border: "1px solid var(--border-2)", background: "rgba(255,255,255,0.05)", color: "var(--text-2)", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
@@ -1781,7 +1781,7 @@ function PlayerPassPickerPage({
             /* ── Confirm step ── */
             <div style={{ marginTop: 12, width: "min(300px, 88vw)", display: "flex", flexDirection: "column", gap: 10 }}>
               <div style={{ padding: "12px 16px", borderRadius: 14, background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontSize: 14, fontWeight: 800, color: "#fbbf24" }}>
-                Are you sure? This costs <CoinImg size={14} /> {fmtCoins(PLAYER_PASS_COST)}
+                Are you sure?
               </div>
               <div style={{ display: "flex", gap: 10 }}>
                 <button onClick={() => setLocalConfirmStep(false)} style={{ flex: 1, padding: "12px 0", borderRadius: 999, border: "1px solid var(--border-2)", background: "rgba(255,255,255,0.06)", color: "var(--text-2)", fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
