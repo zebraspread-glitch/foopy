@@ -157,12 +157,15 @@ export function PlayerCard({
             </div>
           </>
         ) : (
-          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}>
             <div style={{ width: 34, height: 34, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.1)" }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ color: "rgba(255,255,255,.5)" }}>
                 <rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="2" />
                 <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
               </svg>
+            </div>
+            <div className="ac-name" style={{ fontWeight: 800, color: "rgba(255,255,255,.35)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "90%", padding: "0 4px" }}>
+              {card.playerName}
             </div>
           </div>
         )}
