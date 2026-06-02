@@ -1529,16 +1529,6 @@
     "statsIds": []
   },
   {
-    "id": "zachary_williams",
-    "name": "Zachary Williams",
-    "team": "Carlton",
-    "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
-    "statsIds": [],
-    "footyWireUrl": "https://www.footywire.compp-carlton-blues--zachary-williams"
-  },
-  {
     "id": "angus_anderson",
     "name": "Angus Anderson",
     "team": "Collingwood",
@@ -2433,16 +2423,6 @@
     "statsIds": []
   },
   {
-    "id": "nikolas_cox",
-    "name": "Nikolas Cox",
-    "team": "Essendon",
-    "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
-    "statsIds": [],
-    "footyWireUrl": "https://www.footywire.compp-essendon-bombers--nikolas-cox"
-  },
-  {
     "id": "peter_wright",
     "name": "Peter Wright",
     "team": "Essendon",
@@ -3123,16 +3103,6 @@
       1595
     ],
     "statsIds": []
-  },
-  {
-    "id": "bradley_close",
-    "name": "Bradley Close",
-    "team": "Geelong",
-    "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
-    "statsIds": [],
-    "footyWireUrl": "https://www.footywire.compp-geelong-cats--bradley-close"
   },
   {
     "id": "cillian_burke",
