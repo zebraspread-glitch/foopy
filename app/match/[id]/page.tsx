@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -148,6 +148,9 @@ function matchScrollProgress(scrollY: number) {
 function lerp(from: number, to: number, progress: number) {
   return from + (to - from) * clamp01(progress);
 }
+function easeOut(t: number) { const c = clamp01(t); return 1 - (1 - c) * (1 - c); }
+function easeIn(t: number) { const c = clamp01(t); return c * c; }
+function easeInOut(t: number) { const c = clamp01(t); return c < 0.5 ? 2 * c * c : 1 - (-2 * c + 2) ** 2 / 2; }
 
 function liveFeedTeamColors(team: any) {
   const key = String(team || "").toLowerCase().trim();
@@ -769,9 +772,7 @@ function formatMatchTime(date?: string) {
 function formatRecord(raw: string) {
   const parts = raw.split("-");
   if (parts.length < 2) return raw;
-  return parts[2]
-    ? `${parts[0]}W ${parts[1]}L ${parts[2]}D`
-    : `${parts[0]}W ${parts[1]}L`;
+  return parts[2] ? `${parts[0]}-${parts[1]}-${parts[2]}` : `${parts[0]}-${parts[1]}`;
 }
 
 function mixColor(a: string, b: string, amount: number) {
@@ -918,62 +919,34 @@ function QuarterScoresTable({
   );
 }
 
-function TeamScore({ team, record, collapse = 0 }: { team: any; record?: string; collapse?: number }) {
+function TeamScore({ team, record }: { team: any; record?: string }) {
   const safeTeam = safeText(team, "");
   const accent = teamColor(safeTeam);
-  const detailOpacity = Math.max(0, 1 - collapse * 1.45);
-  const detailTranslate = -10 * collapse;
-  const logoScale = 1 - collapse * 0.34;
 
   return (
-    <div style={{
-      display: "flex", flexDirection: "column",
-      alignItems: "center",
-      gap: 10,
-      minWidth: 0,
-      width: "100%",
-    }}>
-      {/* Logo */}
-      <Link href={`/team/${toTeamSlug(safeTeam)}`} style={{ textDecoration: "none", flexShrink: 0, display: "block", transform: `translateY(${-14 * collapse}px) scale(${logoScale})`, transformOrigin: "top center", willChange: "transform" }}>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, minWidth: 0, width: "100%" }}>
+      <Link href={`/team/${toTeamSlug(safeTeam)}`} className="match-anim-team-logo" style={{ textDecoration: "none", flexShrink: 0, display: "block", transformOrigin: "top center" }}>
         <div style={{
           width: "clamp(72px, 16vw, 104px)", height: "clamp(72px, 16vw, 104px)",
           borderRadius: "50%", flexShrink: 0, overflow: "hidden",
           boxShadow: `0 18px 40px ${accent}30, 0 4px 18px rgba(0,0,0,.45)`,
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
-          <img
-            src={getLogo(safeTeam)}
-            alt={safeTeam}
-            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-          />
+          <img src={getLogo(safeTeam)} alt={safeTeam} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
         </div>
       </Link>
-      {/* Name */}
-      <div style={{
+      <div className="match-anim-team-detail" style={{
         fontSize: "clamp(13px, 3.2vw, 17px)", fontWeight: 900, color: "#f4f4f5",
-        textAlign: "center",
-        lineHeight: 1.2,
-        maxWidth: "100%",
-        whiteSpace: "nowrap",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
+        textAlign: "center", lineHeight: 1.2, maxWidth: "100%",
+        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
         textShadow: "0 2px 14px rgba(0,0,0,.65)",
-        opacity: detailOpacity,
-        transform: `translateY(${detailTranslate}px)`,
-        willChange: "opacity, transform",
       }}>
         {getTeamNickname(safeTeam)}
       </div>
-      {/* Record */}
       {record && (
-        <div style={{
+        <div className="match-anim-team-detail" style={{
           fontSize: "clamp(11px, 2.4vw, 13px)", fontWeight: 700,
-          color: "rgba(255,255,255,0.55)",
-          letterSpacing: "0.02em",
-          whiteSpace: "nowrap",
-          opacity: detailOpacity,
-          transform: `translateY(${detailTranslate}px)`,
-          willChange: "opacity, transform",
+          color: "rgba(255,255,255,0.55)", letterSpacing: "0.02em", whiteSpace: "nowrap",
         }}>
           {record}
         </div>
@@ -2634,8 +2607,11 @@ function MatchPageInner() {
   const [teamStats, setTeamStats] = useState<any[]>([]);
   const [allGames, setAllGames] = useState<MatchGame[]>([]);
   const [roundGames, setRoundGames] = useState<MatchGame[]>([]);
-  const [scrollProgress, setScrollProgress] = useState(0);
+  const scrollRef = useRef(0);
   const rafRef = useRef<number>(0);
+  const matchSectionRef = useRef<HTMLElement>(null);
+  const stickyHeaderRef = useRef<HTMLDivElement>(null);
+  const compactWrapRef = useRef<HTMLDivElement>(null);
   /** Prevents re-fetching final stats on every 5-second game-poll tick */
   const finalStatsFetchedRef = useRef(false);
   const gameRef = useRef(game);
@@ -2700,14 +2676,35 @@ function MatchPageInner() {
     window.scrollTo(0, 0); // always start match page at top, prevents scroll-restoration glitch
   }, []);
 
+  const applyScrollVars = useCallback((sp: number) => {
+    const section = matchSectionRef.current;
+    if (!section) return;
+    section.style.setProperty("--anim-eio", String(easeInOut(sp)));
+    section.style.setProperty("--anim-ei",  String(easeIn(sp)));
+    section.style.setProperty("--anim-eo",  String(easeOut(sp)));
+    const shadowAlpha = (clamp01((sp - 0.05) / 0.2) * 0.22).toFixed(3);
+    if (stickyHeaderRef.current)
+      stickyHeaderRef.current.style.boxShadow = `0 10px 24px rgba(0,0,0,${shadowAlpha})`;
+    if (compactWrapRef.current) {
+      const eo = easeOut(sp);
+      const h = lerp(0, MATCH_COMPACT_SCORE_HEIGHT, eo);
+      const el = compactWrapRef.current;
+      el.style.height = h > 0 ? `calc(env(safe-area-inset-top) + ${h}px)` : "0";
+      el.style.paddingTop = h > 0 ? "env(safe-area-inset-top)" : "0";
+      el.style.opacity = String(eo);
+      el.style.pointerEvents = sp > 0.15 ? "auto" : "none";
+    }
+  }, []);
+
+  useLayoutEffect(() => { applyScrollVars(scrollRef.current); });
+
   useEffect(() => {
     if (!mounted) return;
 
     const update = () => {
-      const progress = matchScrollProgress(window.scrollY || window.pageYOffset || 0);
-      setScrollProgress((current) => (
-        Math.abs(current - progress) < 0.004 ? current : progress
-      ));
+      const sp = matchScrollProgress(window.scrollY || window.pageYOffset || 0);
+      scrollRef.current = sp;
+      applyScrollVars(sp);
     };
 
     const onScroll = () => {
@@ -2716,12 +2713,12 @@ function MatchPageInner() {
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
-    update(); // initial call
+    update();
     return () => {
       window.removeEventListener("scroll", onScroll);
       cancelAnimationFrame(rafRef.current);
     };
-  }, [mounted]);
+  }, [mounted, applyScrollVars]);
 
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 1000);
@@ -3495,31 +3492,31 @@ function MatchPageInner() {
     status === "LIVE" ? (compactClock || "LIVE") :
     status === "FINAL" ? "FT" :
     timeUntilStart(game.date, now);
-  const expandedHeaderHeight = Math.round(lerp(248, 0, scrollProgress));
-  const expandedHeaderPaddingY = Math.round(lerp(20, 0, scrollProgress));
-  const expandedContentOpacity = Math.max(0, 1 - scrollProgress * 1.35);
-  const expandedDetailsOpacity = Math.max(0, 1 - scrollProgress * 1.65);
-  const compactHeaderVisibleHeight = Math.round(lerp(0, MATCH_COMPACT_SCORE_HEIGHT, scrollProgress));
 
   return (
     <main style={pageStyle} className="page-enter">
+      <style>{`
+        .match-anim-header { height: calc(248px - 248px * var(--anim-eio,0)); padding: calc(20px*(1 - var(--anim-eio,0))) 24px calc(24px*(1 - var(--anim-eio,0))); will-change: height, padding; }
+        .match-anim-glow { opacity: max(0.2, calc(1 - var(--anim-ei,0) * 1.35)); }
+        .match-anim-teams-row { transform: translateY(calc(-18px * var(--anim-eio,0))); will-change: transform; }
+        .match-anim-center { opacity: max(0, calc(1 - var(--anim-ei,0) * 1.35)); transform: translateY(calc(-12px * var(--anim-ei,0))); will-change: opacity, transform; }
+        .match-anim-venue { opacity: max(0, calc(1 - var(--anim-ei,0) * 1.65)); transform: translateY(calc(-12px * var(--anim-ei,0))); will-change: opacity, transform; }
+        .match-anim-team-logo { transform: translateY(calc(-14px * var(--anim-eio,0))) scale(calc(1 - 0.34 * var(--anim-eio,0))); will-change: transform; }
+        .match-anim-team-detail { opacity: max(0, calc(1 - var(--anim-eio,0) * 1.45)); transform: translateY(calc(-10px * var(--anim-eio,0))); will-change: opacity, transform; }
+        .match-anim-compact-row { transform: translateY(calc(-10px * (1 - var(--anim-eo,0)))); will-change: transform; }
+      `}</style>
       <RoundGameStrip games={roundGames} activeId={id} now={now} />
-      <section style={matchCentreStyle}>
+      <section ref={matchSectionRef} style={matchCentreStyle}>
         {/* ── Scoreboard ── */}
-        <div style={{
+        <div className="match-anim-header" style={{
           position: "relative", overflow: "hidden",
           boxSizing: "border-box",
-          height: expandedHeaderHeight,
-          padding: `${expandedHeaderPaddingY}px 24px ${Math.round(lerp(24, 0, scrollProgress))}px`,
-          borderBottom: scrollProgress < 0.98 ? "1px solid var(--border-1)" : "0 solid transparent",
+          borderBottom: "1px solid var(--border-1)",
           background: "linear-gradient(180deg, var(--surface-1) 0%, var(--surface-2) 58%, var(--bg) 100%)",
-          pointerEvents: scrollProgress < 0.98 ? "auto" : "none",
-          willChange: "height, padding, border-width",
         }}>
           {/* Team colour glow blobs */}
-          <div style={{
+          <div className="match-anim-glow" style={{
             position: "absolute", inset: 0, pointerEvents: "none",
-            opacity: Math.max(0.2, expandedContentOpacity),
             background: `radial-gradient(ellipse 48% 72% at 18% 56%, ${teamColor(game.hteam ?? "")}26 0%, transparent 70%),
                          radial-gradient(ellipse 48% 72% at 82% 56%, ${teamColor(game.ateam ?? "")}26 0%, transparent 70%),
                          radial-gradient(ellipse 70% 36% at 50% -4%, var(--border-1), transparent 70%)`,
@@ -3535,23 +3532,18 @@ function MatchPageInner() {
 
 
           {/* Teams + centre row */}
-          <div style={{
+          <div className="match-anim-teams-row" style={{
             position: "relative",
             display: "grid",
             gridTemplateColumns: "minmax(0, 1fr) minmax(96px, 200px) minmax(0, 1fr)",
             alignItems: "center",
             gap: 12,
-            transform: `translateY(${-18 * scrollProgress}px)`,
-            willChange: "transform",
           }}>
-            <TeamScore team={game.hteam} record={homeRecord} collapse={scrollProgress} />
+            <TeamScore team={game.hteam} record={homeRecord} />
 
             {/* Centre */}
-            <div style={{
+            <div className="match-anim-center" style={{
               display: "flex", flexDirection: "column", alignItems: "center", gap: 8, minWidth: 0,
-              opacity: expandedContentOpacity,
-              transform: `translateY(${-12 * scrollProgress}px)`,
-              willChange: "opacity, transform",
             }}>
               {status === "UPCOMING" ? (
                 <>
@@ -3637,18 +3629,15 @@ function MatchPageInner() {
               )}
             </div>
 
-            <TeamScore team={game.ateam} record={awayRecord} collapse={scrollProgress} />
+            <TeamScore team={game.ateam} record={awayRecord} />
           </div>
 
           {/* Venue + round row — only for upcoming games */}
           {status === "UPCOMING" && (
-            <div style={{
+            <div className="match-anim-venue" style={{
               position: "relative",
               marginTop: 26,
               display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-              opacity: expandedDetailsOpacity,
-              transform: `translateY(${-12 * scrollProgress}px)`,
-              willChange: "opacity, transform",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 13 8 13s8-7.75 8-13a8 8 0 0 0-8-8z"/></svg>
@@ -3672,7 +3661,7 @@ function MatchPageInner() {
           const indicatorWidth = `${100 / tabCount}%`;
 
           return (
-            <div style={{
+            <div ref={stickyHeaderRef} style={{
               position: "sticky",
               top: 0,
               width: "100%",
@@ -3680,18 +3669,15 @@ function MatchPageInner() {
               background: "rgba(10,10,15,0.94)",
               backdropFilter: "blur(22px) saturate(180%)", WebkitBackdropFilter: "blur(22px) saturate(180%)",
               borderBottom: "1px solid var(--border-2)",
-              boxShadow: scrollProgress > 0.05 ? "0 10px 24px rgba(0,0,0,0.22)" : "none",
             }}>
-              <div style={{
-                height: compactHeaderVisibleHeight > 0 ? `calc(env(safe-area-inset-top) + ${compactHeaderVisibleHeight}px)` : 0,
-                paddingTop: compactHeaderVisibleHeight > 0 ? "env(safe-area-inset-top)" : 0,
+              <div ref={compactWrapRef} style={{
+                height: 0,
                 boxSizing: "border-box",
-                opacity: scrollProgress,
                 overflow: "hidden",
-                pointerEvents: scrollProgress > 0.15 ? "auto" : "none",
                 willChange: "height, opacity",
+                pointerEvents: "none",
               }}>
-                <div style={{ height: MATCH_COMPACT_SCORE_HEIGHT, display: "flex", alignItems: "center", padding: "0 14px", gap: 8, transform: `translateY(${lerp(-10, 0, scrollProgress)}px)`, willChange: "transform" }}>
+                <div className="match-anim-compact-row" style={{ height: MATCH_COMPACT_SCORE_HEIGHT, display: "flex", alignItems: "center", padding: "0 14px", gap: 8 }}>
                   {/* Scores */}
                   <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
                     {/* Home */}
