@@ -1764,90 +1764,70 @@ function PlayerPassPickerPage({
   }
 
   return (
-    <div style={{ padding: "18px 14px calc(112px + env(safe-area-inset-bottom))" }}>
-      <div style={{ maxWidth: 560, margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "stretch", gap: 24 }}>
-        <section style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-          <div style={{ width: "min(238px, 72vw)", boxShadow: `0 18px 42px ${teamAccent}28` }}>
+    <div style={{ paddingBottom: "calc(112px + env(safe-area-inset-bottom))" }}>
+      <div style={{ maxWidth: 560, margin: "0 auto" }}>
+
+        {/* ── Hero: card left, info right ── */}
+        <div style={{ padding: "20px 16px 22px", background: `linear-gradient(150deg, ${teamAccent}18 0%, transparent 55%)`, borderBottom: "1px solid var(--border-1)", display: "flex", alignItems: "center", gap: 18 }}>
+          <div style={{ width: "min(145px, 40vw)", flexShrink: 0, boxShadow: `0 16px 36px ${teamAccent}30` }}>
             <PlayerCard pass={previewPass} />
           </div>
-
-          <div style={{ marginTop: 22, fontSize: 42, lineHeight: 1, fontWeight: 950, color: "var(--text-1)", display: "flex", alignItems: "center", justifyContent: "center", gap: 9 }}>
-            <CoinImg size={30} /> {fmtCoins(PLAYER_PASS_COST)}
-          </div>
-
-          {localConfirmStep ? (
-            /* ── Confirm step ── */
-            <div style={{ marginTop: 12, width: "min(300px, 88vw)", display: "flex", flexDirection: "column", gap: 10 }}>
-              <div style={{ padding: "12px 16px", borderRadius: 14, background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontSize: 14, fontWeight: 800, color: "#fbbf24" }}>
-                Are you sure?
-              </div>
-              <div style={{ display: "flex", gap: 10 }}>
-                <button onClick={() => setLocalConfirmStep(false)} style={{ flex: 1, padding: "12px 0", borderRadius: 999, border: "1px solid var(--border-2)", background: "rgba(255,255,255,0.06)", color: "var(--text-2)", fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
-                  Cancel
-                </button>
-                <button onClick={() => handleBuyPass(pendingPlayer.pid)} style={{ flex: 2, padding: "12px 0", borderRadius: 999, border: "none", background: `linear-gradient(135deg, ${teamAccent}, #f59e0b, #fbbf24)`, color: "#fff", fontWeight: 950, fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: "inherit", boxShadow: `0 12px 28px ${teamAccent}28, inset 0 1px 0 rgba(255,255,255,0.2)` }}>
-                  <CheckCircle size={16} strokeWidth={2.8} /> Confirm Purchase
-                </button>
-              </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 22, fontWeight: 950, color: "var(--text-1)", lineHeight: 1.1, letterSpacing: "-0.02em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {pendingPlayer.name}
             </div>
-          ) : (
-            <button
-              onClick={() => canBuy && setLocalConfirmStep(true)}
-              disabled={!canBuy}
-              style={{
-                marginTop: 12,
-                width: "min(240px, 78vw)",
-                padding: "13px 20px",
-                borderRadius: 999,
-                border: pendingPlayerOwned ? "1px solid rgba(255,255,255,0.12)" : "none",
-                background: pendingPlayerOwned ? "rgba(255,255,255,0.08)" : canBuy ? `linear-gradient(135deg, ${teamAccent}, #f59e0b, #fbbf24)` : "rgba(255,255,255,0.08)",
-                color: pendingPlayerOwned ? "var(--text-2)" : canBuy ? "#fff" : "rgba(255,255,255,0.32)",
-                fontSize: 18,
-                fontWeight: 950,
-                fontFamily: "inherit",
-                cursor: canBuy ? "pointer" : "default",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-                boxShadow: canBuy ? `0 14px 34px ${teamAccent}30, inset 0 1px 0 rgba(255,255,255,0.24)` : "none",
-              }}
-            >
-              {pendingPlayerOwned ? <><CheckCircle size={18} strokeWidth={2.8} />Owned</> : "Get Pass"}
-            </button>
-          )}
+            <div style={{ fontSize: 13, fontWeight: 800, color: teamAccent, marginTop: 3 }}>{pendingPlayer.team}</div>
 
-          <div style={{ marginTop: 10, fontSize: 14, color: coins >= PLAYER_PASS_COST ? "var(--text-3)" : "#f87171", fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
-            <CoinImg size={15} />{fmtCoins(coins)} balance
-          </div>
-
-          {!pendingPlayerOwned && coins < PLAYER_PASS_COST && (
-            <div style={{ marginTop: 10, padding: "9px 13px", borderRadius: 999, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", fontSize: 12, fontWeight: 850, color: "#f87171" }}>
-              Need <CoinImg size={12} /> {fmtCoins(PLAYER_PASS_COST - coins)} more coins
+            <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 5 }}>
+              <CoinImg size={17} />
+              <span style={{ fontSize: 26, fontWeight: 950, letterSpacing: "-0.03em", color: "var(--text-1)", lineHeight: 1 }}>{fmtCoins(PLAYER_PASS_COST)}</span>
+              <span style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 700, marginLeft: 2 }}>per pass</span>
             </div>
-          )}
-        </section>
 
-        <section>
-          <h2 style={{ margin: "0 0 16px", textAlign: "center", fontSize: 26, lineHeight: 1.05, fontWeight: 950, color: "var(--text-1)" }}>
-            2026 Pass Features
-          </h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            {localConfirmStep ? (
+              <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ padding: "10px 12px", borderRadius: 12, background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.22)", fontSize: 13, fontWeight: 800, color: "#fbbf24", textAlign: "center" }}>
+                  Are you sure?
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => setLocalConfirmStep(false)} style={{ flex: 1, padding: "10px 0", borderRadius: 999, border: "1px solid var(--border-2)", background: "rgba(255,255,255,0.06)", color: "var(--text-2)", fontWeight: 800, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+                  <button onClick={() => handleBuyPass(pendingPlayer.pid)} style={{ flex: 2, padding: "10px 0", borderRadius: 999, border: "none", background: `linear-gradient(135deg,${teamAccent},#f59e0b,#fbbf24)`, color: "#fff", fontWeight: 950, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "inherit", boxShadow: `0 10px 24px ${teamAccent}28` }}>
+                    <CheckCircle size={15} strokeWidth={2.8} /> Confirm
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => canBuy && setLocalConfirmStep(true)}
+                disabled={!canBuy}
+                style={{ marginTop: 10, width: "100%", padding: "12px 0", borderRadius: 999, border: pendingPlayerOwned ? "1px solid rgba(255,255,255,0.12)" : "none", background: pendingPlayerOwned ? "rgba(255,255,255,0.08)" : canBuy ? `linear-gradient(135deg,${teamAccent},#f59e0b,#fbbf24)` : "rgba(255,255,255,0.08)", color: pendingPlayerOwned ? "var(--text-2)" : canBuy ? "#fff" : "rgba(255,255,255,0.3)", fontSize: 16, fontWeight: 950, fontFamily: "inherit", cursor: canBuy ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, boxShadow: canBuy ? `0 12px 28px ${teamAccent}30, inset 0 1px 0 rgba(255,255,255,0.22)` : "none" }}
+              >
+                {pendingPlayerOwned ? <><CheckCircle size={16} strokeWidth={2.8} />Owned</> : "Get Pass"}
+              </button>
+            )}
+
+            <div style={{ marginTop: 8, fontSize: 12, color: coins >= PLAYER_PASS_COST ? "var(--text-3)" : "#f87171", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
+              <CoinImg size={12} />{fmtCoins(coins)} balance
+              {!pendingPlayerOwned && coins < PLAYER_PASS_COST && <span style={{ color: "#f87171" }}> · need {fmtCoins(PLAYER_PASS_COST - coins)} more</span>}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Features: 2-col grid ── */}
+        <div style={{ padding: "20px 16px 0" }}>
+          <div style={{ fontSize: 11, fontWeight: 900, color: "var(--text-3)", letterSpacing: "0.08em", textTransform: "uppercase" as const, marginBottom: 12 }}>What you get</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             {passFeatures.map((feature) => (
-              <div key={feature.title} style={{ display: "flex", alignItems: "flex-start", gap: 13 }}>
-                <div style={{ width: 40, height: 40, borderRadius: "50%", background: `${feature.color}22`, color: feature.color, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: `1px solid ${feature.color}22` }}>
-                  {feature.icon}
-                </div>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 20, lineHeight: 1.1, fontWeight: 950, color: "var(--text-1)" }}>{feature.title}</div>
-                  <div style={{ marginTop: 4, fontSize: 14, lineHeight: 1.35, fontWeight: 650, color: "rgba(255,255,255,0.72)" }}>{feature.copy}</div>
-                </div>
+              <div key={feature.title} style={{ padding: "14px 13px", borderRadius: 16, background: `${feature.color}0c`, border: `1px solid ${feature.color}1e` }}>
+                <div style={{ color: feature.color, marginBottom: 8, display: "flex" }}>{feature.icon}</div>
+                <div style={{ fontSize: 13, fontWeight: 900, color: "var(--text-1)", lineHeight: 1.2 }}>{feature.title}</div>
+                <div style={{ marginTop: 4, fontSize: 11, color: "var(--text-3)", lineHeight: 1.45, fontWeight: 600 }}>{feature.copy}</div>
               </div>
             ))}
           </div>
-        </section>
+        </div>
 
-        <section style={{ paddingTop: 2 }}>
+        <section style={{ padding: "20px 16px 0" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 12 }}>
             <div>
               <div style={{ fontSize: 16, fontWeight: 950, color: "var(--text-2)", display: "flex", alignItems: "center", gap: 6 }}>
@@ -1893,9 +1873,11 @@ function PlayerPassPickerPage({
           )}
         </section>
 
-        <button onClick={() => setPendingPlayer(null)} style={{ alignSelf: "center", border: "1px solid var(--border-2)", background: "rgba(255,255,255,0.05)", color: "var(--text-2)", borderRadius: 999, padding: "10px 18px", fontSize: 13, fontWeight: 900, fontFamily: "inherit", cursor: "pointer" }}>
-          Choose another player
-        </button>
+        <div style={{ padding: "20px 16px 0", display: "flex", justifyContent: "center" }}>
+          <button onClick={() => setPendingPlayer(null)} style={{ border: "1px solid var(--border-2)", background: "rgba(255,255,255,0.05)", color: "var(--text-2)", borderRadius: 999, padding: "10px 18px", fontSize: 13, fontWeight: 900, fontFamily: "inherit", cursor: "pointer" }}>
+            Choose another player
+          </button>
+        </div>
       </div>
     </div>
   );
