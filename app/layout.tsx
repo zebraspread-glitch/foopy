@@ -1,4 +1,5 @@
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
 import BottomNav from "./components/BottomNav";
 import GlobalSideDrawer from "./components/GlobalSideDrawer";
@@ -57,6 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </div>
         <BottomNav />
         <AuraToast />
+        <Analytics />
       </body>
     </html>
   );

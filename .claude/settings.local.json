@@ -93,7 +93,10 @@
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\\\\app\" -Recurse -Filter \"*pass*\")",
       "PowerShell(Stop-Process -Id 29028 -Force)",
       "Bash(node -e \"const d=require\\('./app/data/game-stats.json'\\); const keys=Object.keys\\(d\\); console.log\\(keys.slice\\(0,5\\).join\\('\\\\n'\\)\\);\")",
-      "Bash(powershell -Command \"Get-Content 'app/data/game-stats.json' | Select-String '\\\\\"id\\\\\"' | Select-Object -First 5\")"
+      "Bash(powershell -Command \"Get-Content 'app/data/game-stats.json' | Select-String '\\\\\"id\\\\\"' | Select-Object -First 5\")",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\(p.dependencies['@vercel/analytics'] || 'not installed'\\)\")",
+      "Bash(npm i *)",
+      "Bash(grep -n \"DELETED_START\\\\|Sticky header + tabs\" \"C:/Users/User/Downloads/foopy/app/match/\\\\[id\\\\]/page.tsx\")"
     ]
   }
 }

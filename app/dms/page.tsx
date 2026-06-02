@@ -4,9 +4,10 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/app/lib/supabase";
+import { VerifiedBadge } from "@/app/components/VerifiedBadge";
 
 /* ── Types ── */
-type Profile = { id: string; username: string; display_name: string; avatar_url?: string | null };
+type Profile = { id: string; username: string; display_name: string; avatar_url?: string | null; verified?: boolean };
 type InboxEntry = {
   id: string; other: Profile; convId: string | null;
   preview: string; last_at: string | null; unread: number;
@@ -22,7 +23,7 @@ type GroupChat = {
 };
 type GroupMsg = {
   id: string; sender_id: string; content: string; created_at: string;
-  sender: { username: string; display_name: string; avatar_url: string | null } | null;
+  sender: { username: string; display_name: string; avatar_url: string | null; verified?: boolean } | null;
 };
 type GroupInvite = {
   id: string; group_chat_id: string; group_name: string;
@@ -259,7 +260,7 @@ function DMsPageInner() {
         // Guaranteed to be the real session — safe to mark as ready
         if (u) {
           try {
-            const { data } = await supabase.from("profiles").select("id,username,display_name,avatar_url").eq("id", u.id).single();
+            const { data } = await supabase.from("profiles").select("id,username,display_name,avatar_url,verified").eq("id", u.id).single();
             setMyProfile(data ?? null);
             if (data) profileCache.current[(data as any).id] = data as Profile;
           } catch {}
@@ -269,7 +270,7 @@ function DMsPageInner() {
       } else if (u) {
         // Subsequent sign-in / token refresh — sync profile
         try {
-          const { data } = await supabase.from("profiles").select("id,username,display_name,avatar_url").eq("id", u.id).single();
+          const { data } = await supabase.from("profiles").select("id,username,display_name,avatar_url,verified").eq("id", u.id).single();
           setMyProfile(data ?? null);
           if (data) profileCache.current[(data as any).id] = data as Profile;
         } catch {}
@@ -294,7 +295,7 @@ function DMsPageInner() {
     const allIds = [...new Set([...friendIds, ...convoOtherIds])];
     if (!allIds.length) { setInbox([]); setInboxLoaded(true); return; }
     const [profilesRes, unreadRes] = await Promise.all([
-      supabase.from("profiles").select("id,username,display_name,avatar_url").in("id", allIds),
+      supabase.from("profiles").select("id,username,display_name,avatar_url,verified").in("id", allIds),
       convos.length
         ? supabase.from("dm_messages").select("conversation_id").in("conversation_id", convos.map(r => r.id)).neq("sender_id", myProfile.id).is("read_at", null)
         : Promise.resolve({ data: [] }),
@@ -419,7 +420,7 @@ function DMsPageInner() {
     const inviterIds = [...new Set(invites.map((i: any) => i.inviter_id))];
     const [chatsRes, profilesRes] = await Promise.all([
       supabase.from("group_chats").select("id, team_name").in("id", chatIds),
-      supabase.from("profiles").select("id, username, avatar_url").in("id", inviterIds),
+      supabase.from("profiles").select("id, username, avatar_url, verified").in("id", inviterIds),
     ]);
     const chatMap: Record<string, string> = Object.fromEntries((chatsRes.data ?? []).map((c: any) => [c.id, c.team_name]));
     const profileMap: Record<string, any> = Object.fromEntries((profilesRes.data ?? []).map((p: any) => [p.id, p]));
@@ -459,7 +460,7 @@ function DMsPageInner() {
     if (!openId || autoOpened || !myProfile || inbox.length === 0) return;
     const existing = inbox.find(e => e.other.id === openId);
     if (existing) { setAutoOpened(true); openEntry(existing); return; }
-    supabase.from("profiles").select("id,username,display_name,avatar_url").eq("id", openId).maybeSingle()
+    supabase.from("profiles").select("id,username,display_name,avatar_url,verified").eq("id", openId).maybeSingle()
       .then(({ data }) => {
         if (!data) return;
         setAutoOpened(true);
@@ -495,7 +496,7 @@ function DMsPageInner() {
       const senderIds = [...new Set((msgs as any[]).map(m => m.sender_id as string))];
       const uncached = senderIds.filter(id => !profileCache.current[id]);
       if (uncached.length) {
-        const { data: profiles } = await supabase.from("profiles").select("id, username, display_name, avatar_url").in("id", uncached);
+        const { data: profiles } = await supabase.from("profiles").select("id, username, display_name, avatar_url, verified").in("id", uncached);
         for (const p of profiles ?? []) profileCache.current[(p as any).id] = p as Profile;
       }
       if (loadingGroupRef.current !== groupId) return;
@@ -523,7 +524,7 @@ function DMsPageInner() {
     setSentInviteIds(alreadyInvited);
     const friendIds = (friendsRes.data ?? []).map(r => r.requester_id === myProfile.id ? r.addressee_id : r.requester_id).filter(id => !memberIds.has(id));
     if (!friendIds.length) { setInviteFriends([]); return; }
-    const { data: profiles } = await supabase.from("profiles").select("id, username, display_name, avatar_url").in("id", friendIds);
+    const { data: profiles } = await supabase.from("profiles").select("id, username, display_name, avatar_url, verified").in("id", friendIds);
     setInviteFriends((profiles ?? []) as Profile[]);
   }
 
@@ -565,7 +566,7 @@ function DMsPageInner() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "group_chat_messages", filter: `group_chat_id=eq.${activeGroupId}` }, async payload => {
         const msg = payload.new as any;
         if (!profileCache.current[msg.sender_id]) {
-          const { data } = await supabase.from("profiles").select("id,username,display_name,avatar_url").eq("id", msg.sender_id).maybeSingle();
+          const { data } = await supabase.from("profiles").select("id,username,display_name,avatar_url,verified").eq("id", msg.sender_id).maybeSingle();
           if (data) profileCache.current[(data as any).id] = data as Profile;
         }
         setGroupMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, { ...msg, sender: profileCache.current[msg.sender_id] ?? null }]);
@@ -740,10 +741,10 @@ function DMsPageInner() {
     const userIds = members.map((m: any) => m.user_id);
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("id, username, display_name, avatar_url")
+      .select("id, username, display_name, avatar_url, verified")
       .in("id", userIds);
     setMembersModalList((profiles ?? []).map((p: any) => ({
-      id: p.id, username: p.username ?? "", display_name: p.display_name ?? "", avatar_url: p.avatar_url ?? null,
+      id: p.id, username: p.username ?? "", display_name: p.display_name ?? "", avatar_url: p.avatar_url ?? null, verified: p.verified ?? false,
     })));
     setMembersModalLoading(false);
   }
@@ -909,7 +910,10 @@ function DMsPageInner() {
                   style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "11px 20px", background: "none", border: "none", borderTop: i > 0 ? "1px solid var(--border-2)" : "none", cursor: "pointer", textAlign: "left" }}>
                   <Avatar name={member.username} url={member.avatar_url} size={40} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: 15, color: "var(--text-1)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{member.display_name || member.username}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 4, overflow: "hidden" }}>
+                      <span style={{ fontWeight: 700, fontSize: 15, color: "var(--text-1)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{member.display_name || member.username}</span>
+                      {member.verified && <VerifiedBadge size={13} />}
+                    </div>
                     <div style={{ fontSize: 12, color: "var(--text-3)" }}>@{member.username}</div>
                   </div>
                   {member.id === activeGroup.created_by && (
@@ -1019,10 +1023,11 @@ function DMsPageInner() {
                   </div>
                   <div style={{ flex: 1, minWidth: 0, opacity: m.id.startsWith("t") || groupDeletingIds.has(m.id) ? 0.55 : 1 }}>
                     {!samePrev && (
-                      <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 3 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
                         <span onClick={() => !mine && router.push(`/profile/${sn}`)} style={{ fontSize: 13, fontWeight: 800, color: mine ? "#60a5fa" : "var(--text-1)", cursor: mine ? "default" : "pointer" }}>
                           {mine ? "You" : senderName}
                         </span>
+                        {!mine && m.sender?.verified && <VerifiedBadge size={12} />}
                         <span style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 500 }}>{fmtTime(m.created_at)}</span>
                       </div>
                     )}
@@ -1068,7 +1073,10 @@ function DMsPageInner() {
         <button onClick={() => router.push(`/profile/${activeConv.other?.username}`)} style={{ display: "flex", alignItems: "center", gap: 11, flex: 1, background: "none", border: "none", cursor: "pointer", padding: "0 4px", textAlign: "left", minWidth: 0 }}>
           <Avatar name={activeConv.other?.username ?? "?"} url={activeConv.other?.avatar_url} size={38} />
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontWeight: 700, fontSize: 15, color: "var(--text-1)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{activeConv.other?.display_name || activeConv.other?.username}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 4, overflow: "hidden" }}>
+              <span style={{ fontWeight: 700, fontSize: 15, color: "var(--text-1)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{activeConv.other?.display_name || activeConv.other?.username}</span>
+              {activeConv.other?.verified && <VerifiedBadge size={13} />}
+            </div>
             <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 400 }}>@{activeConv.other?.username}</div>
           </div>
         </button>
@@ -1085,7 +1093,10 @@ function DMsPageInner() {
         ) : messages.length === 0 && (
           <div style={{ padding: "80px 24px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
             <Avatar name={activeConv.other?.username ?? "?"} url={activeConv.other?.avatar_url} size={80} />
-            <div style={{ fontWeight: 700, fontSize: 18, color: "var(--text-1)" }}>{activeConv.other?.display_name || activeConv.other?.username}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontWeight: 700, fontSize: 18, color: "var(--text-1)" }}>{activeConv.other?.display_name || activeConv.other?.username}</span>
+              {activeConv.other?.verified && <VerifiedBadge size={16} />}
+            </div>
             <div style={{ fontSize: 13, color: "var(--text-3)", fontWeight: 400 }}>@{activeConv.other?.username}</div>
             <div style={{ fontSize: 13, color: "var(--text-3)", background: "var(--surface-2)", borderRadius: 16, padding: "8px 16px", marginTop: 4 }}>Send a message to start chatting 👋</div>
           </div>
@@ -1553,7 +1564,10 @@ function InboxRow({ entry, myId, isLast, onClick, bubbleColor = "#22c55e" }: { e
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 2 }}>
-          <span style={{ fontWeight: hasUnread ? 700 : 600, fontSize: 15, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName}</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 4, overflow: "hidden" }}>
+              <span style={{ fontWeight: hasUnread ? 700 : 600, fontSize: 15, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName}</span>
+              {entry.other?.verified && <VerifiedBadge size={13} />}
+            </span>
           {entry.last_at && <span style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 400, flexShrink: 0, marginLeft: 8 }}>{ago(entry.last_at)}</span>}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>

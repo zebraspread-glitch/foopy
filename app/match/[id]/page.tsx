@@ -135,8 +135,10 @@ function useCompactViewport(maxWidth = 520) {
   return compact;
 }
 
-const MATCH_SCROLL_RANGE = 200;
-const MATCH_COMPACT_SCORE_HEIGHT = 60;
+const MATCH_SCROLL_RANGE   = 160;  // px of scroll to fully collapse (spec)
+const HEADER_MAX_H         = 200;  // expanded header height
+const HEADER_MIN_H         = 72;   // compact header height (room for 2 lines)
+const HEADER_COLLAPSE      = HEADER_MAX_H - HEADER_MIN_H;
 
 function clamp01(value: number) {
   return Math.max(0, Math.min(1, value));
@@ -2611,8 +2613,8 @@ function MatchPageInner() {
   const scrollRef = useRef(0);
   const rafRef = useRef<number>(0);
   const matchSectionRef = useRef<HTMLElement>(null);
-  const stickyHeaderRef = useRef<HTMLDivElement>(null);
-  const compactWrapRef = useRef<HTMLDivElement>(null);
+  const stickyHeaderRef    = useRef<HTMLDivElement>(null);
+  const headerContainerRef = useRef<HTMLDivElement>(null); // receives --p; CSS does the rest
   /** Prevents re-fetching final stats on every 5-second game-poll tick */
   const finalStatsFetchedRef = useRef(false);
   const gameRef = useRef(game);
@@ -2677,32 +2679,13 @@ function MatchPageInner() {
     window.scrollTo(0, 0); // always start match page at top, prevents scroll-restoration glitch
   }, []);
 
+  // Per-frame work is intentionally tiny: write ONE eased CSS variable.
+  // All geometry (height, logo travel/scale, score scale, fades) is expressed
+  // in CSS via calc(var(--p)) using transform/opacity only → composited, 60fps.
   const applyScrollVars = useCallback((sp: number) => {
-    const section = matchSectionRef.current;
-    if (!section) return;
-
-    // Keep base vars for compact-row slide
-    section.style.setProperty("--anim-eio", String(easeInOut(sp)));
-    section.style.setProperty("--anim-ei",  String(easeIn(sp)));
-    section.style.setProperty("--anim-eo",  String(easeOut(sp)));
-
-    // Content-fade: starts at 20% of scroll, smooth easeInOut
-    const cf = easeInOut(clamp01((sp - 0.2) / 0.8));
-    section.style.setProperty("--anim-cf", String(cf));
-
-    const shadowAlpha = (clamp01((sp - 0.05) / 0.3) * 0.28).toFixed(3);
-    if (stickyHeaderRef.current)
-      stickyHeaderRef.current.style.boxShadow = `0 8px 20px rgba(0,0,0,${shadowAlpha})`;
-
-    if (compactWrapRef.current) {
-      const compactP = clamp01((sp - 0.3) / 0.7);
-      const h = lerp(0, MATCH_COMPACT_SCORE_HEIGHT, easeOut(compactP));
-      const el = compactWrapRef.current;
-      el.style.height = h > 0 ? `calc(env(safe-area-inset-top) + ${h}px)` : "0";
-      el.style.paddingTop = h > 0 ? "env(safe-area-inset-top)" : "0";
-      el.style.opacity = String(easeOut(clamp01((sp - 0.35) / 0.65)));
-      el.style.pointerEvents = sp > 0.45 ? "auto" : "none";
-    }
+    const hc = headerContainerRef.current;
+    if (!hc) return;
+    hc.style.setProperty("--p", easeInOut(clamp01(sp)).toFixed(4));
   }, []);
 
   useLayoutEffect(() => { applyScrollVars(scrollRef.current); });
@@ -3505,160 +3488,76 @@ function MatchPageInner() {
   return (
     <main style={pageStyle} className="page-enter">
       <style>{`
-        .match-anim-header { opacity: max(0, calc(1 - var(--anim-cf,0) * 1.15)); will-change: opacity; }
-        .match-anim-glow { opacity: max(0.2, calc(1 - var(--anim-cf,0) * 1.4)); }
-        .match-anim-teams-row { transform: translateY(calc(-22px * var(--anim-cf,0))); will-change: transform; }
-        .match-anim-center { opacity: max(0, calc(1 - var(--anim-cf,0) * 1.3)); transform: translateY(calc(-14px * var(--anim-cf,0))); will-change: opacity, transform; }
-        .match-anim-venue { opacity: max(0, calc(1 - var(--anim-cf,0) * 1.6)); transform: translateY(calc(-14px * var(--anim-cf,0))); will-change: opacity, transform; }
-        .match-anim-team-logo { transform: translateY(calc(-16px * var(--anim-cf,0))) scale(calc(1 - 0.34 * var(--anim-cf,0))); will-change: transform; }
-        .match-anim-team-detail { opacity: max(0, calc(1 - var(--anim-cf,0) * 1.4)); transform: translateY(calc(-10px * var(--anim-cf,0))); will-change: opacity, transform; }
-        .match-anim-compact-row { transform: translateY(calc(-8px * (1 - var(--anim-eo,0)))); will-change: transform; }
+        /* ── Collapsing match header — driven by a single --p (0..1) var ──────
+           Only transform / opacity / one height-calc animate. 60fps on mobile. */
+        .mh {
+          position: relative;
+          display: grid;
+          /* centred trio: [flex margin] logo  score  logo [flex margin] */
+          grid-template-columns: minmax(0,1fr) auto auto auto minmax(0,1fr);
+          column-gap: 18px;
+          align-items: center;
+          height: calc(${HEADER_MAX_H}px - ${HEADER_COLLAPSE}px * var(--p, 0));
+          padding: 0 12px;
+          box-sizing: border-box;
+          /* contain layout only (NOT paint) so the 2nd line is never clipped */
+          contain: layout;
+          background: linear-gradient(180deg, var(--surface-1) 0%, var(--surface-2) 60%, var(--bg) 100%);
+          border-bottom: 1px solid var(--border-1);
+          will-change: height;
+        }
+        .mh-glow { position: absolute; inset: 0; pointer-events: none; opacity: calc(1 - var(--p,0) * 1.5); will-change: opacity; }
+        .mh-slot { position: relative; display: flex; align-items: center; justify-content: center; height: 100%; z-index: 2; }
+        .mh-slot-l { grid-column: 2; }
+        .mh-center { grid-column: 3; }
+        .mh-slot-r { grid-column: 4; }
+        .mh-logo { display: block; width: 68px; height: 68px; border-radius: 50%; overflow: hidden; border: 2px solid rgba(255,255,255,0.12); flex-shrink: 0; will-change: transform; text-decoration: none; cursor: pointer; }
+        .mh-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        /* shrink toward the inner (score-facing) edge so logos keep framing the score */
+        .mh-slot-l .mh-logo { transform-origin: right center; transform: scale(calc(1 - 0.5 * var(--p,0))); }
+        .mh-slot-r .mh-logo { transform-origin: left center;  transform: scale(calc(1 - 0.5 * var(--p,0))); }
+        .mh-name { position: absolute; top: calc(50% + 44px); left: 50%; transform: translateX(-50%); white-space: nowrap; text-align: center; opacity: calc(1 - var(--p,0) * 2.1); will-change: opacity; }
+        .mh-name > div { max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .mh-center { position: relative; z-index: 1; min-width: 0; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; overflow: visible; }
+        .mh-score {
+          max-width: 100%; white-space: nowrap; text-overflow: ellipsis;
+          line-height: 1.12; font-weight: 1000; letter-spacing: -0.03em; color: var(--text-1);
+          font-variant-numeric: tabular-nums;
+          font-size: clamp(26px, 9.5vw, 46px);
+          transform: scale(calc(1 - 0.45 * var(--p,0)));
+          transform-origin: center center; will-change: transform;
+        }
+        .mh-sub { line-height: 1.3; transform: scale(calc(1 - 0.18 * var(--p,0))); transform-origin: center center; will-change: transform; white-space: nowrap; }
+        .mh-venue { position: absolute; left: 12px; right: 12px; bottom: 10px; text-align: center; opacity: calc(1 - var(--p,0) * 2.2); pointer-events: none; will-change: opacity; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        @media (hover: hover) and (pointer: fine) {
+          .mh {
+            height: calc(${HEADER_MAX_H}px - 118px * var(--p, 0));
+            column-gap: calc(22px - 4px * var(--p, 0));
+            padding: 0 20px;
+          }
+          .mh-logo {
+            width: calc(68px - 30px * var(--p, 0));
+            height: calc(68px - 30px * var(--p, 0));
+            transform: none !important;
+            will-change: width, height;
+          }
+          .mh-score {
+            font-size: calc(46px - 20px * var(--p, 0));
+            transform: none;
+            will-change: font-size;
+          }
+          .mh-sub {
+            transform: none;
+          }
+          .mh-name > div {
+            max-width: 160px;
+          }
+        }
       `}</style>
       <RoundGameStrip games={roundGames} activeId={id} now={now} />
       <section ref={matchSectionRef} style={matchCentreStyle}>
-        {/* ── Scoreboard ── */}
-        <div className="match-anim-header" style={{
-          position: "relative", overflow: "hidden",
-          boxSizing: "border-box",
-          borderBottom: "1px solid var(--border-1)",
-          background: "linear-gradient(180deg, var(--surface-1) 0%, var(--surface-2) 58%, var(--bg) 100%)",
-        }}>
-          {/* Team colour glow blobs */}
-          <div className="match-anim-glow" style={{
-            position: "absolute", inset: 0, pointerEvents: "none",
-            background: `radial-gradient(ellipse 48% 72% at 18% 56%, ${teamColor(game.hteam ?? "")}26 0%, transparent 70%),
-                         radial-gradient(ellipse 48% 72% at 82% 56%, ${teamColor(game.ateam ?? "")}26 0%, transparent 70%),
-                         radial-gradient(ellipse 70% 36% at 50% -4%, var(--border-1), transparent 70%)`,
-          }} />
-          <div style={{
-            position: "absolute",
-            inset: "auto 18% 0",
-            height: 1,
-            background: "linear-gradient(90deg, transparent, var(--border-2), transparent)",
-            pointerEvents: "none",
-          }} />
-
-
-
-          {/* Teams + centre row */}
-          <div className="match-anim-teams-row" style={{
-            position: "relative",
-            display: "grid",
-            gridTemplateColumns: "minmax(0, 1fr) minmax(96px, 200px) minmax(0, 1fr)",
-            alignItems: "center",
-            gap: 12,
-          }}>
-            <TeamScore team={game.hteam} record={homeRecord} />
-
-            {/* Centre */}
-            <div className="match-anim-center" style={{
-              display: "flex", flexDirection: "column", alignItems: "center", gap: 8, minWidth: 0,
-            }}>
-              {status === "UPCOMING" ? (
-                <>
-                  <span style={{
-                    fontSize: "clamp(30px, 7.5vw, 50px)", fontWeight: 900,
-                    color: "var(--text-1)", letterSpacing: "-0.03em",
-                    fontVariantNumeric: "tabular-nums", lineHeight: 1,
-                  }}>
-                    {formatMatchTime(game.date)}
-                  </span>
-                  <span style={{
-                    fontSize: "clamp(12px, 3vw, 15px)", fontWeight: 700,
-                    color: "rgba(255,255,255,0.45)", letterSpacing: "-0.01em",
-                  }}>
-                    {getCountdownText(game.date, now)}
-                  </span>
-                </>
-              ) : (
-                <>
-                  {/* Scores */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{
-                      fontSize: "clamp(34px, 8vw, 56px)", fontWeight: 1000,
-                      color: "var(--text-1)", letterSpacing: "-0.03em",
-                      fontVariantNumeric: "tabular-nums", lineHeight: 1,
-                    }}>
-                      {scoreText(game.hscore)}
-                    </span>
-                    <span style={{ fontSize: "clamp(20px, 5vw, 32px)", fontWeight: 300, color: "rgba(255,255,255,0.2)", lineHeight: 1 }}>–</span>
-                    <span style={{
-                      fontSize: "clamp(34px, 8vw, 56px)", fontWeight: 1000,
-                      color: "var(--text-1)", letterSpacing: "-0.03em",
-                      fontVariantNumeric: "tabular-nums", lineHeight: 1,
-                    }}>
-                      {scoreText(game.ascore)}
-                    </span>
-                  </div>
-                  {/* Status badge */}
-                  {status === "LIVE" ? (
-                    <div style={{
-                      display: "flex", alignItems: "center", gap: 5,
-                      padding: "6px 14px", borderRadius: 999,
-                      background: "#16a34a", border: "1px solid #16a34a",
-                    }}>
-                      <span style={{
-                        width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
-                        background: "var(--text-1)",
-                        boxShadow: "0 0 0 2px rgba(255,255,255,0.22)",
-                        animation: "livePulse 1.8s ease-in-out infinite",
-                      }} />
-                      <span style={{ fontSize: 13, fontWeight: 900, color: "var(--text-1)" }}>Live</span>
-                      {(game.timestr || getLiveGameClock(liveEvents)) && (
-                        <>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.72)" }}>·</span>
-                          <span style={{ fontSize: 13, fontWeight: 800, color: "var(--text-1)" }}>{formatTimestr(game.timestr) || getLiveGameClock(liveEvents)}</span>
-                        </>
-                      )}
-                    </div>
-                  ) : (
-                    <div style={{
-                      padding: "6px 20px", borderRadius: 999,
-                      background: statusBadgeTone.bg,
-                      border: `1px solid ${statusBadgeTone.border}`,
-                      color: statusBadgeTone.color,
-                      fontSize: 13, fontWeight: 800,
-                    }}>
-                      Full time
-                    </div>
-                  )}
-                  {/* Viewer count */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-2)" }}>
-                      {status === "FINAL"
-                        ? (totalViewerCount ?? "—")
-                        : totalViewerCount != null ? totalViewerCount : Math.max(1, liveViewerCount)}
-                    </span>
-                  </div>
-                </>
-              )}
-            </div>
-
-            <TeamScore team={game.ateam} record={awayRecord} />
-          </div>
-
-          {/* Venue + round row — only for upcoming games */}
-          {status === "UPCOMING" && (
-            <div className="match-anim-venue" style={{
-              position: "relative",
-              marginTop: 26,
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 13 8 13s8-7.75 8-13a8 8 0 0 0-8-8z"/></svg>
-                <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.5)", whiteSpace: "nowrap" }}>
-                  Round {game.round ?? "-"} · {game.venue || "Venue TBA"} · {formatDate(game.date)}
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* ── Sticky score + tabs ── */}
+        {/* ── Sticky header + tabs ── */}
         {(() => {
           const tabList: string[] = [
             ...(isSignedIn ? ["feed","chat","polls", ...(hasDuelGame ? ["duels"] : [])] : ["feed"]),
@@ -3679,49 +3578,82 @@ function MatchPageInner() {
               backdropFilter: "blur(22px) saturate(180%)", WebkitBackdropFilter: "blur(22px) saturate(180%)",
               borderBottom: "1px solid var(--border-2)",
             }}>
-              <div ref={compactWrapRef} style={{
-                height: 0,
-                boxSizing: "border-box",
-                overflow: "hidden",
-                willChange: "height, opacity",
-                pointerEvents: "none",
-              }}>
-                <div className="match-anim-compact-row" style={{ height: MATCH_COMPACT_SCORE_HEIGHT, display: "flex", alignItems: "center", padding: "0 14px", gap: 8 }}>
-                  {/* Scores */}
-                  <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
-                    {/* Home */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, justifyContent: "flex-end" }}>
-                      <div style={{ width: 34, height: 34, borderRadius: "50%", overflow: "hidden", background: `${teamColor(game.hteam ?? "")}22`, border: "1px solid var(--border-3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <img src={getLogo(game.hteam)} alt={game.hteam ?? ""} style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover", display: "block" }} />
-                      </div>
-                      <span style={{ fontSize: 20, fontWeight: 1000, color: "var(--text-1)", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em" }}>
-                        {typeof homeScoreDisplay === "string" ? homeScoreDisplay : scoreText(homeScoreDisplay)}
-                      </span>
-                    </div>
+              {/* ─── Collapsing match header — single grid, morphs via --p ─── */}
+              <div ref={headerContainerRef} className="mh">
+                {/* Team-colour glow (fades as header collapses) */}
+                <div className="mh-glow" style={{
+                  background: `radial-gradient(ellipse 60% 85% at 16% 50%, ${teamColor(game.hteam ?? "")}33 0%, transparent 66%),
+                               radial-gradient(ellipse 60% 85% at 84% 50%, ${teamColor(game.ateam ?? "")}33 0%, transparent 66%)`,
+                }} />
 
-                    {/* Status badge */}
-                    {status === "LIVE" ? (
-                      <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 999, background: "rgba(22,101,52,0.72)", border: "1px solid rgba(74,222,128,0.65)", flexShrink: 0, minWidth: 0, maxWidth: 112 }}>
-                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 0 2px rgba(34,197,94,.25)", animation: "livePulse 1.8s ease-in-out infinite", flexShrink: 0 }} />
-                        <span style={{ fontSize: 12, fontWeight: 900, color: "#4ade80", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{compactStatusLabel}</span>
-                      </div>
-                    ) : (
-                      <div style={{ padding: "5px 9px", borderRadius: 999, background: statusBadgeTone.bg, border: `1px solid ${statusBadgeTone.border}`, color: statusBadgeTone.color, fontSize: 11, fontWeight: 900, flexShrink: 0, whiteSpace: "nowrap", maxWidth: 118, overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {compactStatusLabel}
-                      </div>
-                    )}
-
-                    {/* Away */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, justifyContent: "flex-start" }}>
-                      <span style={{ fontSize: 20, fontWeight: 1000, color: "var(--text-1)", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em" }}>
-                        {typeof awayScoreDisplay === "string" ? awayScoreDisplay : scoreText(awayScoreDisplay)}
-                      </span>
-                      <div style={{ width: 34, height: 34, borderRadius: "50%", overflow: "hidden", background: `${teamColor(game.ateam ?? "")}22`, border: "1px solid var(--border-3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <img src={getLogo(game.ateam)} alt={game.ateam ?? ""} style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover", display: "block" }} />
-                      </div>
-                    </div>
+                {/* Left column — home logo + name */}
+                <div className="mh-slot mh-slot-l">
+                  <Link href={`/team/${toTeamSlug(game.hteam ?? "")}`} aria-label={`${game.hteam ?? "Home"} team page`} className="mh-logo" style={{ background: `${teamColor(game.hteam ?? "")}22` }}>
+                    <img src={getLogo(game.hteam)} alt={game.hteam ?? ""} />
+                  </Link>
+                  <div className="mh-name">
+                    <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text-1)" }}>{game.hteam ?? "Home"}</div>
+                    {homeRecord && <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{homeRecord}</div>}
                   </div>
                 </div>
+
+                {/* Center column — score/time + status (bounded, never overlaps logos) */}
+                <div className="mh-center">
+                  {status === "UPCOMING" ? (
+                    <div className="mh-score" style={{ fontWeight: 900 }}>{formatMatchTime(game.date)}</div>
+                  ) : (
+                    <div className="mh-score">
+                      {scoreText(game.hscore)}
+                      <span style={{ fontWeight: 300, color: "rgba(255,255,255,0.25)", margin: "0 6px" }}>–</span>
+                      {scoreText(game.ascore)}
+                    </div>
+                  )}
+                  <div className="mh-sub">
+                    {status === "LIVE" ? (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 13px", borderRadius: 999, background: "#16a34a" }}>
+                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#fff", boxShadow: "0 0 0 2px rgba(255,255,255,0.22)", animation: "livePulse 1.8s ease-in-out infinite", flexShrink: 0 }} />
+                        <span style={{ fontSize: 13, fontWeight: 900, color: "#fff", whiteSpace: "nowrap" }}>
+                          {`Live${(game.timestr || getLiveGameClock(liveEvents)) ? ` · ${formatTimestr(game.timestr) || getLiveGameClock(liveEvents)}` : ""}`}
+                        </span>
+                      </span>
+                    ) : status === "FINAL" ? (
+                      <span style={{ display: "inline-block", padding: "5px 18px", borderRadius: 999, background: statusBadgeTone.bg, border: `1px solid ${statusBadgeTone.border}`, color: statusBadgeTone.color, fontSize: 13, fontWeight: 800 }}>
+                        Full time
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.5)" }}>
+                        {getCountdownText(game.date, now)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right column — away logo + name */}
+                <div className="mh-slot mh-slot-r">
+                  <Link href={`/team/${toTeamSlug(game.ateam ?? "")}`} aria-label={`${game.ateam ?? "Away"} team page`} className="mh-logo" style={{ background: `${teamColor(game.ateam ?? "")}22` }}>
+                    <img src={getLogo(game.ateam)} alt={game.ateam ?? ""} />
+                  </Link>
+                  <div className="mh-name">
+                    <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text-1)" }}>{game.ateam ?? "Away"}</div>
+                    {awayRecord && <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{awayRecord}</div>}
+                  </div>
+                </div>
+
+                {/* Bottom line — venue (upcoming) or viewer count (live/final) */}
+                {status === "UPCOMING" ? (
+                  <div className="mh-venue" style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.45)" }}>
+                    Round {game.round ?? "–"} · {game.venue || "Venue TBA"} · {formatDate(game.date)}
+                  </div>
+                ) : (
+                  <div className="mh-venue" style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 4 }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-2)" }}>
+                      {status === "FINAL" ? (totalViewerCount ?? "—") : totalViewerCount != null ? totalViewerCount : Math.max(1, liveViewerCount)}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <nav style={{ display: "flex", width: "100%", position: "relative" }}>

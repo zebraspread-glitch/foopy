@@ -1692,19 +1692,20 @@ free_kicks?: {
                         />
                       </section>
 
-                      <div style={cardFooterStyle}>
+                      <div style={cardVenueFooterStyle}>
                         {(status === "LIVE" || status === "COMPLETED") && (
                           <LiveViewerCount gameId={game.id} isComplete={status === "COMPLETED"} />
                         )}
                         <span
                           style={{
-                            ...cardFooterTimeStyle,
+                            ...cardTimeStyle,
                             ...(status === "COMPLETED" ? fullTimeFooterTextStyle : null),
-                            color: status === "LIVE" ? "#4ade80" : "#d6d7e3",
                           }}
                         >
                           {getTimeOnly(game)}
                         </span>
+                        {game.venue ? <span style={cardMetaSeparatorStyle}>·</span> : null}
+                        {game.venue ? <span style={cardVenueTextStyle}>{game.venue}</span> : null}
                       </div>
                     </Link>
                   );
@@ -2152,6 +2153,7 @@ function MobileRoundPanel({
                   homePrimaryColor={TEAM_BAR_COLORS[homeId] ?? homeStyle.colors[0]}
                   awayPrimaryColor={TEAM_BAR_COLORS[awayId] ?? awayStyle.colors[0]}
                   timeText={getTimeOnly(game)}
+                  venue={game.venue}
                   homeLost={status === "COMPLETED" && (game.hscore ?? 0) < (game.ascore ?? 0)}
                   awayLost={status === "COMPLETED" && (game.ascore ?? 0) < (game.hscore ?? 0)}
                   isUpcoming={isUpcoming}
@@ -2208,11 +2210,11 @@ function LiveViewerCount({ gameId, isComplete = false }: { gameId: number; isCom
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.56)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
         <circle cx="12" cy="12" r="3" />
       </svg>
-      <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-1)" }}>
+      <span style={{ fontSize: 11.5, fontWeight: 600, color: "rgba(255,255,255,0.68)", fontVariantNumeric: "tabular-nums" }}>
         {isComplete ? count : Math.max(1, count)}
       </span>
     </div>
@@ -2231,6 +2233,7 @@ function MobileMatchRow({
   homePrimaryColor,
   awayPrimaryColor,
   timeText,
+  venue,
   homeLost,
   awayLost,
   isUpcoming,
@@ -2250,6 +2253,7 @@ function MobileMatchRow({
   homePrimaryColor: string;
   awayPrimaryColor: string;
   timeText: string;
+  venue?: string;
   homeLost: boolean;
   awayLost: boolean;
   isUpcoming: boolean;
@@ -2259,31 +2263,33 @@ function MobileMatchRow({
   gameId: number;
 }) {
   return (
-    <div style={mobileMatchInnerStyle}>
-      <MobileStackedTeamRow
-        logo={homeLogo}
-        name={homeName}
-        goalsText={homeGoalsText}
-        scoreText={homeScoreText}
-        primaryColor={homePrimaryColor}
-        faded={homeLost}
-        winning={!isUpcoming && Number(homeScoreText) > Number(awayScoreText)}
-        isRecord={isUpcoming}
-        compactRecord={compactRecord}
-        showBorder
-      />
+    <div style={mobileMatchContentStyle}>
+      <div style={mobileMatchInnerStyle}>
+        <MobileStackedTeamRow
+          logo={homeLogo}
+          name={homeName}
+          goalsText={homeGoalsText}
+          scoreText={homeScoreText}
+          primaryColor={homePrimaryColor}
+          faded={homeLost}
+          winning={!isUpcoming && Number(homeScoreText) > Number(awayScoreText)}
+          isRecord={isUpcoming}
+          compactRecord={compactRecord}
+          showBorder
+        />
 
-      <MobileStackedTeamRow
-        logo={awayLogo}
-        name={awayName}
-        goalsText={awayGoalsText}
-        scoreText={awayScoreText}
-        primaryColor={awayPrimaryColor}
-        faded={awayLost}
-        winning={!isUpcoming && Number(awayScoreText) > Number(homeScoreText)}
-        isRecord={isUpcoming}
-        compactRecord={compactRecord}
-      />
+        <MobileStackedTeamRow
+          logo={awayLogo}
+          name={awayName}
+          goalsText={awayGoalsText}
+          scoreText={awayScoreText}
+          primaryColor={awayPrimaryColor}
+          faded={awayLost}
+          winning={!isUpcoming && Number(awayScoreText) > Number(homeScoreText)}
+          isRecord={isUpcoming}
+          compactRecord={compactRecord}
+        />
+      </div>
 
       <div style={mobileMatchFooterStyle}>
         {(isLive || isComplete) && (
@@ -2293,11 +2299,12 @@ function MobileMatchRow({
           style={{
             ...mobileFooterTimeStyle,
             ...(timeText === "Full Time" ? fullTimeFooterTextStyle : null),
-            color: isLive ? "#4ade80" : "#d6d7e3",
           }}
         >
           {timeText}
         </span>
+        {venue ? <span style={cardMetaSeparatorStyle}>·</span> : null}
+        {venue ? <span style={mobileVenueStyle}>{venue}</span> : null}
       </div>
     </div>
   );
@@ -2405,25 +2412,60 @@ function TeamRow({
   );
 }
 
-const cardFooterStyle: React.CSSProperties = {
+const cardTimeStyle: React.CSSProperties = {
+  flexShrink: 0,
+  color: "rgba(255,255,255,0.78)",
+  fontSize: "11.5px",
+  lineHeight: 1,
+  fontWeight: 600,
+  letterSpacing: "0.01em",
+  fontVariantNumeric: "tabular-nums",
+  textShadow: "0 1px 2px rgba(0,0,0,0.45)",
+};
+
+const cardVenueFooterStyle: React.CSSProperties = {
+  position: "absolute",
+  left: 0,
+  right: 0,
+  bottom: 0,
+  zIndex: 1,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  gap: 6,
-  padding: "8px 10px 14px",
+  minHeight: "30px",
+  gap: 8,
+  padding: "10px 12px 8px",
+  overflow: "hidden",
+  background: "linear-gradient(180deg, rgba(18,18,18,0) 0%, rgba(18,18,18,0.62) 58%, rgba(18,18,18,0.86) 100%)",
+  pointerEvents: "none",
 };
 
-const cardFooterTimeStyle: React.CSSProperties = {
-  fontSize: "12px",
+const cardMetaSeparatorStyle: React.CSSProperties = {
+  flexShrink: 0,
+  color: "rgba(255,255,255,0.25)",
+  fontSize: "11px",
+  fontWeight: 600,
   lineHeight: 1,
-  fontWeight: 700,
+  textShadow: "0 1px 2px rgba(0,0,0,0.35)",
+};
+
+const cardVenueTextStyle: React.CSSProperties = {
+  minWidth: 0,
+  maxWidth: "100%",
+  color: "rgba(255,255,255,0.48)",
+  fontSize: "11px",
+  fontWeight: 500,
+  lineHeight: 1.15,
   letterSpacing: "0.01em",
-  fontVariantNumeric: "tabular-nums",
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  textShadow: "0 1px 2px rgba(0,0,0,0.35)",
 };
 
 const fullTimeFooterTextStyle: React.CSSProperties = {
-  fontSize: "12px",
-  fontWeight: 700,
+  fontSize: "11.5px",
+  fontWeight: 600,
 };
 
 const desktopGroupStyle: React.CSSProperties = {
@@ -2449,6 +2491,7 @@ const mobileGroupLabelStyle: React.CSSProperties = {
 };
 
 const mobileMatchStyle: React.CSSProperties = {
+  position: "relative",
   borderRadius: "16px",
   border: "1px solid var(--border-1)",
   background: "var(--surface-3)",
@@ -2459,27 +2502,56 @@ const mobileMatchStyle: React.CSSProperties = {
   transition: "transform 0.1s ease, opacity 0.1s ease",
 };
 
+const mobileMatchContentStyle: React.CSSProperties = {
+  position: "relative",
+};
+
 const mobileMatchInnerStyle: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
   gap: "2px",
-  padding: "10px 0 12px",
+  padding: "10px 0 32px",
 };
 
 const mobileMatchFooterStyle: React.CSSProperties = {
+  position: "absolute",
+  left: 0,
+  right: 0,
+  bottom: 0,
+  zIndex: 1,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  gap: 6,
-  padding: "6px 8px 0",
+  gap: 8,
+  minHeight: "30px",
+  padding: "10px 8px 7px",
+  overflow: "hidden",
+  background: "linear-gradient(180deg, rgba(18,18,18,0) 0%, rgba(18,18,18,0.62) 58%, rgba(18,18,18,0.86) 100%)",
+  pointerEvents: "none",
+};
+
+const mobileVenueStyle: React.CSSProperties = {
+  minWidth: 0,
+  maxWidth: "100%",
+  fontSize: "11px",
+  fontWeight: 500,
+  color: "rgba(255,255,255,0.48)",
+  letterSpacing: "0.01em",
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  textShadow: "0 1px 2px rgba(0,0,0,0.35)",
 };
 
 const mobileFooterTimeStyle: React.CSSProperties = {
-  fontSize: "12px",
+  flexShrink: 0,
+  color: "rgba(255,255,255,0.78)",
+  fontSize: "11.5px",
   lineHeight: 1,
-  fontWeight: 700,
+  fontWeight: 600,
   letterSpacing: "0.01em",
   fontVariantNumeric: "tabular-nums",
+  textShadow: "0 1px 2px rgba(0,0,0,0.45)",
 };
 
 const mobileStackedTeamWrapStyle: React.CSSProperties = {
@@ -2644,6 +2716,7 @@ const wrapStyle: React.CSSProperties = {
 };
 
 const cardStyle: React.CSSProperties = {
+  position: "relative",
   display: "flex",
   flexDirection: "column",
   overflow: "hidden",
@@ -2655,41 +2728,11 @@ const cardStyle: React.CSSProperties = {
   textDecoration: "none",
 };
 
-const infoStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "10px",
-  padding: "8px 12px",
-  borderBottom: "1px solid var(--border-1)",
-};
-
-const timeStyle: React.CSSProperties = {
-  fontSize: "12px",
-  fontWeight: 750,
-  textAlign: "right",
-  lineHeight: 1.1,
-  whiteSpace: "nowrap",
-  flexShrink: 0,
-  color: "var(--text-2)",
-};
-
-const venueStyle: React.CSSProperties = {
-  minWidth: 0,
-  color: "var(--text-3)",
-  fontSize: "11px",
-  fontWeight: 600,
-  lineHeight: 1.15,
-  whiteSpace: "nowrap",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-};
-
 const teamsStyle: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
   gap: "2px",
-  padding: "12px 0 0",
+  padding: "12px 0 36px",
 };
 
 const teamRowWrap: React.CSSProperties = {
