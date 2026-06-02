@@ -60,9 +60,11 @@ const CARD_NAME_OVERRIDES: Record<string, string> = {
   tewjiath: "Tew Jiath",
   tobynmurray: "Tobyn Murray",
   tobywhan: "Toby Whan",
+  joshgibcus: "Josh Gibcus",
   tomanastasopoulos: "Tom Anastasopoulos",
   tomcochrane: "Tom Cochrane",
   tomgreen: "Tom Green",
+  tomsims: "Tom Sims",
   tyanprindable: "Tyan Prindable",
   vigovisentini: "Vigo Visentini",
   willsetterfield: "Will Setterfield",
@@ -95,7 +97,8 @@ export const CARD_PLAYER_ID_ALIASES: Record<string, string> = {
   olliedempsey: "oliverdempsey",
   olivergreeves: "olliegreeves",
   roberthansenjr: "roberthansen",
-  tomsims: "thomassims",
+  thomaslynch: "tomlynch",
+  thomassims: "tomsims",
   williamgreen: "willgreen",
   zacharywilliams: "zacwilliams",
 };
@@ -308,7 +311,7 @@ export const CARD_PLAYERS: CardPlayer[] = [
     "aidancorr", "baileyscott", "blakethredgold", "braydengeorge", "calebdaniel", "callumcolemanjones", "cameronzurhaar", "charliecomben", "charliespargo", "colbymckercher", "cooperharvey", "coopertrembath", "dylanstephens", "finnosullivan", "georgewardlaw", "griffinlogue", "harrysheezel", "hugomikunda", "jackdarling", "jacksonarcher", "jacobkonstanty", "joshgoater", "jysimpkin", "lachydovaston", "lukedaviesuniacke", "lukemcdonald", "lukeparker", "lukeurquhart", "mattwhitlock", "nicklarkey", "paulcurtis", "rileyhardeman", "riverstevens", "roberthansen", "taylorgoad", "tobypink", "tomblamires", "tompowell", "tristanxerri", "wildawson", "zacbanch", "zacfisher", "zaneduursma",
   ]),
   ...makeTeamCards("Richmond", "tigers", [
-    "benmiller", "campbellgray", "dionprestia", "harryarmstrong", "hugoralphsmith", "jackross", "jacobhopper", "jamestrezise", "jasperalger", "jaydenshort", "jontyfaull", "joshsmillie", "judsonclarke", "kalebsmith", "kanemcauliffe", "liamfawcett", "luketrainor", "mauricerioli", "mykeltilefau", "nathanbroad", "nickvlastuin", "noahbalta", "oliverhayesbrown", "patrickretschko", "rhyanmansell", "sambanks", "samcumming", "samgrlj", "samlalor", "samsonryan", "sethcampbell", "steelygreen", "tajhotton", "thomaslynch", "thomassims", "timtaranto", "tobynankervis", "tombrown", "tomburton", "tomlynch", "tylersonsie", "zanepeucker",
+    "benmiller", "campbellgray", "dionprestia", "harryarmstrong", "hugoralphsmith", "jackross", "jacobhopper", "jamestrezise", "jasperalger", "jaydenshort", "jontyfaull", "joshgibcus", "joshsmillie", "judsonclarke", "kalebsmith", "kanemcauliffe", "liamfawcett", "luketrainor", "mauricerioli", "mykeltilefau", "nathanbroad", "nickvlastuin", "noahbalta", "noahrobertsthompson", "oliverhayesbrown", "patrickretschko", "rhyanmansell", "sambanks", "samcumming", "samgrlj", "samlalor", "samsonryan", "sethcampbell", "steelygreen", "tajhotton", "timtaranto", "tobynankervis", "tombrown", "tomburton", "tomlynch", "tomsims", "tylersonsie", "zanepeucker",
   ]),
   ...makeTeamCards("St Kilda", "saints", [
     "alexdodson", "alixtauru", "angushastie", "anthonycaminiti", "bradleyhill", "callumwilkie", "charliebanfield", "coopersharman", "danbutler", "darcywilson", "dougalhoward", "eamonnarmstrong", "hughboxshall", "hugogarcia", "hunterclark", "isaackeeler", "jackcarroll", "jackhiggins", "jacksilvagni", "jacksinclair", "jackmacrae", "jamesbarrat", "kobemcdonald", "kyefincher", "lancecollard", "liamhenry", "liamoconnell", "liamryan", "liamstocker", "marcuswindhager", "masonwood", "mattaesphillipou", "maxhall", "maxking", "mitchowens", "nasiahwanganeenmilera", "paddydow", "patricksaid", "rowanmarshall", "ryanbyrnes", "samflanders", "tobietravaglia", "tomdekoning",
