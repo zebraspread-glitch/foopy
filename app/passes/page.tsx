@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
+import { ArrowLeft, CheckCircle, Search, Ticket, TrendingUp, Trophy, Users, Zap } from "lucide-react";
 import { supabase } from "@/app/lib/supabase";
 import {
   AFL_TEAMS,
@@ -35,6 +36,17 @@ function fmtCoins(n: number) {
   return n >= 1000 ? `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k` : String(n);
 }
 
+function shortRelativeTime(value?: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const days = Math.max(0, Math.floor((Date.now() - date.getTime()) / 86_400_000));
+  if (days >= 365) return `${Math.floor(days / 365)}y`;
+  if (days >= 30) return `${Math.floor(days / 30)}mo`;
+  if (days >= 1) return `${days}d`;
+  return "today";
+}
+
 function CoinImg({ size = 14 }: { size?: number }) {
   return <img suppressHydrationWarning src="/coin/coin.png" alt="coins" style={{ width: size, height: size, objectFit: "contain", verticalAlign: "middle", display: "inline-block" }} />;
 }
@@ -42,6 +54,14 @@ function CoinImg({ size = 14 }: { size?: number }) {
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type Tab = "player" | "team";
+
+type PendingPlayerPass = {
+  pid: string;
+  name: string;
+  team: string;
+  imgSrc: string;
+  xp: number;
+};
 
 type PassesData = {
   teamPasses: TeamPass[];
@@ -676,12 +696,15 @@ function PassesPageInner() {
   const [playerPickerOpen, setPlayerPickerOpen] = useState(false);
   const [earningsOpen, setEarningsOpen]         = useState(false);
   const [playerSearch, setPlayerSearch]         = useState("");
-  const [pendingPlayer, setPendingPlayer]       = useState<{ pid: string; name: string; team: string; imgSrc: string; xp: number } | null>(null);
+  const [pendingPlayer, setPendingPlayer]       = useState<PendingPlayerPass | null>(null);
   const [pendingTeam, setPendingTeam]           = useState<string | null>(null);
   const [purchaseErr, setPurchaseErr]           = useState<string | null>(null);
   const [selectedPass, setSelectedPass]         = useState<PlayerPass | null>(null);
   const [playerSortBy, setPlayerSortBy]         = useState<"recent" | "level">("recent");
   const [leaderboardPass, setLeaderboardPass]   = useState<PlayerPass | null>(null);
+  const [confirmStep, setConfirmStep]           = useState(false);
+  const [purchaseAnim, setPurchaseAnim]         = useState(false);
+  const [boughtPlayer, setBoughtPlayer]         = useState<{ pid: string; name: string; team: string; imgSrc: string; xp: number } | null>(null);
   const [selectedTeamPass, setSelectedTeamPass]       = useState<TeamPass | null>(null);
   const [leaderboardTeamPass, setLeaderboardTeamPass] = useState<TeamPass | null>(null);
   const autoClaimFired = useRef(false);
@@ -760,17 +783,25 @@ function PassesPageInner() {
 
   async function addPlayerPass(playerId: string) {
     if (!token) return;
-    setPlayerPickerOpen(false);
-    setPlayerSearch("");
-    setPendingPlayer(null);
+    setConfirmStep(false);
     setPurchaseErr(null);
+    const snapshot = pendingPlayer;
     const res = await fetch("/api/passes/player", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ player_id: playerId }),
     });
     if (res.ok) {
+      setBoughtPlayer(snapshot);
+      setPurchaseAnim(true);
       fetchData(token);
+      setTimeout(() => {
+        setPurchaseAnim(false);
+        setBoughtPlayer(null);
+        setPlayerPickerOpen(false);
+        setPlayerSearch("");
+        setPendingPlayer(null);
+      }, 2600);
     } else {
       const body = await res.json().catch(() => ({}));
       setPurchaseErr(body.error ?? "Purchase failed");
@@ -783,7 +814,19 @@ function PassesPageInner() {
     else setPlayerPickerOpen(true);
   }
 
+  function closePlayerPicker() {
+    setPlayerPickerOpen(false);
+    setPlayerSearch("");
+    setPendingPlayer(null);
+    setConfirmStep(false);
+    setPurchaseAnim(false);
+    setBoughtPlayer(null);
+  }
+
   const ownedPlayerKeys = new Set((data?.playerPasses ?? []).map((p) => playerPassIdentityKey(p)));
+  const pendingPlayerOwned = pendingPlayer
+    ? ownedPlayerKeys.has(playerPassIdentityKey({ player_id: pendingPlayer.pid, player_name: pendingPlayer.name, team_name: pendingPlayer.team }))
+    : false;
   const filtered = playerSearch.trim().length < 2 ? [] :
     (playersRaw as any[]).filter((p) => String(p.name ?? p.player ?? "").toLowerCase().includes(playerSearch.toLowerCase())).slice(0, 30);
 
@@ -803,6 +846,51 @@ function PassesPageInner() {
           <div style={{ fontSize: 13, color: "var(--text-3)", maxWidth: 260 }}>Earn Aura and Coins from your favourite team and players every round.</div>
           <Link href="/login" style={{ marginTop: 8, display: "inline-block", padding: "12px 28px", background: "linear-gradient(135deg,#7c3aed,#a855f7)", color: "#fff", borderRadius: 999, fontWeight: 800, fontSize: 15, textDecoration: "none" }}>Sign In</Link>
         </div>
+      </div>
+    );
+  }
+
+  if (playerPickerOpen) {
+    return (
+      <div style={pageStyle}>
+        <div style={{ ...headerStyle, gap: 12 }}>
+          <button onClick={closePlayerPicker} style={passPageBackButtonStyle} aria-label="Back to passes">
+            <ArrowLeft size={18} strokeWidth={2.6} />
+          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
+            <div style={passPageIconStyle}>
+              <Ticket size={18} strokeWidth={2.6} />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontWeight: 950, fontSize: 19, color: "var(--text-1)", lineHeight: 1.05 }}>
+                {pendingPlayer ? "2026 Player Pass" : "Player Passes"}
+              </div>
+              <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 750, marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {pendingPlayer ? `${pendingPlayer.name} · ${pendingPlayer.team}` : "Choose a player"}
+              </div>
+            </div>
+          </div>
+          <div style={{ fontSize: 13, fontWeight: 900, color: "#fbbf24", display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+            <CoinImg size={16} />{fmtCoins(coins)}
+          </div>
+        </div>
+        <PlayerPassPickerPage
+          pendingPlayer={pendingPlayer}
+          data={data}
+          coins={coins}
+          pendingPlayerOwned={pendingPlayerOwned}
+          playerSearch={playerSearch}
+          setPlayerSearch={setPlayerSearch}
+          setPendingPlayer={setPendingPlayer}
+          addPlayerPass={addPlayerPass}
+          filtered={filtered}
+          ownedPlayerKeys={ownedPlayerKeys}
+          userId={userId}
+          onOpenLeaderboard={setLeaderboardPass}
+        />
+        {leaderboardPass && (
+          <PassLeaderboard pass={leaderboardPass} onClose={() => setLeaderboardPass(null)} />
+        )}
       </div>
     );
   }
@@ -1151,12 +1239,86 @@ function PassesPageInner() {
       {playerPickerOpen && (
         <Modal
           centered
-          title={pendingPlayer ? "Player Pass" : `Add Player Pass · ${fmtCoins(PLAYER_PASS_COST)} coins`}
-          onClose={() => { setPlayerPickerOpen(false); setPlayerSearch(""); setPendingPlayer(null); }}
+          title={pendingPlayer ? "2026 Player Pass" : `Add Player Pass · ${fmtCoins(PLAYER_PASS_COST)} coins`}
+          onClose={closePlayerPicker}
         >
-          {pendingPlayer ? (
+          {purchaseAnim && boughtPlayer ? (
+            /* ── Success animation ── */
+            <>
+              <style>{`
+                @keyframes passParticleFly {
+                  0%   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+                  100% { opacity: 0; transform: translate(calc(-50% + var(--fly-x)), calc(-50% + var(--fly-y))) scale(0.15); }
+                }
+                @keyframes passCardBounce {
+                  0%   { opacity: 0; transform: scale(0.35) translateY(40px); }
+                  55%  { transform: scale(1.08) translateY(-8px); }
+                  78%  { transform: scale(0.97) translateY(2px); }
+                  100% { opacity: 1; transform: scale(1) translateY(0); }
+                }
+                @keyframes passSuccessText {
+                  0%   { opacity: 0; transform: translateY(14px); }
+                  100% { opacity: 1; transform: translateY(0); }
+                }
+                @keyframes passCheckIn {
+                  0%   { opacity: 0; transform: scale(0); }
+                  65%  { transform: scale(1.22); }
+                  100% { opacity: 1; transform: scale(1); }
+                }
+                @keyframes passGlow {
+                  0%, 100% { box-shadow: 0 0 0 6px rgba(74,222,128,0.12), 0 8px 24px rgba(22,163,74,0.3); }
+                  50%       { box-shadow: 0 0 0 14px rgba(74,222,128,0.06), 0 8px 32px rgba(22,163,74,0.5); }
+                }
+              `}</style>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 18, padding: "32px 16px", position: "relative", minHeight: 360 }}>
+                {/* Confetti particles */}
+                {Array.from({ length: 16 }).map((_, i) => {
+                  const angle = (i / 16) * Math.PI * 2;
+                  const dist = 85 + (i % 4) * 22;
+                  const dx = Math.round(Math.cos(angle) * dist);
+                  const dy = Math.round(Math.sin(angle) * dist - 28);
+                  const colors = ["#fbbf24","#a78bfa","#60a5fa","#34d399","#f472b6","#fb923c","#e879f9"];
+                  return (
+                    <div key={i} style={{
+                      position: "absolute", top: "36%", left: "50%",
+                      width: i % 2 === 0 ? 9 : 6, height: i % 2 === 0 ? 9 : 6,
+                      borderRadius: i % 3 === 0 ? "50%" : 3,
+                      background: colors[i % colors.length],
+                      pointerEvents: "none",
+                      "--fly-x": `${dx}px`,
+                      "--fly-y": `${dy}px`,
+                      animation: `passParticleFly 1.1s ease-out ${i * 0.025}s both`,
+                    } as React.CSSProperties} />
+                  );
+                })}
+                {/* Checkmark */}
+                <div style={{
+                  width: 60, height: 60, borderRadius: "50%",
+                  background: "linear-gradient(135deg, #15803d, #4ade80)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0, zIndex: 1,
+                  animation: "passCheckIn 0.55s cubic-bezier(0.34,1.56,0.64,1) 0.05s both, passGlow 2s ease-in-out 0.6s infinite",
+                }}>
+                  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+                {/* Text */}
+                <div style={{ textAlign: "center", animation: "passSuccessText 0.4s ease-out 0.25s both", zIndex: 1 }}>
+                  <div style={{ fontSize: 22, fontWeight: 950, color: "var(--text-1)", letterSpacing: "-0.02em" }}>Pass Purchased!</div>
+                  <div style={{ fontSize: 14, color: "var(--text-3)", marginTop: 5, fontWeight: 600 }}>
+                    {boughtPlayer.name} · {boughtPlayer.team}
+                  </div>
+                </div>
+                {/* Card */}
+                <div style={{ width: "min(155px, 48vw)", animation: "passCardBounce 0.65s cubic-bezier(0.34,1.56,0.64,1) 0.15s both", zIndex: 1 }}>
+                  <PlayerPassCard pass={{ id: "", user_id: "", player_id: boughtPlayer.pid, player_name: boughtPlayer.name, team_name: boughtPlayer.team, active: true, xp: boughtPlayer.xp, serial_number: null, created_at: "" }} />
+                </div>
+              </div>
+            </>
+          ) : pendingPlayer ? (
             /* ── Confirmation screen ── */
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(260px, 100%), 1fr))", gap: 16, alignItems: "stretch" }}>
               {/* Card preview */}
               {(() => {
                 const pendingPlayerKey = playerPassIdentityKey({
@@ -1177,8 +1339,8 @@ function PassesPageInner() {
                   created_at: "",
                 };
                 return (
-                  <div style={{ display: "flex", justifyContent: "center" }}>
-                    <div style={{ width: 160 }}>
+                  <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 330, borderRadius: 22, border: "1px solid rgba(255,255,255,0.09)", background: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.025))", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)" }}>
+                    <div style={{ width: "min(230px, 72vw)" }}>
                       <PlayerCard pass={previewPass} />
                     </div>
                   </div>
@@ -1186,18 +1348,25 @@ function PassesPageInner() {
               })()}
 
               {/* Pass info */}
-              <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
-                <div style={{ fontWeight: 900, fontSize: 16, color: "var(--text-1)" }}>{pendingPlayer.name}</div>
-                <div style={{ fontSize: 13, color: "var(--text-3)" }}>{pendingPlayer.team}</div>
+              <div style={{ background: `linear-gradient(135deg, ${teamColor(pendingPlayer.team)}22, rgba(255,255,255,0.045))`, border: "1px solid rgba(255,255,255,0.09)", borderRadius: 22, padding: "20px 18px", display: "flex", flexDirection: "column", gap: 12, minHeight: 330, boxSizing: "border-box", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 42, height: 42, borderRadius: 14, background: "rgba(251,191,36,0.14)", border: "1px solid rgba(251,191,36,0.24)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fbbf24", flexShrink: 0 }}>
+                    <Ticket size={20} strokeWidth={2.6} />
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 950, fontSize: 22, color: "var(--text-1)", lineHeight: 1.05 }}>{pendingPlayer.name}</div>
+                    <div style={{ fontSize: 13, color: "var(--text-3)", fontWeight: 750, marginTop: 5 }}>{pendingPlayer.team}</div>
+                  </div>
+                </div>
                 <div style={{ height: 1, background: "var(--border-1)" }} />
-                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.55 }}>
+                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.68)", lineHeight: 1.6 }}>
                   Earn <span style={{ color: "#a78bfa", fontWeight: 800 }}>Aura</span> &amp; <span style={{ color: "#fbbf24", fontWeight: 800 }}>Coins</span> based on {pendingPlayer.name.split(" ")[0]}'s Foopy Rating each game. The pass levels up as you earn XP, increasing your reward multiplier up to <span style={{ color: "#c084fc", fontWeight: 800 }}>7×</span>.
                 </div>
                 <div style={{ height: 1, background: "var(--border-1)" }} />
                 {/* Multipliers preview */}
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                   {PLAYER_PASS_LEVELS.map((lvl, i) => (
-                    <div key={lvl.name} style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 999, background: `${lvl.color}18`, border: `1px solid ${lvl.color}40` }}>
+                    <div key={lvl.name} style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 9px", borderRadius: 999, background: `${lvl.color}18`, border: `1px solid ${lvl.color}40` }}>
                       <span style={{ fontSize: 10, fontWeight: 900, color: lvl.color }}>{lvl.name}</span>
                       <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: 700 }}>{[1,1.25,1.5,1.75,2,2.5,3,4,5,7][i]}×</span>
                     </div>
@@ -1206,7 +1375,7 @@ function PassesPageInner() {
               </div>
 
               {/* Price row */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", background: "rgba(255,255,255,0.04)", borderRadius: 14, border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", background: "rgba(255,255,255,0.045)", borderRadius: 18, border: "1px solid rgba(255,255,255,0.09)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)" }}>
                 <div>
                   <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 700, marginBottom: 2 }}>COST</div>
                   <div style={{ fontSize: 20, fontWeight: 900, color: "#fbbf24", display: "flex", alignItems: "center", gap: 5 }}>
@@ -1221,38 +1390,57 @@ function PassesPageInner() {
                 </div>
               </div>
 
-              {coins < PLAYER_PASS_COST && (
-                <div style={{ padding: "10px 14px", borderRadius: 12, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", fontSize: 13, fontWeight: 700, color: "#f87171", textAlign: "center" }}>
+              {!pendingPlayerOwned && coins < PLAYER_PASS_COST && (
+                <div style={{ gridColumn: "1 / -1", padding: "12px 14px", borderRadius: 14, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", fontSize: 13, fontWeight: 800, color: "#f87171", textAlign: "center" }}>
                   Need <CoinImg size={13} /> {fmtCoins(PLAYER_PASS_COST - coins)} more — open packs to earn coins
                 </div>
               )}
 
-              {/* Buttons */}
-              <div style={{ display: "flex", gap: 10 }}>
-                <button onClick={() => setPendingPlayer(null)} style={{ flex: 1, padding: "13px 0", borderRadius: 999, border: "1px solid var(--border-2)", background: "rgba(255,255,255,0.05)", color: "var(--text-2)", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
-                  ← Back
-                </button>
-                <button
-                  onClick={() => coins >= PLAYER_PASS_COST && addPlayerPass(pendingPlayer.pid)}
-                  disabled={coins < PLAYER_PASS_COST}
-                  style={{ flex: 2, padding: "13px 0", borderRadius: 999, border: "none", background: coins >= PLAYER_PASS_COST ? "linear-gradient(135deg,#854d0e,#ca8a04)" : "rgba(255,255,255,0.08)", color: coins >= PLAYER_PASS_COST ? "#fff" : "rgba(255,255,255,0.3)", fontWeight: 900, fontSize: 15, cursor: coins >= PLAYER_PASS_COST ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
-                >
-                  Get Pass · <CoinImg size={14} /> {fmtCoins(PLAYER_PASS_COST)}
-                </button>
-              </div>
+              {/* Buttons — two-step confirmation */}
+              {confirmStep ? (
+                <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ padding: "13px 16px", borderRadius: 14, background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontSize: 14, fontWeight: 800, color: "#fbbf24" }}>
+                    <CoinImg size={15} /> Spend {fmtCoins(PLAYER_PASS_COST)} on {pendingPlayer.name.split(" ")[0]}'s pass?
+                  </div>
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <button onClick={() => setConfirmStep(false)} style={{ flex: 1, padding: "13px 0", borderRadius: 999, border: "1px solid var(--border-2)", background: "rgba(255,255,255,0.05)", color: "var(--text-2)", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => addPlayerPass(pendingPlayer.pid)}
+                      style={{ flex: 2, padding: "13px 0", borderRadius: 999, border: "none", background: "linear-gradient(135deg,#92400e,#d97706,#fbbf24)", color: "#fff", fontWeight: 950, fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: "0 14px 34px rgba(217,119,6,0.3), inset 0 1px 0 rgba(255,255,255,0.2)" }}
+                    >
+                      <CheckCircle size={15} strokeWidth={2.8} /> Confirm Purchase
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ gridColumn: "1 / -1", display: "flex", gap: 10 }}>
+                  <button onClick={() => setPendingPlayer(null)} style={{ flex: 1, padding: "13px 0", borderRadius: 999, border: "1px solid var(--border-2)", background: "rgba(255,255,255,0.05)", color: "var(--text-2)", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
+                    ← Back
+                  </button>
+                  <button
+                    onClick={() => !pendingPlayerOwned && coins >= PLAYER_PASS_COST && setConfirmStep(true)}
+                    disabled={pendingPlayerOwned || coins < PLAYER_PASS_COST}
+                    style={{ flex: 2, padding: "13px 0", borderRadius: 999, border: pendingPlayerOwned ? "1px solid rgba(255,255,255,0.12)" : "none", background: pendingPlayerOwned ? "rgba(255,255,255,0.08)" : coins >= PLAYER_PASS_COST ? "linear-gradient(135deg,#92400e,#d97706,#fbbf24)" : "rgba(255,255,255,0.08)", color: pendingPlayerOwned ? "var(--text-2)" : coins >= PLAYER_PASS_COST ? "#fff" : "rgba(255,255,255,0.3)", fontWeight: 950, fontSize: 15, cursor: pendingPlayerOwned || coins < PLAYER_PASS_COST ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: !pendingPlayerOwned && coins >= PLAYER_PASS_COST ? "0 14px 34px rgba(217,119,6,0.24), inset 0 1px 0 rgba(255,255,255,0.2)" : "none" }}
+                  >
+                    {pendingPlayerOwned ? <><CheckCircle size={15} strokeWidth={2.8} />Owned</> : <>Get Pass · <CoinImg size={14} /> {fmtCoins(PLAYER_PASS_COST)}</>}
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             /* ── Search screen ── */
             <>
               <input type="text" placeholder="Search player name…" value={playerSearch} onChange={(e) => setPlayerSearch(e.target.value)} autoFocus
-                style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: "1.5px solid var(--border-2)", background: "var(--surface-2)", color: "var(--text-1)", fontSize: 15, fontWeight: 600, marginBottom: 10, outline: "none", boxSizing: "border-box" }}
+                style={{ width: "100%", padding: "14px 16px", borderRadius: 16, border: "1.5px solid var(--border-2)", background: "rgba(255,255,255,0.055)", color: "var(--text-1)", fontSize: 15, fontWeight: 700, marginBottom: 14, outline: "none", boxSizing: "border-box", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)" }}
               />
               {playerSearch.trim().length < 2 ? (
                 <div style={{ textAlign: "center", padding: "24px 0", color: "var(--text-3)", fontSize: 13 }}>Type at least 2 characters</div>
               ) : filtered.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "24px 0", color: "var(--text-3)", fontSize: 13 }}>No players found</div>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 5, maxHeight: 400, overflowY: "auto" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {filtered.map((p: any, i: number) => {
                     const pid   = String(p.id ?? "");
                     const pname = String(p.name ?? p.player ?? "");
@@ -1284,7 +1472,7 @@ function PassesPageInner() {
                             0
                           );
                           setPendingPlayer({ pid, name: pname, team, imgSrc, xp });
-                        }} disabled={owned} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 12, border: "1px solid var(--border-2)", background: owned ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.04)", cursor: owned ? "default" : "pointer", opacity: owned ? 0.45 : 1, width: "100%", textAlign: "left" }}>
+                        }} disabled={owned} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 16, border: "1px solid var(--border-2)", background: owned ? "rgba(255,255,255,0.025)" : "rgba(255,255,255,0.055)", cursor: owned ? "default" : "pointer", opacity: owned ? 0.55 : 1, width: "100%", textAlign: "left", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)" }}>
                         <div style={{ width: 44, height: 44, borderRadius: 10, overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.07)" }}>
                           {imgSrc
                             ? <img src={imgSrc} alt={pname} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
@@ -1296,7 +1484,7 @@ function PassesPageInner() {
                           <div style={{ fontSize: 12, color: "var(--text-3)" }}>{team}</div>
                         </div>
                         <span style={{ fontSize: 11, fontWeight: 800, flexShrink: 0, color: owned ? "#a78bfa" : "#fbbf24", display: "flex", alignItems: "center", gap: 3 }}>
-                          {owned ? "Owned" : <><CoinImg size={12} />{fmtCoins(PLAYER_PASS_COST)}</>}
+                          {owned ? <><CheckCircle size={12} strokeWidth={2.8} />Owned</> : <><CoinImg size={12} />{fmtCoins(PLAYER_PASS_COST)}</>}
                         </span>
                       </button>
                     );
@@ -1312,6 +1500,309 @@ function PassesPageInner() {
 }
 
 // ── Earnings Modal ────────────────────────────────────────────────────────────
+
+function PlayerPassPickerPage({
+  pendingPlayer,
+  data,
+  coins,
+  pendingPlayerOwned,
+  playerSearch,
+  setPlayerSearch,
+  setPendingPlayer,
+  addPlayerPass,
+  filtered,
+  ownedPlayerKeys,
+  userId,
+  onOpenLeaderboard,
+}: {
+  pendingPlayer: PendingPlayerPass | null;
+  data: PassesData | null;
+  coins: number;
+  pendingPlayerOwned: boolean;
+  playerSearch: string;
+  setPlayerSearch: (value: string) => void;
+  setPendingPlayer: (value: PendingPlayerPass | null) => void;
+  addPlayerPass: (playerId: string) => Promise<void>;
+  filtered: any[];
+  ownedPlayerKeys: Set<string>;
+  userId: string | null;
+  onOpenLeaderboard: (pass: PlayerPass) => void;
+}) {
+  const pendingPlayerId = pendingPlayer?.pid ?? "";
+  const [holders, setHolders] = useState<LeaderboardEntry[]>([]);
+  const [holdersLoading, setHoldersLoading] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    if (!pendingPlayerId) {
+      setHolders([]);
+      setHoldersLoading(false);
+      return () => { active = false; };
+    }
+
+    setHoldersLoading(true);
+    fetch(`/api/passes/leaderboard?player_id=${encodeURIComponent(pendingPlayerId)}`)
+      .then((res) => res.ok ? res.json() : [])
+      .then((rows) => {
+        if (active) setHolders(Array.isArray(rows) ? rows : []);
+      })
+      .catch(() => {
+        if (active) setHolders([]);
+      })
+      .finally(() => {
+        if (active) setHoldersLoading(false);
+      });
+
+    return () => { active = false; };
+  }, [pendingPlayerId]);
+
+  if (!pendingPlayer) {
+    return (
+      <div style={{ padding: "16px 16px calc(104px + env(safe-area-inset-bottom))" }}>
+        <div style={{ maxWidth: 560, margin: "0 auto" }}>
+          <div style={{ position: "relative", marginBottom: 14 }}>
+            <Search size={17} strokeWidth={2.5} style={{ position: "absolute", left: 15, top: "50%", transform: "translateY(-50%)", color: "var(--text-3)", pointerEvents: "none" }} />
+            <input
+              type="text"
+              placeholder="Search player name..."
+              value={playerSearch}
+              onChange={(e) => setPlayerSearch(e.target.value)}
+              autoFocus
+              style={{ width: "100%", padding: "14px 16px 14px 42px", borderRadius: 16, border: "1.5px solid var(--border-2)", background: "rgba(255,255,255,0.055)", color: "var(--text-1)", fontSize: 15, fontWeight: 750, outline: "none", boxSizing: "border-box", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)" }}
+            />
+          </div>
+
+          {playerSearch.trim().length < 2 ? (
+            <div style={playerPassEmptySearchStyle}>Type at least 2 characters</div>
+          ) : filtered.length === 0 ? (
+            <div style={playerPassEmptySearchStyle}>No players found</div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {filtered.map((p: any, i: number) => {
+                const pid   = String(p.id ?? "");
+                const pname = String(p.name ?? p.player ?? "");
+                const team  = String(p.club ?? p.team ?? "");
+                const owned = ownedPlayerKeys.has(playerPassIdentityKey({ player_id: pid, player_name: pname, team_name: team }));
+                const imgSrc = playerPassImgSrc(pname, team);
+                return (
+                  <button
+                    key={`${pid}_${i}`}
+                    onClick={async () => {
+                      if (owned) return;
+                      const { data: byName } = await supabase
+                        .from("user_cards")
+                        .select("rating, duplicate_count")
+                        .eq("user_id", userId ?? "")
+                        .ilike("player_name", pname.trim());
+                      const cardPlayerId = pname.toLowerCase().replace(/'/g, "").replace(/[^a-z0-9]+/g, "");
+                      const { data: byId } = await supabase
+                        .from("user_cards")
+                        .select("rating, duplicate_count")
+                        .eq("user_id", userId ?? "")
+                        .eq("player_id", cardPlayerId);
+                      const cardRows = (byName?.length ? byName : byId) ?? [];
+                      const xp = cardRows.reduce(
+                        (sum: number, c: any) => sum + (Number(c.rating) || 0) * Math.max(Number(c.duplicate_count) || 1, 1),
+                        0
+                      );
+                      setPendingPlayer({ pid, name: pname, team, imgSrc, xp });
+                    }}
+                    disabled={owned}
+                    style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 16, border: `1px solid ${owned ? "rgba(167,139,250,0.2)" : "var(--border-2)"}`, background: owned ? "rgba(167,139,250,0.055)" : "rgba(255,255,255,0.055)", cursor: owned ? "default" : "pointer", opacity: owned ? 0.62 : 1, width: "100%", textAlign: "left", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)" }}
+                  >
+                    <div style={{ width: 46, height: 46, borderRadius: 14, overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                      {imgSrc ? (
+                        <img src={imgSrc} alt={pname} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                      ) : (
+                        <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>P</div>
+                      )}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 900, fontSize: 14, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pname}</div>
+                      <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 700, marginTop: 2 }}>{team}</div>
+                    </div>
+                    <span style={{ fontSize: 11, fontWeight: 900, flexShrink: 0, color: owned ? "#a78bfa" : "#fbbf24", display: "flex", alignItems: "center", gap: 4 }}>
+                      {owned ? <><CheckCircle size={13} strokeWidth={2.8} />Owned</> : <><CoinImg size={12} />{fmtCoins(PLAYER_PASS_COST)}</>}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  const pendingPlayerKey = playerPassIdentityKey({
+    player_id: pendingPlayer.pid,
+    player_name: pendingPlayer.name,
+    team_name: pendingPlayer.team,
+  });
+  const existingPass = data?.playerPasses?.find((p) => playerPassIdentityKey(p) === pendingPlayerKey);
+  const previewPass: PlayerPass = existingPass ?? {
+    id: "",
+    user_id: "",
+    player_id: pendingPlayer.pid,
+    player_name: pendingPlayer.name,
+    team_name: pendingPlayer.team,
+    active: true,
+    xp: pendingPlayer.xp,
+    serial_number: null,
+    created_at: "",
+  };
+  const teamAccent = teamColor(pendingPlayer.team);
+  const canBuy = !pendingPlayerOwned && coins >= PLAYER_PASS_COST;
+  const holderPreview = [...holders]
+    .sort((a, b) => (a.serial_number ?? 999999) - (b.serial_number ?? 999999))
+    .slice(0, 8);
+  const passFeatures: Array<{ title: string; copy: string; icon: ReactNode; color: string }> = [
+    {
+      title: "Earn Aura and Coins",
+      copy: `Rewards are based on ${pendingPlayer.name.split(" ")[0]}'s Foopy Rating each game.`,
+      icon: <Zap size={18} strokeWidth={2.7} />,
+      color: "#0ea5e9",
+    },
+    {
+      title: "Level up the pass",
+      copy: "Earn XP to climb tiers and boost the reward multiplier.",
+      icon: <TrendingUp size={18} strokeWidth={2.7} />,
+      color: "#22c55e",
+    },
+    {
+      title: "Collect holder serials",
+      copy: "Early holders keep their serial on the pass leaderboard.",
+      icon: <Trophy size={18} strokeWidth={2.7} />,
+      color: "#f59e0b",
+    },
+    {
+      title: "Compete with holders",
+      copy: "Compare XP against everyone holding this player pass.",
+      icon: <Users size={18} strokeWidth={2.7} />,
+      color: "#a78bfa",
+    },
+  ];
+
+  return (
+    <div style={{ padding: "18px 14px calc(112px + env(safe-area-inset-bottom))" }}>
+      <div style={{ maxWidth: 560, margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "stretch", gap: 24 }}>
+        <section style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+          <div style={{ width: "min(238px, 72vw)", padding: 8, borderRadius: 22, background: `linear-gradient(145deg, rgba(255,255,255,0.08), ${teamAccent}16)`, border: "1px solid rgba(255,255,255,0.1)", boxShadow: `0 18px 42px ${teamAccent}18, inset 0 1px 0 rgba(255,255,255,0.07)` }}>
+            <PlayerCard pass={previewPass} />
+          </div>
+
+          <div style={{ marginTop: 22, fontSize: 42, lineHeight: 1, fontWeight: 950, color: "var(--text-1)", display: "flex", alignItems: "center", justifyContent: "center", gap: 9 }}>
+            <CoinImg size={30} /> {fmtCoins(PLAYER_PASS_COST)}
+          </div>
+
+          <button
+            onClick={() => canBuy && addPlayerPass(pendingPlayer.pid)}
+            disabled={!canBuy}
+            style={{
+              marginTop: 12,
+              width: "min(240px, 78vw)",
+              padding: "13px 20px",
+              borderRadius: 999,
+              border: pendingPlayerOwned ? "1px solid rgba(255,255,255,0.12)" : "none",
+              background: pendingPlayerOwned ? "rgba(255,255,255,0.08)" : canBuy ? `linear-gradient(135deg, ${teamAccent}, #f59e0b, #fbbf24)` : "rgba(255,255,255,0.08)",
+              color: pendingPlayerOwned ? "var(--text-2)" : canBuy ? "#fff" : "rgba(255,255,255,0.32)",
+              fontSize: 18,
+              fontWeight: 950,
+              fontFamily: "inherit",
+              cursor: canBuy ? "pointer" : "default",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              boxShadow: canBuy ? `0 14px 34px ${teamAccent}30, inset 0 1px 0 rgba(255,255,255,0.24)` : "none",
+            }}
+          >
+            {pendingPlayerOwned ? <><CheckCircle size={18} strokeWidth={2.8} />Owned</> : "Get Pass"}
+          </button>
+
+          <div style={{ marginTop: 10, fontSize: 14, color: coins >= PLAYER_PASS_COST ? "var(--text-3)" : "#f87171", fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+            <CoinImg size={15} />{fmtCoins(coins)} balance
+          </div>
+
+          {!pendingPlayerOwned && coins < PLAYER_PASS_COST && (
+            <div style={{ marginTop: 10, padding: "9px 13px", borderRadius: 999, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", fontSize: 12, fontWeight: 850, color: "#f87171" }}>
+              Need <CoinImg size={12} /> {fmtCoins(PLAYER_PASS_COST - coins)} more coins
+            </div>
+          )}
+        </section>
+
+        <section>
+          <h2 style={{ margin: "0 0 16px", textAlign: "center", fontSize: 26, lineHeight: 1.05, fontWeight: 950, color: "var(--text-1)" }}>
+            2026 Pass Features
+          </h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            {passFeatures.map((feature) => (
+              <div key={feature.title} style={{ display: "flex", alignItems: "flex-start", gap: 13 }}>
+                <div style={{ width: 40, height: 40, borderRadius: "50%", background: `${feature.color}22`, color: feature.color, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: `1px solid ${feature.color}22` }}>
+                  {feature.icon}
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 20, lineHeight: 1.1, fontWeight: 950, color: "var(--text-1)" }}>{feature.title}</div>
+                  <div style={{ marginTop: 4, fontSize: 14, lineHeight: 1.35, fontWeight: 650, color: "rgba(255,255,255,0.72)" }}>{feature.copy}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section style={{ paddingTop: 2 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 12 }}>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 950, color: "var(--text-2)", display: "flex", alignItems: "center", gap: 6 }}>
+                Pass holders <Ticket size={14} strokeWidth={2.6} /> {holdersLoading ? "..." : holders.length}
+              </div>
+              <div style={{ marginTop: 3, fontSize: 12, color: "var(--text-3)", fontWeight: 750 }}>
+                Oldest holders
+              </div>
+            </div>
+            <button onClick={() => onOpenLeaderboard(previewPass)} style={{ border: "none", background: "transparent", color: "#38bdf8", fontSize: 13, fontWeight: 900, fontFamily: "inherit", cursor: "pointer", padding: 0, flexShrink: 0 }}>
+              View leaderboard
+            </button>
+          </div>
+
+          {holdersLoading ? (
+            <div style={{ padding: "24px 0", color: "var(--text-3)", fontSize: 13, fontWeight: 800, textAlign: "center" }}>Loading holders...</div>
+          ) : holderPreview.length === 0 ? (
+            <div style={{ padding: "24px 0", color: "var(--text-3)", fontSize: 13, fontWeight: 800, textAlign: "center" }}>No pass holders yet</div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {holderPreview.map((entry, idx) => {
+                const rank = entry.serial_number ?? idx + 1;
+                const when = shortRelativeTime(entry.created_at);
+                const name = entry.username ? `@${entry.username}` : "Unknown";
+                return (
+                  <div key={entry.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 34, color: "#0ea5e9", fontSize: 15, fontWeight: 950 }}>#{rank}</div>
+                    <div style={{ width: 40, height: 40, borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-2)", fontWeight: 950, flexShrink: 0 }}>
+                      {entry.avatar_url ? (
+                        <img src={entry.avatar_url} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                      ) : (
+                        name.slice(1, 2).toUpperCase() || "?"
+                      )}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "baseline", gap: 8 }}>
+                      <span style={{ fontSize: 15, fontWeight: 950, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
+                      {when && <span style={{ fontSize: 13, color: "var(--text-3)", fontWeight: 750, flexShrink: 0 }}>{when}</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        <button onClick={() => setPendingPlayer(null)} style={{ alignSelf: "center", border: "1px solid var(--border-2)", background: "rgba(255,255,255,0.05)", color: "var(--text-2)", borderRadius: 999, padding: "10px 18px", fontSize: 13, fontWeight: 900, fontFamily: "inherit", cursor: "pointer" }}>
+          Choose another player
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function EarningsModal({ rewards, playerPasses, teamPasses, onClose }: {
   rewards: PassReward[];
@@ -1374,6 +1865,7 @@ function EarningsModal({ rewards, playerPasses, teamPasses, onClose }: {
 
 function Modal({ title, onClose, children, centered }: { title: string; onClose: () => void; children: ReactNode; centered?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
+
   return (
     <div ref={ref} onClick={(e) => { if (e.target === ref.current) onClose(); }}
       style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 9000, display: "flex", alignItems: centered ? "center" : "flex-end", justifyContent: "center", padding: centered ? "0 16px" : 0 }}>
@@ -1407,4 +1899,39 @@ const headerStyle: CSSProperties = {
 
 const titleStyle: CSSProperties = {
   fontSize: 26, fontWeight: 900, color: "var(--text-1)", letterSpacing: "-0.03em",
+};
+
+const passPageBackButtonStyle: CSSProperties = {
+  width: 38,
+  height: 38,
+  borderRadius: 999,
+  border: "1px solid var(--border-2)",
+  background: "rgba(255,255,255,0.05)",
+  color: "var(--text-1)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+  flexShrink: 0,
+};
+
+const passPageIconStyle: CSSProperties = {
+  width: 38,
+  height: 38,
+  borderRadius: 13,
+  background: "linear-gradient(135deg, rgba(245,158,11,0.22), rgba(255,255,255,0.06))",
+  border: "1px solid rgba(245,158,11,0.25)",
+  color: "#fbbf24",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexShrink: 0,
+};
+
+const playerPassEmptySearchStyle: CSSProperties = {
+  textAlign: "center",
+  padding: "42px 0",
+  color: "var(--text-3)",
+  fontSize: 13,
+  fontWeight: 750,
 };
