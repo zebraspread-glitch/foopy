@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Check, TicketCheck } from "lucide-react";
 import { supabase } from "@/app/lib/supabase";
-import { PLAYER_PASS_COST } from "@/app/lib/passes";
 
 interface Props {
   playerId: string;
@@ -13,7 +13,64 @@ interface Props {
   imgSrc?: string;
 }
 
-export function PlayerPassSection({ playerId, accentColor }: Props) {
+const TEAM_PASS_GRADIENTS: Record<string, string[]> = {
+  adelaide: ["#002b5c", "#c8102e", "#ffd200"],
+  adelaidecrows: ["#002b5c", "#c8102e", "#ffd200"],
+  brisbane: ["#7a003c", "#fbbf24", "#1e3a8a"],
+  brisbanelions: ["#7a003c", "#fbbf24", "#1e3a8a"],
+  carlton: ["#031a35", "#0b3b75"],
+  collingwood: ["#111111", "#ffffff", "#111111"],
+  essendon: ["#111111", "#ed1b2f"],
+  fremantle: ["#4b1979", "#ffffff", "#4b1979"],
+  geelong: ["#003b73", "#ffffff", "#003b73"],
+  geelongcats: ["#003b73", "#ffffff", "#003b73"],
+  goldcoast: ["#ff1f2d", "#ffd200"],
+  goldcoastsuns: ["#ff1f2d", "#ffd200"],
+  gws: ["#f15a22", "#343434"],
+  gwsgiants: ["#f15a22", "#343434"],
+  greaterwesternsydney: ["#f15a22", "#343434"],
+  greaterwesternsydneygiants: ["#f15a22", "#343434"],
+  hawthorn: ["#8b4a24", "#fbbf24"],
+  hawthornhawks: ["#8b4a24", "#fbbf24"],
+  melbourne: ["#001f54", "#c8102e"],
+  melbournedemons: ["#001f54", "#c8102e"],
+  northmelbourne: ["#0055a4", "#ffffff", "#0055a4"],
+  northmelbournekangaroos: ["#0055a4", "#ffffff", "#0055a4"],
+  portadelaide: ["#00a9b7", "#111111", "#ffffff"],
+  portadelaidepower: ["#00a9b7", "#111111", "#ffffff"],
+  richmond: ["#111111", "#ffd200"],
+  richmondtigers: ["#111111", "#ffd200"],
+  stkilda: ["#ed1b2f", "#ffffff", "#111111"],
+  stkildasaints: ["#ed1b2f", "#ffffff", "#111111"],
+  sydney: ["#ed171f", "#ffffff", "#ed171f"],
+  sydneyswans: ["#ed171f", "#ffffff", "#ed171f"],
+  westcoast: ["#003087", "#f2a900"],
+  westcoasteagles: ["#003087", "#f2a900"],
+  westernbulldogs: ["#2b6edc", "#ffffff", "#ed1b2f"],
+};
+
+function teamGradientColors(teamName: string, fallback: string) {
+  const key = teamName.toLowerCase().replace(/[^a-z0-9]/g, "");
+  return TEAM_PASS_GRADIENTS[key] ?? [fallback, "#0f172a"];
+}
+
+function teamGradient(teamName: string, fallback: string) {
+  const colors = teamGradientColors(teamName, fallback);
+
+  return `linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0.32)), linear-gradient(90deg, ${colors.join(", ")})`;
+}
+
+function teamBorderColor(teamName: string, fallback: string) {
+  const colors = teamGradientColors(teamName, fallback);
+  const visibleTeamColor = colors.find((color) => {
+    const c = color.toLowerCase();
+    return c !== "#ffffff" && c !== "#fff" && c !== "#111111";
+  });
+
+  return visibleTeamColor ?? colors[0] ?? fallback;
+}
+
+export function PlayerPassSection({ playerId, teamName, accentColor }: Props) {
   const router = useRouter();
   const [holderCount, setHolderCount] = useState<number | null>(null);
   const [alreadyOwned, setAlreadyOwned] = useState(false);
@@ -48,71 +105,115 @@ export function PlayerPassSection({ playerId, accentColor }: Props) {
     return () => { cancelled = true; };
   }, [playerId]);
 
-  return (
-    <section style={{
-      background: "var(--bg)",
-      border: "1px solid var(--border-2)",
-      borderRadius: 18,
-      padding: "16px 16px 18px",
-    }}>
-      <div style={{
-        fontSize: 12, fontWeight: 800, color: "var(--text-3)",
-        textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12,
-      }}>
-        Player Pass
-      </div>
+  const holderLabel =
+    holderCount === null
+      ? "holder count loading"
+      : `${holderCount.toLocaleString()} holder${holderCount === 1 ? "" : "s"}`;
+  const actionLabel = `${alreadyOwned ? "Open" : "Get"} 2026 Player Pass, ${alreadyOwned ? "pass owned" : "pass available"}, ${holderLabel}`;
+  const passBackground = teamGradient(teamName, accentColor);
+  const ownedBorderColor = teamBorderColor(teamName, accentColor);
 
-      <div style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
-        {/* Main button */}
+  return (
+    <section aria-label="Player pass" style={{ width: "100%" }}>
+      <style>{`
+        @keyframes player-pass-shine {
+          0% { left: -52%; opacity: 0; }
+          18% { opacity: 0.72; }
+          46% { opacity: 0.22; }
+          100% { left: 114%; opacity: 0; }
+        }
+      `}</style>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, width: "100%" }}>
         <button
+          type="button"
           onClick={() => router.push(`/passes?player=${encodeURIComponent(playerId)}`)}
+          aria-label={actionLabel}
+          title={actionLabel}
           style={{
-            flex: 1,
-            padding: "13px 16px",
-            borderRadius: 14,
-            border: alreadyOwned ? `1px solid ${accentColor}44` : "1px solid rgba(255,255,255,0.08)",
+            flex: "1 1 auto",
+            minWidth: 0,
+            minHeight: 32,
+            padding: "7px 12px",
+            borderRadius: 999,
+            border: alreadyOwned ? `1.5px solid ${ownedBorderColor}` : "1px solid rgba(255,255,255,0.16)",
             background: alreadyOwned
-              ? `${accentColor}18`
-              : "linear-gradient(135deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03))",
-            color: alreadyOwned ? accentColor : "var(--text-1)",
-            fontWeight: 800,
-            fontSize: 14,
+              ? "linear-gradient(180deg, var(--surface-1), var(--surface-3))"
+              : passBackground,
+            color: alreadyOwned ? "var(--text-1)" : "#fff",
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: 8,
+            boxShadow: alreadyOwned
+              ? "inset 0 1px 0 rgba(255,255,255,0.08), 0 6px 16px rgba(0,0,0,0.12)"
+              : "inset 0 1px 0 rgba(255,255,255,0.26), 0 8px 20px rgba(0,0,0,0.22)",
+            overflow: "hidden",
+            position: "relative",
           }}
         >
-          {alreadyOwned ? (
-            <>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-              Pass Owned
-            </>
-          ) : (
-            <>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="1" y="4" width="22" height="16" rx="2" /><line x1="1" y1="10" x2="23" y2="10" />
-              </svg>
-              Get Pass · 🪙 {PLAYER_PASS_COST.toLocaleString()}
-            </>
+          {!alreadyOwned && (
+            <span
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                top: "-20%",
+                bottom: "-20%",
+                left: "-52%",
+                width: "42%",
+                background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.76), transparent)",
+                animation: "player-pass-shine 2.8s ease-in-out infinite",
+                pointerEvents: "none",
+                transform: "skewX(-20deg)",
+              }}
+            />
           )}
+          <span style={{ position: "relative", zIndex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, minWidth: 0, maxWidth: "100%", textShadow: alreadyOwned ? "none" : "0 1px 2px rgba(0,0,0,0.48)" }}>
+            <TicketCheck size={17} strokeWidth={2.7} aria-hidden="true" />
+            <span style={{ fontSize: 14, fontWeight: 900, lineHeight: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              2026 Player Pass
+            </span>
+            {alreadyOwned && (
+              <span
+                aria-hidden="true"
+                style={{
+                  width: 16,
+                  height: 16,
+                  borderRadius: "50%",
+                  background: "var(--text-1)",
+                  color: "var(--bg)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <Check size={11} strokeWidth={3.4} />
+              </span>
+            )}
+          </span>
         </button>
 
-        {/* Holder count pill */}
-        <div style={{
-          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-          gap: 1, minWidth: 52, padding: "10px 12px",
-          background: "var(--surface-2)", border: "1px solid var(--border-1)",
-          borderRadius: 14, flexShrink: 0,
-        }}>
-          <span style={{ fontSize: 18, fontWeight: 950, letterSpacing: "-0.04em", color: "var(--text-1)", lineHeight: 1 }}>
-            {holderCount !== null ? holderCount : "—"}
-          </span>
-          <span style={{ fontSize: 9, fontWeight: 800, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-            Holders
+        <div
+          aria-label={holderLabel}
+          title={holderLabel}
+          style={{
+            minHeight: 32,
+            minWidth: 58,
+            padding: "7px 11px",
+            borderRadius: 999,
+            border: "1px solid rgba(255,255,255,0.12)",
+            background: "rgba(255,255,255,0.06)",
+            color: "var(--text-1)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
+            flexShrink: 0,
+          }}
+        >
+          <TicketCheck size={15} strokeWidth={2.6} aria-hidden="true" />
+          <span style={{ fontSize: 13, fontWeight: 900, lineHeight: 1, whiteSpace: "nowrap" }}>
+            {holderCount !== null ? holderCount.toLocaleString() : "-"}
           </span>
         </div>
       </div>

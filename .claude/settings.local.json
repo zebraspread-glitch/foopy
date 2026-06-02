@@ -77,7 +77,19 @@
       "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\\\\app\\\\aura\")",
       "Bash(taskkill /PID 9292 /F)",
       "PowerShell(Stop-Process -Id 9292 -Force -ErrorAction SilentlyContinue)",
-      "Bash(node -e \"const g=require\\('./app/data/game-stats.json'\\); console.log\\(Object.keys\\(g\\).slice\\(0,5\\)\\)\")"
+      "Bash(node -e \"const g=require\\('./app/data/game-stats.json'\\); console.log\\(Object.keys\\(g\\).slice\\(0,5\\)\\)\")",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\\\\app\" -Recurse | Where-Object { $_.Name -match \"match\" } | Select-Object -ExpandProperty FullName)",
+      "Bash(git -C \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\" diff app/match/[id]/page.tsx --stat)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\" -Recurse -Force)",
+      "Bash(Select-Object -First 50)",
+      "Bash(Format-Table FullName)",
+      "Bash(node audit.js)",
+      "Bash(del \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\\\\audit.js\")",
+      "Bash(xargs -I{} basename {} .png)",
+      "Bash(git commit *)",
+      "Bash(git revert *)",
+      "Bash(sed -i 's/position: \"fixed\", inset: 0, zIndex: 11000, background: \"var\\(--bg\\)\", display: \"flex\", flexDirection: \"column\", overflowY: \"auto\"/position: \"fixed\", inset: 0, zIndex: 11000, background: \"var\\(--bg\\)\", display: \"flex\", flexDirection: \"column\"/g' app/passes/page.tsx)",
+      "Bash(sed -i 's/background: \"var\\(--bg\\)\", position: \"sticky\", top: 0, zIndex: 2/background: \"var\\(--bg\\)\", flexShrink: 0, zIndex: 2/g' app/passes/page.tsx)"
     ]
   }
 }

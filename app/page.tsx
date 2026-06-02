@@ -1354,14 +1354,72 @@ free_kicks?: {
     };
 
     const allStats = liveGameStats as unknown as Record<string, RawGame>;
-    const playerGames: Record<number, Array<{ date: string; goals: number; disposals: number; kicks: number; tackles: number }>> = {};
+    const statGames = Object.values(allStats);
+    const statGameIds = new Set(statGames.map((g) => String(g.gameId)).filter(Boolean));
+    const statGameIdByDateAndTeams = new Map<string, string>();
 
-    for (const g of Object.values(allStats)) {
+    function statGameKey(date: string | undefined, teamIds: Array<number | null | undefined>) {
+      const ids = teamIds
+        .map(Number)
+        .filter((id) => Number.isFinite(id) && id > 0)
+        .sort((a, b) => a - b);
+
+      if (!date || ids.length < 2) return "";
+      return `${date.slice(0, 10)}|${ids.join("-")}`;
+    }
+
+    for (const g of statGames) {
+      if (!Array.isArray(g.teams)) continue;
+      const key = statGameKey(g.date, g.teams.map((t) => t.team?.id));
+      if (key && !statGameIdByDateAndTeams.has(key)) {
+        statGameIdByDateAndTeams.set(key, String(g.gameId));
+      }
+    }
+
+    function getStatGameIdForFixture(game: Game) {
+      const mapped = API_SPORTS_MATCH_IDS[String(game.id)];
+      if (mapped && statGameIds.has(mapped)) return mapped;
+
+      return statGameIdByDateAndTeams.get(statGameKey(game.date, [game.hteamid, game.ateamid])) ?? null;
+    }
+
+    const completedStatGameIds = new Set<string>();
+    const latestCompletedStatGameByTeam = new Map<number, { gameId: string; time: number }>();
+
+    for (const game of games) {
+      if (getStatus(game) !== "COMPLETED") continue;
+
+      const statGameId = getStatGameIdForFixture(game);
+      if (!statGameId) continue;
+
+      completedStatGameIds.add(statGameId);
+
+      const gameTime = game.date ? new Date(game.date).getTime() : 0;
+      for (const teamId of [game.hteamid, game.ateamid]) {
+        if (!teamId) continue;
+
+        const previous = latestCompletedStatGameByTeam.get(teamId);
+        if (!previous || gameTime > previous.time) {
+          latestCompletedStatGameByTeam.set(teamId, { gameId: statGameId, time: gameTime });
+        }
+      }
+    }
+
+    if (latestCompletedStatGameByTeam.size === 0) return [];
+
+    const playerGames: Record<number, Array<{ gameId: string; date: string; goals: number; disposals: number; kicks: number; tackles: number }>> = {};
+
+    for (const g of statGames) {
+      const gameId = String(g.gameId);
+      if (!completedStatGameIds.has(gameId)) continue;
+      if (!Array.isArray(g.teams)) continue;
+
       for (const t of g.teams) {
         for (const pl of t.players) {
           const id = pl.player.id;
           if (!playerGames[id]) playerGames[id] = [];
           playerGames[id].push({
+            gameId,
             date: g.date,
             goals: pl.goals?.total ?? 0,
             disposals: pl.disposals ?? 0,
@@ -1374,7 +1432,14 @@ free_kicks?: {
 
     // sort each player's games oldest→newest
     for (const arr of Object.values(playerGames)) {
-      arr.sort((a, b) => a.date.localeCompare(b.date));
+      arr.sort((a, b) => {
+        const timeA = new Date(a.date).getTime();
+        const timeB = new Date(b.date).getTime();
+        const safeTimeA = Number.isFinite(timeA) ? timeA : 0;
+        const safeTimeB = Number.isFinite(timeB) ? timeB : 0;
+
+        return safeTimeA - safeTimeB || Number(a.gameId) - Number(b.gameId);
+      });
     }
 
     // id lookup: apiSportsId → player info
@@ -1391,7 +1456,7 @@ free_kicks?: {
       { key: "tackles",   threshold: 5,  label: "game 5+ tackle streak",    emoji: "🔒", min: 4 },
     ];
 
-    for (const [idStr, games] of Object.entries(playerGames)) {
+    for (const [idStr, playedGames] of Object.entries(playerGames)) {
       const apiId = Number(idStr);
       const info = byApiId.get(apiId);
       if (!info) continue;
@@ -1401,14 +1466,21 @@ free_kicks?: {
       const team = String(info.club ?? info.team ?? "");
       if (!name || !team) continue;
 
+      const teamId = getTeamIdFromName(team);
+      if (!teamId) continue;
+
+      const latestTeamGame = latestCompletedStatGameByTeam.get(teamId);
+      const latestPlayerGame = playedGames[playedGames.length - 1];
+      if (!latestTeamGame || !latestPlayerGame || latestPlayerGame.gameId !== latestTeamGame.gameId) continue;
+
       const image = playerImagePath(name, team);
       const teamLogo = getTeamLogoFromName(team);
       const teamColor = getTeamColorFromName(team);
 
       for (const def of STREAK_DEFS) {
         let streak = 0;
-        for (let i = games.length - 1; i >= 0; i--) {
-          if (games[i][def.key] >= def.threshold) streak++;
+        for (let i = playedGames.length - 1; i >= 0; i--) {
+          if (playedGames[i][def.key] >= def.threshold) streak++;
           else break;
         }
         if (streak >= def.min) {
@@ -1421,7 +1493,7 @@ free_kicks?: {
     results.sort((a, b) => b.streak - a.streak || a.name.localeCompare(b.name));
 
     return results.slice(0, 20);
-  }, [liveGameStats]);
+  }, [liveGameStats, games]);
 
   function chooseRound(round: number) {
     setSelectedRound(round);
