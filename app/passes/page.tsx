@@ -1770,7 +1770,7 @@ function PlayerPassPickerPage({
     <div style={{ padding: "18px 14px calc(112px + env(safe-area-inset-bottom))" }}>
       <div style={{ maxWidth: 560, margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "stretch", gap: 24 }}>
         <section style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-          <div style={{ width: "min(238px, 72vw)", padding: 8, borderRadius: 22, background: `linear-gradient(145deg, rgba(255,255,255,0.08), ${teamAccent}16)`, border: "1px solid rgba(255,255,255,0.1)", boxShadow: `0 18px 42px ${teamAccent}18, inset 0 1px 0 rgba(255,255,255,0.07)` }}>
+          <div style={{ width: "min(238px, 72vw)", boxShadow: `0 18px 42px ${teamAccent}28` }}>
             <PlayerCard pass={previewPass} />
           </div>
 
