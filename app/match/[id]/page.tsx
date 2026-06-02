@@ -674,9 +674,9 @@ function normalizeSavedPlayer(player: any, team?: string): PlayerStat {
     goals: raw.goals?.total ?? raw.goals ?? player?.goals?.total ?? player?.goals ?? 0,
 goalAssists: raw.goals?.assists ?? raw.goalAssists ?? player?.goals?.assists ?? player?.goalAssists ?? 0,
 behinds: raw.behinds ?? player?.behinds ?? 0,
-    disposals: raw.disposals ?? player?.disposals ?? 0,
     kicks: raw.kicks ?? player?.kicks ?? 0,
     handballs: raw.handballs ?? player?.handballs ?? 0,
+    disposals: raw.disposals ?? player?.disposals ?? ((raw.kicks ?? player?.kicks ?? 0) + (raw.handballs ?? player?.handballs ?? 0)),
     marks: raw.marks ?? player?.marks ?? 0,
     tackles: raw.tackles ?? player?.tackles ?? 0,
     hitouts: raw.hitouts ?? player?.hitouts ?? 0,
@@ -759,6 +759,21 @@ function formatDate(date?: string) {
   return d.toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
 }
 
+function formatMatchTime(date?: string) {
+  if (!date) return "Time TBA";
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return "Time TBA";
+  return d.toLocaleTimeString("en-AU", { hour: "numeric", minute: "2-digit", hour12: true }).toLowerCase();
+}
+
+function formatRecord(raw: string) {
+  const parts = raw.split("-");
+  if (parts.length < 2) return raw;
+  return parts[2]
+    ? `${parts[0]}W ${parts[1]}L ${parts[2]}D`
+    : `${parts[0]}W ${parts[1]}L`;
+}
+
 function mixColor(a: string, b: string, amount: number) {
   const c1 = parseInt(a.slice(1), 16);
   const c2 = parseInt(b.slice(1), 16);
@@ -792,6 +807,31 @@ function foopyColor(value: number) {
   }
 
   return mixColor("#3b82f6", "#1e3a8a", (v - 9) / 0.9);
+}
+
+const TEAM_NICKNAMES: Record<string, string> = {
+  "Adelaide": "Crows", "Adelaide Crows": "Crows",
+  "Brisbane": "Lions", "Brisbane Lions": "Lions",
+  "Carlton": "Blues",
+  "Collingwood": "Magpies",
+  "Essendon": "Bombers",
+  "Fremantle": "Dockers",
+  "Geelong": "Cats", "Geelong Cats": "Cats",
+  "Gold Coast": "Suns", "Gold Coast Suns": "Suns",
+  "GWS": "Giants", "GWS Giants": "Giants", "Greater Western Sydney": "Giants", "Greater Western Sydney Giants": "Giants",
+  "Hawthorn": "Hawks", "Hawthorn Hawks": "Hawks",
+  "Melbourne": "Demons", "Melbourne Demons": "Demons",
+  "North Melbourne": "Kangaroos", "North Melbourne Kangaroos": "Kangaroos",
+  "Port Adelaide": "Power", "Port Adelaide Power": "Power",
+  "Richmond": "Tigers", "Richmond Tigers": "Tigers",
+  "St Kilda": "Saints", "St Kilda Saints": "Saints",
+  "Sydney": "Swans", "Sydney Swans": "Swans",
+  "West Coast": "Eagles", "West Coast Eagles": "Eagles",
+  "Western Bulldogs": "Bulldogs",
+};
+
+function getTeamNickname(name: string): string {
+  return TEAM_NICKNAMES[name] ?? name;
 }
 
 function toTeamSlug(name: string): string {
@@ -878,24 +918,9 @@ function QuarterScoresTable({
   );
 }
 
-function TeamScore({ team, score, goals, behinds, align = "left", collapse = 0 }: { team: any; score: any; goals?: number; behinds?: number; align?: "left" | "right"; collapse?: number }) {
+function TeamScore({ team, record, collapse = 0 }: { team: any; record?: string; collapse?: number }) {
   const safeTeam = safeText(team, "");
-  const displayScore = typeof score === "string" ? score : scoreText(score);
-  const isRecordScore = typeof displayScore === "string" && displayScore.includes("-");
   const accent = teamColor(safeTeam);
-  const prevScore = useRef<any>(score);
-  const [animKey, setAnimKey] = useState(0);
-
-  useEffect(() => {
-    const prev = prevScore.current;
-    prevScore.current = score;
-    if (prev !== undefined && prev !== score) {
-      // Bump the key to restart the animation even if it fires twice quickly
-      setAnimKey(k => k + 1);
-    }
-  }, [score]);
-
-  const showGB = !isRecordScore && goals != null && behinds != null;
   const detailOpacity = Math.max(0, 1 - collapse * 1.45);
   const detailTranslate = -10 * collapse;
   const logoScale = 1 - collapse * 0.34;
@@ -904,16 +929,16 @@ function TeamScore({ team, score, goals, behinds, align = "left", collapse = 0 }
     <div style={{
       display: "flex", flexDirection: "column",
       alignItems: "center",
-      gap: lerp(12, 6, collapse),
+      gap: 10,
       minWidth: 0,
       width: "100%",
     }}>
       {/* Logo */}
       <Link href={`/team/${toTeamSlug(safeTeam)}`} style={{ textDecoration: "none", flexShrink: 0, display: "block", transform: `translateY(${-14 * collapse}px) scale(${logoScale})`, transformOrigin: "top center", willChange: "transform" }}>
         <div style={{
-          width: "clamp(82px, 17vw, 116px)", height: "clamp(82px, 17vw, 116px)",
+          width: "clamp(72px, 16vw, 104px)", height: "clamp(72px, 16vw, 104px)",
           borderRadius: "50%", flexShrink: 0, overflow: "hidden",
-          boxShadow: `0 22px 48px ${accent}30, 0 4px 22px rgba(0,0,0,.45)`,
+          boxShadow: `0 18px 40px ${accent}30, 0 4px 18px rgba(0,0,0,.45)`,
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
           <img
@@ -923,40 +948,9 @@ function TeamScore({ team, score, goals, behinds, align = "left", collapse = 0 }
           />
         </div>
       </Link>
-      {/* Score */}
-      <div
-        key={animKey}
-        style={{
-          fontSize: isRecordScore ? "clamp(42px, 8.6vw, 72px)" : "clamp(48px, 11vw, 78px)", fontWeight: 1000, color: "var(--text-1)",
-          letterSpacing: 0, lineHeight: 0.88,
-          textShadow: `0 16px 36px ${accent}40, 0 2px 12px rgba(0,0,0,.55)`,
-          animation: animKey > 0 ? "score-pop 0.55s cubic-bezier(0.22,1,0.36,1) forwards" : undefined,
-          display: "inline-block",
-          fontVariantNumeric: "tabular-nums",
-          transformOrigin: "center",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {displayScore}
-      </div>
-      {/* G.B */}
-      {showGB && (
-        <div style={{
-          fontSize: "clamp(11px, 2.6vw, 14px)", fontWeight: 700,
-          color: "rgba(255,255,255,.38)",
-          fontVariantNumeric: "tabular-nums",
-          letterSpacing: ".02em",
-          marginTop: -6,
-          opacity: detailOpacity,
-          transform: `translateY(${detailTranslate}px)`,
-          willChange: "opacity, transform",
-        }}>
-          {goals}.{behinds}
-        </div>
-      )}
       {/* Name */}
       <div style={{
-        fontSize: "clamp(13px, 3.2vw, 18px)", fontWeight: 900, color: "#f4f4f5",
+        fontSize: "clamp(13px, 3.2vw, 17px)", fontWeight: 900, color: "#f4f4f5",
         textAlign: "center",
         lineHeight: 1.2,
         maxWidth: "100%",
@@ -968,8 +962,22 @@ function TeamScore({ team, score, goals, behinds, align = "left", collapse = 0 }
         transform: `translateY(${detailTranslate}px)`,
         willChange: "opacity, transform",
       }}>
-        {safeTeam}
+        {getTeamNickname(safeTeam)}
       </div>
+      {/* Record */}
+      {record && (
+        <div style={{
+          fontSize: "clamp(11px, 2.4vw, 13px)", fontWeight: 700,
+          color: "rgba(255,255,255,0.55)",
+          letterSpacing: "0.02em",
+          whiteSpace: "nowrap",
+          opacity: detailOpacity,
+          transform: `translateY(${detailTranslate}px)`,
+          willChange: "opacity, transform",
+        }}>
+          {record}
+        </div>
+      )}
     </div>
   );
 }
@@ -1793,12 +1801,12 @@ function recentCompletedTeamGames(team: string, allGames: MatchGame[], currentGa
 }
 
 function FormColumn({ team, games, compact }: { team: string; games: MatchGame[]; compact: boolean }) {
-  const logoSize = compact ? 30 : 48;
-  const scoreWidth = compact ? 78 : 92;
-  const scoreHeight = compact ? 30 : 34;
-  const scorePadding = compact ? "0 8px" : "0 10px";
-  const scoreFontSize = compact ? 12 : 14;
-  const rowGap = compact ? 5 : 8;
+  const logoSize = compact ? 24 : 34;
+  const scoreWidth = compact ? 64 : 76;
+  const scoreHeight = compact ? 24 : 26;
+  const scorePadding = compact ? "0 6px" : "0 8px";
+  const scoreFontSize = compact ? 11 : 12;
+  const rowGap = compact ? 4 : 6;
   const rowWidth = (logoSize * 2) + scoreWidth + (rowGap * 2);
 
   return (
@@ -1887,6 +1895,7 @@ type PreviewPlayerLeader = {
   name: string;
   foopyTotal: number;
   goalsTotal: number;
+  disposalsTotal: number;
   games: number;
   playerId?: string;
 };
@@ -1935,6 +1944,7 @@ function playerSeasonTotalsForTeam(team: string, allGames: MatchGame[], currentG
 
       const rating = foopyRating(player);
       const goals = num(player.goals);
+      const disposals = num(player.disposals);
       if (rating <= 0 && goals <= 0) continue;
 
       const known = findPlayerInfo(name, team);
@@ -1945,11 +1955,13 @@ function playerSeasonTotalsForTeam(team: string, allGames: MatchGame[], currentG
         playerId: known?.id,
         foopyTotal: 0,
         goalsTotal: 0,
+        disposalsTotal: 0,
         games: 0,
       };
 
       existing.foopyTotal += rating;
       existing.goalsTotal += goals;
+      existing.disposalsTotal += disposals;
       existing.games += 1;
       totals.set(key, existing);
     }
@@ -1982,8 +1994,9 @@ function foopyBadgeColor(value: number) {
   return "#ef4444";
 }
 
-function PreviewLeaderRow({ player }: { player: PreviewPlayerLeader }) {
+function PreviewLeaderRow({ player, metric }: { player: PreviewPlayerLeader; metric: "foopy" | "goals" }) {
   const averageFoopy = player.games ? player.foopyTotal / player.games : 0;
+  const avgDisposals = player.games ? (player.disposalsTotal / player.games).toFixed(1) : "0.0";
   const foopyBadgeBg = foopyBadgeColor(averageFoopy);
   const [failed, setFailed] = useState(false);
   const src = playerImagePath(player.name, player.team);
@@ -2001,39 +2014,38 @@ function PreviewLeaderRow({ player }: { player: PreviewPlayerLeader }) {
     <div style={{
       position: "relative",
       minWidth: 0,
-      minHeight: 232,
       height: "100%",
-      borderRadius: 15,
+      borderRadius: 16,
       overflow: "hidden",
-      background: `linear-gradient(180deg, ${colours.primary}35 0%, rgba(9,11,15,0.96) 55%, rgba(4,5,7,1) 100%)`,
-      border: "1px solid rgba(255,255,255,0.13)",
-      boxShadow: `inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -2px 0 ${accentColour}70`,
+      background: `linear-gradient(155deg, ${colours.primary}50 0%, rgba(9,11,15,0.98) 52%)`,
+      border: "1px solid rgba(255,255,255,0.10)",
+      boxShadow: `0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.07)`,
       boxSizing: "border-box",
     }}>
+      {/* Subtle top-right colour blob */}
+      <div style={{
+        position: "absolute", inset: 0, pointerEvents: "none",
+        background: `radial-gradient(ellipse 80% 60% at 90% 0%, ${colours.primary}28 0%, transparent 65%)`,
+      }} />
+
+      {/* Team logo */}
       <img
         src={getLogo(player.team)}
         alt=""
         style={{
           position: "absolute",
-          top: 10,
-          right: 10,
+          top: 10, right: 10,
           zIndex: 3,
-          width: 26,
-          height: 26,
+          width: 28, height: 28,
           borderRadius: "50%",
           objectFit: "cover",
-          padding: 2,
-          background: "rgba(0,0,0,0.30)",
-          border: "1px solid rgba(255,255,255,0.12)",
-          opacity: 0.95,
+          background: "rgba(0,0,0,0.35)",
+          border: "1px solid rgba(255,255,255,0.14)",
         }}
       />
-      <div style={{
-        position: "relative",
-        height: 156,
-        margin: "4px 0 0",
-        overflow: "hidden",
-      }}>
+
+      {/* Player image */}
+      <div style={{ position: "relative", height: 164, overflow: "hidden" }}>
         {!failed && src ? (
           <Image
             key={src}
@@ -2046,81 +2058,64 @@ function PreviewLeaderRow({ player }: { player: PreviewPlayerLeader }) {
               objectPosition: "center bottom",
               transform: "scale(1.18)",
               transformOrigin: "center bottom",
-              filter: "drop-shadow(0 14px 16px rgba(0,0,0,0.48))",
+              filter: "drop-shadow(0 12px 18px rgba(0,0,0,0.55))",
             }}
             onError={() => setFailed(true)}
           />
         ) : (
           <div style={{
-            position: "absolute",
-            inset: 0,
-            display: "grid",
-            placeItems: "center",
-            color: "var(--text-1)",
-            fontSize: 28,
-            fontWeight: 950,
+            position: "absolute", inset: 0,
+            display: "grid", placeItems: "center",
+            color: "var(--text-1)", fontSize: 30, fontWeight: 950,
           }}>
             {getInitials(player.name)}
           </div>
         )}
+        {/* Fade out bottom of image */}
         <div style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: 92,
-          background: "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.78) 72%, rgba(0,0,0,0.98) 100%)",
+          position: "absolute", left: 0, right: 0, bottom: 0, height: 80,
+          background: "linear-gradient(to bottom, transparent 0%, rgba(6,7,10,0.9) 70%, rgba(6,7,10,1) 100%)",
         }} />
       </div>
-      <div style={{
-        position: "relative",
-        zIndex: 2,
-        marginTop: -4,
-        padding: "0 12px 12px",
-        minWidth: 0,
-      }}>
-        <div style={{ fontSize: 14, fontWeight: 1000, color: "var(--text-1)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.05 }}>
+
+      {/* Info */}
+      <div style={{ position: "relative", zIndex: 2, padding: "2px 12px 14px" }}>
+        <div style={{ fontSize: 14, fontWeight: 900, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", letterSpacing: "-0.01em" }}>
           {player.name}
         </div>
         <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-          gap: 10,
-          marginTop: 10,
-          padding: "10px 0 0",
-          borderTop: "1px solid rgba(255,255,255,0.08)",
+          display: "flex", alignItems: "flex-end", justifyContent: "space-between",
+          marginTop: 10, paddingTop: 10,
+          borderTop: `1px solid rgba(255,255,255,0.07)`,
         }}>
-          <div style={{ minWidth: 0 }}>
+          {/* Foopy */}
+          <div>
             <span style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              minWidth: 42,
-              height: 28,
-              padding: "0 9px",
-              borderRadius: 7,
-              background: foopyBadgeBg,
-              color: "#fff",
-              fontSize: 14,
-              fontWeight: 1000,
-              fontVariantNumeric: "tabular-nums",
+              display: "inline-flex", alignItems: "center", justifyContent: "center",
+              minWidth: 44, height: 28, padding: "0 10px",
+              borderRadius: 8, background: foopyBadgeBg,
+              color: "#fff", fontSize: 14, fontWeight: 1000, fontVariantNumeric: "tabular-nums",
             }}>
               {averageFoopy.toFixed(1)}
             </span>
-            <span style={{ display: "block", marginTop: 4, fontSize: 9, fontWeight: 950, color: softAccent, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            <span style={{ display: "block", marginTop: 5, fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.55)", textTransform: "uppercase", letterSpacing: "0.07em" }}>
               Foopy
             </span>
           </div>
-          <div style={{ minWidth: 0, textAlign: "right" }}>
-            <strong style={{ display: "block", fontSize: 25, fontWeight: 1000, color: "var(--text-1)", letterSpacing: "-0.04em", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
-              {player.goalsTotal}
+          {/* Right stat: avg disposals for top players, goals for top scorers */}
+          <div style={{ textAlign: "right" }}>
+            <strong style={{ display: "block", fontSize: 28, fontWeight: 1000, color: "#fff", letterSpacing: "-0.04em", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+              {metric === "foopy" ? avgDisposals : player.goalsTotal}
             </strong>
-            <span style={{ display: "block", marginTop: 4, fontSize: 9, fontWeight: 950, color: softAccent, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              Goals
+            <span style={{ display: "block", marginTop: 5, fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.55)", textTransform: "uppercase", letterSpacing: "0.07em" }}>
+              {metric === "foopy" ? "Avg Disp" : "Goals"}
             </span>
           </div>
         </div>
       </div>
+
+      {/* Bottom accent line */}
+      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${accentColour}80, ${accentColour}20)` }} />
     </div>
   );
 
@@ -2148,7 +2143,7 @@ function PreviewLeaderboard({ title, players, metric }: { title: string; players
       {players.length ? (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12, marginTop: 12 }}>
           {players.map((player) => (
-            <PreviewLeaderRow key={`${metric}-${player.playerId ?? player.name}-${player.team}`} player={player} />
+            <PreviewLeaderRow key={`${metric}-${player.playerId ?? player.name}-${player.team}`} player={player} metric={metric} />
           ))}
         </div>
       ) : (
@@ -3493,12 +3488,14 @@ function MatchPageInner() {
     status === "UPCOMING" ? getTeamRecordBeforeGame(game.hteam, allGames, game) : game.hscore;
   const awayScoreDisplay =
     status === "UPCOMING" ? getTeamRecordBeforeGame(game.ateam, allGames, game) : game.ascore;
+  const homeRecord = formatRecord(getTeamRecordBeforeGame(game.hteam, allGames, game));
+  const awayRecord = formatRecord(getTeamRecordBeforeGame(game.ateam, allGames, game));
   const compactClock = formatTimestr(game.timestr) || getLiveGameClock(liveEvents);
   const compactStatusLabel =
     status === "LIVE" ? (compactClock || "LIVE") :
     status === "FINAL" ? "FT" :
     timeUntilStart(game.date, now);
-  const expandedHeaderHeight = Math.round(lerp(268, 0, scrollProgress));
+  const expandedHeaderHeight = Math.round(lerp(248, 0, scrollProgress));
   const expandedHeaderPaddingY = Math.round(lerp(20, 0, scrollProgress));
   const expandedContentOpacity = Math.max(0, 1 - scrollProgress * 1.35);
   const expandedDetailsOpacity = Math.max(0, 1 - scrollProgress * 1.65);
@@ -3537,100 +3534,110 @@ function MatchPageInner() {
 
 
 
-          {/* Scores row */}
+          {/* Teams + centre row */}
           <div style={{
             position: "relative",
             display: "grid",
-            gridTemplateColumns: "minmax(0, 1fr) minmax(82px, 180px) minmax(0, 1fr)",
+            gridTemplateColumns: "minmax(0, 1fr) minmax(96px, 200px) minmax(0, 1fr)",
             alignItems: "center",
-            gap: 16,
+            gap: 12,
             transform: `translateY(${-18 * scrollProgress}px)`,
             willChange: "transform",
           }}>
-            <TeamScore
-              team={game.hteam}
-              score={homeScoreDisplay}
-              goals={status !== "UPCOMING" ? (game.hgoals ?? undefined) : undefined}
-              behinds={status !== "UPCOMING" ? (game.hbehinds ?? undefined) : undefined}
-              align="left"
-              collapse={scrollProgress}
-            />
+            <TeamScore team={game.hteam} record={homeRecord} collapse={scrollProgress} />
 
             {/* Centre */}
             <div style={{
-              display: "flex", flexDirection: "column", alignItems: "center", gap: 10, minWidth: 0, alignSelf: "end",
-              paddingBottom: lerp(19, 4, scrollProgress),
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 8, minWidth: 0,
               opacity: expandedContentOpacity,
               transform: `translateY(${-12 * scrollProgress}px)`,
               willChange: "opacity, transform",
             }}>
-              {/* Status badge */}
-              {status === "LIVE" ? (
-                <div style={{
-                  display: "flex", alignItems: "center", gap: 6,
-                  padding: "8px 18px", borderRadius: 999,
-                  background: "#16a34a",
-                  border: "1px solid #16a34a",
-                  boxShadow: "0 14px 36px rgba(0,0,0,.24)",
-                }}>
+              {status === "UPCOMING" ? (
+                <>
                   <span style={{
-                    width: 7, height: 7, borderRadius: "50%", flexShrink: 0,
-                    background: "var(--text-1)",
-                    boxShadow: "0 0 0 2px rgba(255,255,255,0.22)",
-                    animation: "livePulse 1.8s ease-in-out infinite",
-                  }} />
-                  <span style={{ fontSize: 14, fontWeight: 900, color: "var(--text-1)", letterSpacing: 0 }}>Live</span>
-                  {(game.timestr || getLiveGameClock(liveEvents)) && (
-                    <>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.72)" }}>·</span>
-                      <span style={{ fontSize: 14, fontWeight: 800, color: "var(--text-1)" }}>{formatTimestr(game.timestr) || getLiveGameClock(liveEvents)}</span>
-                    </>
-                  )}
-                </div>
-              ) : status === "UPCOMING" ? (
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-                  <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)" }}>Starts in</span>
-                  <span style={{ fontSize: 18, fontWeight: 900, letterSpacing: "-0.02em", color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>{getCountdownText(game.date, now)}</span>
-                </div>
-              ) : (
-                <div style={{
-                  fontSize: 17, fontWeight: 800, letterSpacing: 0,
-                  padding: "8px 28px", borderRadius: 999,
-                  background: statusBadgeTone.bg,
-                  border: `1px solid ${statusBadgeTone.border}`,
-                  color: statusBadgeTone.color,
-                  boxShadow: "0 14px 36px rgba(0,0,0,.24)",
-                }}>
-                  {statusBadgeTone.label}
-                </div>
-              )}
-
-              {status !== "UPCOMING" && (
-                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-2)" }}>
-                    {status === "FINAL"
-                      ? (totalViewerCount ?? "—")
-                      : totalViewerCount != null
-                        ? totalViewerCount          // total unique visitors
-                        : Math.max(1, liveViewerCount)} {/* fallback to presence */}
+                    fontSize: "clamp(30px, 7.5vw, 50px)", fontWeight: 900,
+                    color: "var(--text-1)", letterSpacing: "-0.03em",
+                    fontVariantNumeric: "tabular-nums", lineHeight: 1,
+                  }}>
+                    {formatMatchTime(game.date)}
                   </span>
-                </div>
+                  <span style={{
+                    fontSize: "clamp(12px, 3vw, 15px)", fontWeight: 700,
+                    color: "rgba(255,255,255,0.45)", letterSpacing: "-0.01em",
+                  }}>
+                    {getCountdownText(game.date, now)}
+                  </span>
+                </>
+              ) : (
+                <>
+                  {/* Scores */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{
+                      fontSize: "clamp(34px, 8vw, 56px)", fontWeight: 1000,
+                      color: "var(--text-1)", letterSpacing: "-0.03em",
+                      fontVariantNumeric: "tabular-nums", lineHeight: 1,
+                    }}>
+                      {scoreText(game.hscore)}
+                    </span>
+                    <span style={{ fontSize: "clamp(20px, 5vw, 32px)", fontWeight: 300, color: "rgba(255,255,255,0.2)", lineHeight: 1 }}>–</span>
+                    <span style={{
+                      fontSize: "clamp(34px, 8vw, 56px)", fontWeight: 1000,
+                      color: "var(--text-1)", letterSpacing: "-0.03em",
+                      fontVariantNumeric: "tabular-nums", lineHeight: 1,
+                    }}>
+                      {scoreText(game.ascore)}
+                    </span>
+                  </div>
+                  {/* Status badge */}
+                  {status === "LIVE" ? (
+                    <div style={{
+                      display: "flex", alignItems: "center", gap: 5,
+                      padding: "6px 14px", borderRadius: 999,
+                      background: "#16a34a", border: "1px solid #16a34a",
+                    }}>
+                      <span style={{
+                        width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
+                        background: "var(--text-1)",
+                        boxShadow: "0 0 0 2px rgba(255,255,255,0.22)",
+                        animation: "livePulse 1.8s ease-in-out infinite",
+                      }} />
+                      <span style={{ fontSize: 13, fontWeight: 900, color: "var(--text-1)" }}>Live</span>
+                      {(game.timestr || getLiveGameClock(liveEvents)) && (
+                        <>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.72)" }}>·</span>
+                          <span style={{ fontSize: 13, fontWeight: 800, color: "var(--text-1)" }}>{formatTimestr(game.timestr) || getLiveGameClock(liveEvents)}</span>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <div style={{
+                      padding: "6px 20px", borderRadius: 999,
+                      background: statusBadgeTone.bg,
+                      border: `1px solid ${statusBadgeTone.border}`,
+                      color: statusBadgeTone.color,
+                      fontSize: 13, fontWeight: 800,
+                    }}>
+                      Full time
+                    </div>
+                  )}
+                  {/* Viewer count */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-2)" }}>
+                      {status === "FINAL"
+                        ? (totalViewerCount ?? "—")
+                        : totalViewerCount != null ? totalViewerCount : Math.max(1, liveViewerCount)}
+                    </span>
+                  </div>
+                </>
               )}
-
             </div>
 
-            <TeamScore
-              team={game.ateam}
-              score={awayScoreDisplay}
-              goals={status !== "UPCOMING" ? (game.agoals ?? undefined) : undefined}
-              behinds={status !== "UPCOMING" ? (game.abehinds ?? undefined) : undefined}
-              align="right"
-              collapse={scrollProgress}
-            />
+            <TeamScore team={game.ateam} record={awayRecord} collapse={scrollProgress} />
           </div>
 
           {/* Venue + round row — only for upcoming games */}
@@ -3643,19 +3650,10 @@ function MatchPageInner() {
               transform: `translateY(${-12 * scrollProgress}px)`,
               willChange: "opacity, transform",
             }}>
-              <div style={{
-                display: "flex", alignItems: "center", gap: 6,
-                background: "var(--surface-3)",
-                border: "1px solid var(--border-3)",
-                borderRadius: 9, padding: "7px 13px",
-                maxWidth: "100%",
-              }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#71717a" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 13 8 13s8-7.75 8-13a8 8 0 0 0-8-8z"/></svg>
-                <span style={{ fontSize: 12, fontWeight: 700, color: "#71717a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  Round {game.round ?? "-"} · {game.venue || "Venue TBA"}
-                </span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: "#52525b", whiteSpace: "nowrap" }}>
-                  · {formatDate(game.date)}
+              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 13 8 13s8-7.75 8-13a8 8 0 0 0-8-8z"/></svg>
+                <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.5)", whiteSpace: "nowrap" }}>
+                  Round {game.round ?? "-"} · {game.venue || "Venue TBA"} · {formatDate(game.date)}
                 </span>
               </div>
             </div>
