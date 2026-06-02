@@ -801,7 +801,7 @@ function PassesPageInner() {
         setPlayerPickerOpen(false);
         setPlayerSearch("");
         setPendingPlayer(null);
-      }, 2600);
+      }, 2500);
     } else {
       const body = await res.json().catch(() => ({}));
       setPurchaseErr(body.error ?? "Purchase failed");
@@ -1535,16 +1535,16 @@ function PlayerPassPickerPage({
   const [localPurchaseAnim, setLocalPurchaseAnim] = useState(false);
   const [localBoughtPlayer, setLocalBoughtPlayer] = useState<typeof pendingPlayer>(null);
 
-  async function handleBuyPass(pid: string) {
+  function handleBuyPass(pid: string) {
     const snapshot = pendingPlayer;
     setLocalConfirmStep(false);
     setLocalBoughtPlayer(snapshot);
     setLocalPurchaseAnim(true);
-    await addPlayerPass(pid);
+    addPlayerPass(pid);
     setTimeout(() => {
       setLocalPurchaseAnim(false);
       setLocalBoughtPlayer(null);
-    }, 2400);
+    }, 2500);
   }
 
   useEffect(() => {
