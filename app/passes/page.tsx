@@ -1544,6 +1544,7 @@ function PlayerPassPickerPage({
     setTimeout(() => {
       setLocalPurchaseAnim(false);
       setLocalBoughtPlayer(null);
+      setPendingPlayer(null);
     }, 2500);
   }
 
