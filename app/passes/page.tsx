@@ -1531,6 +1531,21 @@ function PlayerPassPickerPage({
   const pendingPlayerId = pendingPlayer?.pid ?? "";
   const [holders, setHolders] = useState<LeaderboardEntry[]>([]);
   const [holdersLoading, setHoldersLoading] = useState(false);
+  const [localConfirmStep, setLocalConfirmStep] = useState(false);
+  const [localPurchaseAnim, setLocalPurchaseAnim] = useState(false);
+  const [localBoughtPlayer, setLocalBoughtPlayer] = useState<typeof pendingPlayer>(null);
+
+  async function handleBuyPass(pid: string) {
+    const snapshot = pendingPlayer;
+    setLocalConfirmStep(false);
+    setLocalBoughtPlayer(snapshot);
+    setLocalPurchaseAnim(true);
+    await addPlayerPass(pid);
+    setTimeout(() => {
+      setLocalPurchaseAnim(false);
+      setLocalBoughtPlayer(null);
+    }, 2400);
+  }
 
   useEffect(() => {
     let active = true;
@@ -1683,6 +1698,73 @@ function PlayerPassPickerPage({
     },
   ];
 
+  if (localPurchaseAnim && localBoughtPlayer) {
+    return (
+      <div style={{ padding: "18px 14px calc(112px + env(safe-area-inset-bottom))", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh", position: "relative" }}>
+        <style>{`
+          @keyframes detailParticleFly {
+            0%   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(calc(-50% + var(--fly-x)), calc(-50% + var(--fly-y))) scale(0.15); }
+          }
+          @keyframes detailCardBounce {
+            0%   { opacity: 0; transform: scale(0.35) translateY(40px); }
+            55%  { transform: scale(1.08) translateY(-8px); }
+            78%  { transform: scale(0.97) translateY(2px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+          }
+          @keyframes detailSuccessText {
+            0%   { opacity: 0; transform: translateY(14px); }
+            100% { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes detailCheckIn {
+            0%   { opacity: 0; transform: scale(0); }
+            65%  { transform: scale(1.22); }
+            100% { opacity: 1; transform: scale(1); }
+          }
+          @keyframes detailGlow {
+            0%, 100% { box-shadow: 0 0 0 6px rgba(74,222,128,0.12), 0 8px 24px rgba(22,163,74,0.3); }
+            50%       { box-shadow: 0 0 0 14px rgba(74,222,128,0.06), 0 8px 32px rgba(22,163,74,0.5); }
+          }
+        `}</style>
+        {/* Confetti */}
+        {Array.from({ length: 16 }).map((_, i) => {
+          const angle = (i / 16) * Math.PI * 2;
+          const dist = 85 + (i % 4) * 22;
+          const dx = Math.round(Math.cos(angle) * dist);
+          const dy = Math.round(Math.sin(angle) * dist - 28);
+          const colors = ["#fbbf24","#a78bfa","#60a5fa","#34d399","#f472b6","#fb923c","#e879f9"];
+          return (
+            <div key={i} style={{
+              position: "fixed", top: "40%", left: "50%",
+              width: i % 2 === 0 ? 9 : 6, height: i % 2 === 0 ? 9 : 6,
+              borderRadius: i % 3 === 0 ? "50%" : 3,
+              background: colors[i % colors.length],
+              pointerEvents: "none", zIndex: 10,
+              "--fly-x": `${dx}px`, "--fly-y": `${dy}px`,
+              animation: `detailParticleFly 1.1s ease-out ${i * 0.025}s both`,
+            } as React.CSSProperties} />
+          );
+        })}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 20 }}>
+          <div style={{ width: 64, height: 64, borderRadius: "50%", background: "linear-gradient(135deg, #15803d, #4ade80)", display: "flex", alignItems: "center", justifyContent: "center", animation: "detailCheckIn 0.55s cubic-bezier(0.34,1.56,0.64,1) 0.05s both, detailGlow 2s ease-in-out 0.6s infinite" }}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
+          <div style={{ textAlign: "center", animation: "detailSuccessText 0.4s ease-out 0.25s both" }}>
+            <div style={{ fontSize: 26, fontWeight: 950, color: "var(--text-1)", letterSpacing: "-0.02em" }}>Pass Purchased!</div>
+            <div style={{ fontSize: 15, color: "var(--text-3)", marginTop: 6, fontWeight: 600 }}>
+              {localBoughtPlayer.name} · {localBoughtPlayer.team}
+            </div>
+          </div>
+          <div style={{ width: "min(175px, 54vw)", animation: "detailCardBounce 0.65s cubic-bezier(0.34,1.56,0.64,1) 0.15s both" }}>
+            <PlayerPassCard pass={{ id: "", user_id: "", player_id: localBoughtPlayer.pid, player_name: localBoughtPlayer.name, team_name: localBoughtPlayer.team, active: true, xp: localBoughtPlayer.xp, serial_number: null, created_at: "" }} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ padding: "18px 14px calc(112px + env(safe-area-inset-bottom))" }}>
       <div style={{ maxWidth: 560, margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "stretch", gap: 24 }}>
@@ -1695,30 +1777,47 @@ function PlayerPassPickerPage({
             <CoinImg size={30} /> {fmtCoins(PLAYER_PASS_COST)}
           </div>
 
-          <button
-            onClick={() => canBuy && addPlayerPass(pendingPlayer.pid)}
-            disabled={!canBuy}
-            style={{
-              marginTop: 12,
-              width: "min(240px, 78vw)",
-              padding: "13px 20px",
-              borderRadius: 999,
-              border: pendingPlayerOwned ? "1px solid rgba(255,255,255,0.12)" : "none",
-              background: pendingPlayerOwned ? "rgba(255,255,255,0.08)" : canBuy ? `linear-gradient(135deg, ${teamAccent}, #f59e0b, #fbbf24)` : "rgba(255,255,255,0.08)",
-              color: pendingPlayerOwned ? "var(--text-2)" : canBuy ? "#fff" : "rgba(255,255,255,0.32)",
-              fontSize: 18,
-              fontWeight: 950,
-              fontFamily: "inherit",
-              cursor: canBuy ? "pointer" : "default",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 8,
-              boxShadow: canBuy ? `0 14px 34px ${teamAccent}30, inset 0 1px 0 rgba(255,255,255,0.24)` : "none",
-            }}
-          >
-            {pendingPlayerOwned ? <><CheckCircle size={18} strokeWidth={2.8} />Owned</> : "Get Pass"}
-          </button>
+          {localConfirmStep ? (
+            /* ── Confirm step ── */
+            <div style={{ marginTop: 12, width: "min(300px, 88vw)", display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ padding: "12px 16px", borderRadius: 14, background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontSize: 14, fontWeight: 800, color: "#fbbf24" }}>
+                <CoinImg size={14} /> Spend {fmtCoins(PLAYER_PASS_COST)} on {pendingPlayer.name.split(" ")[0]}'s pass?
+              </div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={() => setLocalConfirmStep(false)} style={{ flex: 1, padding: "12px 0", borderRadius: 999, border: "1px solid var(--border-2)", background: "rgba(255,255,255,0.06)", color: "var(--text-2)", fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
+                  Cancel
+                </button>
+                <button onClick={() => handleBuyPass(pendingPlayer.pid)} style={{ flex: 2, padding: "12px 0", borderRadius: 999, border: "none", background: `linear-gradient(135deg, ${teamAccent}, #f59e0b, #fbbf24)`, color: "#fff", fontWeight: 950, fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: "inherit", boxShadow: `0 12px 28px ${teamAccent}28, inset 0 1px 0 rgba(255,255,255,0.2)` }}>
+                  <CheckCircle size={16} strokeWidth={2.8} /> Confirm Purchase
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => canBuy && setLocalConfirmStep(true)}
+              disabled={!canBuy}
+              style={{
+                marginTop: 12,
+                width: "min(240px, 78vw)",
+                padding: "13px 20px",
+                borderRadius: 999,
+                border: pendingPlayerOwned ? "1px solid rgba(255,255,255,0.12)" : "none",
+                background: pendingPlayerOwned ? "rgba(255,255,255,0.08)" : canBuy ? `linear-gradient(135deg, ${teamAccent}, #f59e0b, #fbbf24)` : "rgba(255,255,255,0.08)",
+                color: pendingPlayerOwned ? "var(--text-2)" : canBuy ? "#fff" : "rgba(255,255,255,0.32)",
+                fontSize: 18,
+                fontWeight: 950,
+                fontFamily: "inherit",
+                cursor: canBuy ? "pointer" : "default",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                boxShadow: canBuy ? `0 14px 34px ${teamAccent}30, inset 0 1px 0 rgba(255,255,255,0.24)` : "none",
+              }}
+            >
+              {pendingPlayerOwned ? <><CheckCircle size={18} strokeWidth={2.8} />Owned</> : "Get Pass"}
+            </button>
+          )}
 
           <div style={{ marginTop: 10, fontSize: 14, color: coins >= PLAYER_PASS_COST ? "var(--text-3)" : "#f87171", fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
             <CoinImg size={15} />{fmtCoins(coins)} balance
