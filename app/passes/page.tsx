@@ -152,9 +152,9 @@ function PassLeaderboard({ pass, onClose }: { pass: PlayerPass; onClose: () => v
   const imgSrc = playerPassImgSrc(pass.player_name, pass.team_name);
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 11000, background: "var(--bg)", display: "flex", flexDirection: "column", overflowY: "auto" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 11000, background: "var(--bg)", display: "flex", flexDirection: "column" }}>
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", padding: "calc(env(safe-area-inset-top) + 14px) 20px 14px", borderBottom: "1px solid var(--border-2)", background: "var(--bg)", position: "sticky", top: 0, zIndex: 2 }}>
+      <div style={{ display: "flex", alignItems: "center", padding: "calc(env(safe-area-inset-top) + 14px) 20px 14px", borderBottom: "1px solid var(--border-2)", background: "var(--bg)", flexShrink: 0, zIndex: 2 }}>
         <button onClick={onClose} style={{ background: "none", border: "none", color: "#60a5fa", fontSize: 15, fontWeight: 900, cursor: "pointer", padding: 0, marginRight: 16 }}>← Back</button>
         <div style={{ flex: 1 }}>
           <div style={{ fontWeight: 900, fontSize: 17, color: "var(--text-1)" }}>Leaderboard</div>
@@ -166,6 +166,7 @@ function PassLeaderboard({ pass, onClose }: { pass: PlayerPass; onClose: () => v
         )}
       </div>
 
+      <div style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
       <div style={{ maxWidth: 680, margin: "0 auto", width: "100%", padding: "16px 16px calc(100px + env(safe-area-inset-bottom))" }}>
         {/* Sort toggle */}
         <div style={{ display: "flex", background: "rgba(255,255,255,0.06)", borderRadius: 999, padding: 3, marginBottom: 14 }}>
@@ -263,6 +264,7 @@ function PassLeaderboard({ pass, onClose }: { pass: PlayerPass; onClose: () => v
           </div>
         )}
       </div>
+      </div>
     </div>
   );
 }
@@ -312,9 +314,9 @@ function TeamPassLeaderboard({ pass, onClose }: { pass: TeamPass; onClose: () =>
   const total  = sorted.length;
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 11000, background: "var(--bg)", display: "flex", flexDirection: "column", overflowY: "auto" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 11000, background: "var(--bg)", display: "flex", flexDirection: "column" }}>
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", padding: "calc(env(safe-area-inset-top) + 14px) 20px 14px", borderBottom: "1px solid var(--border-2)", background: "var(--bg)", position: "sticky", top: 0, zIndex: 2 }}>
+      <div style={{ display: "flex", alignItems: "center", padding: "calc(env(safe-area-inset-top) + 14px) 20px 14px", borderBottom: "1px solid var(--border-2)", background: "var(--bg)", flexShrink: 0, zIndex: 2 }}>
         <button onClick={onClose} style={{ background: "none", border: "none", color: "#60a5fa", fontSize: 15, fontWeight: 900, cursor: "pointer", padding: 0, marginRight: 16 }}>← Back</button>
         <div style={{ flex: 1 }}>
           <div style={{ fontWeight: 900, fontSize: 17, color: "var(--text-1)" }}>Leaderboard</div>
@@ -324,6 +326,7 @@ function TeamPassLeaderboard({ pass, onClose }: { pass: TeamPass; onClose: () =>
           style={{ width: 42, height: 42, borderRadius: "50%", objectFit: "cover", border: "2px solid var(--border-3)", background: teamColor(pass.team_name), flexShrink: 0 }} />
       </div>
 
+      <div style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
       <div style={{ maxWidth: 680, margin: "0 auto", width: "100%", padding: "16px 16px calc(100px + env(safe-area-inset-bottom))" }}>
         {/* Sort toggle */}
         <div style={{ display: "flex", background: "rgba(255,255,255,0.06)", borderRadius: 999, padding: 3, marginBottom: 14 }}>
@@ -412,6 +415,7 @@ function TeamPassLeaderboard({ pass, onClose }: { pass: TeamPass; onClose: () =>
             })}
           </div>
         )}
+      </div>
       </div>
     </div>
   );
