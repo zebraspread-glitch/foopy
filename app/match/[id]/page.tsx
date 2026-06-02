@@ -4264,7 +4264,7 @@ function MatchComments({ gameId, highlight }: { gameId: number; highlight: strin
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "calc(100dvh - 108px)" }}>
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "calc(100dvh - 108px)" }}>
 
       {/* Duplicate toast */}
       {dupToast && (
@@ -4319,7 +4319,7 @@ function MatchComments({ gameId, highlight }: { gameId: number; highlight: strin
       </div>
 
       {/* Comments list */}
-      <div style={{ flex: 1, overflowY: "auto", minHeight: 0, padding: "10px 0 4px" }}>
+      <div style={{ flex: 1, padding: "10px 0 4px" }}>
         {loading ? (
           <div style={{ display: "flex", justifyContent: "center", padding: "48px 0" }}>
             <div style={{ width: 24, height: 24, border: "2px solid var(--border-2)", borderTop: "2px solid #3b82f6", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
@@ -4357,8 +4357,8 @@ function MatchComments({ gameId, highlight }: { gameId: number; highlight: strin
         />
       )}
 
-      {/* Input — pinned to bottom of flex column */}
-      <div style={{ flexShrink: 0, zIndex: 50, borderTop: "1px solid var(--border-2)", padding: "10px 14px calc(14px + env(safe-area-inset-bottom))", background: "var(--bottom-nav-bg)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
+      {/* Input — sticky to viewport bottom */}
+      <div style={{ position: "sticky", bottom: 0, zIndex: 50, borderTop: "1px solid var(--border-2)", padding: "10px 14px calc(14px + env(safe-area-inset-bottom))", background: "var(--bottom-nav-bg)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
         {!userId ? (
           <button onClick={() => router.push("/login")} style={{ width: "100%", height: 48, borderRadius: 16, background: "linear-gradient(135deg,#3b82f6,#2563eb)", color: "var(--text-1)", fontWeight: 900, fontSize: 15, border: "none", cursor: "pointer", boxShadow: "0 4px 16px rgba(59,130,246,0.3)" }}>
             Sign in to chat
