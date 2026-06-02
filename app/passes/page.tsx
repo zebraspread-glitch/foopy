@@ -858,9 +858,6 @@ function PassesPageInner() {
             <ArrowLeft size={18} strokeWidth={2.6} />
           </button>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
-            <div style={passPageIconStyle}>
-              <Ticket size={18} strokeWidth={2.6} />
-            </div>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontWeight: 950, fontSize: 19, color: "var(--text-1)", lineHeight: 1.05 }}>
                 {pendingPlayer ? "2026 Player Pass" : "Player Passes"}
