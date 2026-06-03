@@ -24,5 +24,13 @@ export async function GET(req: Request) {
   });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ leaderboard: data ?? [] });
+
+  const rows = data ?? [];
+  if (rows.length > 0) {
+    const ids = rows.map((r: any) => r.user_id).filter(Boolean);
+    const { data: profiles } = await db.from("profiles").select("id, verified").in("id", ids);
+    const verifiedMap = Object.fromEntries((profiles ?? []).map((p: any) => [p.id, p.verified ?? false]));
+    return NextResponse.json({ leaderboard: rows.map((r: any) => ({ ...r, verified: verifiedMap[r.user_id] ?? false })) });
+  }
+  return NextResponse.json({ leaderboard: rows });
 }

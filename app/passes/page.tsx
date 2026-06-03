@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle, Search, Ticket, TrendingUp, Trophy, Users, Zap } from "lucide-react";
+import { VerifiedBadge } from "@/app/components/VerifiedBadge";
 import { supabase } from "@/app/lib/supabase";
 import {
   AFL_TEAMS,
@@ -427,8 +428,8 @@ type GlobalSubTab  = "leaderboard" | "purchases";
 type GlobalPassType = "player" | "team";
 type PurchasePeriod = "1d" | "7d" | "all";
 
-type GlobalPlayerEntry = { id: string; player_name: string; team_name: string; xp: number; serial_number: number | null; username: string | null; avatar_url: string | null };
-type GlobalTeamEntry   = { id: string; team_name: string; xp: number; serial_number: number | null; username: string | null; avatar_url: string | null };
+type GlobalPlayerEntry = { id: string; player_name: string; team_name: string; xp: number; serial_number: number | null; username: string | null; avatar_url: string | null; verified?: boolean };
+type GlobalTeamEntry   = { id: string; team_name: string; xp: number; serial_number: number | null; username: string | null; avatar_url: string | null; verified?: boolean };
 type MostBoughtPlayer  = { player_id: string; player_name: string; team_name: string; count: number };
 type MostBoughtTeam    = { team_name: string; count: number };
 
@@ -562,7 +563,7 @@ function GlobalPassView() {
                       {/* Name + owner */}
                       <div style={{ flex: 1, minWidth: 0, padding: "13px 0" }}>
                         <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", lineHeight: 1.2 }}>{e.player_name}</div>
-                        <div style={{ fontSize: 13, color: "var(--text-3)", fontWeight: 500, marginTop: 3 }}>{e.username ? `@${e.username}` : "—"}</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "var(--text-3)", fontWeight: 500, marginTop: 3 }}>{e.username ? `@${e.username}` : "—"}{e.verified && <VerifiedBadge size={11} />}</div>
                       </div>
                       {/* XP + serial */}
                       <div style={{ textAlign: "right", flexShrink: 0 }}>
@@ -597,7 +598,7 @@ function GlobalPassView() {
                       </div>
                       <div style={{ flex: 1, minWidth: 0, padding: "13px 0" }}>
                         <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", lineHeight: 1.2 }}>{e.team_name}</div>
-                        <div style={{ fontSize: 13, color: "var(--text-3)", fontWeight: 500, marginTop: 3 }}>{e.username ? `@${e.username}` : "—"}</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "var(--text-3)", fontWeight: 500, marginTop: 3 }}>{e.username ? `@${e.username}` : "—"}{e.verified && <VerifiedBadge size={11} />}</div>
                       </div>
                       <div style={{ textAlign: "right", flexShrink: 0 }}>
                         <div style={{ fontSize: 16, fontWeight: 800, color: level.color, letterSpacing: "-0.02em" }}>

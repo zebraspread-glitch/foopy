@@ -1588,6 +1588,7 @@ function GroupRow({ group, isLast, onClick, bubbleColor = "#22c55e" }: { group: 
   const logo = TEAM_LOGOS[group.team_name] || group.image_url;
   const color = TEAM_COLORS[group.team_name];
   const isGeneral = group.team_name === "General";
+  const isOfficial = group.created_by === null;
   return (
     <button onClick={onClick} style={{ width: "100%", display: "flex", alignItems: "center", gap: 13, padding: "10px 16px", background: "none", cursor: "pointer", textAlign: "left", border: "none", color: "var(--text-1)" }}>
       <div style={{ flexShrink: 0, padding: hasUnread ? 2.5 : 0, borderRadius: "50%", background: hasUnread ? bubbleColor : "transparent", transition: "background .2s" }}>
@@ -1604,8 +1605,10 @@ function GroupRow({ group, isLast, onClick, bubbleColor = "#22c55e" }: { group: 
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 2 }}>
-          <span style={{ fontWeight: hasUnread ? 700 : 600, fontSize: 15, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {group.team_name}{!group.is_public && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: "var(--text-4)", textTransform: "uppercase", letterSpacing: ".06em", verticalAlign: "middle" }}>Private</span>}
+          <span style={{ display: "flex", alignItems: "center", gap: 5, fontWeight: hasUnread ? 700 : 600, fontSize: 15, color: "var(--text-1)", overflow: "hidden" }}>
+            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{group.team_name}</span>
+            {isOfficial && <VerifiedBadge size={14} />}
+            {!group.is_public && <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text-4)", textTransform: "uppercase", letterSpacing: ".06em", flexShrink: 0 }}>Private</span>}
           </span>
           {group.last_message && <span style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 400, flexShrink: 0, marginLeft: 8 }}>{ago(group.last_message.created_at)}</span>}
         </div>

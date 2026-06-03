@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
+import { VerifiedBadge } from "@/app/components/VerifiedBadge";
 
 const CURRENT_SEASON = new Date().getFullYear();
 
@@ -11,6 +12,7 @@ type LeaderboardEntry = {
   username: string;
   display_name: string;
   avatar_url: string | null;
+  verified?: boolean;
   wins: number;
   losses: number;
   draws: number;
@@ -135,9 +137,10 @@ export default function DuelsLeaderboardPage() {
 
                   {/* Name */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {entry.display_name || entry.username}
-                      {isMe && <span style={{ marginLeft: 6, fontSize: 11, color: "#3b82f6", fontWeight: 800 }}>YOU</span>}
+                    <div style={{ display: "flex", alignItems: "center", gap: 5, fontWeight: 700, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{entry.display_name || entry.username}</span>
+                      {entry.verified && <VerifiedBadge size={13} />}
+                      {isMe && <span style={{ fontSize: 11, color: "#3b82f6", fontWeight: 800, flexShrink: 0 }}>YOU</span>}
                     </div>
                     <div style={{ fontSize: 11, color: "#64748b" }}>
                       {entry.total_duels} duel{entry.total_duels !== 1 ? "s" : ""}

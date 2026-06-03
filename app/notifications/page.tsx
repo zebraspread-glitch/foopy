@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
 import { NOTIF_LAST_SEEN_KEY } from "@/app/components/TopBar";
+import { VerifiedBadge } from "@/app/components/VerifiedBadge";
 
 /* ── Types ── */
 type NotifType =
@@ -23,6 +24,7 @@ type Actor = {
   username: string | null;
   display_name: string | null;
   avatar_url: string | null;
+  verified?: boolean;
 };
 
 type Notification = {
@@ -231,7 +233,7 @@ export default function NotificationsPage() {
     if (actorIds.length > 0) {
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, username, display_name, avatar_url")
+        .select("id, username, display_name, avatar_url, verified")
         .in("id", actorIds);
       for (const p of profiles ?? []) actorMap.set(p.id, p as Actor);
     }
@@ -428,7 +430,7 @@ export default function NotificationsPage() {
                   {/* Text block */}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 14, lineHeight: 1.4, color: n.read ? "#94a3b8" : "#f1f5f9" }}>
-                      <span style={{ fontWeight: 700, color: n.read ? "#94a3b8" : "#fff" }}>{actorName}</span>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontWeight: 700, color: n.read ? "#94a3b8" : "#fff" }}>{actorName}{n.actor?.verified && <VerifiedBadge size={12} />}</span>
                       {" "}
                       <span style={{ fontWeight: n.read ? 400 : 500 }}>
                         {text.replace(actorName, "").trimStart()}
