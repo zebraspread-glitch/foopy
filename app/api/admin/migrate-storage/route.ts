@@ -26,7 +26,7 @@ async function downloadImage(url: string): Promise<{ data: Buffer; contentType: 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const secret = searchParams.get("secret");
-  if (!secret || secret !== process.env.SUPABASE_SERVICE_ROLE_KEY?.slice(-12)) {
+  if (!secret || secret !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
