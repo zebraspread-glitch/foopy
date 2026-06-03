@@ -64,6 +64,7 @@ type Profile = {
   total_likes: number | null;
   aura: number | null;
   favourite_team: string | null;
+  created_at: string | null;
 };
 
 type FriendEntry = {
