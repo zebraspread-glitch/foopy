@@ -1035,33 +1035,80 @@ function PicksLockedScreen({
         </div>
       </div>
 
-      {/* ── Contested ── */}
-      {different.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <PickSection label="CONTESTED" type="contested" count={different.length} color="#ef4444" index={0} />
-          {different.map(({ q, mp, op }, i) => (
-            <LockedPickRow key={q.id} question={q} myPick={mp} oppPick={op} index={i} liveGameStats={liveGameStats} />
-          ))}
+      {/* ── Pick table ── */}
+      <div style={{ background: "var(--surface-2)", border: "1px solid var(--border-2)", borderRadius: 14, overflow: "hidden" }}>
+        {/* Column headers */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 3px 1fr", background: "rgba(255,255,255,0.03)", borderBottom: "1px solid var(--border-2)" }}>
+          <div style={{ padding: "8px 12px", fontSize: 10, fontWeight: 900, letterSpacing: "0.08em", color: "#3b82f6" }}>— YOU</div>
+          <div />
+          <div style={{ padding: "8px 12px", fontSize: 10, fontWeight: 900, letterSpacing: "0.08em", color: "var(--text-3)", textAlign: "right" }}>Opponent —</div>
         </div>
-      )}
 
-      {/* ── Tiebreaker ── */}
-      {tbQuestion && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <PickSection label="TIEBREAKER" type="tiebreaker" count={null} color="#f59e0b" index={0} />
-          <LockedPickRow question={tbQuestion} myPick={tbMp} oppPick={tbOp} isTiebreaker index={0} liveGameStats={liveGameStats} />
-        </div>
-      )}
+        {/* All question rows together */}
+        {withPicks.map(({ q, mp, op }, i) => {
+          const agreed = mp && op && mp.pick === op.pick;
+          const myCorrect  = mp?.is_correct  ?? null;
+          const oppCorrect = op?.is_correct ?? null;
+          const barColor = myCorrect !== null
+            ? (myCorrect ? "#22c55e" : "#ef4444")
+            : agreed ? "#22c55e" : "#f59e0b";
 
-      {/* ── Agreed ── */}
-      {same.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <PickSection label="AGREED" type="agreed" count={same.length} color="#22c55e" index={0} />
-          {same.map(({ q, mp, op }, i) => (
-            <LockedPickRow key={q.id} question={q} myPick={mp} oppPick={op} index={i} liveGameStats={liveGameStats} />
-          ))}
-        </div>
-      )}
+          const myImg   = mp ? (mp.pick === "a" ? q.option_a_image : q.option_b_image) : null;
+          const oppImg  = op ? (op.pick === "a" ? q.option_a_image : q.option_b_image) : null;
+          const myName  = mp ? (mp.pick === "a" ? q.option_a : q.option_b) : "—";
+          const oppName = op ? (op.pick === "a" ? q.option_a : q.option_b) : "—";
+          const myTeam  = mp ? (mp.pick === "a" ? q.option_a_team : q.option_b_team) : null;
+          const oppTeam = op ? (op.pick === "a" ? q.option_a_team : q.option_b_team) : null;
+          const myColor  = safeTeamColor(myTeam,  "#3b82f6");
+          const oppColor = safeTeamColor(oppTeam, "#475569");
+
+          return (
+            <div key={q.id} style={{
+              display: "grid", gridTemplateColumns: "1fr 3px 1fr",
+              borderBottom: i < withPicks.length - 1 ? "1px solid var(--border-1)" : "none",
+              animation: `lpr-in 0.2s ${Math.min(i * 0.04, 0.3)}s ease both`,
+            }}>
+              {/* YOU cell */}
+              <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 10px" }}>
+                {myTeam && (
+                  <img src={teamLogoUrl(myTeam)} alt="" style={{ width: 18, height: 18, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                )}
+                <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-1)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{myName}</span>
+                {myCorrect !== null && <span style={{ fontSize: 13, flexShrink: 0, color: myCorrect ? "#22c55e" : "#ef4444", fontWeight: 900 }}>{myCorrect ? "✓" : "✗"}</span>}
+                <div style={{ width: 26, height: 26, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${myColor}22`, border: `1.5px solid ${myColor}44` }}>
+                  {myImg ? <img src={myImg} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} /> : null}
+                </div>
+              </div>
+
+              {/* Colored center bar */}
+              <div style={{ background: barColor, opacity: 0.85 }} />
+
+              {/* OPP cell */}
+              <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 10px", flexDirection: "row-reverse" }}>
+                {oppTeam && (
+                  <img src={teamLogoUrl(oppTeam)} alt="" style={{ width: 18, height: 18, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                )}
+                <span style={{ fontSize: 12, fontWeight: 700, color: op ? "var(--text-1)" : "var(--text-4)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "right", fontStyle: !op ? "italic" : "normal" }}>{op ? oppName : "Pending…"}</span>
+                {oppCorrect !== null && <span style={{ fontSize: 13, flexShrink: 0, color: oppCorrect ? "#22c55e" : "#ef4444", fontWeight: 900 }}>{oppCorrect ? "✓" : "✗"}</span>}
+                <div style={{ width: 26, height: 26, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${oppColor}22`, border: `1.5px solid ${oppColor}44` }}>
+                  {oppImg ? <img src={oppImg} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} /> : null}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Tiebreaker row */}
+        {tbQuestion && tbMp && (
+          <div style={{ borderTop: "1px solid var(--border-2)", padding: "8px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(245,158,11,0.05)" }}>
+            <span style={{ fontSize: 10, fontWeight: 800, color: "#f59e0b", letterSpacing: "0.06em" }}>★ TIEBREAKER</span>
+            <div style={{ display: "flex", gap: 16, fontSize: 12 }}>
+              <span style={{ color: "var(--text-3)" }}>You: <strong style={{ color: "var(--text-1)" }}>{tbMp.pick === "a" ? tbQuestion.option_a : tbQuestion.option_b} by {tbMp.pick_margin ?? "—"}</strong></span>
+              {tbOp && <span style={{ color: "var(--text-3)" }}>Opp: <strong style={{ color: "var(--text-1)" }}>{tbOp.pick === "a" ? tbQuestion.option_a : tbQuestion.option_b} by {tbOp.pick_margin ?? "—"}</strong></span>}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
