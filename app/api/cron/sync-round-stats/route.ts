@@ -130,7 +130,7 @@ export async function GET(req: Request) {
   // it means the game recently finished — trigger a player season stats refresh
   // so the /stats page updates without anyone having to run a script.
   if (newlyFinalised.length > 0) {
-    const CRON_SECRET = process.env.CRON_SECRET ?? "foopy-cron";
+    const CRON_SECRET = process.env.CRON_SECRET ?? "";
     fetch(`${origin}/api/cron/sync-player-season-stats`, {
       headers: { authorization: `Bearer ${CRON_SECRET}` },
       cache: "no-store",

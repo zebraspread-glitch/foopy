@@ -14,7 +14,7 @@ const PLAYER_NAME_BY_ID = new Map<number, string>(
 
 export const dynamic = "force-dynamic";
 
-const CRON_SECRET = process.env.CRON_SECRET ?? "foopy-cron";
+const CRON_SECRET = process.env.CRON_SECRET ?? "";
 const API_BASE    = "https://v1.afl.api-sports.io";
 
 // Margins are now stored as exact numeric strings (e.g. "30")

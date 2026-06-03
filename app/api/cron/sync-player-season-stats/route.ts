@@ -16,7 +16,7 @@ export const maxDuration = 300;
  * Protected by CRON_SECRET env var.
  */
 
-const CRON_SECRET = process.env.CRON_SECRET ?? "foopy-cron";
+const CRON_SECRET = process.env.CRON_SECRET ?? "";
 const API_BASE    = "https://v1.afl.api-sports.io";
 const SEASON      = new Date().getFullYear().toString();
 
