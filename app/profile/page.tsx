@@ -895,10 +895,12 @@ export default function ProfilePage() {
   }
 
   // ── Stats section ──
-  type StatsPopup = null | "games" | "likes" | "polls";
+  type StatsPopup = null | "games" | "likes" | "polls" | "duels";
   const [statsPopup, setStatsPopup] = useState<StatsPopup>(null);
   const [cardCount, setCardCount] = useState<number | null>(null);
   const [duelStats, setDuelStats] = useState<{ wins: number; losses: number; total: number; winRate: number; winStreak: number } | null>(null);
+  const [duelHistory, setDuelHistory] = useState<any[]>([]);
+  const [duelHistoryLoading, setDuelHistoryLoading] = useState(false);
   const [auraRank, setAuraRank] = useState<number | null>(null);
   const [pollsVoted, setPollsVoted] = useState<number | null>(null);
   const [pollsWon, setPollsWon] = useState<number | null>(null);
@@ -1599,6 +1601,21 @@ export default function ProfilePage() {
     setPollsDataLoading(false);
   }
 
+  async function openDuelsPopup() {
+    setStatsPopup("duels");
+    if (duelHistory.length > 0) return;
+    setDuelHistoryLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const res = await fetch("/api/duels/history", { headers: { Authorization: `Bearer ${session.access_token}` } });
+      if (res.ok) {
+        const data = await res.json();
+        setDuelHistory(data.duels ?? []);
+      }
+    } catch {}
+    setDuelHistoryLoading(false);
+  }
 
   if (loading) {
     return (
@@ -1903,7 +1920,7 @@ export default function ProfilePage() {
             { label: "Comments",    value: commentCount ?? "—",                                          color: "#38bdf8", icon: <MessageCircle size={15} /> },
             { label: "Likes",       value: profile?.total_likes ?? totalLikes ?? "—",                    color: "#f43f5e", icon: <Heart    size={15} />, onClick: openLikesPopup },
             { label: "Games",       value: gamesViewed ?? "—",                                           color: "#4ade80", icon: <Tv       size={15} />, onClick: openGamesPopup },
-            { label: "Duels",       value: duelStats?.total ?? 0,                                        color: "#f97316", icon: <Zap      size={15} /> },
+            { label: "Duels",       value: duelStats?.total ?? 0,                                        color: "#f97316", icon: <Zap      size={15} />, onClick: openDuelsPopup },
             { label: "Polls Voted", value: pollsVoted  ?? "—",                                           color: "#a78bfa", icon: <BarChart2 size={15} />, onClick: openPollsPopup },
             { label: "Polls Won",   value: pollsWon    ?? "—",                                           color: "#22c55e", icon: <Trophy   size={15} />, onClick: openPollsPopup },
           ];
@@ -2405,6 +2422,7 @@ export default function ProfilePage() {
                 {statsPopup === "games" && "Live Games Viewed"}
                 {statsPopup === "likes" && "Likes Leaderboard"}
                 {statsPopup === "polls" && "Polls Won by Team"}
+                {statsPopup === "duels" && "Duel History"}
               </div>
               <button onClick={() => setStatsPopup(null)} style={{ background: "none", border: "none", color: "var(--text-3)", cursor: "pointer", padding: 4 }}>
                 <X size={20} />
@@ -2481,6 +2499,57 @@ export default function ProfilePage() {
               )}
 
               {/* Polls popup */}
+              {statsPopup === "duels" && (
+                duelHistoryLoading ? (
+                  <div style={{ textAlign: "center", padding: 40, color: "var(--text-3)" }}>Loading…</div>
+                ) : duelHistory.filter((d: any) => d.status === "complete").length === 0 ? (
+                  <EmptyState icon="⚔️" text="No completed duels yet. Challenge someone!" />
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {duelHistory.filter((d: any) => d.status === "complete").map((d: any) => {
+                      const isChallenger = d.challenger_id === user?.id;
+                      const myScore = isChallenger ? d.challenger_score : d.opponent_score;
+                      const oppScore = isChallenger ? d.opponent_score : d.challenger_score;
+                      const opponent = isChallenger ? d.opponent : d.challenger;
+                      const result = d.is_draw ? "D" : d.winner_id === user?.id ? "W" : "L";
+                      const resultColor = result === "W" ? "#22c55e" : result === "L" ? "#ef4444" : "#94a3b8";
+                      const game = d.duel_game;
+                      return (
+                        <div key={d.id} style={{ padding: "12px 14px", borderRadius: 14, background: "var(--surface-2)", border: "1px solid var(--border-1)" }}>
+                          {game && (
+                            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", marginBottom: 8 }}>
+                              Rd {game.round} · {game.home_team} vs {game.away_team}
+                            </div>
+                          )}
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            {opponent?.avatar_url
+                              ? <img src={opponent.avatar_url} alt="" style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+                              : <div style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--surface-3)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 900, color: "var(--text-3)" }}>{(opponent?.username ?? "?")[0].toUpperCase()}</div>
+                            }
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text-1)" }}>
+                                vs @{opponent?.username ?? "Unknown"}
+                              </div>
+                              <div style={{ fontSize: 11, color: "var(--text-4)", marginTop: 1 }}>
+                                {d.completed_at ? new Date(d.completed_at).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : ""}
+                              </div>
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                              <span style={{ fontSize: 17, fontWeight: 950, letterSpacing: "-0.03em", color: "var(--text-1)" }}>
+                                {myScore ?? "—"}<span style={{ color: "var(--text-4)", fontWeight: 400, margin: "0 3px" }}>–</span>{oppScore ?? "—"}
+                              </span>
+                              <span style={{ fontSize: 12, fontWeight: 900, color: resultColor, background: `${resultColor}18`, border: `1px solid ${resultColor}44`, borderRadius: 8, padding: "3px 8px", minWidth: 26, textAlign: "center" }}>
+                                {result}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )
+              )}
+
               {statsPopup === "polls" && (
                 pollsDataLoading ? (
                   <div style={{ textAlign: "center", padding: 40, color: "var(--text-3)" }}>Loading…</div>

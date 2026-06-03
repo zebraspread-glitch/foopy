@@ -18,6 +18,10 @@ export async function GET(req: Request) {
   const { data: { user }, error: authErr } = await supabaseServer.auth.getUser(token);
   if (authErr || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const { searchParams } = new URL(req.url);
+  // Allow fetching another user's history (for public profile viewing)
+  const targetUserId = searchParams.get("user_id") ?? user.id;
+
   const db = adminSupabase();
 
   // Plain select — no FK joins to profiles (those FKs point to auth.users, not profiles)
@@ -27,7 +31,7 @@ export async function GET(req: Request) {
       *,
       duel_game:duel_games(id, game_id, round, season, home_team, away_team, game_date)
     `)
-    .or(`challenger_id.eq.${user.id},opponent_id.eq.${user.id}`)
+    .or(`challenger_id.eq.${targetUserId},opponent_id.eq.${targetUserId}`)
     .neq("status", "cancelled")
     .order("created_at", { ascending: false })
     .limit(50);
@@ -55,12 +59,12 @@ export async function GET(req: Request) {
     opponent:   d.opponent_id ? (profileMap[d.opponent_id] ?? null) : null,
   }));
 
-  const { data: streakData } = await db.rpc("get_duel_win_streak", { p_user_id: user.id });
+  const { data: streakData } = await db.rpc("get_duel_win_streak", { p_user_id: targetUserId });
   const winStreak = streakData ?? 0;
 
   const completed = duelsWithProfiles.filter((d: any) => d.status === "complete");
-  const wins      = completed.filter((d: any) => d.winner_id === user.id).length;
-  const losses    = completed.filter((d: any) => d.winner_id !== null && d.winner_id !== user.id && !d.is_draw).length;
+  const wins      = completed.filter((d: any) => d.winner_id === targetUserId).length;
+  const losses    = completed.filter((d: any) => d.winner_id !== null && d.winner_id !== targetUserId && !d.is_draw).length;
   const draws     = completed.filter((d: any) => d.is_draw).length;
   const winRate   = completed.filter((d: any) => d.winner_id !== null).length > 0
     ? Math.round(wins / completed.filter((d: any) => d.winner_id !== null).length * 100)
@@ -69,6 +73,6 @@ export async function GET(req: Request) {
   return NextResponse.json({
     duels: duelsWithProfiles,
     stats: { wins, losses, draws, total: completed.length, winRate, winStreak },
-    userId: user.id,
+    userId: targetUserId,
   });
 }

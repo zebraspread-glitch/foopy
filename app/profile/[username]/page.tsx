@@ -429,6 +429,9 @@ export default function PublicProfilePage() {
   const [playerPasses,   setPlayerPasses]   = useState<PlayerPass[]>([]);
   const [teamPasses,     setTeamPasses]     = useState<TeamPass[]>([]);
   const [duelStats,      setDuelStats]      = useState<{ wins: number; losses: number; total: number; winRate: number; winStreak: number } | null>(null);
+  const [duelHistoryOpen,    setDuelHistoryOpen]    = useState(false);
+  const [duelHistory,        setDuelHistory]        = useState<any[]>([]);
+  const [duelHistoryLoading, setDuelHistoryLoading] = useState(false);
   const [auraRank,       setAuraRank]       = useState<number | null>(null);
   const [pollsVoted,     setPollsVoted]     = useState<number | null>(null);
   const [pollsWon,       setPollsWon]       = useState<number | null>(null);
@@ -660,6 +663,24 @@ export default function PublicProfilePage() {
   );
   const filledFavs = favourites.filter(Boolean).length;
   const isOwnProfile = currentUserId === profile.id;
+
+  async function openDuelHistory() {
+    setDuelHistoryOpen(true);
+    if (duelHistory.length > 0) return;
+    setDuelHistoryLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const res = await fetch(`/api/duels/history?user_id=${profile.id}`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDuelHistory(data.duels ?? []);
+      }
+    } catch {}
+    setDuelHistoryLoading(false);
+  }
 
   async function handleFriendAction() {
     if (!currentUserId || !profile) return;
@@ -953,14 +974,14 @@ export default function PublicProfilePage() {
         {/* ── Stats grid ── */}
         {(() => {
           const passCount = playerPasses.length + teamPasses.length;
-          const stats: { label: string; value: string | number; color: string; icon: React.ReactNode }[] = [
+          const stats: { label: string; value: string | number; color: string; icon: React.ReactNode; onClick?: () => void }[] = [
             { label: "Aura Rank",   value: auraRank    != null ? `#${auraRank.toLocaleString()}` : "—", color: "#c084fc", icon: <Star        size={15} /> },
             { label: "Cards",       value: cardCount,                                                    color: "#fbbf24", icon: <Layers      size={15} /> },
             { label: "Passes",      value: passCount,                                                    color: "#60a5fa", icon: <Ticket      size={15} /> },
             { label: "Comments",    value: commentCount ?? "—",                                          color: "#38bdf8", icon: <MessageCircle size={15} /> },
             { label: "Likes",       value: profile.total_likes ?? "—",                                   color: "#f43f5e", icon: <Heart       size={15} /> },
             { label: "Games",       value: gamesViewed ?? "—",                                           color: "#4ade80", icon: <Tv          size={15} /> },
-            { label: "Duels",       value: duelStats?.total ?? 0,                                        color: "#f97316", icon: <Zap         size={15} /> },
+            { label: "Duels",       value: duelStats?.total ?? 0,                                        color: "#f97316", icon: <Zap         size={15} />, onClick: openDuelHistory },
             { label: "Polls Voted", value: pollsVoted  ?? "—",                                           color: "#a78bfa", icon: <BarChart2   size={15} /> },
             { label: "Polls Won",   value: pollsWon    ?? "—",                                           color: "#22c55e", icon: <Trophy      size={15} /> },
           ];
@@ -971,13 +992,18 @@ export default function PublicProfilePage() {
                 const row = Math.floor(i / 3);
                 const totalRows = Math.ceil(stats.length / 3);
                 return (
-                  <div key={s.label} style={{ padding: "14px 8px", borderRight: col < 2 ? "1px solid var(--border-2)" : "none", borderBottom: row < totalRows - 1 ? "1px solid var(--border-2)" : "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                      <span style={{ color: s.color, opacity: 0.8, lineHeight: 0, flexShrink: 0 }}>{s.icon}</span>
-                      <span style={{ fontSize: 17, fontWeight: 950, letterSpacing: "-0.03em", color: s.color, lineHeight: 1 }}>{s.value}</span>
-                    </div>
-                    <span style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,0.3)", textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{s.label}</span>
-                  </div>
+                  {(() => {
+                    const El = s.onClick ? "button" : "div";
+                    return (
+                      <El key={s.label} onClick={s.onClick} style={{ padding: "14px 8px", background: "none", border: "none", borderRight: col < 2 ? "1px solid var(--border-2)" : "none", borderBottom: row < totalRows - 1 ? "1px solid var(--border-2)" : "none", cursor: s.onClick ? "pointer" : "default", color: "var(--text-1)", fontFamily: "inherit", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                          <span style={{ color: s.color, opacity: 0.8, lineHeight: 0, flexShrink: 0 }}>{s.icon}</span>
+                          <span style={{ fontSize: 17, fontWeight: 950, letterSpacing: "-0.03em", color: s.color, lineHeight: 1 }}>{s.value}</span>
+                        </div>
+                        <span style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,0.3)", textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{s.label}</span>
+                      </El>
+                    );
+                  })()}
                 );
               })}
             </div>
@@ -1112,6 +1138,63 @@ export default function PublicProfilePage() {
                   <span style={{ fontSize: 15, fontWeight: 900 }}>@{f.username}</span>
                 </button>
               ))
+            )}
+          </div>
+        </div>
+      )}
+      {/* ── Duel History overlay ── */}
+      {duelHistoryOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "var(--bg)", color: "var(--text-1)", overflowY: "auto" }}>
+          <div style={{ height: "calc(58px + env(safe-area-inset-top))", display: "flex", alignItems: "center", gap: 18, padding: "env(safe-area-inset-top) 20px 0", background: "var(--bg)", borderBottom: "1px solid var(--border-2)", position: "sticky", top: 0 }}>
+            <button onClick={() => setDuelHistoryOpen(false)} style={backBtnStyle}>← Back</button>
+            <strong style={{ fontSize: 18 }}>Duel History</strong>
+          </div>
+          <div style={{ maxWidth: 680, margin: "0 auto", padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+            {duelHistoryLoading ? (
+              <div style={{ textAlign: "center", padding: 40, color: "var(--text-3)" }}>Loading…</div>
+            ) : duelHistory.filter((d: any) => d.status === "complete").length === 0 ? (
+              <div style={{ textAlign: "center", padding: 40, color: "var(--text-3)", fontSize: 14, fontWeight: 700 }}>No completed duels yet.</div>
+            ) : (
+              duelHistory.filter((d: any) => d.status === "complete").map((d: any) => {
+                const isChallenger = d.challenger_id === profile.id;
+                const myScore  = isChallenger ? d.challenger_score : d.opponent_score;
+                const oppScore = isChallenger ? d.opponent_score   : d.challenger_score;
+                const opponent = isChallenger ? d.opponent : d.challenger;
+                const result   = d.is_draw ? "D" : d.winner_id === profile.id ? "W" : "L";
+                const resultColor = result === "W" ? "#22c55e" : result === "L" ? "#ef4444" : "#94a3b8";
+                const game = d.duel_game;
+                return (
+                  <div key={d.id} style={{ padding: "12px 14px", borderRadius: 14, background: "var(--surface-2)", border: "1px solid var(--border-1)" }}>
+                    {game && (
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", marginBottom: 8 }}>
+                        Rd {game.round} · {game.home_team} vs {game.away_team}
+                      </div>
+                    )}
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      {opponent?.avatar_url
+                        ? <img src={opponent.avatar_url} alt="" style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+                        : <div style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--surface-3)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 900, color: "var(--text-3)" }}>{(opponent?.username ?? "?")[0].toUpperCase()}</div>
+                      }
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text-1)" }}>
+                          vs @{opponent?.username ?? "Unknown"}
+                        </div>
+                        <div style={{ fontSize: 11, color: "var(--text-4)", marginTop: 1 }}>
+                          {d.completed_at ? new Date(d.completed_at).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : ""}
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                        <span style={{ fontSize: 17, fontWeight: 950, letterSpacing: "-0.03em", color: "var(--text-1)" }}>
+                          {myScore ?? "—"}<span style={{ color: "var(--text-4)", fontWeight: 400, margin: "0 3px" }}>–</span>{oppScore ?? "—"}
+                        </span>
+                        <span style={{ fontSize: 12, fontWeight: 900, color: resultColor, background: `${resultColor}18`, border: `1px solid ${resultColor}44`, borderRadius: 8, padding: "3px 8px", minWidth: 26, textAlign: "center" as const }}>
+                          {result}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
             )}
           </div>
         </div>
