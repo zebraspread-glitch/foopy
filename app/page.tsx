@@ -604,6 +604,7 @@ function getTeamColorFromName(team?: string) {
 export default function HomePage() {
   const [games, setGames] = useState<Game[]>([]);
   const [liveGameStats, setLiveGameStats] = useState<Record<string, any>>(matchStatsRaw as any);
+  const [finalGameStats, setFinalGameStats] = useState<Record<string, any>>(matchStatsRaw as any);
   const [selectedRound, setSelectedRound] = useState<number>(1);
   const [loading, setLoading] = useState(true);
   const [columns, setColumns] = useState<"1" | "3">("3");
@@ -692,6 +693,14 @@ export default function HomePage() {
     fetch("/api/game-stats")
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data) setLiveGameStats(data); })
+      .catch(() => {});
+  }, []);
+
+  // Fetch final-only stats for streak calculation (complete, verified data only)
+  useEffect(() => {
+    fetch("/api/game-stats?finalOnly=true")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setFinalGameStats(data); })
       .catch(() => {});
   }, []);
 
@@ -1353,9 +1362,9 @@ free_kicks?: {
       }>;
     };
 
-    // Use only the static bundled stats (complete, authoritative data).
-    // match_cache data is often incomplete for recent rounds, causing wrong streak counts.
-    const allStats = matchStatsRaw as unknown as Record<string, RawGame>;
+    // Use final-only stats: static data + is_final=true match_cache rows.
+    // This updates automatically as sync-round-stats writes final stats after each game.
+    const allStats = finalGameStats as unknown as Record<string, RawGame>;
     const statGames = Object.values(allStats);
     const statGameIds = new Set(statGames.map((g) => String(g.gameId)).filter(Boolean));
     const statGameIdByDateAndTeams = new Map<string, string>();
@@ -1524,7 +1533,7 @@ free_kicks?: {
     results.sort((a, b) => b.streak - a.streak || a.name.localeCompare(b.name));
 
     return results.slice(0, 20);
-  }, [games]);
+  }, [finalGameStats, games]);
 
   function chooseRound(round: number) {
     setSelectedRound(round);
