@@ -423,6 +423,61 @@ export default function DuelsTab({
     }
   }
 
+  // Enter matchmaking then submit picks atomically (used when no duel exists yet)
+  async function enterAndSubmitPicks() {
+    if (!duelGame) return;
+
+    const regularPicks = draftPicks.filter(p => {
+      const q = questions.find(q => q.id === p.question_id);
+      return q && !q.is_tiebreaker;
+    });
+    const tbPick = draftPicks.find(p => questions.find(q => q.id === p.question_id)?.is_tiebreaker);
+
+    if (regularPicks.some(p => p.pick === null)) {
+      alert("Please answer all 10 questions before submitting"); return;
+    }
+    if (tbPick && (tbPick.pick === null || !tbPick.pick_margin)) {
+      alert("Please answer the tiebreaker question (team + margin)"); return;
+    }
+
+    setEntering(true); setEnterError("");
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    const freshToken = sessionData.session?.access_token;
+    if (!freshToken) { setEnterError("Not signed in"); setEntering(false); return; }
+
+    // Step 1: enter matchmaking
+    const enterRes = await fetch("/api/duels/enter", {
+      method: "POST",
+      headers: { "content-type": "application/json", "authorization": `Bearer ${freshToken}` },
+      body: JSON.stringify({ duel_game_id: duelGame.id }),
+    });
+    const enterJson = await enterRes.json().catch(() => ({}));
+    if (!enterRes.ok) { setEnterError(enterJson.error ?? "Failed to enter duel"); setEntering(false); return; }
+
+    const newDuel = enterJson.duel;
+    setDuel(newDuel);
+
+    // Step 2: submit picks against the new duel
+    const picks = draftPicks
+      .filter(p => p.pick !== null)
+      .map(p => ({ question_id: p.question_id, pick: p.pick!, pick_margin: p.pick_margin ?? undefined }));
+
+    const picksRes = await fetch("/api/duels/picks", {
+      method: "POST",
+      headers: { "content-type": "application/json", "authorization": `Bearer ${freshToken}` },
+      body: JSON.stringify({ duel_id: newDuel.id, picks }),
+    });
+
+    setEntering(false);
+    if (picksRes.ok) {
+      await load();
+    } else {
+      const picksJson = await picksRes.json().catch(() => ({}));
+      alert(picksJson.error ?? "Failed to submit picks");
+    }
+  }
+
   if (loading) return <LoadingSpinner />;
 
   // No duel game enabled for this match
@@ -460,7 +515,24 @@ export default function DuelsTab({
         </div>
       );
     }
-    return <EnterDuelScreen duelGame={duelGame} onEnter={enterDuel} entering={entering} error={enterError} />;
+    // Initialise draft picks if not yet set
+    if (draftPicks.length === 0 && questions.length > 0) {
+      setDraftPicks(questions.map(q => ({ question_id: q.id, pick: null, pick_margin: null })));
+    }
+    // Show picks form directly — matchmaking happens on submit
+    return (
+      <PicksForm
+        questions={regularQs}
+        tbQuestion={tbQuestion}
+        draftPicks={draftPicks}
+        onChange={setDraftPicks}
+        onSubmit={enterAndSubmitPicks}
+        submitting={entering || submitting}
+        headerNote="Answer all questions — you'll be matched with an opponent when you submit."
+        duelGame={duelGame}
+        isGameStarted={isGameStarted}
+      />
+    );
   }
 
   // ── Cancelled ──
