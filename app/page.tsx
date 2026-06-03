@@ -1430,25 +1430,39 @@ free_kicks?: {
       }
     }
 
-    // sort each player's games oldest→newest
-    for (const arr of Object.values(playerGames)) {
-      arr.sort((a, b) => {
-        const timeA = new Date(a.date).getTime();
-        const timeB = new Date(b.date).getTime();
-        const safeTimeA = Number.isFinite(timeA) ? timeA : 0;
-        const safeTimeB = Number.isFinite(timeB) ? timeB : 0;
-        return safeTimeA - safeTimeB || Number(a.gameId) - Number(b.gameId);
-      });
-    }
-
-    // Primary lookup: apiSportsId → player info
+    // Lookup maps
     const byApiId = new Map<number, PlayerStatsPlayer>();
-    // Fallback lookup: normalised name → player info (handles stale/changed API IDs)
     const byPlayerName = new Map<string, PlayerStatsPlayer>();
     for (const p of playerStatsRaw as PlayerStatsPlayer[]) {
       if (p.apiSportsId) byApiId.set(p.apiSportsId, p);
       const slug = normalizeTeam(String(p.name || (p as any).player || ""));
       if (slug) byPlayerName.set(slug, p);
+    }
+
+    // Merge playerGames by normalised player name — handles ID changes between seasons
+    type GameEntry = { gameId: string; date: string; playerName: string; goals: number; disposals: number; kicks: number; tackles: number };
+    const playerGamesByName: Record<string, GameEntry[]> = {};
+    const seenGamesByName: Record<string, Set<string>> = {};
+
+    for (const games of Object.values(playerGames)) {
+      for (const g of games) {
+        const slug = normalizeTeam(g.playerName);
+        if (!slug) continue;
+        if (!playerGamesByName[slug]) { playerGamesByName[slug] = []; seenGamesByName[slug] = new Set(); }
+        if (!seenGamesByName[slug].has(g.gameId)) {
+          playerGamesByName[slug].push(g);
+          seenGamesByName[slug].add(g.gameId);
+        }
+      }
+    }
+
+    // Sort each player's merged games oldest→newest
+    for (const arr of Object.values(playerGamesByName)) {
+      arr.sort((a, b) => {
+        const ta = new Date(a.date).getTime(), tb = new Date(b.date).getTime();
+        const sa = Number.isFinite(ta) ? ta : 0, sb = Number.isFinite(tb) ? tb : 0;
+        return sa - sb || Number(a.gameId) - Number(b.gameId);
+      });
     }
 
     const results: PlayerStreakEntry[] = [];
@@ -1459,11 +1473,8 @@ free_kicks?: {
       { key: "tackles",   threshold: 5,  label: "game 5+ tackle streak",    emoji: "🔒", min: 4 },
     ];
 
-    for (const [idStr, playedGames] of Object.entries(playerGames)) {
-      const apiId = Number(idStr);
-      // Try ID first, fall back to name from the actual stats data
-      const nameFromStats = normalizeTeam(playedGames[0]?.playerName ?? "");
-      const info = byApiId.get(apiId) ?? (nameFromStats ? byPlayerName.get(nameFromStats) : null);
+    for (const [nameSlug, playedGames] of Object.entries(playerGamesByName)) {
+      const info = byPlayerName.get(nameSlug);
       if (!info) continue;
 
       const id = String((info as { id?: string }).id ?? "");
@@ -1478,15 +1489,14 @@ free_kicks?: {
       const latestPlayerGame = playedGames[playedGames.length - 1];
       if (!latestTeamGame || !latestPlayerGame) continue;
 
-      // If the player's latest game matches the team's latest → use it directly.
-      // If not, only allow the streak if the team's latest game has NO player data at all
-      // (stats not loaded yet). If there IS data for the latest game but this player
-      // isn't in it, they likely didn't play or didn't meet the threshold — skip them.
+      // Require player's latest game to match team's latest game.
+      // Exception: if the team's latest game has NO player data at all (stats not synced yet),
+      // allow the streak to count from the player's most recent available game.
       if (latestPlayerGame.gameId !== latestTeamGame.gameId) {
-        const latestGameHasData = Object.values(playerGames).some(
+        const latestGameHasData = Object.values(playerGamesByName).some(
           games => games[games.length - 1]?.gameId === latestTeamGame.gameId
         );
-        if (latestGameHasData) continue; // data loaded but player not in it → streak broken/inactive
+        if (latestGameHasData) continue;
       }
 
       const image = playerImagePath(name, team);
