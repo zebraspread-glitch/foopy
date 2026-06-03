@@ -1090,60 +1090,65 @@ function LockedPickRow({ question, myPick, oppPick, isTiebreaker, index = 0, liv
         <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-1)", lineHeight: 1.3 }}>{question.question_text}</span>
       </div>
 
-      {/* My pick row */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", background: myPick ? `${myColor}08` : undefined }}>
-        <div style={{ width: 38, height: 38, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${myColor}18`, border: `2px solid ${myColor}50` }}>
-          {myImage
-            ? <img src={myImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-            : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.2)", fontSize: 15 }}>–</div>
-          }
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{myLabel}</div>
-          {myTeam && <div style={{ fontSize: 11, fontWeight: 600, color: myColor, marginTop: 1 }}>{myTeam}</div>}
-        </div>
-        <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.07em", color: "#3b82f6", background: "#3b82f618", padding: "2px 7px", borderRadius: 999, flexShrink: 0 }}>YOU</span>
-        {myCorrect !== null
-          ? <span style={{ fontSize: 20, fontWeight: 900, flexShrink: 0, color: myCorrect ? "#4ade80" : "#ef4444" }}>{myCorrect ? "✓" : "✗"}</span>
-          : myStat && (
-            <div style={{ textAlign: "right", minWidth: 44, flexShrink: 0 }}>
-              <div style={{ fontSize: 28, fontWeight: 900, color: "var(--text-1)", lineHeight: 1, letterSpacing: "-0.04em" }}>{myStat.value}</div>
-              <div style={{ fontSize: 9, fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.07em", marginTop: 1 }}>{myStat.label}</div>
+      {/* Side-by-side picks */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+        {/* YOU — left */}
+        <div style={{ padding: "10px 12px", borderRight: "1px solid var(--border-2)", background: myPick ? `${myColor}08` : undefined, display: "flex", flexDirection: "column", gap: 6 }}>
+          <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.07em", color: "#3b82f6", background: "#3b82f618", padding: "2px 7px", borderRadius: 999, alignSelf: "flex-start" }}>YOU</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${myColor}18`, border: `2px solid ${myColor}50` }}>
+              {myImage
+                ? <img src={myImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.2)", fontSize: 13 }}>–</div>
+              }
             </div>
-          )
-        }
-      </div>
-
-      {/* Divider */}
-      <div style={{ height: 1, background: "var(--border-2)" }} />
-
-      {/* Opponent pick row */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", background: oppPick ? `${oppColor}06` : undefined }}>
-        <div style={{ width: 38, height: 38, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${oppColor}18`, border: `2px solid ${oppColor}50` }}>
-          {oppImage
-            ? <img src={oppImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-            : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.2)", fontSize: 15 }}>–</div>
-          }
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          {oppPick
-            ? <>
-                <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text-2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{oppLabel}</div>
-                {oppTeam && <div style={{ fontSize: 11, fontWeight: 600, color: oppColor, marginTop: 1 }}>{oppTeam}</div>}
-              </>
-            : <div style={{ fontSize: 13, color: "var(--text-3)", fontStyle: "italic" }}>Pending…</div>
-          }
-        </div>
-        <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.07em", color: "#64748b", background: "#64748b18", padding: "2px 7px", borderRadius: 999, flexShrink: 0 }}>OPP</span>
-        {oppCorrect !== null
-          ? <span style={{ fontSize: 20, fontWeight: 900, flexShrink: 0, color: oppCorrect ? "#4ade80" : "#ef4444" }}>{oppCorrect ? "✓" : "✗"}</span>
-          : oppStat && (
-            <div style={{ textAlign: "right", minWidth: 44, flexShrink: 0 }}>
-              <div style={{ fontSize: 28, fontWeight: 900, color: "var(--text-3)", lineHeight: 1, letterSpacing: "-0.04em" }}>{oppStat.value}</div>
-              <div style={{ fontSize: 9, fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.07em", marginTop: 1 }}>{oppStat.label}</div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontWeight: 700, fontSize: 12, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{myLabel}</div>
+              {myTeam && <div style={{ fontSize: 10, fontWeight: 600, color: myColor }}>{myTeam}</div>}
             </div>
-          )
-        }
+          </div>
+          {myCorrect !== null
+            ? <span style={{ fontSize: 18, fontWeight: 900, color: myCorrect ? "#4ade80" : "#ef4444" }}>{myCorrect ? "✓" : "✗"}</span>
+            : myStat && (
+              <div>
+                <span style={{ fontSize: 22, fontWeight: 900, color: "var(--text-1)", letterSpacing: "-0.04em" }}>{myStat.value}</span>
+                <span style={{ fontSize: 9, fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.07em", marginLeft: 4 }}>{myStat.label}</span>
+              </div>
+            )
+          }
+        </div>
+
+        {/* OPP — right */}
+        <div style={{ padding: "10px 12px", background: oppPick ? `${oppColor}06` : undefined, display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
+          <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.07em", color: "#64748b", background: "#64748b18", padding: "2px 7px", borderRadius: 999 }}>OPP</span>
+          {oppPick ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexDirection: "row-reverse" }}>
+              <div style={{ width: 32, height: 32, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${oppColor}18`, border: `2px solid ${oppColor}50` }}>
+                {oppImage
+                  ? <img src={oppImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                  : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.2)", fontSize: 13 }}>–</div>
+                }
+              </div>
+              <div style={{ minWidth: 0, textAlign: "right" }}>
+                <div style={{ fontWeight: 700, fontSize: 12, color: "var(--text-2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{oppLabel}</div>
+                {oppTeam && <div style={{ fontSize: 10, fontWeight: 600, color: oppColor }}>{oppTeam}</div>}
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", flex: 1 }}>
+              <span style={{ fontSize: 12, color: "var(--text-4)", fontStyle: "italic" }}>Pending…</span>
+            </div>
+          )}
+          {oppCorrect !== null
+            ? <span style={{ fontSize: 18, fontWeight: 900, color: oppCorrect ? "#4ade80" : "#ef4444" }}>{oppCorrect ? "✓" : "✗"}</span>
+            : oppStat && (
+              <div style={{ textAlign: "right" }}>
+                <span style={{ fontSize: 22, fontWeight: 900, color: "var(--text-3)", letterSpacing: "-0.04em" }}>{oppStat.value}</span>
+                <span style={{ fontSize: 9, fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.07em", marginLeft: 4 }}>{oppStat.label}</span>
+              </div>
+            )
+          }
+        </div>
       </div>
 
       {/* Tiebreaker margin strip */}
