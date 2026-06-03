@@ -1476,7 +1476,11 @@ free_kicks?: {
 
       const latestTeamGame = latestCompletedStatGameByTeam.get(teamId);
       const latestPlayerGame = playedGames[playedGames.length - 1];
-      if (!latestTeamGame || !latestPlayerGame || latestPlayerGame.gameId !== latestTeamGame.gameId) continue;
+      if (!latestTeamGame || !latestPlayerGame) continue;
+      // Allow up to 14 days gap — handles delayed stats, late-out players, and
+      // match_cache entries that don't include every player from the latest game
+      const daysBehind = (latestTeamGame.time - new Date(latestPlayerGame.date).getTime()) / 86400000;
+      if (daysBehind > 14) continue;
 
       const image = playerImagePath(name, team);
       const teamLogo = getTeamLogoFromName(team);
