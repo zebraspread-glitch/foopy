@@ -1406,7 +1406,7 @@ free_kicks?: {
 
     if (latestCompletedStatGameByTeam.size === 0) return [];
 
-    const playerGames: Record<number, Array<{ gameId: string; date: string; goals: number; disposals: number; kicks: number; tackles: number }>> = {};
+    const playerGames: Record<number, Array<{ gameId: string; date: string; playerName: string; goals: number; disposals: number; kicks: number; tackles: number }>> = {};
 
     for (const g of statGames) {
       const gameId = String(g.gameId);
@@ -1415,12 +1415,13 @@ free_kicks?: {
 
       for (const t of g.teams) {
         for (const pl of t.players) {
-          const id = pl.player.id;
+          const id = (pl.player as any).id;
           if (!playerGames[id]) playerGames[id] = [];
           playerGames[id].push({
             gameId,
             date: g.date,
-            goals: pl.goals?.total ?? (typeof pl.goals === "number" ? pl.goals : 0),
+            playerName: String((pl.player as any).name ?? ""),
+            goals: (pl.goals as any)?.total ?? (typeof pl.goals === "number" ? pl.goals : 0),
             disposals: pl.disposals ?? 0,
             kicks: pl.kicks ?? 0,
             tackles: pl.tackles ?? 0,
@@ -1436,15 +1437,18 @@ free_kicks?: {
         const timeB = new Date(b.date).getTime();
         const safeTimeA = Number.isFinite(timeA) ? timeA : 0;
         const safeTimeB = Number.isFinite(timeB) ? timeB : 0;
-
         return safeTimeA - safeTimeB || Number(a.gameId) - Number(b.gameId);
       });
     }
 
-    // id lookup: apiSportsId → player info
+    // Primary lookup: apiSportsId → player info
     const byApiId = new Map<number, PlayerStatsPlayer>();
+    // Fallback lookup: normalised name → player info (handles stale/changed API IDs)
+    const byPlayerName = new Map<string, PlayerStatsPlayer>();
     for (const p of playerStatsRaw as PlayerStatsPlayer[]) {
       if (p.apiSportsId) byApiId.set(p.apiSportsId, p);
+      const slug = normalizeTeam(String(p.name || (p as any).player || ""));
+      if (slug) byPlayerName.set(slug, p);
     }
 
     const results: PlayerStreakEntry[] = [];
@@ -1457,7 +1461,9 @@ free_kicks?: {
 
     for (const [idStr, playedGames] of Object.entries(playerGames)) {
       const apiId = Number(idStr);
-      const info = byApiId.get(apiId);
+      // Try ID first, fall back to name from the actual stats data
+      const nameFromStats = normalizeTeam(playedGames[0]?.playerName ?? "");
+      const info = byApiId.get(apiId) ?? (nameFromStats ? byPlayerName.get(nameFromStats) : null);
       if (!info) continue;
 
       const id = String((info as { id?: string }).id ?? "");
