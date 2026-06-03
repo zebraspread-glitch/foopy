@@ -804,6 +804,13 @@ export default function ProfilePage() {
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
 
+  // Bottom sheets
+  const [avatarSheetOpen, setAvatarSheetOpen] = useState(false);
+  const [bannerSheetOpen, setBannerSheetOpen] = useState(false);
+  // Optimistic local previews (shown immediately while upload happens)
+  const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(null);
+  const [localBannerUrl, setLocalBannerUrl] = useState<string | null>(null);
+
   const [showFriends, setShowFriends] = useState(false);
   const [friendsTab, setFriendsTab] = useState<FriendsTab>("friends");
   const [friends, setFriends] = useState<FriendEntry[]>([]);
@@ -1412,6 +1419,10 @@ export default function ProfilePage() {
     setAvatarUploading(true);
     setAvatarErr("");
 
+    // Optimistic local preview — show immediately before upload completes
+    const localPreview = URL.createObjectURL(file);
+    setLocalAvatarUrl(localPreview);
+
     const path = `${user!.id}/avatar-${Date.now()}.jpg`;
 
     const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, {
@@ -1446,6 +1457,7 @@ export default function ProfilePage() {
     }
 
     setProfile(data as Profile);
+    setLocalAvatarUrl(null); // clear optimistic — real URL now in profile
     setAvatarUploading(false);
     setEditSection(null);
   }
@@ -1459,6 +1471,9 @@ export default function ProfilePage() {
 
     setBannerUploading(true);
     setBannerErr("");
+
+    const localPreview = URL.createObjectURL(file);
+    setLocalBannerUrl(localPreview);
 
     const path = `${user!.id}/banner-${Date.now()}.jpg`;
 
@@ -1494,6 +1509,7 @@ export default function ProfilePage() {
     }
 
     setProfile(data as Profile);
+    setLocalBannerUrl(null);
     setBannerUploading(false);
     setEditSection(null);
   }
@@ -1673,8 +1689,27 @@ export default function ProfilePage() {
       <div style={wrapStyle}>
         {/* ── Profile header card ── */}
         <div style={profileCardStyle}>
-          {/* Banner — clean, nothing on top */}
-          <div style={profile?.banner_url ? { height: bannerStyle.height, backgroundImage: `url(${profile.banner_url})`, backgroundSize: "cover", backgroundPosition: "center" } : bannerStyle} />
+          {/* Banner — tappable */}
+          <button
+            onClick={() => setBannerSheetOpen(true)}
+            style={{ display: "block", width: "100%", border: "none", padding: 0, cursor: "pointer", position: "relative", background: "none" }}
+            aria-label="Edit banner"
+          >
+            <div style={
+              (localBannerUrl || profile?.banner_url)
+                ? { height: bannerStyle.height, backgroundImage: `url(${localBannerUrl ?? profile?.banner_url})`, backgroundSize: "cover", backgroundPosition: "center" }
+                : bannerStyle
+            } />
+            {/* Camera badge on banner */}
+            <div style={{ position: "absolute", bottom: 8, right: 8, width: 28, height: 28, borderRadius: "50%", background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Camera size={14} color="#fff" />
+            </div>
+            {bannerUploading && (
+              <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div className="spinner" />
+              </div>
+            )}
+          </button>
 
           <input ref={fileInputRef} type="file" accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif" style={{ display: "none" }}
             onChange={(e) => { const file = e.target.files?.[0]; if (!file) return; setAvatarErr(""); openImagePreview(file, "avatar"); e.target.value = ""; }}
@@ -1685,16 +1720,20 @@ export default function ProfilePage() {
 
           {/* Avatar + username + pills — all below the banner */}
           <div style={{ display: "flex", alignItems: "center", padding: "14px 16px 16px", gap: 14 }}>
-            {/* Avatar */}
-            <div style={{ flexShrink: 0 }}>
-              {profile?.avatar_url ? (
-                <img src={profile.avatar_url} alt="Profile" style={{ width: 90, height: 90, borderRadius: "50%", objectFit: "cover", border: "3px solid var(--bg)", boxShadow: "0 0 0 2px var(--border-3)" }} />
+            {/* Avatar — tappable */}
+            <button onClick={() => setAvatarSheetOpen(true)} style={{ flexShrink: 0, background: "none", border: "none", padding: 0, cursor: "pointer", position: "relative" }} aria-label="Edit profile photo">
+              {(localAvatarUrl || profile?.avatar_url) ? (
+                <img src={localAvatarUrl ?? profile?.avatar_url ?? ""} alt="Profile" style={{ width: 90, height: 90, borderRadius: "50%", objectFit: "cover", border: "3px solid var(--bg)", boxShadow: "0 0 0 2px var(--border-3)", display: "block" }} />
               ) : (
                 <div style={{ width: 90, height: 90, borderRadius: "50%", background: `linear-gradient(135deg,${avBg},var(--surface-1))`, color: avFg, display: "grid", placeItems: "center", fontSize: 32, fontWeight: 950, border: "3px solid var(--bg)", boxShadow: `0 0 0 2px var(--border-3),0 0 30px ${avFg}44` }}>
                   {label[0].toUpperCase()}
                 </div>
               )}
-            </div>
+              {/* Camera badge */}
+              <div style={{ position: "absolute", bottom: 0, right: 0, width: 26, height: 26, borderRadius: "50%", background: "var(--text-1)", border: "2px solid var(--bg)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {avatarUploading ? <div className="spinner" style={{ width: 12, height: 12 }} /> : <Camera size={12} color="var(--bg)" />}
+              </div>
+            </button>
 
             {/* Username + pills */}
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -2002,86 +2041,115 @@ export default function ProfilePage() {
 
       </div>
 
+      {/* ── Full-screen crop editor ── */}
       {previewOpen && previewUrl && previewType && (
-        <div style={previewOverlayStyle}>
-          <div style={previewHeaderStyle}>
-            <button onClick={closeImagePreview} style={previewIconBtnStyle} aria-label="Cancel preview">
-              ←
+        <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#000", display: "flex", flexDirection: "column", animation: "cropIn 0.22s ease" }}>
+          <style>{`@keyframes cropIn { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:none; } }`}</style>
+
+          {/* Top bar */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "calc(env(safe-area-inset-top) + 14px) 20px 14px", flexShrink: 0, zIndex: 2 }}>
+            <button onClick={closeImagePreview} style={{ background: "none", border: "none", color: "#fff", fontSize: 16, fontWeight: 600, cursor: "pointer", padding: "8px 4px", fontFamily: "inherit", opacity: 0.85 }}>
+              Cancel
             </button>
-
-            <strong style={{ fontSize: 16 }}>Image Preview</strong>
-
-            <button onClick={confirmImageUpload} style={previewIconBtnStyle} aria-label="Confirm image">
-              ✓
+            <span style={{ fontSize: 15, fontWeight: 700, color: "#fff", opacity: 0.7 }}>
+              {previewType === "avatar" ? "Profile Photo" : "Banner"}
+            </span>
+            <button
+              onClick={confirmImageUpload}
+              style={{ background: "#fff", border: "none", color: "#000", fontSize: 15, fontWeight: 800, cursor: "pointer", padding: "8px 20px", borderRadius: 999, fontFamily: "inherit" }}
+            >
+              Done
             </button>
           </div>
 
-          <div style={previewBodyStyle}>
-            <div
+          {/* Crop area — fills remaining space */}
+          <div style={{ position: "relative", flex: 1 }}>
+            <Cropper
+              image={previewUrl}
+              crop={crop}
+              zoom={zoom}
+              aspect={previewType === "banner" ? 3 / 1 : 1 / 1}
+              cropShape={previewType === "avatar" ? "round" : "rect"}
+              showGrid={false}
               style={{
-                position: "relative",
-                width: "100%",
-                maxWidth: previewType === "banner" ? 720 : 420,
-                aspectRatio: previewType === "banner" ? "3 / 1" : "1 / 1",
-                borderRadius: previewType === "banner" ? 14 : "50%",
-                overflow: "hidden",
-                background: "var(--surface-1)",
-                border: "1px solid var(--border-3)",
-                boxShadow: "0 20px 60px rgba(0,0,0,.5)",
+                containerStyle: { background: "#000" },
+                mediaStyle: {},
+                cropAreaStyle: {
+                  border: previewType === "avatar" ? "3px solid rgba(255,255,255,0.9)" : "2px solid rgba(255,255,255,0.9)",
+                  boxShadow: "0 0 0 9999px rgba(0,0,0,0.65)",
+                },
               }}
-            >
-              <Cropper
-                image={previewUrl}
-                crop={crop}
-                zoom={zoom}
-                aspect={previewType === "banner" ? 3 / 1 : 1 / 1}
-                cropShape={previewType === "avatar" ? "round" : "rect"}
-                showGrid={false}
-                onCropChange={setCrop}
-                onZoomChange={setZoom}
-                onCropComplete={(_, areaPixels) => setCroppedAreaPixels(areaPixels)}
-              />
-            </div>
+              onCropChange={setCrop}
+              onZoomChange={setZoom}
+              onCropComplete={(_, areaPixels) => setCroppedAreaPixels(areaPixels)}
+            />
+          </div>
 
-            <div style={{ width: "100%", maxWidth: 420, marginTop: 18 }}>
-              <input
-                type="range"
-                min={1}
-                max={3}
-                step={0.01}
-                value={zoom}
-                onChange={(e) => setZoom(Number(e.target.value))}
-                style={{ width: "100%" }}
-              />
+          {/* Bottom controls */}
+          <div style={{ padding: "18px 24px", paddingBottom: "calc(18px + env(safe-area-inset-bottom))", flexShrink: 0, display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
+            <input
+              type="range"
+              min={1}
+              max={3}
+              step={0.01}
+              value={zoom}
+              onChange={(e) => setZoom(Number(e.target.value))}
+              style={{ width: "100%", maxWidth: 320, accentColor: "#fff", height: 3, cursor: "pointer" }}
+            />
+            <p style={{ margin: 0, fontSize: 12, color: "rgba(255,255,255,0.4)", fontWeight: 500 }}>
+              Pinch or use slider to zoom · Drag to reposition
+            </p>
+          </div>
+        </div>
+      )}
 
-              <button
-                onClick={() => {
-                  setCrop({ x: 0, y: 0 });
-                  setZoom(1);
-                }}
-                style={{
-                  marginTop: 14,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: "10px 14px",
-                  borderRadius: 999,
-                  border: "1px solid var(--border-3)",
-                  background: "var(--surface-3)",
-                  color: "var(--text-2)",
-                  fontWeight: 900,
-                  cursor: "pointer",
-                  fontFamily: "inherit",
-                }}
-              >
-                <RotateCcw size={15} />
-                Reset
+      {/* ── Avatar bottom sheet ── */}
+      {avatarSheetOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 9998 }} onClick={() => setAvatarSheetOpen(false)}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)" }} />
+          <div
+            style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "var(--surface-2)", borderRadius: "20px 20px 0 0", padding: "8px 16px", paddingBottom: "calc(16px + env(safe-area-inset-bottom))", animation: "sheetUp 0.22s cubic-bezier(0.34,1.56,0.64,1)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <style>{`@keyframes sheetUp { from { transform: translateY(100%); } to { transform: none; } }`}</style>
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: "var(--border-3)", margin: "6px auto 18px" }} />
+            {[
+              profile?.avatar_url ? { label: "View Photo", icon: "👁", action: () => { setAvatarSheetOpen(false); window.open(profile.avatar_url!, "_blank"); } } : null,
+              { label: "Change Photo", icon: "📷", action: () => { setAvatarSheetOpen(false); fileInputRef.current?.click(); } },
+              (localAvatarUrl || profile?.avatar_url) ? { label: "Remove Photo", icon: "🗑", danger: true, action: async () => { setAvatarSheetOpen(false); await supabase.from("profiles").update({ avatar_url: null }).eq("id", user!.id); setProfile(p => p ? { ...p, avatar_url: null } : p); setLocalAvatarUrl(null); } } : null,
+            ].filter(Boolean).map((item: any) => (
+              <button key={item.label} onClick={item.action} style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", padding: "16px 8px", background: "none", border: "none", borderBottom: "1px solid var(--border-1)", cursor: "pointer", fontFamily: "inherit", color: item.danger ? "#ef4444" : "var(--text-1)", fontSize: 16, fontWeight: 600 }}>
+                <span style={{ fontSize: 20, width: 28, textAlign: "center" }}>{item.icon}</span>{item.label}
               </button>
-            </div>
+            ))}
+            <button onClick={() => setAvatarSheetOpen(false)} style={{ display: "block", width: "100%", padding: "16px 8px", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", color: "var(--text-3)", fontSize: 16, fontWeight: 600, marginTop: 4 }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
-            <div style={{ marginTop: 16, color: "var(--text-3)", fontSize: 13, fontWeight: 800 }}>
-              Drag the image and use the slider to crop it.
-            </div>
+      {/* ── Banner bottom sheet ── */}
+      {bannerSheetOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 9998 }} onClick={() => setBannerSheetOpen(false)}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)" }} />
+          <div
+            style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "var(--surface-2)", borderRadius: "20px 20px 0 0", padding: "8px 16px", paddingBottom: "calc(16px + env(safe-area-inset-bottom))", animation: "sheetUp 0.22s cubic-bezier(0.34,1.56,0.64,1)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: "var(--border-3)", margin: "6px auto 18px" }} />
+            {[
+              profile?.banner_url ? { label: "View Banner", icon: "👁", action: () => { setBannerSheetOpen(false); window.open(profile.banner_url!, "_blank"); } } : null,
+              { label: "Change Banner", icon: "🖼", action: () => { setBannerSheetOpen(false); bannerInputRef.current?.click(); } },
+              (localBannerUrl || profile?.banner_url) ? { label: "Remove Banner", icon: "🗑", danger: true, action: async () => { setBannerSheetOpen(false); await supabase.from("profiles").update({ banner_url: null }).eq("id", user!.id); setProfile(p => p ? { ...p, banner_url: null } : p); setLocalBannerUrl(null); } } : null,
+            ].filter(Boolean).map((item: any) => (
+              <button key={item.label} onClick={item.action} style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", padding: "16px 8px", background: "none", border: "none", borderBottom: "1px solid var(--border-1)", cursor: "pointer", fontFamily: "inherit", color: item.danger ? "#ef4444" : "var(--text-1)", fontSize: 16, fontWeight: 600 }}>
+                <span style={{ fontSize: 20, width: 28, textAlign: "center" }}>{item.icon}</span>{item.label}
+              </button>
+            ))}
+            <button onClick={() => setBannerSheetOpen(false)} style={{ display: "block", width: "100%", padding: "16px 8px", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", color: "var(--text-3)", fontSize: 16, fontWeight: 600, marginTop: 4 }}>
+              Cancel
+            </button>
           </div>
         </div>
       )}
