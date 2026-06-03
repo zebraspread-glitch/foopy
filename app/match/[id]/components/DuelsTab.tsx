@@ -921,7 +921,12 @@ function PicksLockedScreen({
             </div>
             <div style={{ textAlign: "center" }}>
               <div style={{ fontWeight: 800, fontSize: 14, color: "var(--text-1)" }}>{me?.display_name || me?.username || "You"}</div>
-              {me?.favourite_team && <div style={{ fontSize: 11, color: meColor, fontWeight: 600, marginTop: 1 }}>{me.favourite_team}</div>}
+              {me?.favourite_team && (
+                <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 3, justifyContent: "center" }}>
+                  <img src={teamLogoUrl(me.favourite_team)} alt="" style={{ width: 14, height: 14, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                  <span style={{ fontSize: 11, color: meColor, fontWeight: 700 }}>{me.favourite_team}</span>
+                </div>
+              )}
               {me?.aura != null && <div style={{ fontSize: 11, fontWeight: 700, color: "#c084fc", marginTop: 2 }}>✦ {me.aura.toLocaleString()}</div>}
               {me?.duelRecord && <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 2 }}>{me.duelRecord.wins}W·{me.duelRecord.draws}D·{me.duelRecord.losses}L</div>}
             </div>
@@ -936,7 +941,12 @@ function PicksLockedScreen({
             </div>
             <div style={{ textAlign: "center" }}>
               <div style={{ fontWeight: 800, fontSize: 14, color: "var(--text-1)" }}>{opponent?.display_name || opponent?.username || "Opponent"}</div>
-              {opponent?.favourite_team && <div style={{ fontSize: 11, color: oppColor, fontWeight: 600, marginTop: 1 }}>{opponent.favourite_team}</div>}
+              {opponent?.favourite_team && (
+                <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 3, justifyContent: "center" }}>
+                  <img src={teamLogoUrl(opponent.favourite_team)} alt="" style={{ width: 14, height: 14, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                  <span style={{ fontSize: 11, color: oppColor, fontWeight: 700 }}>{opponent.favourite_team}</span>
+                </div>
+              )}
               {opponent?.aura != null && <div style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", marginTop: 2 }}>✦ {opponent.aura.toLocaleString()}</div>}
               {opponent?.duelRecord && <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 2 }}>{opponent.duelRecord.wins}W·{opponent.duelRecord.draws}D·{opponent.duelRecord.losses}L</div>}
             </div>
