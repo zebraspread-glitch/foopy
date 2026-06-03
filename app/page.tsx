@@ -1421,7 +1421,7 @@ free_kicks?: {
           playerGames[id].push({
             gameId,
             date: g.date,
-            goals: pl.goals?.total ?? 0,
+            goals: pl.goals?.total ?? (typeof pl.goals === "number" ? pl.goals : 0),
             disposals: pl.disposals ?? 0,
             kicks: pl.kicks ?? 0,
             tackles: pl.tackles ?? 0,
