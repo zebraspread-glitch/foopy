@@ -21,6 +21,18 @@ let mem: CacheEntry | null = null;
 
 /* ── Helpers ── */
 
+function hasFullSeasonShape(games: unknown[]): boolean {
+  const teamIds = new Set<number>();
+  for (const game of games as any[]) {
+    const homeId = Number(game?.hteamid);
+    const awayId = Number(game?.ateamid);
+    if (homeId) teamIds.add(homeId);
+    if (awayId) teamIds.add(awayId);
+  }
+
+  return games.length >= 100 && teamIds.size >= 18;
+}
+
 function isLive(games: unknown[]): boolean {
   return games.some((g: any) => {
     const c = g.complete ?? 0;
@@ -41,6 +53,10 @@ function loadLS(): CacheEntry | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed?.data)) return null;
+    if (!hasFullSeasonShape(parsed.data)) {
+      localStorage.removeItem(LS_KEY);
+      return null;
+    }
     if (Date.now() - parsed.fetchedAt > LS_TTL_MS) return null;
     return parsed as CacheEntry;
   } catch {
@@ -62,7 +78,11 @@ function saveLS(entry: CacheEntry) {
  * to fetch fresh data in the background.
  */
 export function getGamesCached(): unknown[] | null {
-  if (mem) return mem.data;
+  if (mem) {
+    if (hasFullSeasonShape(mem.data)) return mem.data;
+    mem = null;
+  }
+
   const ls = loadLS();
   if (ls) { mem = ls; return ls.data; }
   return null;
@@ -72,8 +92,9 @@ export function getGamesCached(): unknown[] | null {
  * Returns games from memory cache if fresh, otherwise fetches from
  * network and updates both caches. Throws on network failure.
  */
-export async function getGames(): Promise<unknown[]> {
-  if (!memIsStale()) return mem!.data;
+export async function getGames(options: { force?: boolean } = {}): Promise<unknown[]> {
+  if (mem && !hasFullSeasonShape(mem.data)) mem = null;
+  if (!options.force && !memIsStale()) return mem!.data;
   return fetchFresh();
 }
 
@@ -81,11 +102,16 @@ async function fetchFresh(): Promise<unknown[]> {
   const res = await fetch("/api/games?fresh=1");
   if (!res.ok) {
     // Serve stale data rather than crash
-    if (mem) return mem.data;
+    if (mem && hasFullSeasonShape(mem.data)) return mem.data;
     throw new Error(`Games fetch failed: ${res.status}`);
   }
   const body = await res.json();
   const games: unknown[] = Array.isArray(body) ? body : (body.games ?? []);
+  if (!hasFullSeasonShape(games)) {
+    if (mem && hasFullSeasonShape(mem.data)) return mem.data;
+    throw new Error(`Games fetch returned a partial season: ${games.length} games`);
+  }
+
   const entry: CacheEntry = { data: games, fetchedAt: Date.now() };
   mem = entry;
   saveLS(entry);

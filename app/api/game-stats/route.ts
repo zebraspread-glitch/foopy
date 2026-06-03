@@ -85,6 +85,10 @@ export async function GET(req: Request) {
   }
 
   return NextResponse.json(staticStats, {
-    headers: { "Cache-Control": "public, max-age=60, stale-while-revalidate=120" },
+    headers: {
+      "Cache-Control": finalOnly
+        ? "no-store"
+        : "public, max-age=60, stale-while-revalidate=120",
+    },
   });
 }

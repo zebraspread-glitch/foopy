@@ -49,18 +49,6 @@ type StatLeader = {
   statLine: string;
 };
 
-type PlayerStreakEntry = {
-  id: string;
-  name: string;
-  team: string;
-  image: string;
-  teamLogo: string;
-  teamColor: string;
-  streak: number;
-  label: string;
-  emoji: string;
-};
-
 type PlayerStatsPlayer = {
   id?: string;
   name?: string;
@@ -604,14 +592,12 @@ function getTeamColorFromName(team?: string) {
 export default function HomePage() {
   const [games, setGames] = useState<Game[]>([]);
   const [liveGameStats, setLiveGameStats] = useState<Record<string, any>>(matchStatsRaw as any);
-  const [finalGameStats, setFinalGameStats] = useState<Record<string, any>>(matchStatsRaw as any);
   const [selectedRound, setSelectedRound] = useState<number>(1);
   const [loading, setLoading] = useState(true);
   const [columns, setColumns] = useState<"1" | "3">("3");
   const [hasLoadedSavedRound, setHasLoadedSavedRound] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [pullVisible, setPullVisible] = useState(false);
-  const [showStreaksPopup, setShowStreaksPopup] = useState(false);
   const [mounted, setMounted] = useState(false);
   const roundRef = useRef<HTMLDivElement | null>(null);
   const touchStartY = useRef(0);
@@ -696,31 +682,6 @@ export default function HomePage() {
       .catch(() => {});
   }, []);
 
-  // Fetch final-only stats for streak calculation (complete, verified data only)
-  useEffect(() => {
-    fetch("/api/game-stats?finalOnly=true")
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data) setFinalGameStats(data); })
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    if (!showStreaksPopup) return;
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setShowStreaksPopup(false);
-    }
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [showStreaksPopup]);
-
   useEffect(() => {
     // Ref ensures round is set only once — cached load shouldn't be overridden by fresh load
     const roundSetRef = { current: false };
@@ -745,7 +706,7 @@ export default function HomePage() {
     }
 
     // Step 2: Fetch fresh data in background
-    getGames()
+    getGames({ force: true })
       .then((data) => {
         applyGames(data as Game[]);
         setLoading(false);
@@ -1346,195 +1307,6 @@ free_kicks?: {
       });
   }, [games, shownGames, selectedRound]);
 
-  const playerStreaks = useMemo(() => {
-    type RawGame = {
-      gameId: number;
-      date: string;
-      teams: Array<{
-        team: { id: number };
-        players: Array<{
-          player: { id: number };
-          goals?: { total?: number };
-          disposals?: number;
-          kicks?: number;
-          tackles?: number;
-        }>;
-      }>;
-    };
-
-    // Use final-only stats: static data + is_final=true match_cache rows.
-    // This updates automatically as sync-round-stats writes final stats after each game.
-    const allStats = finalGameStats as unknown as Record<string, RawGame>;
-    const statGames = Object.values(allStats);
-    const statGameIds = new Set(statGames.map((g) => String(g.gameId)).filter(Boolean));
-    const statGameIdByDateAndTeams = new Map<string, string>();
-
-    // Name-based key: date + sorted normalised team names — works regardless of ID system
-    function statGameKeyByNames(date: string | undefined, names: string[]) {
-      const parts = names.map(n => normalizeTeam(n)).filter(Boolean).sort();
-      if (!date || parts.length < 2) return "";
-      return `${date.slice(0, 10)}|${parts.join("|")}`;
-    }
-
-    for (const g of statGames) {
-      if (!Array.isArray(g.teams)) continue;
-      const teamNames = g.teams.map((t: any) => String(t.team?.name ?? ""));
-      const nameKey = statGameKeyByNames(g.date, teamNames);
-      if (nameKey && !statGameIdByDateAndTeams.has(nameKey)) {
-        statGameIdByDateAndTeams.set(nameKey, String(g.gameId));
-      }
-    }
-
-    function getStatGameIdForFixture(game: Game) {
-      const mapped = API_SPORTS_MATCH_IDS[String(game.id)];
-      if (mapped && statGameIds.has(mapped)) return mapped;
-
-      // Fall back to matching by date + team names (works even without an explicit ID mapping)
-      return statGameIdByDateAndTeams.get(statGameKeyByNames(game.date, [game.hteam ?? "", game.ateam ?? ""])) ?? null;
-    }
-
-    const completedStatGameIds = new Set<string>();
-    const latestCompletedStatGameByTeam = new Map<number, { gameId: string; time: number }>();
-    const prevCompletedStatGameByTeam   = new Map<number, { gameId: string; time: number }>();
-
-    for (const game of games) {
-      if (getStatus(game) !== "COMPLETED") continue;
-
-      const statGameId = getStatGameIdForFixture(game);
-      if (!statGameId) continue;
-
-      completedStatGameIds.add(statGameId);
-
-      const gameTime = game.date ? new Date(game.date).getTime() : 0;
-      for (const teamId of [game.hteamid, game.ateamid]) {
-        if (!teamId) continue;
-
-        const current = latestCompletedStatGameByTeam.get(teamId);
-        if (!current || gameTime > current.time) {
-          if (current) prevCompletedStatGameByTeam.set(teamId, current);
-          latestCompletedStatGameByTeam.set(teamId, { gameId: statGameId, time: gameTime });
-        } else if (gameTime > (prevCompletedStatGameByTeam.get(teamId)?.time ?? 0)) {
-          prevCompletedStatGameByTeam.set(teamId, { gameId: statGameId, time: gameTime });
-        }
-      }
-    }
-
-    if (latestCompletedStatGameByTeam.size === 0) return [];
-
-    const playerGames: Record<number, Array<{ gameId: string; date: string; playerName: string; goals: number; disposals: number; kicks: number; tackles: number }>> = {};
-
-    for (const g of statGames) {
-      const gameId = String(g.gameId);
-      if (!completedStatGameIds.has(gameId)) continue;
-      if (!Array.isArray(g.teams)) continue;
-
-      for (const t of g.teams) {
-        for (const pl of t.players) {
-          const id = (pl.player as any).id;
-          if (!playerGames[id]) playerGames[id] = [];
-          playerGames[id].push({
-            gameId,
-            date: g.date,
-            playerName: String((pl.player as any).name ?? ""),
-            goals: (pl.goals as any)?.total ?? (typeof pl.goals === "number" ? pl.goals : 0),
-            disposals: pl.disposals ?? 0,
-            kicks: pl.kicks ?? 0,
-            tackles: pl.tackles ?? 0,
-          });
-        }
-      }
-    }
-
-    // Lookup maps
-    const byApiId = new Map<number, PlayerStatsPlayer>();
-    const byPlayerName = new Map<string, PlayerStatsPlayer>();
-    for (const p of playerStatsRaw as PlayerStatsPlayer[]) {
-      if (p.apiSportsId) byApiId.set(p.apiSportsId, p);
-      const slug = normalizeTeam(String(p.name || (p as any).player || ""));
-      if (slug) byPlayerName.set(slug, p);
-    }
-
-    // Merge playerGames by normalised player name — handles API Sports ID changes across seasons.
-    // Name comes from players.json (via byApiId) when available, falling back to the stats payload.
-    type GameEntry = { gameId: string; date: string; playerName: string; goals: number; disposals: number; kicks: number; tackles: number };
-    const playerGamesByName: Record<string, GameEntry[]> = {};
-    const seenGamesByName: Record<string, Set<string>> = {};
-
-    for (const [idStr, games] of Object.entries(playerGames)) {
-      const apiId = Number(idStr);
-      const infoById = byApiId.get(apiId);
-      const canonicalName = infoById
-        ? String(infoById.name || (infoById as any).player || "")
-        : (games[0]?.playerName ?? "");
-      const slug = normalizeTeam(canonicalName);
-      if (!slug) continue;
-
-      if (!playerGamesByName[slug]) { playerGamesByName[slug] = []; seenGamesByName[slug] = new Set(); }
-      for (const g of games) {
-        if (!seenGamesByName[slug].has(g.gameId)) {
-          playerGamesByName[slug].push(g);
-          seenGamesByName[slug].add(g.gameId);
-        }
-      }
-    }
-
-    // Sort each player's merged games oldest→newest
-    for (const arr of Object.values(playerGamesByName)) {
-      arr.sort((a, b) => {
-        const ta = new Date(a.date).getTime(), tb = new Date(b.date).getTime();
-        const sa = Number.isFinite(ta) ? ta : 0, sb = Number.isFinite(tb) ? tb : 0;
-        return sa - sb || Number(a.gameId) - Number(b.gameId);
-      });
-    }
-
-    const results: PlayerStreakEntry[] = [];
-
-    const STREAK_DEFS: Array<{ key: "goals" | "disposals" | "kicks" | "tackles"; threshold: number; label: string; emoji: string; min: number }> = [
-      { key: "goals",     threshold: 1,  label: "game goal streak",        emoji: "🎯", min: 4 },
-      { key: "disposals", threshold: 25, label: "game 25+ disposal streak", emoji: "💪", min: 4 },
-      { key: "tackles",   threshold: 5,  label: "game 5+ tackle streak",    emoji: "🔒", min: 4 },
-    ];
-
-    for (const [nameSlug, playedGames] of Object.entries(playerGamesByName)) {
-      const info = byPlayerName.get(nameSlug);
-      if (!info) continue;
-
-      const id = String((info as { id?: string }).id ?? "");
-      const name = String(info.name || info.player || "");
-      const team = String(info.club ?? info.team ?? "");
-      if (!name || !team) continue;
-
-      const teamId = getTeamIdFromName(team);
-      if (!teamId) continue;
-
-      const latestTeamGame = latestCompletedStatGameByTeam.get(teamId);
-      const latestPlayerGame = playedGames[playedGames.length - 1];
-      if (!latestTeamGame || !latestPlayerGame) continue;
-
-      if (latestPlayerGame.gameId !== latestTeamGame.gameId) continue;
-
-      const image = playerImagePath(name, team);
-      const teamLogo = getTeamLogoFromName(team);
-      const teamColor = getTeamColorFromName(team);
-
-      for (const def of STREAK_DEFS) {
-        let streak = 0;
-        for (let i = playedGames.length - 1; i >= 0; i--) {
-          if (playedGames[i][def.key] >= def.threshold) streak++;
-          else break;
-        }
-        if (streak >= def.min) {
-          results.push({ id, name, team, image, teamLogo, teamColor, streak, label: `${streak}-${def.label}`, emoji: def.emoji });
-        }
-      }
-    }
-
-    // Sort: longest streak first, then alphabetically
-    results.sort((a, b) => b.streak - a.streak || a.name.localeCompare(b.name));
-
-    return results.slice(0, 20);
-  }, [finalGameStats, games]);
-
   function chooseRound(round: number) {
     setSelectedRound(round);
   }
@@ -1957,112 +1729,9 @@ free_kicks?: {
           </div>
         )}
 
-        {/* ── Player Streaks ── */}
-        {playerStreaks.length > 0 && selectedRound === currentRound && (
-          <>
-            <div style={mobileGroupLabelStyle}>Player Streaks</div>
-            <div style={streakSectionStyle}>
-              {playerStreaks.slice(0, 5).map((streak, i) => (
-                <PlayerStreakRow key={`${streak.name}-${streak.label}`} streak={streak} index={i} mounted={mounted} />
-              ))}
-              {playerStreaks.length > 5 && (
-                <button
-                  onClick={() => setShowStreaksPopup(true)}
-                  style={{ width: "100%", padding: "12px", background: "none", border: "none", borderTop: "1px solid var(--border-1)", color: "var(--text-3)", fontSize: 13, fontWeight: 700, cursor: "pointer", letterSpacing: "0.02em" }}
-                >
-                  {`View ${playerStreaks.length - 5} more`}
-                </button>
-              )}
-            </div>
-          </>
-        )}
       </section>
     </main>
-    {showStreaksPopup && (
-      <div style={streakPopupBackdropStyle} onClick={() => setShowStreaksPopup(false)}>
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="player-streaks-title"
-          style={streakPopupStyle}
-          onClick={(event) => event.stopPropagation()}
-        >
-          <div style={streakPopupHeaderStyle}>
-            <div>
-              <div id="player-streaks-title" style={{ ...mobileGroupLabelStyle, padding: 0 }}>Player Streaks</div>
-              <div style={streakPopupCountStyle}>{playerStreaks.length} active streaks</div>
-            </div>
-            <button type="button" aria-label="Close player streaks" onClick={() => setShowStreaksPopup(false)} style={streakPopupCloseStyle}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
-                <path d="M18 6 6 18" />
-                <path d="m6 6 12 12" />
-              </svg>
-            </button>
-          </div>
-          <div style={streakPopupListStyle}>
-            {playerStreaks.map((streak, i) => (
-              <PlayerStreakRow
-                key={`${streak.name}-${streak.label}-popup`}
-                streak={streak}
-                index={i}
-                mounted={mounted}
-                onNavigate={() => setShowStreaksPopup(false)}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-    )}
     </>
-  );
-}
-
-function PlayerStreakRow({
-  streak,
-  index,
-  mounted,
-  onNavigate,
-}: {
-  streak: PlayerStreakEntry;
-  index: number;
-  mounted: boolean;
-  onNavigate?: () => void;
-}) {
-  return (
-    <Link
-      href={`/player/${streak.id}`}
-      prefetch={false}
-      onClick={onNavigate}
-      style={{
-        ...streakRowStyle,
-        borderTop: index === 0 ? "none" : "1px solid var(--border-1)",
-        textDecoration: "none",
-        color: "inherit",
-      }}
-    >
-      <div style={{ width: 40, height: 40, borderRadius: "50%", flexShrink: 0, background: streak.teamColor, position: "relative", overflow: "hidden" }}>
-        {mounted && (
-          <PlayerPhoto
-            candidates={playerImageCandidates(streak.name, streak.team)}
-            alt={streak.name}
-            imageStyle={streakAvatarImageStyle}
-            fallbackStyle={streakAvatarFallbackStyle}
-            initials={getInitials(streak.name)}
-          />
-        )}
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={streakNameStyle}>{streak.name}</div>
-        <div style={streakLabelStyle}>{streak.label}</div>
-      </div>
-      {streak.teamLogo && (
-        <div style={{ width: 32, height: 32, borderRadius: "50%", flexShrink: 0, background: streak.teamColor, position: "relative", overflow: "hidden" }}>
-          {mounted && (
-            <img src={streak.teamLogo} alt={streak.team} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-          )}
-        </div>
-      )}
-    </Link>
   );
 }
 
@@ -3145,117 +2814,6 @@ const byeTeamsLabelStyle: React.CSSProperties = {
   letterSpacing: "0.09em",
   textTransform: "uppercase",
   color: "rgba(255,255,255,0.45)",
-};
-
-const streakSectionStyle: React.CSSProperties = {
-  marginTop: "20px",
-  borderRadius: "16px",
-  border: "1px solid var(--border-1)",
-  background: "var(--surface-3)",
-  overflow: "hidden",
-  boxShadow: "0 2px 12px rgba(0,0,0,0.35)",
-};
-
-const streakPopupBackdropStyle: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  zIndex: 160,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "18px 12px calc(18px + env(safe-area-inset-bottom))",
-  background: "rgba(0,0,0,0.72)",
-  backdropFilter: "blur(12px)",
-  WebkitBackdropFilter: "blur(12px)",
-};
-
-const streakPopupStyle: React.CSSProperties = {
-  width: "min(680px, 100%)",
-  maxHeight: "min(78dvh, 680px)",
-  borderRadius: "18px",
-  border: "1px solid var(--border-2)",
-  background: "var(--surface-3)",
-  boxShadow: "0 24px 80px rgba(0,0,0,0.72)",
-  overflow: "hidden",
-  display: "flex",
-  flexDirection: "column",
-};
-
-const streakPopupHeaderStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "16px",
-  padding: "16px 16px 12px",
-  borderBottom: "1px solid var(--border-1)",
-};
-
-const streakPopupCountStyle: React.CSSProperties = {
-  marginTop: "4px",
-  fontSize: "12px",
-  fontWeight: 700,
-  color: "var(--text-3)",
-};
-
-const streakPopupCloseStyle: React.CSSProperties = {
-  width: 36,
-  height: 36,
-  borderRadius: "50%",
-  background: "rgba(255,255,255,0.07)",
-  color: "var(--text-1)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  flexShrink: 0,
-};
-
-const streakPopupListStyle: React.CSSProperties = {
-  overflowY: "auto",
-  WebkitOverflowScrolling: "touch",
-};
-
-const streakRowStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "12px",
-  padding: "11px 14px",
-};
-
-const streakAvatarImageStyle: React.CSSProperties = {
-  position: "absolute",
-  inset: 0,
-  width: "100%",
-  height: "100%",
-  objectFit: "cover",
-  objectPosition: "top center",
-  borderRadius: "50%",
-};
-
-const streakAvatarFallbackStyle: React.CSSProperties = {
-  position: "absolute",
-  inset: 0,
-  placeItems: "center",
-  fontSize: 13,
-  fontWeight: 800,
-  color: "#fff",
-};
-
-
-const streakNameStyle: React.CSSProperties = {
-  fontSize: "14px",
-  fontWeight: 800,
-  color: "var(--text-1)",
-  letterSpacing: "-0.01em",
-  whiteSpace: "nowrap",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-};
-
-const streakLabelStyle: React.CSSProperties = {
-  fontSize: "12px",
-  fontWeight: 600,
-  color: "var(--text-3)",
-  marginTop: "2px",
 };
 
 // ── Duel Homepage Card ────────────────────────────────────────────────────────
