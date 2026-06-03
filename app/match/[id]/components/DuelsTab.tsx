@@ -1085,87 +1085,96 @@ function LockedPickRow({ question, myPick, oppPick, isTiebreaker, index = 0, liv
 
   const delay = `${Math.min(index * 0.05, 0.3)}s`;
 
-  const myBorderColor  = myCorrect  === true ? "#4ade80" : myCorrect  === false ? "#ef4444" : myColor;
-  const oppBorderColor = oppCorrect === true ? "#4ade80" : oppCorrect === false ? "#ef4444" : oppColor;
-
-  function PickPill({ image, label, team, correct, stat, align }: {
-    image: string | null; label: string; team: string | null;
-    correct: boolean | null; stat: { value: string; label: string } | null;
-    align: "left" | "right";
-  }) {
-    const borderColor = correct === true ? "#4ade80" : correct === false ? "#ef4444" : (align === "left" ? myColor : oppColor);
-    const isRight = align === "right";
-    return (
-      <div style={{
-        display: "flex", flexDirection: isRight ? "row-reverse" : "row",
-        alignItems: "center", gap: 8,
-        padding: "9px 11px", borderRadius: 10,
-        background: `${borderColor}0d`,
-        border: `2px solid ${borderColor}50`,
-        minWidth: 0, flex: 1,
-      }}>
-        <div style={{ width: 28, height: 28, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${borderColor}20`, border: `1.5px solid ${borderColor}60` }}>
-          {image
-            ? <img src={image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-            : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.25)", fontSize: 11 }}>–</div>
-          }
-        </div>
-        <div style={{ minWidth: 0, flex: 1, textAlign: isRight ? "right" : "left" }}>
-          <div style={{ fontWeight: 700, fontSize: 12, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</div>
-          {team && <div style={{ fontSize: 10, fontWeight: 600, color: borderColor, opacity: 0.85 }}>{team}</div>}
-        </div>
-        {correct !== null
-          ? <span style={{ fontSize: 16, fontWeight: 900, flexShrink: 0, color: correct ? "#4ade80" : "#ef4444" }}>{correct ? "✓" : "✗"}</span>
-          : stat && (
-            <div style={{ textAlign: isRight ? "left" : "right", flexShrink: 0 }}>
-              <span style={{ fontSize: 18, fontWeight: 900, color: "var(--text-1)", letterSpacing: "-0.03em" }}>{stat.value}</span>
-              <div style={{ fontSize: 8, fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{stat.label}</div>
-            </div>
-          )
-        }
-      </div>
-    );
-  }
+  const myBC  = myCorrect  === true ? "#4ade80" : myCorrect  === false ? "#ef4444" : myColor;
+  const oppBC = oppCorrect === true ? "#4ade80" : oppCorrect === false ? "#ef4444" : oppColor;
 
   return (
     <div style={{
       background: "var(--surface-2)",
       border: "1px solid var(--border-2)",
       borderRadius: 12,
-      overflow: "hidden",
+      padding: "10px 12px",
+      display: "flex", flexDirection: "column", gap: 8,
       animation: `lpr-in 0.25s ${delay} ease both`,
     }}>
       {/* Question */}
-      <div style={{ padding: "10px 13px 9px", borderBottom: "1px solid var(--border-2)", display: "flex", alignItems: "center", gap: 7 }}>
-        {isTiebreaker && <span style={{ fontSize: 9, fontWeight: 800, color: "#f59e0b" }}>★</span>}
-        <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-1)", lineHeight: 1.3 }}>{question.question_text}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        {isTiebreaker && <span style={{ fontSize: 9, fontWeight: 800, color: "#f59e0b", flexShrink: 0 }}>★</span>}
+        <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", lineHeight: 1.3 }}>{question.question_text}</span>
       </div>
 
-      {/* Side-by-side pills */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, padding: 10 }}>
-        {/* YOU */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.07em", color: "#3b82f6" }}>YOU</span>
-          <PickPill image={myImage} label={myLabel} team={myTeam} correct={myCorrect} stat={myStat} align="left" />
-        </div>
-
-        {/* OPP */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-end" }}>
-          <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.07em", color: "#64748b" }}>OPP</span>
-          {oppPick
-            ? <PickPill image={oppImage} label={oppLabel} team={oppTeam} correct={oppCorrect} stat={oppStat} align="right" />
-            : <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", flex: 1, padding: "9px 11px", borderRadius: 10, border: "2px solid var(--border-2)", width: "100%", boxSizing: "border-box" as const }}>
-                <span style={{ fontSize: 11, color: "var(--text-4)", fontStyle: "italic" }}>Pending…</span>
+      {/* Picks row */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+        {/* YOU pill */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 7,
+          padding: "7px 10px", borderRadius: 9,
+          background: `${myBC}0e`, border: `1.5px solid ${myBC}45`,
+          minWidth: 0,
+        }}>
+          <div style={{ width: 26, height: 26, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${myBC}20`, border: `1.5px solid ${myBC}55` }}>
+            {myImage
+              ? <img src={myImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+              : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.2)", fontSize: 10 }}>–</div>
+            }
+          </div>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{myLabel}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              {myTeam && <span style={{ fontSize: 9, fontWeight: 600, color: myBC, opacity: 0.8 }}>{myTeam}</span>}
+              <span style={{ fontSize: 8, fontWeight: 900, letterSpacing: "0.06em", color: "#3b82f6", background: "#3b82f620", padding: "1px 5px", borderRadius: 999 }}>YOU</span>
+            </div>
+          </div>
+          {myCorrect !== null
+            ? <span style={{ fontSize: 14, fontWeight: 900, flexShrink: 0, color: myCorrect ? "#4ade80" : "#ef4444" }}>{myCorrect ? "✓" : "✗"}</span>
+            : myStat && <div style={{ flexShrink: 0, textAlign: "right" }}>
+                <div style={{ fontSize: 16, fontWeight: 900, color: "var(--text-1)", lineHeight: 1, letterSpacing: "-0.03em" }}>{myStat.value}</div>
+                <div style={{ fontSize: 7, fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{myStat.label}</div>
               </div>
           }
         </div>
+
+        {/* OPP pill */}
+        {oppPick ? (
+          <div style={{
+            display: "flex", alignItems: "center", gap: 7,
+            padding: "7px 10px", borderRadius: 9,
+            background: `${oppBC}0e`, border: `1.5px solid ${oppBC}45`,
+            minWidth: 0, flexDirection: "row-reverse",
+          }}>
+            <div style={{ width: 26, height: 26, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${oppBC}20`, border: `1.5px solid ${oppBC}55` }}>
+              {oppImage
+                ? <img src={oppImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.2)", fontSize: 10 }}>–</div>
+              }
+            </div>
+            <div style={{ minWidth: 0, flex: 1, textAlign: "right" }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{oppLabel}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, justifyContent: "flex-end" }}>
+                <span style={{ fontSize: 8, fontWeight: 900, letterSpacing: "0.06em", color: "#64748b", background: "#64748b20", padding: "1px 5px", borderRadius: 999 }}>OPP</span>
+                {oppTeam && <span style={{ fontSize: 9, fontWeight: 600, color: oppBC, opacity: 0.8 }}>{oppTeam}</span>}
+              </div>
+            </div>
+            {oppCorrect !== null
+              ? <span style={{ fontSize: 14, fontWeight: 900, flexShrink: 0, color: oppCorrect ? "#4ade80" : "#ef4444" }}>{oppCorrect ? "✓" : "✗"}</span>
+              : oppStat && <div style={{ flexShrink: 0, textAlign: "left" }}>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: "var(--text-1)", lineHeight: 1, letterSpacing: "-0.03em" }}>{oppStat.value}</div>
+                  <div style={{ fontSize: 7, fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{oppStat.label}</div>
+                </div>
+            }
+          </div>
+        ) : (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "7px 10px", borderRadius: 9, border: "1.5px dashed var(--border-2)" }}>
+            <span style={{ fontSize: 11, color: "var(--text-4)", fontStyle: "italic" }}>Pending…</span>
+          </div>
+        )}
       </div>
 
       {/* Tiebreaker margin strip */}
       {isTiebreaker && (myPick?.pick_margin || oppPick?.pick_margin) && (
-        <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid var(--border-2)", padding: "6px 13px" }}>
-          <span style={{ fontSize: 12, color: "var(--text-3)" }}>by <strong style={{ color: "#a78bfa" }}>{myPick?.pick_margin ?? "—"}</strong></span>
-          <span style={{ fontSize: 12, color: "var(--text-3)" }}>by <strong style={{ color: "#a78bfa" }}>{oppPick?.pick_margin ?? "—"}</strong></span>
+        <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid var(--border-2)", paddingTop: 7 }}>
+          <span style={{ fontSize: 11, color: "var(--text-3)" }}>by <strong style={{ color: "#a78bfa" }}>{myPick?.pick_margin ?? "—"}</strong></span>
+          <span style={{ fontSize: 11, color: "var(--text-3)" }}>by <strong style={{ color: "#a78bfa" }}>{oppPick?.pick_margin ?? "—"}</strong></span>
         </div>
       )}
     </div>
