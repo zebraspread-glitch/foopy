@@ -1079,7 +1079,7 @@ function PicksLockedScreen({
                     {myImg && <img src={myImg} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
                   </div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", borderLeft: `3px solid ${bc}`, borderRight: `3px solid ${bc}`, padding: "0 3px" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", background: `linear-gradient(to right, ${bc} 3px, transparent 3px, transparent calc(100% - 3px), ${bc} calc(100% - 3px))` }}>
                   <span style={{ fontSize: 9, fontWeight: 900, color: bc, letterSpacing: "0.04em", textTransform: "uppercase" as const, textAlign: "center" as const, lineHeight: 1.2, whiteSpace: "nowrap" as const, overflow: "hidden", textOverflow: "ellipsis", maxWidth: 64 }}>
                     {DUEL_STAT_CATS[q.category_key ?? ""]?.label ?? q.category_key?.replace("player_","").replace("team_","") ?? "—"}
                   </span>
@@ -1115,7 +1115,7 @@ function PicksLockedScreen({
                   {myImg && <img src={myImg} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
                 </div>
               </div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", borderLeft: "3px solid #f59e0b", borderRight: "3px solid #f59e0b", padding: "0 3px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(to right, #f59e0b 3px, transparent 3px, transparent calc(100% - 3px), #f59e0b calc(100% - 3px))" }}>
                 <span style={{ fontSize: 9, fontWeight: 900, color: "#f59e0b", letterSpacing: "0.04em", textTransform: "uppercase" as const, textAlign: "center" as const, lineHeight: 1.2, whiteSpace: "nowrap" as const }}>★ TB</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "11px 12px", flexDirection: "row-reverse" }}>
