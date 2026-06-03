@@ -1500,13 +1500,7 @@ free_kicks?: {
       const latestPlayerGame = playedGames[playedGames.length - 1];
       if (!latestTeamGame || !latestPlayerGame) continue;
 
-      // Player must have appeared in the team's latest or second-latest game.
-      // This handles one round of missing/incomplete stats (e.g. API Sports drops a player)
-      // while still correctly breaking streaks when a player's 0-goal game IS in the data.
-      if (latestPlayerGame.gameId !== latestTeamGame.gameId) {
-        const prevTeamGame = prevCompletedStatGameByTeam.get(teamId);
-        if (!prevTeamGame || latestPlayerGame.gameId !== prevTeamGame.gameId) continue;
-      }
+      if (latestPlayerGame.gameId !== latestTeamGame.gameId) continue;
 
       const image = playerImagePath(name, team);
       const teamLogo = getTeamLogoFromName(team);
