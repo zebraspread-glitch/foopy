@@ -2103,55 +2103,51 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* ── Avatar bottom sheet ── */}
-      {avatarSheetOpen && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 9998 }} onClick={() => setAvatarSheetOpen(false)}>
-          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)" }} />
-          <div
-            style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "var(--surface-2)", borderRadius: "20px 20px 0 0", padding: "8px 16px", paddingBottom: "calc(16px + env(safe-area-inset-bottom))", animation: "sheetUp 0.22s cubic-bezier(0.34,1.56,0.64,1)" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <style>{`@keyframes sheetUp { from { transform: translateY(100%); } to { transform: none; } }`}</style>
-            <div style={{ width: 36, height: 4, borderRadius: 2, background: "var(--border-3)", margin: "6px auto 18px" }} />
+      {/* ── Avatar popup ── */}
+      {avatarSheetOpen && createPortal(
+        <div style={{ position: "fixed", inset: 0, zIndex: 9998, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px 16px" }} onClick={() => setAvatarSheetOpen(false)}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(12px)" }} />
+          <div style={{ position: "relative", background: "var(--surface-2)", borderRadius: 20, width: "100%", maxWidth: 340, overflow: "hidden", animation: "popIn 0.18s cubic-bezier(0.34,1.56,0.64,1)" }} onClick={e => e.stopPropagation()}>
+            <style>{`@keyframes popIn { from { opacity:0; transform:scale(0.92); } to { opacity:1; transform:none; } }`}</style>
+            <div style={{ padding: "14px 16px 4px", fontSize: 13, fontWeight: 700, color: "var(--text-3)", textAlign: "center", letterSpacing: "0.04em", textTransform: "uppercase" as const }}>Profile Photo</div>
             {[
               profile?.avatar_url ? { label: "View Photo", icon: "👁", action: () => { setAvatarSheetOpen(false); window.open(profile.avatar_url!, "_blank"); } } : null,
               { label: "Change Photo", icon: "📷", action: () => { setAvatarSheetOpen(false); fileInputRef.current?.click(); } },
               (localAvatarUrl || profile?.avatar_url) ? { label: "Remove Photo", icon: "🗑", danger: true, action: async () => { setAvatarSheetOpen(false); await supabase.from("profiles").update({ avatar_url: null }).eq("id", user!.id); setProfile(p => p ? { ...p, avatar_url: null } : p); setLocalAvatarUrl(null); } } : null,
-            ].filter(Boolean).map((item: any) => (
-              <button key={item.label} onClick={item.action} style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", padding: "16px 8px", background: "none", border: "none", borderBottom: "1px solid var(--border-1)", cursor: "pointer", fontFamily: "inherit", color: item.danger ? "#ef4444" : "var(--text-1)", fontSize: 16, fontWeight: 600 }}>
-                <span style={{ fontSize: 20, width: 28, textAlign: "center" }}>{item.icon}</span>{item.label}
+            ].filter(Boolean).map((item: any, i: number, arr: any[]) => (
+              <button key={item.label} onClick={item.action} style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", padding: "16px 20px", background: "none", border: "none", borderTop: i === 0 ? "1px solid var(--border-2)" : "1px solid var(--border-1)", cursor: "pointer", fontFamily: "inherit", color: item.danger ? "#ef4444" : "var(--text-1)", fontSize: 16, fontWeight: 600 }}>
+                <span style={{ fontSize: 18, width: 24, textAlign: "center" as const }}>{item.icon}</span>{item.label}
               </button>
             ))}
-            <button onClick={() => setAvatarSheetOpen(false)} style={{ display: "block", width: "100%", padding: "16px 8px", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", color: "var(--text-3)", fontSize: 16, fontWeight: 600, marginTop: 4 }}>
+            <button onClick={() => setAvatarSheetOpen(false)} style={{ display: "block", width: "100%", padding: "16px 20px", background: "none", border: "none", borderTop: "1px solid var(--border-2)", cursor: "pointer", fontFamily: "inherit", color: "var(--text-3)", fontSize: 16, fontWeight: 700, marginTop: 4 }}>
               Cancel
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* ── Banner bottom sheet ── */}
-      {bannerSheetOpen && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 9998 }} onClick={() => setBannerSheetOpen(false)}>
-          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)" }} />
-          <div
-            style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "var(--surface-2)", borderRadius: "20px 20px 0 0", padding: "8px 16px", paddingBottom: "calc(16px + env(safe-area-inset-bottom))", animation: "sheetUp 0.22s cubic-bezier(0.34,1.56,0.64,1)" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ width: 36, height: 4, borderRadius: 2, background: "var(--border-3)", margin: "6px auto 18px" }} />
+      {/* ── Banner popup ── */}
+      {bannerSheetOpen && createPortal(
+        <div style={{ position: "fixed", inset: 0, zIndex: 9998, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px 16px" }} onClick={() => setBannerSheetOpen(false)}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(12px)" }} />
+          <div style={{ position: "relative", background: "var(--surface-2)", borderRadius: 20, width: "100%", maxWidth: 340, overflow: "hidden", animation: "popIn 0.18s cubic-bezier(0.34,1.56,0.64,1)" }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: "14px 16px 4px", fontSize: 13, fontWeight: 700, color: "var(--text-3)", textAlign: "center", letterSpacing: "0.04em", textTransform: "uppercase" as const }}>Banner</div>
             {[
               profile?.banner_url ? { label: "View Banner", icon: "👁", action: () => { setBannerSheetOpen(false); window.open(profile.banner_url!, "_blank"); } } : null,
               { label: "Change Banner", icon: "🖼", action: () => { setBannerSheetOpen(false); bannerInputRef.current?.click(); } },
               (localBannerUrl || profile?.banner_url) ? { label: "Remove Banner", icon: "🗑", danger: true, action: async () => { setBannerSheetOpen(false); await supabase.from("profiles").update({ banner_url: null }).eq("id", user!.id); setProfile(p => p ? { ...p, banner_url: null } : p); setLocalBannerUrl(null); } } : null,
-            ].filter(Boolean).map((item: any) => (
-              <button key={item.label} onClick={item.action} style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", padding: "16px 8px", background: "none", border: "none", borderBottom: "1px solid var(--border-1)", cursor: "pointer", fontFamily: "inherit", color: item.danger ? "#ef4444" : "var(--text-1)", fontSize: 16, fontWeight: 600 }}>
-                <span style={{ fontSize: 20, width: 28, textAlign: "center" }}>{item.icon}</span>{item.label}
+            ].filter(Boolean).map((item: any, i: number) => (
+              <button key={item.label} onClick={item.action} style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", padding: "16px 20px", background: "none", border: "none", borderTop: i === 0 ? "1px solid var(--border-2)" : "1px solid var(--border-1)", cursor: "pointer", fontFamily: "inherit", color: item.danger ? "#ef4444" : "var(--text-1)", fontSize: 16, fontWeight: 600 }}>
+                <span style={{ fontSize: 18, width: 24, textAlign: "center" as const }}>{item.icon}</span>{item.label}
               </button>
             ))}
-            <button onClick={() => setBannerSheetOpen(false)} style={{ display: "block", width: "100%", padding: "16px 8px", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", color: "var(--text-3)", fontSize: 16, fontWeight: 600, marginTop: 4 }}>
+            <button onClick={() => setBannerSheetOpen(false)} style={{ display: "block", width: "100%", padding: "16px 20px", background: "none", border: "none", borderTop: "1px solid var(--border-2)", cursor: "pointer", fontFamily: "inherit", color: "var(--text-3)", fontSize: 16, fontWeight: 700, marginTop: 4 }}>
               Cancel
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {pickerOpen && <FavouritesPicker onPick={handlePick} onClose={() => setPickerOpen(false)} />}
@@ -2317,6 +2313,7 @@ export default function ProfilePage() {
               padding: "calc(env(safe-area-inset-top) + 16px) 20px 16px",
               borderBottom: "1px solid var(--border-2)",
               background: "var(--bg)",
+              flexShrink: 0,
             }}
           >
             <button
@@ -2343,7 +2340,7 @@ export default function ProfilePage() {
             )}
           </div>
 
-          <div style={{ display: "flex", borderBottom: "1px solid var(--border-2)", background: "var(--bg)" }}>
+          <div style={{ display: "flex", borderBottom: "1px solid var(--border-2)", background: "var(--bg)", flexShrink: 0 }}>
             {(["friends", "requests", "add"] as FriendsTab[]).map((tab) => (
               <button
                 key={tab}
