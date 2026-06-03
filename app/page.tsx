@@ -1439,16 +1439,23 @@ free_kicks?: {
       if (slug) byPlayerName.set(slug, p);
     }
 
-    // Merge playerGames by normalised player name — handles ID changes between seasons
+    // Merge playerGames by normalised player name — handles API Sports ID changes across seasons.
+    // Name comes from players.json (via byApiId) when available, falling back to the stats payload.
     type GameEntry = { gameId: string; date: string; playerName: string; goals: number; disposals: number; kicks: number; tackles: number };
     const playerGamesByName: Record<string, GameEntry[]> = {};
     const seenGamesByName: Record<string, Set<string>> = {};
 
-    for (const games of Object.values(playerGames)) {
+    for (const [idStr, games] of Object.entries(playerGames)) {
+      const apiId = Number(idStr);
+      const infoById = byApiId.get(apiId);
+      const canonicalName = infoById
+        ? String(infoById.name || (infoById as any).player || "")
+        : (games[0]?.playerName ?? "");
+      const slug = normalizeTeam(canonicalName);
+      if (!slug) continue;
+
+      if (!playerGamesByName[slug]) { playerGamesByName[slug] = []; seenGamesByName[slug] = new Set(); }
       for (const g of games) {
-        const slug = normalizeTeam(g.playerName);
-        if (!slug) continue;
-        if (!playerGamesByName[slug]) { playerGamesByName[slug] = []; seenGamesByName[slug] = new Set(); }
         if (!seenGamesByName[slug].has(g.gameId)) {
           playerGamesByName[slug].push(g);
           seenGamesByName[slug].add(g.gameId);
