@@ -991,19 +991,15 @@ export default function PublicProfilePage() {
                 const col = i % 3;
                 const row = Math.floor(i / 3);
                 const totalRows = Math.ceil(stats.length / 3);
+                const El = s.onClick ? "button" : "div";
                 return (
-                  {(() => {
-                    const El = s.onClick ? "button" : "div";
-                    return (
-                      <El key={s.label} onClick={s.onClick} style={{ padding: "14px 8px", background: "none", border: "none", borderRight: col < 2 ? "1px solid var(--border-2)" : "none", borderBottom: row < totalRows - 1 ? "1px solid var(--border-2)" : "none", cursor: s.onClick ? "pointer" : "default", color: "var(--text-1)", fontFamily: "inherit", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                          <span style={{ color: s.color, opacity: 0.8, lineHeight: 0, flexShrink: 0 }}>{s.icon}</span>
-                          <span style={{ fontSize: 17, fontWeight: 950, letterSpacing: "-0.03em", color: s.color, lineHeight: 1 }}>{s.value}</span>
-                        </div>
-                        <span style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,0.3)", textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{s.label}</span>
-                      </El>
-                    );
-                  })()}
+                  <El key={s.label} onClick={s.onClick} style={{ padding: "14px 8px", background: "none", border: "none", borderRight: col < 2 ? "1px solid var(--border-2)" : "none", borderBottom: row < totalRows - 1 ? "1px solid var(--border-2)" : "none", cursor: s.onClick ? "pointer" : "default", color: "var(--text-1)", fontFamily: "inherit", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                      <span style={{ color: s.color, opacity: 0.8, lineHeight: 0, flexShrink: 0 }}>{s.icon}</span>
+                      <span style={{ fontSize: 17, fontWeight: 950, letterSpacing: "-0.03em", color: s.color, lineHeight: 1 }}>{s.value}</span>
+                    </div>
+                    <span style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,0.3)", textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{s.label}</span>
+                  </El>
                 );
               })}
             </div>
