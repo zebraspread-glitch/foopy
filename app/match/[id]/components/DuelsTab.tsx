@@ -1051,7 +1051,7 @@ function PicksLockedScreen({
           const oppCorrect = op?.is_correct ?? null;
           const barColor = myCorrect !== null
             ? (myCorrect ? "#22c55e" : "#ef4444")
-            : agreed ? "#22c55e" : "#f59e0b";
+            : agreed ? "#22c55e" : "#ef4444";
 
           const myImg   = mp ? (mp.pick === "a" ? q.option_a_image : q.option_b_image) : null;
           const oppImg  = op ? (op.pick === "a" ? q.option_a_image : q.option_b_image) : null;
@@ -1100,7 +1100,7 @@ function PicksLockedScreen({
 
         {/* Tiebreaker row */}
         {tbQuestion && tbMp && (
-          <div style={{ borderTop: "1px solid var(--border-2)", padding: "8px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(245,158,11,0.05)" }}>
+          <div style={{ borderTop: "2px solid #f59e0b44", padding: "8px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(245,158,11,0.05)" }}>
             <span style={{ fontSize: 10, fontWeight: 800, color: "#f59e0b", letterSpacing: "0.06em" }}>★ TIEBREAKER</span>
             <div style={{ display: "flex", gap: 16, fontSize: 12 }}>
               <span style={{ color: "var(--text-3)" }}>You: <strong style={{ color: "var(--text-1)" }}>{tbMp.pick === "a" ? tbQuestion.option_a : tbQuestion.option_b} by {tbMp.pick_margin ?? "—"}</strong></span>
@@ -1108,6 +1108,21 @@ function PicksLockedScreen({
             </div>
           </div>
         )}
+
+        {/* Legend */}
+        <div style={{ borderTop: "1px solid var(--border-1)", padding: "7px 12px", display: "flex", gap: 14, alignItems: "center" }}>
+          <span style={{ fontSize: 9, fontWeight: 700, color: "var(--text-4)", letterSpacing: "0.05em", textTransform: "uppercase" as const }}>Key</span>
+          {([
+            { color: "#22c55e", label: "Agreed" },
+            { color: "#ef4444", label: "Contested" },
+            { color: "#f59e0b", label: "Tiebreaker" },
+          ]).map(({ color, label }) => (
+            <div key={label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              <div style={{ width: 3, height: 14, borderRadius: 2, background: color }} />
+              <span style={{ fontSize: 10, fontWeight: 600, color: "var(--text-3)" }}>{label}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
