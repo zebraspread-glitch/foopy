@@ -10,6 +10,7 @@ import { X, Plus, Search, RotateCcw, Camera, ImageIcon, AtSign, Pencil, Users, S
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
 import AuraBadge from "@/app/components/AuraBadge";
+import { VerifiedBadge } from "@/app/components/VerifiedBadge";
 import { auraToastEmitter } from "@/app/lib/auraToastEmitter";
 import { supabase } from "@/app/lib/supabase";
 import { createNotification } from "@/app/lib/notifications";
@@ -72,6 +73,7 @@ type FriendEntry = {
   id: string;
   username: string | null;
   avatar_url: string | null;
+  verified?: boolean;
 };
 
 type RequestEntry = {
@@ -1178,10 +1180,10 @@ export default function ProfilePage() {
 
     const [{ data: fp }, { data: rp }] = await Promise.all([
       otherIds.length
-        ? supabase.from("profiles").select("id,username,avatar_url").in("id", otherIds)
+        ? supabase.from("profiles").select("id,username,avatar_url,verified").in("id", otherIds)
         : Promise.resolve({ data: [] }),
       reqIds.length
-        ? supabase.from("profiles").select("id,username,avatar_url").in("id", reqIds)
+        ? supabase.from("profiles").select("id,username,avatar_url,verified").in("id", reqIds)
         : Promise.resolve({ data: [] }),
     ]);
 
@@ -2311,7 +2313,7 @@ export default function ProfilePage() {
                     <div key={f.friendship_id} style={friendRowStyle} onClick={() => router.push(`/profile/${f.username}`)}>
                       <Avatar name={f.username || "?"} url={f.avatar_url} size={44} />
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 800, fontSize: 15 }}>@{f.username}</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 5, fontWeight: 800, fontSize: 15 }}>@{f.username}{f.verified && <VerifiedBadge size={14} />}</div>
                       </div>
                       <button
                         onClick={(e) => {

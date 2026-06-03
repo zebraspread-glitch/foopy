@@ -18,7 +18,7 @@ async function attachProfiles(db: ReturnType<typeof adminSupabase>, duel: any) {
 
   const { data: profiles } = await db
     .from("profiles")
-    .select("id, username, display_name, avatar_url, aura, favourite_team")
+    .select("id, username, display_name, avatar_url, aura, favourite_team, verified")
     .in("id", ids);
   const map = Object.fromEntries((profiles ?? []).map((p: any) => [p.id, p]));
 

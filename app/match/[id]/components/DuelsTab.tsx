@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
 import { teamColors } from "../utils";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
+import { VerifiedBadge } from "@/app/components/VerifiedBadge";
 
 function teamLogoUrl(name: string): string {
   const k = name.toLowerCase().replace(/[^a-z]/g, "");
@@ -121,8 +122,8 @@ type Duel = {
   coins_awarded_challenger: number;
   aura_awarded_opponent: number;
   coins_awarded_opponent: number;
-  challenger: { id: string; username: string; display_name: string; avatar_url: string | null; aura?: number; favourite_team?: string | null; duelRecord?: { wins: number; losses: number; draws: number } } | null;
-  opponent:   { id: string; username: string; display_name: string; avatar_url: string | null; aura?: number; favourite_team?: string | null; duelRecord?: { wins: number; losses: number; draws: number } } | null;
+  challenger: { id: string; username: string; display_name: string; avatar_url: string | null; aura?: number; favourite_team?: string | null; verified?: boolean; duelRecord?: { wins: number; losses: number; draws: number } } | null;
+  opponent:   { id: string; username: string; display_name: string; avatar_url: string | null; aura?: number; favourite_team?: string | null; verified?: boolean; duelRecord?: { wins: number; losses: number; draws: number } } | null;
 };
 
 type Pick = {
@@ -1001,7 +1002,7 @@ function PicksLockedScreen({
               <UserAvatar user={me ?? { username: "You", display_name: "You", avatar_url: null }} size={52} />
             </div>
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontWeight: 800, fontSize: 14, color: "var(--text-1)" }}>{me?.display_name || me?.username || "You"}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 4, fontWeight: 800, fontSize: 14, color: "var(--text-1)" }}>{me?.display_name || me?.username || "You"}{me?.verified && <VerifiedBadge size={13} />}</div>
               {me?.favourite_team && (
                 <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 3, justifyContent: "center" }}>
                   <img src={teamLogoUrl(me.favourite_team)} alt="" style={{ width: 14, height: 14, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
@@ -1021,7 +1022,7 @@ function PicksLockedScreen({
               <UserAvatar user={opponent ?? { username: "?", display_name: "?", avatar_url: null }} size={52} />
             </div>
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontWeight: 800, fontSize: 14, color: "var(--text-1)" }}>{opponent?.display_name || opponent?.username || "Opponent"}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 4, fontWeight: 800, fontSize: 14, color: "var(--text-1)" }}>{opponent?.display_name || opponent?.username || "Opponent"}{opponent?.verified && <VerifiedBadge size={13} />}</div>
               {opponent?.favourite_team && (
                 <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 3, justifyContent: "center" }}>
                   <img src={teamLogoUrl(opponent.favourite_team)} alt="" style={{ width: 14, height: 14, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />

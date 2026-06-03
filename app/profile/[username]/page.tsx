@@ -43,7 +43,7 @@ type Profile = {
   total_likes: number | null;
 };
 
-type FriendEntry = { id: string; username: string | null; avatar_url: string | null };
+type FriendEntry = { id: string; username: string | null; avatar_url: string | null; verified?: boolean };
 
 // ── Teams ────────────────────────────────────────────────────────────────────
 
@@ -575,7 +575,7 @@ export default function PublicProfilePage() {
       const ids = (rows ?? []).map(r => r.requester_id === p.id ? r.addressee_id : r.requester_id);
 
       if (ids.length) {
-        const { data } = await supabase.from("profiles").select("id, username, avatar_url").in("id", ids);
+        const { data } = await supabase.from("profiles").select("id, username, avatar_url, verified").in("id", ids);
         setFriends((data ?? []) as FriendEntry[]);
       } else {
         setFriends([]);
@@ -1131,7 +1131,7 @@ export default function PublicProfilePage() {
                     ? <img src={f.avatar_url} alt={f.username || ""} style={{ width: 42, height: 42, borderRadius: "50%", objectFit: "cover" }} />
                     : <div style={{ width: 42, height: 42, borderRadius: "50%", background: "var(--surface-1)", color: "var(--text-2)", display: "grid", placeItems: "center", fontWeight: 950, flexShrink: 0 }}>{(f.username || "?")[0].toUpperCase()}</div>
                   }
-                  <span style={{ fontSize: 15, fontWeight: 900 }}>@{f.username}</span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 15, fontWeight: 900 }}>@{f.username}{f.verified && <VerifiedBadge size={14} />}</span>
                 </button>
               ))
             )}

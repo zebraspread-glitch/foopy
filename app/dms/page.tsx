@@ -953,7 +953,7 @@ function DMsPageInner() {
                   <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 20px" }}>
                     <Avatar name={f.username} url={f.avatar_url} size={40} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 800, fontSize: 14, color: "var(--text-1)" }}>@{f.username}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 5, fontWeight: 800, fontSize: 14, color: "var(--text-1)" }}>@{f.username}{f.verified && <VerifiedBadge size={13} />}</div>
                     </div>
                     <button onClick={() => sendInvite(f.id)} disabled={alreadySent || sendingInviteId === f.id} style={{ padding: "7px 16px", borderRadius: 10, border: "none", fontWeight: 900, fontSize: 13, cursor: alreadySent || sendingInviteId === f.id ? "default" : "pointer", background: alreadySent ? "var(--surface-3)" : "#22c55e", color: alreadySent ? "var(--text-3)" : "#000", opacity: sendingInviteId === f.id ? 0.6 : 1 }}>
                       {sendingInviteId === f.id ? "…" : alreadySent ? "Invited" : "Invite"}
