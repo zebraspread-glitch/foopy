@@ -1358,21 +1358,19 @@ free_kicks?: {
     const statGameIds = new Set(statGames.map((g) => String(g.gameId)).filter(Boolean));
     const statGameIdByDateAndTeams = new Map<string, string>();
 
-    function statGameKey(date: string | undefined, teamIds: Array<number | null | undefined>) {
-      const ids = teamIds
-        .map(Number)
-        .filter((id) => Number.isFinite(id) && id > 0)
-        .sort((a, b) => a - b);
-
-      if (!date || ids.length < 2) return "";
-      return `${date.slice(0, 10)}|${ids.join("-")}`;
+    // Name-based key: date + sorted normalised team names — works regardless of ID system
+    function statGameKeyByNames(date: string | undefined, names: string[]) {
+      const parts = names.map(n => normalizeTeam(n)).filter(Boolean).sort();
+      if (!date || parts.length < 2) return "";
+      return `${date.slice(0, 10)}|${parts.join("|")}`;
     }
 
     for (const g of statGames) {
       if (!Array.isArray(g.teams)) continue;
-      const key = statGameKey(g.date, g.teams.map((t) => t.team?.id));
-      if (key && !statGameIdByDateAndTeams.has(key)) {
-        statGameIdByDateAndTeams.set(key, String(g.gameId));
+      const teamNames = g.teams.map((t: any) => String(t.team?.name ?? ""));
+      const nameKey = statGameKeyByNames(g.date, teamNames);
+      if (nameKey && !statGameIdByDateAndTeams.has(nameKey)) {
+        statGameIdByDateAndTeams.set(nameKey, String(g.gameId));
       }
     }
 
@@ -1380,7 +1378,8 @@ free_kicks?: {
       const mapped = API_SPORTS_MATCH_IDS[String(game.id)];
       if (mapped && statGameIds.has(mapped)) return mapped;
 
-      return statGameIdByDateAndTeams.get(statGameKey(game.date, [game.hteamid, game.ateamid])) ?? null;
+      // Fall back to matching by date + team names (works even without an explicit ID mapping)
+      return statGameIdByDateAndTeams.get(statGameKeyByNames(game.date, [game.hteam ?? "", game.ateam ?? ""])) ?? null;
     }
 
     const completedStatGameIds = new Set<string>();
