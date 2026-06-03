@@ -1045,13 +1045,21 @@ function PicksLockedScreen({
         </div>
 
         {/* Rows: contested → tiebreaker → agreed */}
-        {(() => {
-          const contested = withPicks.filter(({ mp, op }) => !mp || !op || mp.pick !== op.pick);
-          const agreed    = withPicks.filter(({ mp, op }) => mp && op && mp.pick === op.pick);
-
-          function PickRow({ q, mp, op, barColor, isLast }: { q: DuelQuestion; mp: Pick | null; op: Pick | null; barColor: string; isLast: boolean }) {
+        {/* Contested → Tiebreaker → Agreed, all inlined to avoid flicker from component remount */}
+        {withPicks
+          .slice()
+          .sort((a, b) => {
+            const aAgreed = !!(a.mp && a.op && a.mp.pick === a.op.pick);
+            const bAgreed = !!(b.mp && b.op && b.mp.pick === b.op.pick);
+            if (!aAgreed && bAgreed) return -1;
+            if (aAgreed && !bAgreed) return 1;
+            return 0;
+          })
+          .map(({ q, mp, op }, i, arr) => {
+            const agreed     = !!(mp && op && mp.pick === op.pick);
             const myCorrect  = mp?.is_correct ?? null;
             const oppCorrect = op?.is_correct ?? null;
+            const bc = myCorrect !== null ? (myCorrect ? "#22c55e" : "#ef4444") : agreed ? "#22c55e" : "#ef4444";
             const myImg   = mp ? (mp.pick === "a" ? q.option_a_image : q.option_b_image) : null;
             const oppImg  = op ? (op.pick === "a" ? q.option_a_image : q.option_b_image) : null;
             const myName  = mp ? (mp.pick === "a" ? q.option_a : q.option_b) : "—";
@@ -1060,8 +1068,9 @@ function PicksLockedScreen({
             const oppTeam = op ? (op.pick === "a" ? q.option_a_team : q.option_b_team) : null;
             const myColor  = safeTeamColor(myTeam,  "#3b82f6");
             const oppColor = safeTeamColor(oppTeam, "#475569");
+            const isLast = i === arr.length - 1 && !tbQuestion;
             return (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 3px 1fr", borderBottom: isLast ? "none" : "1px solid var(--border-1)" }}>
+              <div key={q.id} style={{ display: "grid", gridTemplateColumns: "1fr 3px 1fr", borderBottom: isLast ? "none" : "1px solid var(--border-1)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "11px 12px" }}>
                   {myTeam && <img src={teamLogoUrl(myTeam)} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
                   <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-1)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{myName}</span>
@@ -1070,7 +1079,7 @@ function PicksLockedScreen({
                     {myImg && <img src={myImg} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
                   </div>
                 </div>
-                <div style={{ background: barColor, opacity: 0.85 }} />
+                <div style={{ background: bc, opacity: 0.85 }} />
                 <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "11px 12px", flexDirection: "row-reverse" }}>
                   {oppTeam && <img src={teamLogoUrl(oppTeam)} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
                   <span style={{ fontSize: 12, fontWeight: 700, color: op ? "var(--text-1)" : "var(--text-4)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "right", fontStyle: !op ? "italic" : "normal" }}>{op ? oppName : "Pending…"}</span>
@@ -1081,59 +1090,38 @@ function PicksLockedScreen({
                 </div>
               </div>
             );
-          }
+          })}
 
-          const hasTb = !!(tbQuestion && tbMp);
-          const totalRows = contested.length + (hasTb ? 1 : 0) + agreed.length;
-          let idx = 0;
-
+        {/* Tiebreaker row */}
+        {tbQuestion && tbMp && (() => {
+          const myName  = tbMp.pick === "a" ? tbQuestion.option_a : tbQuestion.option_b;
+          const oppName = tbOp ? (tbOp.pick === "a" ? tbQuestion.option_a : tbQuestion.option_b) : null;
+          const myTeam  = tbMp.pick === "a" ? tbQuestion.option_a_team : tbQuestion.option_b_team;
+          const oppTeam = tbOp ? (tbOp.pick === "a" ? tbQuestion.option_a_team : tbQuestion.option_b_team) : null;
+          const myImg   = tbMp.pick === "a" ? tbQuestion.option_a_image : tbQuestion.option_b_image;
+          const oppImg  = tbOp ? (tbOp.pick === "a" ? tbQuestion.option_a_image : tbQuestion.option_b_image) : null;
+          const myColor  = safeTeamColor(myTeam,  "#3b82f6");
+          const oppColor = safeTeamColor(oppTeam, "#475569");
           return (
-            <>
-              {contested.map(({ q, mp, op }) => {
-                const myC = mp?.is_correct ?? null;
-                const bc = myC !== null ? (myC ? "#22c55e" : "#ef4444") : "#ef4444";
-                return <PickRow key={q.id} q={q} mp={mp} op={op} barColor={bc} isLast={++idx === totalRows} />;
-              })}
-
-              {hasTb && (() => {
-                const myName  = tbMp!.pick === "a" ? tbQuestion!.option_a : tbQuestion!.option_b;
-                const oppName = tbOp ? (tbOp.pick === "a" ? tbQuestion!.option_a : tbQuestion!.option_b) : null;
-                const myTeam  = tbMp!.pick === "a" ? tbQuestion!.option_a_team : tbQuestion!.option_b_team;
-                const oppTeam = tbOp ? (tbOp.pick === "a" ? tbQuestion!.option_a_team : tbQuestion!.option_b_team) : null;
-                const myImg   = tbMp!.pick === "a" ? tbQuestion!.option_a_image : tbQuestion!.option_b_image;
-                const oppImg  = tbOp ? (tbOp.pick === "a" ? tbQuestion!.option_a_image : tbQuestion!.option_b_image) : null;
-                const myColor  = safeTeamColor(myTeam,  "#3b82f6");
-                const oppColor = safeTeamColor(oppTeam, "#475569");
-                idx++;
-                return (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 3px 1fr", borderTop: "1px solid var(--border-1)", borderBottom: agreed.length > 0 ? "1px solid var(--border-1)" : "none", background: "rgba(245,158,11,0.04)" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "11px 12px" }}>
-                      {myTeam && <img src={teamLogoUrl(myTeam)} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
-                      <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-1)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{myName} <span style={{ fontSize: 10, color: "#f59e0b", fontWeight: 600 }}>by {tbMp!.pick_margin ?? "—"}</span></span>
-                      <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${myColor}22`, border: `1.5px solid ${myColor}44` }}>
-                        {myImg && <img src={myImg} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
-                      </div>
-                    </div>
-                    <div style={{ background: "#f59e0b", opacity: 0.85 }} />
-                    <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "11px 12px", flexDirection: "row-reverse" }}>
-                      {oppTeam && <img src={teamLogoUrl(oppTeam)} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
-                      <span style={{ fontSize: 12, fontWeight: 700, color: oppName ? "var(--text-1)" : "var(--text-4)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "right", fontStyle: !oppName ? "italic" : "normal" }}>
-                        {oppName ? <>{oppName} <span style={{ fontSize: 10, color: "#f59e0b", fontWeight: 600 }}>by {tbOp?.pick_margin ?? "—"}</span></> : "Pending…"}
-                      </span>
-                      <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${oppColor}22`, border: `1.5px solid ${oppColor}44` }}>
-                        {oppImg && <img src={oppImg} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {agreed.map(({ q, mp, op }) => {
-                const myC = mp?.is_correct ?? null;
-                const bc = myC !== null ? (myC ? "#22c55e" : "#ef4444") : "#22c55e";
-                return <PickRow key={q.id} q={q} mp={mp} op={op} barColor={bc} isLast={++idx === totalRows} />;
-              })}
-            </>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 3px 1fr", borderTop: "1px solid var(--border-1)", background: "rgba(245,158,11,0.04)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "11px 12px" }}>
+                {myTeam && <img src={teamLogoUrl(myTeam)} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+                <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-1)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{myName} <span style={{ fontSize: 10, color: "#f59e0b", fontWeight: 600 }}>by {tbMp.pick_margin ?? "—"}</span></span>
+                <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${myColor}22`, border: `1.5px solid ${myColor}44` }}>
+                  {myImg && <img src={myImg} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+                </div>
+              </div>
+              <div style={{ background: "#f59e0b", opacity: 0.85 }} />
+              <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "11px 12px", flexDirection: "row-reverse" }}>
+                {oppTeam && <img src={teamLogoUrl(oppTeam)} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+                <span style={{ fontSize: 12, fontWeight: 700, color: oppName ? "var(--text-1)" : "var(--text-4)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "right", fontStyle: !oppName ? "italic" : "normal" }}>
+                  {oppName ? <>{oppName} <span style={{ fontSize: 10, color: "#f59e0b", fontWeight: 600 }}>by {tbOp?.pick_margin ?? "—"}</span></> : "Pending…"}
+                </span>
+                <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${oppColor}22`, border: `1.5px solid ${oppColor}44` }}>
+                  {oppImg && <img src={oppImg} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+                </div>
+              </div>
+            </div>
           );
         })()}
 
