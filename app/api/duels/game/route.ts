@@ -109,9 +109,9 @@ export async function GET(req: Request) {
       .eq("user_id", user.id);
     picks = pickData ?? [];
 
-    // Fetch opponent picks for active + complete duels so locked screen can show both
+    // Fetch opponent picks once the current user has submitted their own picks
     const opponentId = duel.challenger_id === user.id ? duel.opponent_id : duel.challenger_id;
-    if (opponentId && (duel.status === "active" || duel.status === "complete")) {
+    if (opponentId && picks.length > 0) {
       const { data: oppPickData } = await db
         .from("duel_picks")
         .select("*")
