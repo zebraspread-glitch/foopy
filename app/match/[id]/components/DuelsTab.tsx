@@ -1141,9 +1141,9 @@ function PicksLockedScreen({
         <div style={{ borderTop: "1px solid var(--border-1)", padding: "7px 12px", display: "flex", gap: 14, alignItems: "center" }}>
           <span style={{ fontSize: 9, fontWeight: 700, color: "var(--text-4)", letterSpacing: "0.05em", textTransform: "uppercase" as const }}>Key</span>
           {([
-            { color: "#22c55e", label: "Agreed" },
             { color: "#ef4444", label: "Contested" },
             { color: "#f59e0b", label: "Tiebreaker" },
+            { color: "#22c55e", label: "Agreed" },
           ]).map(({ color, label }) => (
             <div key={label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
               <div style={{ width: 3, height: 14, borderRadius: 2, background: color }} />
