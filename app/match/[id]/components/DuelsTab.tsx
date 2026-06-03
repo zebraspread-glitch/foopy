@@ -1038,7 +1038,7 @@ function PicksLockedScreen({
       {/* ── Pick table ── */}
       <div style={{ background: "var(--surface-2)", border: "1px solid var(--border-2)", borderRadius: 14, overflow: "hidden" }}>
         {/* Column headers */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 54px 1fr", background: "rgba(255,255,255,0.03)", borderBottom: "1px solid var(--border-2)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 72px 1fr", background: "rgba(255,255,255,0.03)", borderBottom: "1px solid var(--border-2)" }}>
           <div style={{ padding: "8px 12px", fontSize: 10, fontWeight: 900, letterSpacing: "0.08em", color: "#3b82f6" }}>— YOU</div>
           <div />
           <div style={{ padding: "8px 12px", fontSize: 10, fontWeight: 900, letterSpacing: "0.08em", color: "var(--text-3)", textAlign: "right" }}>Opponent —</div>
@@ -1070,7 +1070,7 @@ function PicksLockedScreen({
             const oppColor = safeTeamColor(oppTeam, "#475569");
             const isLast = i === arr.length - 1 && !tbQuestion;
             return (
-              <div key={q.id} style={{ display: "grid", gridTemplateColumns: "1fr 54px 1fr", borderBottom: isLast ? "none" : "1px solid var(--border-1)" }}>
+              <div key={q.id} style={{ display: "grid", gridTemplateColumns: "1fr 72px 1fr", borderBottom: isLast ? "none" : "1px solid var(--border-1)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "11px 12px" }}>
                   {myTeam && <img src={teamLogoUrl(myTeam)} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
                   <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-1)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{myName}</span>
@@ -1080,7 +1080,7 @@ function PicksLockedScreen({
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", borderLeft: `3px solid ${bc}`, borderRight: `3px solid ${bc}`, padding: "0 3px" }}>
-                  <span style={{ fontSize: 9, fontWeight: 900, color: bc, letterSpacing: "0.04em", textTransform: "uppercase" as const, textAlign: "center" as const, lineHeight: 1.2, whiteSpace: "nowrap" as const, overflow: "hidden", textOverflow: "ellipsis", maxWidth: 46 }}>
+                  <span style={{ fontSize: 9, fontWeight: 900, color: bc, letterSpacing: "0.04em", textTransform: "uppercase" as const, textAlign: "center" as const, lineHeight: 1.2, whiteSpace: "nowrap" as const, overflow: "hidden", textOverflow: "ellipsis", maxWidth: 64 }}>
                     {DUEL_STAT_CATS[q.category_key ?? ""]?.label ?? q.category_key?.replace("player_","").replace("team_","") ?? "—"}
                   </span>
                 </div>
@@ -1107,7 +1107,7 @@ function PicksLockedScreen({
           const myColor  = safeTeamColor(myTeam,  "#3b82f6");
           const oppColor = safeTeamColor(oppTeam, "#475569");
           return (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 54px 1fr", borderTop: "1px solid var(--border-1)", background: "rgba(245,158,11,0.04)" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 72px 1fr", borderTop: "1px solid var(--border-1)", background: "rgba(245,158,11,0.04)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "11px 12px" }}>
                 {myTeam && <img src={teamLogoUrl(myTeam)} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
                 <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-1)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{myName} <span style={{ fontSize: 10, color: "#f59e0b", fontWeight: 600 }}>by {tbMp.pick_margin ?? "—"}</span></span>
