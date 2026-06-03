@@ -739,22 +739,27 @@ function QuestionCard({
         {(["a", "b"] as const).map((opt) => {
           const label = opt === "a" ? question.option_a : question.option_b;
           const image = opt === "a" ? question.option_a_image : question.option_b_image;
+          const team  = opt === "a" ? question.option_a_team  : question.option_b_team;
           const active = pick === opt;
           return (
             <button
               key={opt}
               onClick={() => onPick(opt)}
               style={{
-                ...pickBtnStyle,
-                background: active ? "#3b82f6" : "var(--surface-2)",
-                border: active ? "2px solid #3b82f6" : "2px solid var(--border-2)",
+                padding: "10px 12px", borderRadius: 10, cursor: "pointer",
+                background: active ? "rgba(59,130,246,0.12)" : "var(--surface-2)",
+                border: `2px solid ${active ? "#3b82f6" : "var(--border-2)"}`,
                 color: active ? "#fff" : "var(--text-1)",
                 fontWeight: active ? 800 : 600,
-                display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+                display: "flex", flexDirection: "row", alignItems: "center", gap: 8,
+                transition: "all 0.12s", fontFamily: "inherit", textAlign: "left",
+                minWidth: 0,
               }}
             >
-              {hasImages && <OptionAvatar image={image ?? null} label={label} size={48} />}
-              <span style={{ fontSize: 13, lineHeight: 1.2, textAlign: "center" }}>{label}</span>
+              {(hasImages || team) && (
+                <OptionAvatar image={image ?? null} label={label} size={28} />
+              )}
+              <span style={{ fontSize: 13, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: active ? "#60a5fa" : "var(--text-1)", fontWeight: 700 }}>{label}</span>
             </button>
           );
         })}
@@ -784,20 +789,24 @@ function TiebreakerCard({
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
         {(["a", "b"] as const).map((opt) => {
           const label = opt === "a" ? question.option_a : question.option_b;
+          const image = opt === "a" ? question.option_a_image : question.option_b_image;
           const active = pick === opt;
           return (
             <button
               key={opt}
               onClick={() => onPick(opt)}
               style={{
-                ...pickBtnStyle,
-                background: active ? "#f59e0b" : "var(--surface-2)",
-                border: active ? "2px solid #f59e0b" : "2px solid var(--border-2)",
-                color: active ? "#000" : "var(--text-1)",
-                fontWeight: active ? 800 : 600,
+                padding: "10px 12px", borderRadius: 10, cursor: "pointer",
+                background: active ? "rgba(245,158,11,0.12)" : "var(--surface-2)",
+                border: `2px solid ${active ? "#f59e0b" : "var(--border-2)"}`,
+                color: active ? "#f59e0b" : "var(--text-1)",
+                fontWeight: 700, display: "flex", flexDirection: "row",
+                alignItems: "center", gap: 8, transition: "all 0.12s",
+                fontFamily: "inherit", textAlign: "left", minWidth: 0,
               }}
             >
-              {label}
+              {image && <OptionAvatar image={image} label={label} size={28} />}
+              <span style={{ fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
             </button>
           );
         })}
