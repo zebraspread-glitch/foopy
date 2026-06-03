@@ -2180,8 +2180,8 @@
     "name": "Harrison Jones",
     "team": "Essendon",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1624,
+    "eventIds": 1624,
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.compp-essendon-bombers--harrison-jones-1"
   },
@@ -2489,7 +2489,7 @@
     ],
     "apiSportsId": 1899,
     "eventIds": [
-      1899
+      1808
     ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.compp-essendon-bombers--tom-edwards"

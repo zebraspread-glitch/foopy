@@ -7,6 +7,7 @@ import NavigationEvents from "./components/NavigationEvents";
 import ThemeModeBootstrap from "./components/ThemeModeBootstrap";
 import AuraToast from "./components/AuraToast";
 import HapticsProvider from "./components/HapticsProvider";
+import PassRewardCollector from "./components/PassRewardCollector";
 
 export const metadata: Metadata = {
   title: "Foopy | AFL Live Scores & Picks",
@@ -57,6 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </div>
         <BottomNav />
+        <PassRewardCollector />
         <AuraToast />
         <Analytics />
       </body>

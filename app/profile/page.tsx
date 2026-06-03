@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 import type { CSSProperties } from "react";
-import { X, Plus, Search, RotateCcw, Camera, ImageIcon, AtSign, Pencil, Users } from "lucide-react";
+import { X, Plus, Search, RotateCcw, Camera, ImageIcon, AtSign, Pencil, Users, Star, Layers, Ticket, MessageCircle, Heart, Tv, Zap, BarChart2, Trophy } from "lucide-react";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
 import AuraBadge from "@/app/components/AuraBadge";
@@ -897,6 +897,13 @@ export default function ProfilePage() {
   type StatsPopup = null | "games" | "likes" | "polls";
   const [statsPopup, setStatsPopup] = useState<StatsPopup>(null);
   const [cardCount, setCardCount] = useState<number | null>(null);
+  const [duelStats, setDuelStats] = useState<{ wins: number; losses: number; total: number; winRate: number; winStreak: number } | null>(null);
+  const [auraRank, setAuraRank] = useState<number | null>(null);
+  const [pollsVoted, setPollsVoted] = useState<number | null>(null);
+  const [pollsWon, setPollsWon] = useState<number | null>(null);
+  const [gamesViewed, setGamesViewed] = useState<number | null>(null);
+  const [commentCount, setCommentCount] = useState<number | null>(null);
+  const [passCount, setPassCount] = useState<number | null>(null);
   const [featuredCardRatings, setFeaturedCardRatings] = useState<Map<string, number>>(new Map());
   const [totalLikes, setTotalLikes] = useState<number | null>(null);
 
@@ -986,6 +993,26 @@ export default function ProfilePage() {
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id)
       .then(({ count }) => setCardCount(count ?? 0));
+    // Duel stats
+    fetch(`/api/duels/profile?user_id=${user.id}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) setDuelStats(d); })
+      .catch(() => {});
+    // Polls voted + polls won
+    supabase.from("match_poll_votes").select("id", { count: "exact", head: true }).eq("user_id", user.id)
+      .then(({ count }) => setPollsVoted(count ?? 0));
+    supabase.from("aura_events").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("event_type", "poll_correct")
+      .then(({ count }) => setPollsWon(count ?? 0));
+    supabase.from("aura_events").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("event_type", "live_game_view")
+      .then(({ count }) => setGamesViewed(count ?? 0));
+    // Comment count
+    supabase.from("feed_comments").select("id", { count: "exact", head: true }).eq("user_id", user.id)
+      .then(({ count }) => setCommentCount(count ?? 0));
+    // Pass count
+    Promise.all([
+      supabase.from("user_player_passes").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("active", true),
+      supabase.from("user_team_passes").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("active", true),
+    ]).then(([pp, tp]) => setPassCount((pp.count ?? 0) + (tp.count ?? 0)));
     // Prefetch picker cards so the modal opens instantly
     setPickerLoading(true);
     supabase
@@ -1007,6 +1034,13 @@ export default function ProfilePage() {
       setPassesPickerLoading(false);
     });
   }, [user]);
+
+  // Aura rank — depends on profile.aura being loaded
+  useEffect(() => {
+    if (profile?.aura == null) return;
+    supabase.from("profiles").select("id", { count: "exact", head: true }).gt("aura", profile.aura)
+      .then(({ count }) => setAuraRank((count ?? 0) + 1));
+  }, [profile?.aura]);
 
   // Fetch ratings for featured cards so the carousel can show them
   useEffect(() => {
@@ -1814,39 +1848,137 @@ export default function ProfilePage() {
           );
         })()}
 
-        {/* ── Stats row ── */}
-        <div style={{ background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18, display: "flex" }}>
-          {(
-            [
-              { label: "Games",     value: profile?.matches_viewed ?? 0,           color: "var(--text-1)",  onClick: openGamesPopup },
-              { label: "Likes",     value: profile?.total_likes ?? totalLikes ?? "—", color: "var(--text-1)",  onClick: openLikesPopup },
-              { label: "Polls Won", value: 0,                                       color: "#22c55e",  onClick: openPollsPopup },
-              { label: "Cards",     value: cardCount ?? "—",                        color: "#c084fc",  onClick: () => router.push("/album") },
-            ] as const
-          ).map((s, i, arr) => (
-            <button
-              key={s.label}
-              onClick={s.onClick}
-              style={{
-                flex: 1,
-                padding: "16px 8px",
-                background: "none",
-                border: "none",
-                borderRight: i < arr.length - 1 ? "1px solid var(--border-2)" : "none",
-                cursor: "pointer",
-                color: "var(--text-1)",
-                fontFamily: "inherit",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 4,
-              }}
-            >
-              <span style={{ fontSize: 20, fontWeight: 950, letterSpacing: "-0.03em", color: s.color }}>{s.value}</span>
-              <span style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{s.label}</span>
-            </button>
-          ))}
-        </div>
+        {/* ── Album ── */}
+        {(() => {
+          const previewRarities = (profile?.featured_cards ?? [])
+            .slice(0, 3).map(fc => fc.rarity as string);
+          while (previewRarities.length < 3) previewRarities.push(["gold","silver","bronze"][previewRarities.length]);
+          const RARITY_COLORS: Record<string, string> = {
+            bronze:"#cd7f32",silver:"#c0c0c0",gold:"#ffd700",
+            emerald:"#10b981",sapphire:"#3b82f6",ruby:"#ef4444",
+            amethyst:"#a78bfa",diamond:"#67e8f9",pinkdiamond:"#f472b6",mythic:"#c084fc",
+          };
+          const cardAngles = [-14, 0, 14];
+          return (
+            <Link href="/album" style={{
+              display:"flex",alignItems:"center",gap:20,
+              background:"var(--bg)",border:"1px solid var(--border-2)",borderRadius:18,
+              padding:"20px 22px",textDecoration:"none",color:"var(--text-1)",
+              position:"relative",overflow:"hidden",
+            }}>
+              <div style={{position:"absolute",inset:0,background:"radial-gradient(ellipse at 20% 50%,rgba(99,102,241,.07) 0%,transparent 60%)",pointerEvents:"none"}} />
+              <div style={{position:"relative",width:72,height:90,flexShrink:0}}>
+                {previewRarities.map((rarity,i) => (
+                  <div key={i} style={{
+                    position:"absolute",width:52,height:72,borderRadius:7,overflow:"hidden",
+                    border:`1.5px solid ${RARITY_COLORS[rarity]??"#ffd700"}55`,
+                    boxShadow:"0 4px 14px rgba(0,0,0,.55),0 0 0 1px rgba(0,0,0,.3)",
+                    transform:`rotate(${cardAngles[i]}deg)`,transformOrigin:"bottom center",
+                    bottom:0,left:"50%",marginLeft:-26,zIndex:i,
+                  }}>
+                    <img src={`/cards/${rarity}.png`} alt="" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}} />
+                  </div>
+                ))}
+              </div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:20,fontWeight:950,letterSpacing:"-0.03em",color:"var(--text-1)",lineHeight:1}}>Album</div>
+                <div style={{fontSize:13,color:"var(--text-3)",fontWeight:700,marginTop:5}}>
+                  {(cardCount ?? 0) > 0 ? `${(cardCount??0).toLocaleString()} cards` : "View collection"}
+                </div>
+              </div>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.25)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}>
+                <path d="M9 18l6-6-6-6"/>
+              </svg>
+            </Link>
+          );
+        })()}
+
+        {/* ── Stats grid ── */}
+        {(() => {
+          const stats: { label: string; value: string | number; color: string; icon: React.ReactNode; onClick?: () => void }[] = [
+            { label: "Aura Rank",   value: auraRank    != null ? `#${auraRank.toLocaleString()}` : "—", color: "#c084fc", icon: <Star     size={15} />, onClick: () => router.push("/aura-leaderboard") },
+            { label: "Cards",       value: cardCount   ?? "—",                                           color: "#fbbf24", icon: <Layers   size={15} />, onClick: () => router.push("/album") },
+            { label: "Passes",      value: passCount   ?? "—",                                           color: "#60a5fa", icon: <Ticket   size={15} />, onClick: () => router.push("/passes") },
+            { label: "Comments",    value: commentCount ?? "—",                                          color: "#38bdf8", icon: <MessageCircle size={15} /> },
+            { label: "Likes",       value: profile?.total_likes ?? totalLikes ?? "—",                    color: "#f43f5e", icon: <Heart    size={15} />, onClick: openLikesPopup },
+            { label: "Games",       value: gamesViewed ?? "—",                                           color: "#4ade80", icon: <Tv       size={15} />, onClick: openGamesPopup },
+            { label: "Duels",       value: duelStats?.total ?? 0,                                        color: "#f97316", icon: <Zap      size={15} /> },
+            { label: "Polls Voted", value: pollsVoted  ?? "—",                                           color: "#a78bfa", icon: <BarChart2 size={15} />, onClick: openPollsPopup },
+            { label: "Polls Won",   value: pollsWon    ?? "—",                                           color: "#22c55e", icon: <Trophy   size={15} />, onClick: openPollsPopup },
+          ];
+          return (
+            <div style={{ background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18, display: "grid", gridTemplateColumns: "repeat(3, 1fr)" }}>
+              {stats.map((s, i) => {
+                const col = i % 3;
+                const row = Math.floor(i / 3);
+                const totalRows = Math.ceil(stats.length / 3);
+                const borderRight = col < 2 ? "1px solid var(--border-2)" : "none";
+                const borderBottom = row < totalRows - 1 ? "1px solid var(--border-2)" : "none";
+                const El = s.onClick ? "button" : "div";
+                return (
+                  <El key={s.label} onClick={s.onClick ?? undefined} style={{ padding: "14px 8px", background: "none", border: "none", borderRight, borderBottom, cursor: s.onClick ? "pointer" : "default", color: "var(--text-1)", fontFamily: "inherit", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                      <span style={{ color: s.color, opacity: 0.8, lineHeight: 0, flexShrink: 0 }}>{s.icon}</span>
+                      <span style={{ fontSize: 17, fontWeight: 950, letterSpacing: "-0.03em", color: s.color, lineHeight: 1 }}>{s.value}</span>
+                    </div>
+                    <span style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{s.label}</span>
+                  </El>
+                );
+              })}
+            </div>
+          );
+        })()}
+
+        {/* ── Duel stats ── */}
+        {duelStats && duelStats.total > 0 && (
+          <div style={{background:"var(--bg)",border:"1px solid var(--border-2)",borderRadius:18,padding:"18px 20px"}}>
+            <div style={{fontSize:12,fontWeight:800,color:"#64748b",letterSpacing:"0.06em",marginBottom:12}}>⚔ DUELS</div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:20,fontWeight:900,color:"#4ade80",lineHeight:1}}>{duelStats.wins}</div>
+                <div style={{fontSize:11,color:"#64748b",marginTop:2}}>Wins</div>
+              </div>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:20,fontWeight:900,color:"#ef4444",lineHeight:1}}>{duelStats.losses}</div>
+                <div style={{fontSize:11,color:"#64748b",marginTop:2}}>Losses</div>
+              </div>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:20,fontWeight:900,color:"#3b82f6",lineHeight:1}}>{duelStats.winRate}%</div>
+                <div style={{fontSize:11,color:"#64748b",marginTop:2}}>Win Rate</div>
+              </div>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:20,fontWeight:900,color:"#f59e0b",lineHeight:1}}>{duelStats.winStreak}</div>
+                <div style={{fontSize:11,color:"#64748b",marginTop:2}}>Streak</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Member Since + Polls Win Rate ── */}
+        {(() => {
+          const daysAgo = profile?.created_at
+            ? Math.floor((Date.now() - new Date(profile.created_at).getTime()) / 86400000)
+            : null;
+          return (
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+              <div style={{background:"var(--bg)",border:"1px solid var(--border-2)",borderRadius:18,padding:"18px 16px"}}>
+                <div style={{fontSize:11,fontWeight:800,color:"rgba(255,255,255,0.35)",letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:6}}>member since</div>
+                <div style={{fontSize:15,fontWeight:950,letterSpacing:"-0.02em",color:"var(--text-1)"}}>
+                  {profile?.created_at
+                    ? new Date(profile.created_at).toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"})
+                    : "—"}
+                </div>
+                {daysAgo !== null && (
+                  <div style={{marginTop:4,fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.35)"}}>{daysAgo} days ago</div>
+                )}
+              </div>
+              <div style={{background:"var(--bg)",border:"1px solid var(--border-2)",borderRadius:18,padding:"18px 16px"}}>
+                <div style={{fontSize:11,fontWeight:800,color:"rgba(255,255,255,0.35)",letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:6}}>Polls win rate</div>
+                <div style={{fontSize:15,fontWeight:950,letterSpacing:"-0.02em",color:"var(--text-1)"}}>—</div>
+              </div>
+            </div>
+          );
+        })()}
 
       </div>
 

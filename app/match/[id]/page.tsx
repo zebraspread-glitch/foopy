@@ -3507,7 +3507,7 @@ function MatchPageInner() {
           will-change: height;
         }
         .mh-glow { position: absolute; inset: 0; pointer-events: none; opacity: calc(1 - var(--p,0) * 1.5); will-change: opacity; }
-        .mh-slot { position: relative; display: flex; align-items: center; justify-content: center; height: 100%; z-index: 2; }
+        .mh-slot { position: relative; display: flex; align-items: center; justify-content: center; height: 100%; z-index: 2; gap: 6px; }
         .mh-slot-l { grid-column: 2; }
         .mh-center { grid-column: 3; }
         .mh-slot-r { grid-column: 4; }
@@ -3518,16 +3518,27 @@ function MatchPageInner() {
         .mh-slot-r .mh-logo { transform-origin: left center;  transform: scale(calc(1 - 0.5 * var(--p,0))); }
         .mh-name { position: absolute; top: calc(50% + 44px); left: 50%; transform: translateX(-50%); white-space: nowrap; text-align: center; opacity: calc(1 - var(--p,0) * 2.1); will-change: opacity; }
         .mh-name > div { max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .mh-center { position: relative; z-index: 1; min-width: 0; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; overflow: visible; }
+        .mh-center { position: relative; z-index: 1; min-width: 0; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(5px * (1 - var(--p,0))); overflow: visible; }
         .mh-score {
           max-width: 100%; white-space: nowrap; text-overflow: ellipsis;
           line-height: 1.12; font-weight: 1000; letter-spacing: -0.03em; color: var(--text-1);
           font-variant-numeric: tabular-nums;
           font-size: clamp(26px, 9.5vw, 46px);
           transform: scale(calc(1 - 0.45 * var(--p,0)));
-          transform-origin: center center; will-change: transform;
+          transform-origin: center center; will-change: transform, opacity;
+          opacity: clamp(0, calc(1.8 - var(--p,0) * 3.6), 1);
+          max-height: clamp(0px, calc(52px - 52px * var(--p,0)), 52px);
+          overflow: hidden;
         }
         .mh-sub { line-height: 1.3; transform: scale(calc(1 - 0.18 * var(--p,0))); transform-origin: center center; will-change: transform; white-space: nowrap; }
+        .mh-mini {
+          font-size: 20px; font-weight: 1000; font-variant-numeric: tabular-nums;
+          letter-spacing: -0.03em; color: var(--text-1); line-height: 1; flex-shrink: 0;
+          overflow: hidden; white-space: nowrap;
+          max-width: clamp(0px, calc((var(--p,0) - 0.42) * 130px), 52px);
+          opacity: clamp(0, calc((var(--p,0) - 0.42) * 4.5), 1);
+          will-change: max-width, opacity;
+        }
         .mh-venue { position: absolute; left: 12px; right: 12px; bottom: 10px; text-align: center; opacity: calc(1 - var(--p,0) * 2.2); pointer-events: none; will-change: opacity; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         @media (hover: hover) and (pointer: fine) {
@@ -3545,11 +3556,12 @@ function MatchPageInner() {
           .mh-score {
             font-size: calc(46px - 20px * var(--p, 0));
             transform: none;
-            will-change: font-size;
+            will-change: font-size, opacity;
           }
           .mh-sub {
             transform: none;
           }
+          .mh-mini { font-size: 22px; }
           .mh-name > div {
             max-width: 160px;
           }
@@ -3577,6 +3589,7 @@ function MatchPageInner() {
               background: "rgba(10,10,15,0.94)",
               backdropFilter: "blur(22px) saturate(180%)", WebkitBackdropFilter: "blur(22px) saturate(180%)",
               borderBottom: "1px solid var(--border-2)",
+              paddingTop: "env(safe-area-inset-top)",
             }}>
               {/* ─── Collapsing match header — single grid, morphs via --p ─── */}
               <div ref={headerContainerRef} className="mh">
@@ -3591,6 +3604,7 @@ function MatchPageInner() {
                   <Link href={`/team/${toTeamSlug(game.hteam ?? "")}`} aria-label={`${game.hteam ?? "Home"} team page`} className="mh-logo" style={{ background: `${teamColor(game.hteam ?? "")}22` }}>
                     <img src={getLogo(game.hteam)} alt={game.hteam ?? ""} />
                   </Link>
+                  {status !== "UPCOMING" && <span className="mh-mini">{scoreText(game.hscore)}</span>}
                   <div className="mh-name">
                     <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text-1)" }}>{game.hteam ?? "Home"}</div>
                     {homeRecord && <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{homeRecord}</div>}
@@ -3630,6 +3644,7 @@ function MatchPageInner() {
 
                 {/* Right column — away logo + name */}
                 <div className="mh-slot mh-slot-r">
+                  {status !== "UPCOMING" && <span className="mh-mini">{scoreText(game.ascore)}</span>}
                   <Link href={`/team/${toTeamSlug(game.ateam ?? "")}`} aria-label={`${game.ateam ?? "Away"} team page`} className="mh-logo" style={{ background: `${teamColor(game.ateam ?? "")}22` }}>
                     <img src={getLogo(game.ateam)} alt={game.ateam ?? ""} />
                   </Link>

@@ -10,12 +10,14 @@ import playerStatsJson from "@/app/data/players.json";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import { foopyRating } from "@/app/match/[id]/utils";
 import { haptic } from "@/app/lib/haptic";
+import { VerifiedBadge } from "@/app/components/VerifiedBadge";
 
 type Profile = {
   id: string;
   username?: string | null;
   display_name?: string | null;
   avatar_url?: string | null;
+  verified?: boolean | null;
 };
 
 type DbComment = {
@@ -246,7 +248,7 @@ function EventCommentsPageInner() {
 
   const [userId, setUserId] = useState<string | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
-  const [replyThreadId, setReplyThreadId] = useState<string | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [body, setBody] = useState("");
   const [replyTo, setReplyTo] = useState<Comment | null>(null);
@@ -447,7 +449,7 @@ function EventCommentsPageInner() {
     if (userIds.length > 0) {
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, username, display_name, avatar_url")
+        .select("id, username, display_name, avatar_url, verified")
         .in("id", userIds);
 
       for (const profile of profiles ?? []) {
@@ -652,15 +654,21 @@ function EventCommentsPageInner() {
   }
 
   function startReply(comment: Comment) {
-    setReplyThreadId(null);
     setReplyTo(comment);
+    // Auto-expand the parent thread so the reply will be visible after submit
+    const parentId = comment.parent_id ?? comment.id;
+    setExpandedIds(prev => new Set(prev).add(parentId));
     setTimeout(() => inputRef.current?.focus(), 60);
   }
 
-  const replyThread = useMemo(
-    () => (replyThreadId ? findCommentById(comments, replyThreadId) : null),
-    [comments, replyThreadId]
-  );
+  function toggleExpanded(id: string) {
+    setExpandedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   return (
     <main style={pageStyle}>
@@ -768,29 +776,14 @@ function EventCommentsPageInner() {
               onDelete={handleDelete}
               onReply={startReply}
               likingIds={likingIds}
-              onViewReplies={(comment) => setReplyThreadId(comment.id)}
+              expandedIds={expandedIds}
+              onToggleReplies={toggleExpanded}
             />
           ))
         )}
       </section>
 
-      {replyThread && (
-        <RepliesPopup
-          comment={replyThread}
-          userId={userId}
-          onClose={() => setReplyThreadId(null)}
-          onLike={handleLike}
-          onDelete={handleDelete}
-          onReply={startReply}
-          likingIds={likingIds}
-          onViewReplies={(comment) => setReplyThreadId(comment.id)}
-          onSubmitReply={(parent, text) => submitCommentText(text, parent)}
-          submitting={submitting}
-          cooldown={cooldown}
-        />
-      )}
-
-      {!replyThread && <section style={inputAreaStyle}>
+      <section style={inputAreaStyle}>
         {!userId ? (
           <button onClick={() => router.push("/login")} style={signInBtnStyle}>
             Sign in to comment
@@ -847,7 +840,7 @@ function EventCommentsPageInner() {
             </div>
           </>
         )}
-      </section>}
+      </section>
     </main>
   );
 }
@@ -1042,7 +1035,7 @@ function EventCard({ playerName, team, img, type, quarter, minute }: {
       overflow: "hidden",
     }}>
       {/* Avatar: player photo, or team logo, or initials fallback */}
-      <div style={{
+      <div suppressHydrationWarning style={{
         width: 56, height: 56, borderRadius: "50%",
         background: `${primary}55`,
         overflow: "hidden", flexShrink: 0,
@@ -1110,17 +1103,11 @@ function PlayerCardHeader({ name, img, team, rating, slug }: { name: string; img
   );
 }
 
-function InlineCommentBody({ name, username, text }: { name: string; username?: string; text: string }) {
+function CommentBody({ text }: { text: string }) {
   const router = useRouter();
   const parts = text.split(/(@\w+)/g);
   return (
     <p style={commentBodyStyle}>
-      <span
-        onClick={() => username && router.push(`/profile/${username}`)}
-        style={{ fontWeight: 900, marginRight: 6, cursor: username ? "pointer" : "default", color: "var(--text-1)" }}
-      >
-        {name}
-      </span>
       {parts.map((part, i) =>
         /^@\w+$/.test(part) ? (
           <span
@@ -1143,8 +1130,8 @@ function CommentRow({
   onDelete,
   onReply,
   likingIds,
-  onViewReplies,
-  hideThreadActions = false,
+  expandedIds,
+  onToggleReplies,
   isReply = false,
 }: {
   comment: Comment;
@@ -1153,8 +1140,8 @@ function CommentRow({
   onDelete: (comment: Comment) => void;
   onReply: (comment: Comment) => void;
   likingIds: Set<string>;
-  onViewReplies: (comment: Comment) => void;
-  hideThreadActions?: boolean;
+  expandedIds: Set<string>;
+  onToggleReplies: (id: string) => void;
   isReply?: boolean;
 }) {
   const router = useRouter();
@@ -1163,204 +1150,132 @@ function CommentRow({
   const avatar = comment.profile?.avatar_url;
   const isOwn = userId === comment.user_id;
   const isLiking = likingIds.has(comment.id);
-
   const replyCount = comment.replies.length;
+  const isExpanded = expandedIds.has(comment.id);
 
   return (
-    <article id={`c-${comment.id}`} style={{ ...commentRowStyle, paddingLeft: isReply ? 54 : 16 }}>
-      <div
-        onClick={() => username && router.push(`/profile/${username}`)}
-        style={{ ...avatarStyle, cursor: username ? "pointer" : "default" }}
-      >
-        {avatar ? (
-          <img src={avatar} alt={name} style={avatarImgStyle} />
-        ) : (
-          <span style={avatarInitialStyle}>{name[0]?.toUpperCase() || "U"}</span>
-        )}
-      </div>
+    <div id={`c-${comment.id}`}>
+      <div style={{ ...commentRowStyle, paddingLeft: isReply ? 52 : 16 }}>
+        {/* Avatar */}
+        <div
+          onClick={() => username && router.push(`/profile/${username}`)}
+          style={{
+            ...avatarStyle,
+            width: isReply ? 28 : 34,
+            height: isReply ? 28 : 34,
+            cursor: username ? "pointer" : "default",
+            flexShrink: 0,
+          }}
+        >
+          {avatar ? (
+            <img src={avatar} alt={name} style={avatarImgStyle} />
+          ) : (
+            <span style={{ ...avatarInitialStyle, fontSize: isReply ? 11 : 13 }}>{name[0]?.toUpperCase() || "U"}</span>
+          )}
+        </div>
 
-      <div style={commentMainStyle}>
-        <div style={{ minWidth: 0 }}>
-          <InlineCommentBody name={name} username={username} text={comment.body} />
+        <div style={commentMainStyle}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 2 }}>
+              <span
+                onClick={() => username && router.push(`/profile/${username}`)}
+                style={{ fontWeight: 900, fontSize: isReply ? 12 : 13, color: "var(--text-1)", cursor: username ? "pointer" : "default" }}
+              >
+                {name}
+              </span>
+              {comment.profile?.verified && <VerifiedBadge size={12} />}
+            </div>
+            <CommentBody text={comment.body} />
 
-          <div style={commentActionsStyle}>
-            <span style={commentTimeStyle}>{formatCommentTime(comment.created_at)}</span>
-            {userId && !hideThreadActions && (
-              <>
+            <div style={commentActionsStyle}>
+              <span style={commentTimeStyle}>{formatCommentTime(comment.created_at)}</span>
+              {userId && (
                 <button onClick={() => onReply(comment)} style={actionBtnStyle}>Reply</button>
-                {isOwn && (
-                  <button onClick={() => onDelete(comment)} style={{ ...actionBtnStyle, color: "#ef4444" }}>Delete</button>
-                )}
-              </>
-            )}
-            {isOwn && hideThreadActions && (
-              <button onClick={() => onDelete(comment)} style={{ ...actionBtnStyle, color: "#ef4444" }}>Delete</button>
+              )}
+              {isOwn && (
+                <button onClick={() => onDelete(comment)} style={{ ...actionBtnStyle, color: "#ef4444" }}>Delete</button>
+              )}
+            </div>
+
+            {!isReply && replyCount > 0 && (
+              <button onClick={() => onToggleReplies(comment.id)} style={viewRepliesBtnStyle}>
+                <span style={{ width: 20, height: 1, background: "var(--border-2)", display: "inline-block", flexShrink: 0 }} />
+                {isExpanded
+                  ? "Hide replies"
+                  : `View ${replyCount} ${replyCount === 1 ? "reply" : "replies"}`}
+                <svg
+                  width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
+                  style={{ transition: "transform 0.22s ease", transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)", flexShrink: 0 }}
+                >
+                  <polyline points="2,3.5 5,6.5 8,3.5" />
+                </svg>
+              </button>
             )}
           </div>
 
-          {replyCount > 0 && !hideThreadActions && (
-            <button onClick={() => onViewReplies(comment)} style={viewRepliesBtnStyle}>
-              <span style={{ width: 24, height: 1, background: "var(--border-2)", display: "inline-block" }} />
-              {`View ${replyCount} ${replyCount === 1 ? "reply" : "replies"}`}
-            </button>
-          )}
+          {/* Like button */}
+          <button
+            onClick={() => onLike(comment)}
+            disabled={!userId || isLiking}
+            aria-label={comment.liked ? "Unlike" : "Like"}
+            style={{
+              width: 30,
+              minHeight: 42,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "flex-start",
+              gap: 3,
+              background: "none",
+              border: "none",
+              padding: "3px 0 0",
+              fontSize: 11,
+              fontWeight: 800,
+              cursor: userId ? "pointer" : "default",
+              color: comment.liked ? "#f43f5e" : "var(--text-3)",
+              opacity: isLiking ? 0.5 : 1,
+              flexShrink: 0,
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill={comment.liked ? "#f43f5e" : "none"} stroke={comment.liked ? "#f43f5e" : "currentColor"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
+            {comment.likes > 0 && <span>{comment.likes}</span>}
+          </button>
         </div>
-
-        <button
-          onClick={() => onLike(comment)}
-          disabled={!userId || isLiking}
-          aria-label={comment.liked ? "Unlike comment" : "Like comment"}
-          style={{
-            width: 30,
-            minHeight: 42,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "flex-start",
-            gap: 3,
-            background: "none",
-            border: "none",
-            padding: "3px 0 0",
-            fontSize: 11,
-            fontWeight: 800,
-            cursor: userId ? "pointer" : "default",
-            color: comment.liked ? "#f43f5e" : "var(--text-3)",
-            opacity: isLiking ? 0.5 : 1,
-          }}
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill={comment.liked ? "#f43f5e" : "none"} stroke={comment.liked ? "#f43f5e" : "currentColor"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-          </svg>
-          {comment.likes > 0 && <span>{comment.likes}</span>}
-        </button>
       </div>
-    </article>
-  );
-}
 
-function RepliesPopup({
-  comment,
-  userId,
-  onClose,
-  onLike,
-  onDelete,
-  onReply,
-  likingIds,
-  onViewReplies,
-  onSubmitReply,
-  submitting,
-  cooldown,
-}: {
-  comment: Comment;
-  userId: string | null;
-  onClose: () => void;
-  onLike: (comment: Comment) => void;
-  onDelete: (comment: Comment) => void;
-  onReply: (comment: Comment) => void;
-  likingIds: Set<string>;
-  onViewReplies: (comment: Comment) => void;
-  onSubmitReply: (parent: Comment, body: string) => Promise<boolean>;
-  submitting: boolean;
-  cooldown: number;
-}) {
-  const router = useRouter();
-  const [replyBody, setReplyBody] = useState("");
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-
-  async function submitReply() {
-    const ok = await onSubmitReply(comment, replyBody);
-    if (ok) setReplyBody("");
-  }
-  const focusReplyInput = () => setTimeout(() => inputRef.current?.focus(), 0);
-
-  return (
-    <div style={replyModalBackdropStyle} onClick={onClose}>
-      <section style={replyModalStyle} onClick={(event) => event.stopPropagation()}>
-        <div style={replyModalHeaderStyle}>
-          <span style={{ display: "flex", alignItems: "baseline", gap: 6, fontSize: 15, fontWeight: 900, color: "var(--text-1)" }}>
-            Replies
-            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-3)" }}>{comment.replies.length > 0 ? comment.replies.length : ""}</span>
-          </span>
-          <button onClick={onClose} style={replyModalCloseStyle}>×</button>
-        </div>
-
-        <div style={replyModalParentStyle}>
-          <CommentRow
-            comment={comment}
-            userId={userId}
-            onLike={onLike}
-            onDelete={onDelete}
-            onReply={() => focusReplyInput()}
-            likingIds={likingIds}
-            onViewReplies={onViewReplies}
-            hideThreadActions
-          />
-        </div>
-
-        <div style={replyModalRepliesStyle}>
-          {comment.replies.length === 0 ? (
-            <div style={replyModalEmptyStyle}>No replies yet.</div>
-          ) : (
-            comment.replies.map((reply) => (
-              <CommentRow
-                key={reply.id}
-                comment={reply}
-                userId={userId}
-                onLike={onLike}
-                onDelete={onDelete}
-                onReply={() => focusReplyInput()}
-                likingIds={likingIds}
-                onViewReplies={onViewReplies}
-              />
-            ))
-          )}
-        </div>
-
-        <div style={replyModalInputStyle}>
-          {!userId ? (
-            <button onClick={() => router.push("/login")} style={signInBtnStyle}>
-              Sign in to reply
-            </button>
-          ) : (
-            <div style={inputRowStyle}>
-              <MentionTextarea
-                textareaRef={inputRef}
-                value={replyBody}
-                onChange={setReplyBody}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" && !event.shiftKey && !cooldown) {
-                    event.preventDefault();
-                    submitReply();
-                  }
-                }}
-                placeholder={cooldown > 0 ? `Wait ${cooldown}s...` : "Write a reply..."}
-                rows={1}
-                maxLength={500}
-                style={textareaStyle}
-              />
-              <button
-                onClick={submitReply}
-                disabled={!replyBody.trim() || submitting || cooldown > 0}
-                style={{
-                  ...sendBtnStyle,
-                  opacity: !replyBody.trim() || submitting || cooldown > 0 ? 0.38 : 1,
-                }}
-              >
-                {submitting ? (
-                  <div className="spinner spinner-sm spinner-white" />
-                ) : cooldown > 0 ? (
-                  <span style={{ fontSize: 11, fontWeight: 900 }}>{cooldown}s</span>
-                ) : (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="22" y1="2" x2="11" y2="13" />
-                    <polygon points="22 2 15 22 11 13 2 9 22 2" fill="currentColor" stroke="none" />
-                  </svg>
-                )}
-              </button>
+      {/* Inline replies — animated expand/collapse */}
+      {!isReply && replyCount > 0 && (
+        <div style={{
+          display: "grid",
+          gridTemplateRows: isExpanded ? "1fr" : "0fr",
+          transition: "grid-template-rows 0.26s cubic-bezier(0.4,0,0.2,1)",
+        }}>
+          <div style={{ overflow: "hidden" }}>
+            <div style={{
+              opacity: isExpanded ? 1 : 0,
+              transform: isExpanded ? "translateY(0)" : "translateY(-6px)",
+              transition: "opacity 0.22s ease, transform 0.22s ease",
+            }}>
+              {comment.replies.map((reply) => (
+                <CommentRow
+                  key={reply.id}
+                  comment={reply}
+                  userId={userId}
+                  onLike={onLike}
+                  onDelete={onDelete}
+                  onReply={onReply}
+                  likingIds={likingIds}
+                  expandedIds={expandedIds}
+                  onToggleReplies={onToggleReplies}
+                  isReply
+                />
+              ))}
             </div>
-          )}
+          </div>
         </div>
-      </section>
+      )}
     </div>
   );
 }
@@ -1398,14 +1313,6 @@ function updateCommentTree(
   });
 }
 
-function findCommentById(comments: Comment[], id: string): Comment | null {
-  for (const comment of comments) {
-    if (comment.id === id) return comment;
-    const found = findCommentById(comment.replies, id);
-    if (found) return found;
-  }
-  return null;
-}
 
 // Bottom nav is hidden on match pages, so no offset needed
 const BOTTOM_NAV_HEIGHT = 0;
@@ -1720,84 +1627,6 @@ const viewRepliesBtnStyle: CSSProperties = {
   padding: 0,
 };
 
-const replyModalBackdropStyle: CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  zIndex: 9998,
-  background: "rgba(0,0,0,0.68)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "18px 10px",
-};
-
-const replyModalStyle: CSSProperties = {
-  width: "100%",
-  maxWidth: 720,
-  height: "min(82dvh, 720px)",
-  background: "var(--bg)",
-  border: "1px solid var(--border-2)",
-  borderRadius: 18,
-  overflow: "hidden",
-  boxShadow: "0 24px 80px rgba(0,0,0,0.68)",
-  display: "flex",
-  flexDirection: "column",
-};
-
-const replyModalHeaderStyle: CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  padding: "10px 16px 11px",
-  borderBottom: "1px solid var(--border-1)",
-};
-
-const replyModalCloseStyle: CSSProperties = {
-  width: 30,
-  height: 30,
-  borderRadius: "50%",
-  border: "none",
-  background: "var(--border-1)",
-  backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17' viewBox='0 0 24 24' fill='none' stroke='%23e5e7eb' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='18' y1='6' x2='6' y2='18'/%3E%3Cline x1='6' y1='6' x2='18' y2='18'/%3E%3C/svg%3E\")",
-  backgroundRepeat: "no-repeat",
-  backgroundPosition: "center",
-  backgroundSize: "17px 17px",
-  color: "var(--text-1)",
-  fontSize: 0,
-  lineHeight: 1,
-  cursor: "pointer",
-};
-
-const replyModalParentStyle: CSSProperties = {
-  padding: "4px 0 12px",
-  borderBottom: "1px solid var(--border-1)",
-  flexShrink: 0,
-};
-
-const replyModalRepliesStyle: CSSProperties = {
-  flex: 1,
-  overflowY: "auto",
-  padding: "8px 0 14px",
-  minHeight: 0,
-};
-
-const replyModalEmptyStyle: CSSProperties = {
-  padding: "22px 16px",
-  color: "var(--text-3)",
-  fontSize: 13,
-  fontWeight: 800,
-  textAlign: "center",
-};
-
-const replyModalInputStyle: CSSProperties = {
-  flexShrink: 0,
-  padding: "10px 14px",
-  paddingBottom: 12,
-  borderTop: "1px solid var(--border-2)",
-  background: "var(--bottom-nav-bg)",
-  backdropFilter: "blur(20px)",
-  WebkitBackdropFilter: "blur(20px)",
-};
 
 const inputAreaStyle: CSSProperties = {
   position: "fixed",

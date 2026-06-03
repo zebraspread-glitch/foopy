@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Users, Layers } from "lucide-react";
+import { Users, Layers, Star, Ticket, MessageCircle, Heart, Tv, Zap, BarChart2, Trophy } from "lucide-react";
 import { supabase } from "@/app/lib/supabase";
 import AuraBadge from "@/app/components/AuraBadge";
 import { VerifiedBadge } from "@/app/components/VerifiedBadge";
@@ -39,6 +39,8 @@ type Profile = {
   aura: number | null;
   coins: number | null;
   favourite_team: string | null;
+  matches_viewed: number | null;
+  total_likes: number | null;
 };
 
 type FriendEntry = { id: string; username: string | null; avatar_url: string | null };
@@ -427,6 +429,11 @@ export default function PublicProfilePage() {
   const [playerPasses,   setPlayerPasses]   = useState<PlayerPass[]>([]);
   const [teamPasses,     setTeamPasses]     = useState<TeamPass[]>([]);
   const [duelStats,      setDuelStats]      = useState<{ wins: number; losses: number; total: number; winRate: number; winStreak: number } | null>(null);
+  const [auraRank,       setAuraRank]       = useState<number | null>(null);
+  const [pollsVoted,     setPollsVoted]     = useState<number | null>(null);
+  const [pollsWon,       setPollsWon]       = useState<number | null>(null);
+  const [gamesViewed,    setGamesViewed]    = useState<number | null>(null);
+  const [commentCount,   setCommentCount]   = useState<number | null>(null);
 
   // Fetch player stats for all player_ event key comments so we can embed them in the URL
   useEffect(() => {
@@ -534,7 +541,7 @@ export default function PublicProfilePage() {
 
       const { data: p } = await supabase
         .from("profiles")
-        .select("id, username, display_name, avatar_url, banner_url, bio, created_at, favourites, featured_cards, featured_passes, aura, coins, favourite_team, verified")
+        .select("id, username, display_name, avatar_url, banner_url, bio, created_at, favourites, featured_cards, featured_passes, aura, coins, favourite_team, verified, matches_viewed, total_likes")
         .eq("username", username)
         .maybeSingle();
 
@@ -584,6 +591,21 @@ export default function PublicProfilePage() {
         .then((r) => r.ok ? r.json() : null)
         .then((d) => { if (d) setDuelStats(d); })
         .catch(() => {});
+      // Aura rank
+      if (p.aura != null) {
+        supabase.from("profiles").select("id", { count: "exact", head: true }).gt("aura", p.aura)
+          .then(({ count }) => setAuraRank((count ?? 0) + 1));
+      }
+      // Polls voted + polls won
+      supabase.from("match_poll_votes").select("id", { count: "exact", head: true }).eq("user_id", p.id)
+        .then(({ count }) => setPollsVoted(count ?? 0));
+      supabase.from("aura_events").select("id", { count: "exact", head: true }).eq("user_id", p.id).eq("event_type", "poll_correct")
+        .then(({ count }) => setPollsWon(count ?? 0));
+      supabase.from("aura_events").select("id", { count: "exact", head: true }).eq("user_id", p.id).eq("event_type", "live_game_view")
+        .then(({ count }) => setGamesViewed(count ?? 0));
+      // Comment count
+      supabase.from("feed_comments").select("id", { count: "exact", head: true }).eq("user_id", p.id)
+        .then(({ count }) => setCommentCount(count ?? 0));
 
       setLoading(false);
     }
@@ -811,7 +833,7 @@ export default function PublicProfilePage() {
 
         {/* ── Featured Cards ── */}
         {(() => {
-          const featuredSlots = (profile.featured_cards ?? []).slice(0, 5);
+          const featuredSlots = (profile.featured_cards ?? []).slice(0, 15);
           const featuredWithData = featuredSlots
             .map(fc => ({ fc, player: CARD_PLAYERS.find(p => p.id === fc.player_id) }))
             .filter((x): x is { fc: FeaturedCardSlot; player: typeof CARD_PLAYERS[0] } => !!x.player);
@@ -822,7 +844,7 @@ export default function PublicProfilePage() {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px" }}>
                 <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text-3)", textTransform: "uppercase" as const, letterSpacing: "0.08em" }}>featured cards</div>
                 <Link href={`/album/${profile.username}`} style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", textDecoration: "none" }}>
-                  {featuredWithData.length}/5 · View Album
+                  {featuredWithData.length}/15 · View Album
                 </Link>
               </div>
               <FeaturedCardsCarousel cards={featuredWithData} />
@@ -925,6 +947,40 @@ export default function PublicProfilePage() {
                 <path d="M9 18l6-6-6-6" />
               </svg>
             </Link>
+          );
+        })()}
+
+        {/* ── Stats grid ── */}
+        {(() => {
+          const passCount = playerPasses.length + teamPasses.length;
+          const stats: { label: string; value: string | number; color: string; icon: React.ReactNode }[] = [
+            { label: "Aura Rank",   value: auraRank    != null ? `#${auraRank.toLocaleString()}` : "—", color: "#c084fc", icon: <Star        size={15} /> },
+            { label: "Cards",       value: cardCount,                                                    color: "#fbbf24", icon: <Layers      size={15} /> },
+            { label: "Passes",      value: passCount,                                                    color: "#60a5fa", icon: <Ticket      size={15} /> },
+            { label: "Comments",    value: commentCount ?? "—",                                          color: "#38bdf8", icon: <MessageCircle size={15} /> },
+            { label: "Likes",       value: profile.total_likes ?? "—",                                   color: "#f43f5e", icon: <Heart       size={15} /> },
+            { label: "Games",       value: gamesViewed ?? "—",                                           color: "#4ade80", icon: <Tv          size={15} /> },
+            { label: "Duels",       value: duelStats?.total ?? 0,                                        color: "#f97316", icon: <Zap         size={15} /> },
+            { label: "Polls Voted", value: pollsVoted  ?? "—",                                           color: "#a78bfa", icon: <BarChart2   size={15} /> },
+            { label: "Polls Won",   value: pollsWon    ?? "—",                                           color: "#22c55e", icon: <Trophy      size={15} /> },
+          ];
+          return (
+            <div style={{ background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18, display: "grid", gridTemplateColumns: "repeat(3, 1fr)" }}>
+              {stats.map((s, i) => {
+                const col = i % 3;
+                const row = Math.floor(i / 3);
+                const totalRows = Math.ceil(stats.length / 3);
+                return (
+                  <div key={s.label} style={{ padding: "14px 8px", borderRight: col < 2 ? "1px solid var(--border-2)" : "none", borderBottom: row < totalRows - 1 ? "1px solid var(--border-2)" : "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                      <span style={{ color: s.color, opacity: 0.8, lineHeight: 0, flexShrink: 0 }}>{s.icon}</span>
+                      <span style={{ fontSize: 17, fontWeight: 950, letterSpacing: "-0.03em", color: s.color, lineHeight: 1 }}>{s.value}</span>
+                    </div>
+                    <span style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,0.3)", textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{s.label}</span>
+                  </div>
+                );
+              })}
+            </div>
           );
         })()}
 
