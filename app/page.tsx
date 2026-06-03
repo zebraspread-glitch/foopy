@@ -1384,6 +1384,7 @@ free_kicks?: {
 
     const completedStatGameIds = new Set<string>();
     const latestCompletedStatGameByTeam = new Map<number, { gameId: string; time: number }>();
+    const prevCompletedStatGameByTeam   = new Map<number, { gameId: string; time: number }>();
 
     for (const game of games) {
       if (getStatus(game) !== "COMPLETED") continue;
@@ -1397,9 +1398,12 @@ free_kicks?: {
       for (const teamId of [game.hteamid, game.ateamid]) {
         if (!teamId) continue;
 
-        const previous = latestCompletedStatGameByTeam.get(teamId);
-        if (!previous || gameTime > previous.time) {
+        const current = latestCompletedStatGameByTeam.get(teamId);
+        if (!current || gameTime > current.time) {
+          if (current) prevCompletedStatGameByTeam.set(teamId, current);
           latestCompletedStatGameByTeam.set(teamId, { gameId: statGameId, time: gameTime });
+        } else if (gameTime > (prevCompletedStatGameByTeam.get(teamId)?.time ?? 0)) {
+          prevCompletedStatGameByTeam.set(teamId, { gameId: statGameId, time: gameTime });
         }
       }
     }
@@ -1496,14 +1500,12 @@ free_kicks?: {
       const latestPlayerGame = playedGames[playedGames.length - 1];
       if (!latestTeamGame || !latestPlayerGame) continue;
 
-      // Require player's latest game to match team's latest game.
-      // Exception: if the team's latest game has NO player data at all (stats not synced yet),
-      // allow the streak to count from the player's most recent available game.
+      // Player must have appeared in the team's latest or second-latest game.
+      // This handles one round of missing/incomplete stats (e.g. API Sports drops a player)
+      // while still correctly breaking streaks when a player's 0-goal game IS in the data.
       if (latestPlayerGame.gameId !== latestTeamGame.gameId) {
-        const latestGameHasData = Object.values(playerGamesByName).some(
-          games => games[games.length - 1]?.gameId === latestTeamGame.gameId
-        );
-        if (latestGameHasData) continue;
+        const prevTeamGame = prevCompletedStatGameByTeam.get(teamId);
+        if (!prevTeamGame || latestPlayerGame.gameId !== prevTeamGame.gameId) continue;
       }
 
       const image = playerImagePath(name, team);
