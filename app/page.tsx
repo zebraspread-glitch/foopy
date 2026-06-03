@@ -1477,10 +1477,17 @@ free_kicks?: {
       const latestTeamGame = latestCompletedStatGameByTeam.get(teamId);
       const latestPlayerGame = playedGames[playedGames.length - 1];
       if (!latestTeamGame || !latestPlayerGame) continue;
-      // Allow up to 14 days gap — handles delayed stats, late-out players, and
-      // match_cache entries that don't include every player from the latest game
-      const daysBehind = (latestTeamGame.time - new Date(latestPlayerGame.date).getTime()) / 86400000;
-      if (daysBehind > 14) continue;
+
+      // If the player's latest game matches the team's latest → use it directly.
+      // If not, only allow the streak if the team's latest game has NO player data at all
+      // (stats not loaded yet). If there IS data for the latest game but this player
+      // isn't in it, they likely didn't play or didn't meet the threshold — skip them.
+      if (latestPlayerGame.gameId !== latestTeamGame.gameId) {
+        const latestGameHasData = Object.values(playerGames).some(
+          games => games[games.length - 1]?.gameId === latestTeamGame.gameId
+        );
+        if (latestGameHasData) continue; // data loaded but player not in it → streak broken/inactive
+      }
 
       const image = playerImagePath(name, team);
       const teamLogo = getTeamLogoFromName(team);
