@@ -1038,14 +1038,13 @@ function PicksLockedScreen({
       {/* ── Pick table ── */}
       <div style={{ background: "var(--surface-2)", border: "1px solid var(--border-2)", borderRadius: 14, overflow: "hidden" }}>
         {/* Column headers */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 72px 1fr", background: "rgba(255,255,255,0.03)", borderBottom: "1px solid var(--border-2)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 86px 1fr", background: "rgba(255,255,255,0.03)", borderBottom: "1px solid var(--border-2)" }}>
           <div style={{ padding: "8px 12px", fontSize: 10, fontWeight: 900, letterSpacing: "0.08em", color: "#3b82f6" }}>— YOU</div>
           <div />
-          <div style={{ padding: "8px 12px", fontSize: 10, fontWeight: 900, letterSpacing: "0.08em", color: "var(--text-3)", textAlign: "right" }}>Opponent —</div>
+          <div style={{ padding: "8px 12px", fontSize: 10, fontWeight: 900, letterSpacing: "0.08em", color: "var(--text-3)", textAlign: "right" as const }}>Opponent —</div>
         </div>
 
-        {/* Rows: contested → tiebreaker → agreed */}
-        {/* Contested → Tiebreaker → Agreed, all inlined to avoid flicker from component remount */}
+        {/* Contested → Agreed rows */}
         {withPicks
           .slice()
           .sort((a, b) => {
@@ -1059,73 +1058,161 @@ function PicksLockedScreen({
             const agreed     = !!(mp && op && mp.pick === op.pick);
             const myCorrect  = mp?.is_correct ?? null;
             const oppCorrect = op?.is_correct ?? null;
-            const bc = myCorrect !== null ? (myCorrect ? "#22c55e" : "#ef4444") : agreed ? "#22c55e" : "#ef4444";
-            const myImg   = mp ? (mp.pick === "a" ? q.option_a_image : q.option_b_image) : null;
-            const oppImg  = op ? (op.pick === "a" ? q.option_a_image : q.option_b_image) : null;
+
+            // Live stat lookup
+            const cat = DUEL_STAT_CATS[q.category_key ?? ""] ?? null;
+            const catLabel = cat ? cat.label.toUpperCase() : (q.category_key?.replace("player_","").replace("team_","").toUpperCase() ?? "—");
+            const norm = (s: string) => s.toLowerCase().replace(/[^a-z]/g, "");
+            const lastName = (s: string) => s.trim().split(/\s+/).pop()?.toLowerCase() ?? "";
+            const getVal = (optName: string | null): string | null => {
+              if (!liveGameStats || !cat || !optName) return null;
+              if (cat.type === "player") {
+                let p = liveGameStats.players.find(pl => norm(pl.name) === norm(optName));
+                if (!p) p = liveGameStats.players.find(pl => lastName(pl.name) === lastName(optName) && pl.name.length > 0);
+                if (!p) return null;
+                if (cat.key === "foopy") return String(liveStatFoopy(p));
+                return String((p as any)[cat.key] ?? 0);
+              }
+              return null;
+            };
+            const myOptName  = mp ? (mp.pick === "a" ? q.option_a : q.option_b) : null;
+            const oppOptName = op ? (op.pick === "a" ? q.option_a : q.option_b) : null;
+            const myVal  = getVal(myOptName);
+            const oppVal = getVal(oppOptName);
+
+            // Winner determination
+            let myWins: boolean | null = null;
+            let oppWins: boolean | null = null;
+            if (myCorrect !== null) { myWins = myCorrect; oppWins = oppCorrect; }
+            else if (myVal !== null && oppVal !== null) {
+              const mn = Number(myVal), on = Number(oppVal);
+              if (mn > on) { myWins = true; oppWins = false; }
+              else if (on > mn) { myWins = false; oppWins = true; }
+            }
+
+            const lineColor = myCorrect !== null ? (myCorrect ? "#22c55e" : "#ef4444") : agreed ? "#22c55e" : "#ef4444";
+            const myImg  = mp ? (mp.pick === "a" ? q.option_a_image : q.option_b_image) : null;
+            const oppImg = op ? (op.pick === "a" ? q.option_a_image : q.option_b_image) : null;
             const myName  = mp ? (mp.pick === "a" ? q.option_a : q.option_b) : "—";
             const oppName = op ? (op.pick === "a" ? q.option_a : q.option_b) : "—";
-            const myTeam  = mp ? (mp.pick === "a" ? q.option_a_team : q.option_b_team) : null;
-            const oppTeam = op ? (op.pick === "a" ? q.option_a_team : q.option_b_team) : null;
+            const myTeam  = mp ? (mp.pick === "a" ? q.option_a_team  : q.option_b_team) : null;
+            const oppTeam = op ? (op.pick === "a" ? q.option_a_team  : q.option_b_team) : null;
             const myColor  = safeTeamColor(myTeam,  "#3b82f6");
             const oppColor = safeTeamColor(oppTeam, "#475569");
             const isLast = i === arr.length - 1 && !tbQuestion;
+
             return (
-              <div key={q.id} style={{ display: "grid", gridTemplateColumns: "1fr 72px 1fr", borderBottom: isLast ? "none" : "1px solid var(--border-1)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "11px 12px" }}>
-                  {myTeam && <img src={teamLogoUrl(myTeam)} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-1)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{myName}</span>
-                  {myCorrect !== null && <span style={{ fontSize: 13, flexShrink: 0, color: myCorrect ? "#22c55e" : "#ef4444", fontWeight: 900 }}>{myCorrect ? "✓" : "✗"}</span>}
-                  <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${myColor}22`, border: `1.5px solid ${myColor}44` }}>
+              <div key={q.id} style={{
+                display: "grid", gridTemplateColumns: "1fr 86px 1fr",
+                borderBottom: isLast ? "none" : "1px solid var(--border-1)",
+              }}>
+                {/* YOU */}
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 8, padding: "12px 12px",
+                  background: myWins === true ? "rgba(34,197,94,0.07)" : myWins === false ? "rgba(239,68,68,0.04)" : undefined,
+                }}>
+                  <div style={{ width: 38, height: 38, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${myColor}20`, border: `2px solid ${myWins === true ? "#22c55e" : myColor}55` }}>
                     {myImg && <img src={myImg} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
                   </div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: myWins === true ? 900 : 600, color: myWins === false ? "var(--text-4)" : "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{myName}</div>
+                    {myVal && <div style={{ fontSize: 16, fontWeight: 900, color: myWins === true ? "#22c55e" : myWins === false ? "var(--text-3)" : "var(--text-2)", letterSpacing: "-0.03em", lineHeight: 1 }}>{myVal}</div>}
+                  </div>
+                  {myWins === true && <span style={{ fontSize: 14, color: "#22c55e", flexShrink: 0 }}>✓</span>}
+                  {myWins === false && <span style={{ fontSize: 14, color: "#ef4444", flexShrink: 0 }}>✗</span>}
                 </div>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", background: `linear-gradient(to right, ${bc} 3px, transparent 3px, transparent calc(100% - 3px), ${bc} calc(100% - 3px))` }}>
-                  <span style={{ fontSize: 9, fontWeight: 900, color: bc, letterSpacing: "0.04em", textTransform: "uppercase" as const, textAlign: "center" as const, lineHeight: 1.2, whiteSpace: "nowrap" as const, overflow: "hidden", textOverflow: "ellipsis", maxWidth: 64 }}>
-                    {DUEL_STAT_CATS[q.category_key ?? ""]?.label ?? q.category_key?.replace("player_","").replace("team_","") ?? "—"}
+
+                {/* CENTER — category label with lines */}
+                <div style={{
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: `linear-gradient(to right, ${lineColor} 2px, transparent 2px, transparent calc(100% - 2px), ${lineColor} calc(100% - 2px))`,
+                  padding: "0 5px",
+                }}>
+                  <span style={{ fontSize: 11, fontWeight: 900, color: lineColor, letterSpacing: "0.05em", textTransform: "uppercase" as const, textAlign: "center" as const, lineHeight: 1.2, whiteSpace: "nowrap" as const }}>
+                    {catLabel}
                   </span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "11px 12px", flexDirection: "row-reverse" }}>
-                  {oppTeam && <img src={teamLogoUrl(oppTeam)} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
-                  <span style={{ fontSize: 12, fontWeight: 700, color: op ? "var(--text-1)" : "var(--text-4)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "right", fontStyle: !op ? "italic" : "normal" }}>{op ? oppName : "Pending…"}</span>
-                  {oppCorrect !== null && <span style={{ fontSize: 13, flexShrink: 0, color: oppCorrect ? "#22c55e" : "#ef4444", fontWeight: 900 }}>{oppCorrect ? "✓" : "✗"}</span>}
-                  <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${oppColor}22`, border: `1.5px solid ${oppColor}44` }}>
+
+                {/* OPP */}
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 8, padding: "12px 12px", flexDirection: "row-reverse",
+                  background: oppWins === true ? "rgba(34,197,94,0.07)" : oppWins === false ? "rgba(239,68,68,0.04)" : undefined,
+                }}>
+                  <div style={{ width: 38, height: 38, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${oppColor}20`, border: `2px solid ${oppWins === true ? "#22c55e" : oppColor}55` }}>
                     {oppImg && <img src={oppImg} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
                   </div>
+                  {op ? (
+                    <div style={{ minWidth: 0, flex: 1, textAlign: "right" as const }}>
+                      <div style={{ fontSize: 12, fontWeight: oppWins === true ? 900 : 600, color: oppWins === false ? "var(--text-4)" : "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{oppName}</div>
+                      {oppVal && <div style={{ fontSize: 16, fontWeight: 900, color: oppWins === true ? "#22c55e" : oppWins === false ? "var(--text-3)" : "var(--text-2)", letterSpacing: "-0.03em", lineHeight: 1 }}>{oppVal}</div>}
+                    </div>
+                  ) : (
+                    <span style={{ fontSize: 11, color: "var(--text-4)", fontStyle: "italic", flex: 1, textAlign: "right" as const }}>Pending…</span>
+                  )}
+                  {oppWins === true && <span style={{ fontSize: 14, color: "#22c55e", flexShrink: 0 }}>✓</span>}
+                  {oppWins === false && <span style={{ fontSize: 14, color: "#ef4444", flexShrink: 0 }}>✗</span>}
                 </div>
               </div>
             );
           })}
 
-        {/* Tiebreaker row */}
+        {/* ── Tiebreaker — special gold row ── */}
         {tbQuestion && tbMp && (() => {
           const myName  = tbMp.pick === "a" ? tbQuestion.option_a : tbQuestion.option_b;
           const oppName = tbOp ? (tbOp.pick === "a" ? tbQuestion.option_a : tbQuestion.option_b) : null;
-          const myTeam  = tbMp.pick === "a" ? tbQuestion.option_a_team : tbQuestion.option_b_team;
-          const oppTeam = tbOp ? (tbOp.pick === "a" ? tbQuestion.option_a_team : tbQuestion.option_b_team) : null;
           const myImg   = tbMp.pick === "a" ? tbQuestion.option_a_image : tbQuestion.option_b_image;
           const oppImg  = tbOp ? (tbOp.pick === "a" ? tbQuestion.option_a_image : tbQuestion.option_b_image) : null;
+          const myTeam  = tbMp.pick === "a" ? tbQuestion.option_a_team : tbQuestion.option_b_team;
+          const oppTeam = tbOp ? (tbOp.pick === "a" ? tbQuestion.option_a_team : tbQuestion.option_b_team) : null;
           const myColor  = safeTeamColor(myTeam,  "#3b82f6");
           const oppColor = safeTeamColor(oppTeam, "#475569");
+          const myCorrect  = tbMp?.is_correct ?? null;
+          const oppCorrect = tbOp?.is_correct ?? null;
           return (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 72px 1fr", borderTop: "1px solid var(--border-1)", background: "rgba(245,158,11,0.04)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "11px 12px" }}>
-                {myTeam && <img src={teamLogoUrl(myTeam)} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
-                <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-1)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{myName} <span style={{ fontSize: 10, color: "#f59e0b", fontWeight: 600 }}>by {tbMp.pick_margin ?? "—"}</span></span>
-                <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${myColor}22`, border: `1.5px solid ${myColor}44` }}>
+            <div style={{
+              display: "grid", gridTemplateColumns: "1fr 86px 1fr",
+              borderTop: "2px solid #f59e0b66",
+              background: "linear-gradient(135deg, rgba(245,158,11,0.1) 0%, rgba(245,158,11,0.04) 100%)",
+              boxShadow: "0 0 24px rgba(245,158,11,0.08) inset",
+            }}>
+              {/* YOU TB */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "16px 12px", background: myCorrect === true ? "rgba(34,197,94,0.06)" : undefined }}>
+                <div style={{ width: 40, height: 40, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${myColor}20`, border: `2px solid ${myCorrect === true ? "#22c55e" : "#f59e0b"}66` }}>
                   {myImg && <img src={myImg} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
                 </div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: myCorrect === false ? "var(--text-4)" : "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{myName}</div>
+                  <div style={{ fontSize: 11, color: "#f59e0b", fontWeight: 700 }}>by {tbMp.pick_margin ?? "—"}</div>
+                </div>
+                {myCorrect === true && <span style={{ fontSize: 14, color: "#22c55e" }}>✓</span>}
+                {myCorrect === false && <span style={{ fontSize: 14, color: "#ef4444" }}>✗</span>}
               </div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(to right, #f59e0b 3px, transparent 3px, transparent calc(100% - 3px), #f59e0b calc(100% - 3px))" }}>
-                <span style={{ fontSize: 9, fontWeight: 900, color: "#f59e0b", letterSpacing: "0.04em", textTransform: "uppercase" as const, textAlign: "center" as const, lineHeight: 1.2, whiteSpace: "nowrap" as const }}>★ TB</span>
+
+              {/* CENTER */}
+              <div style={{
+                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3,
+                background: "linear-gradient(to right, #f59e0b 2px, transparent 2px, transparent calc(100% - 2px), #f59e0b calc(100% - 2px))",
+                padding: "0 5px",
+              }}>
+                <span style={{ fontSize: 16 }}>🏆</span>
+                <span style={{ fontSize: 9, fontWeight: 900, color: "#f59e0b", letterSpacing: "0.06em", textTransform: "uppercase" as const, textAlign: "center" as const }}>TB</span>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "11px 12px", flexDirection: "row-reverse" }}>
-                {oppTeam && <img src={teamLogoUrl(oppTeam)} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
-                <span style={{ fontSize: 12, fontWeight: 700, color: oppName ? "var(--text-1)" : "var(--text-4)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "right", fontStyle: !oppName ? "italic" : "normal" }}>
-                  {oppName ? <>{oppName} <span style={{ fontSize: 10, color: "#f59e0b", fontWeight: 600 }}>by {tbOp?.pick_margin ?? "—"}</span></> : "Pending…"}
-                </span>
-                <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${oppColor}22`, border: `1.5px solid ${oppColor}44` }}>
+
+              {/* OPP TB */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "16px 12px", flexDirection: "row-reverse", background: oppCorrect === true ? "rgba(34,197,94,0.06)" : undefined }}>
+                <div style={{ width: 40, height: 40, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${oppColor}20`, border: `2px solid ${oppCorrect === true ? "#22c55e" : "#f59e0b"}66` }}>
                   {oppImg && <img src={oppImg} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
                 </div>
+                {oppName ? (
+                  <div style={{ minWidth: 0, flex: 1, textAlign: "right" as const }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: oppCorrect === false ? "var(--text-4)" : "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{oppName}</div>
+                    <div style={{ fontSize: 11, color: "#f59e0b", fontWeight: 700 }}>by {tbOp?.pick_margin ?? "—"}</div>
+                  </div>
+                ) : (
+                  <span style={{ fontSize: 11, color: "var(--text-4)", fontStyle: "italic", flex: 1, textAlign: "right" as const }}>Pending…</span>
+                )}
+                {oppCorrect === true && <span style={{ fontSize: 14, color: "#22c55e" }}>✓</span>}
+                {oppCorrect === false && <span style={{ fontSize: 14, color: "#ef4444" }}>✗</span>}
               </div>
             </div>
           );
