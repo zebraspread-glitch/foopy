@@ -1062,20 +1062,20 @@ function PicksLockedScreen({
             const oppColor = safeTeamColor(oppTeam, "#475569");
             return (
               <div style={{ display: "grid", gridTemplateColumns: "1fr 3px 1fr", borderBottom: isLast ? "none" : "1px solid var(--border-1)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 10px" }}>
-                  {myTeam && <img src={teamLogoUrl(myTeam)} alt="" style={{ width: 18, height: 18, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+                <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "11px 12px" }}>
+                  {myTeam && <img src={teamLogoUrl(myTeam)} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
                   <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-1)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{myName}</span>
                   {myCorrect !== null && <span style={{ fontSize: 13, flexShrink: 0, color: myCorrect ? "#22c55e" : "#ef4444", fontWeight: 900 }}>{myCorrect ? "✓" : "✗"}</span>}
-                  <div style={{ width: 26, height: 26, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${myColor}22`, border: `1.5px solid ${myColor}44` }}>
+                  <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${myColor}22`, border: `1.5px solid ${myColor}44` }}>
                     {myImg && <img src={myImg} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
                   </div>
                 </div>
                 <div style={{ background: barColor, opacity: 0.85 }} />
-                <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 10px", flexDirection: "row-reverse" }}>
-                  {oppTeam && <img src={teamLogoUrl(oppTeam)} alt="" style={{ width: 18, height: 18, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+                <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "11px 12px", flexDirection: "row-reverse" }}>
+                  {oppTeam && <img src={teamLogoUrl(oppTeam)} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
                   <span style={{ fontSize: 12, fontWeight: 700, color: op ? "var(--text-1)" : "var(--text-4)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "right", fontStyle: !op ? "italic" : "normal" }}>{op ? oppName : "Pending…"}</span>
                   {oppCorrect !== null && <span style={{ fontSize: 13, flexShrink: 0, color: oppCorrect ? "#22c55e" : "#ef4444", fontWeight: 900 }}>{oppCorrect ? "✓" : "✗"}</span>}
-                  <div style={{ width: 26, height: 26, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${oppColor}22`, border: `1.5px solid ${oppColor}44` }}>
+                  <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${oppColor}22`, border: `1.5px solid ${oppColor}44` }}>
                     {oppImg && <img src={oppImg} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
                   </div>
                 </div>
@@ -1107,20 +1107,20 @@ function PicksLockedScreen({
                 idx++;
                 return (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 3px 1fr", borderTop: "1px solid var(--border-1)", borderBottom: agreed.length > 0 ? "1px solid var(--border-1)" : "none", background: "rgba(245,158,11,0.04)" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 10px" }}>
-                      {myTeam && <img src={teamLogoUrl(myTeam)} alt="" style={{ width: 18, height: 18, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+                    <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "11px 12px" }}>
+                      {myTeam && <img src={teamLogoUrl(myTeam)} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
                       <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-1)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{myName} <span style={{ fontSize: 10, color: "#f59e0b", fontWeight: 600 }}>by {tbMp!.pick_margin ?? "—"}</span></span>
-                      <div style={{ width: 26, height: 26, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${myColor}22`, border: `1.5px solid ${myColor}44` }}>
+                      <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${myColor}22`, border: `1.5px solid ${myColor}44` }}>
                         {myImg && <img src={myImg} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
                       </div>
                     </div>
                     <div style={{ background: "#f59e0b", opacity: 0.85 }} />
-                    <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 10px", flexDirection: "row-reverse" }}>
-                      {oppTeam && <img src={teamLogoUrl(oppTeam)} alt="" style={{ width: 18, height: 18, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+                    <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "11px 12px", flexDirection: "row-reverse" }}>
+                      {oppTeam && <img src={teamLogoUrl(oppTeam)} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
                       <span style={{ fontSize: 12, fontWeight: 700, color: oppName ? "var(--text-1)" : "var(--text-4)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "right", fontStyle: !oppName ? "italic" : "normal" }}>
                         {oppName ? <>{oppName} <span style={{ fontSize: 10, color: "#f59e0b", fontWeight: 600 }}>by {tbOp?.pick_margin ?? "—"}</span></> : "Pending…"}
                       </span>
-                      <div style={{ width: 26, height: 26, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${oppColor}22`, border: `1.5px solid ${oppColor}44` }}>
+                      <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${oppColor}22`, border: `1.5px solid ${oppColor}44` }}>
                         {oppImg && <img src={oppImg} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
                       </div>
                     </div>
@@ -1532,7 +1532,7 @@ function PickResultCell({
   const iconColor = correct === true ? "#4ade80" : "#ef4444";
 
   return (
-    <div style={{ background: bg, border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "8px 10px", display: "flex", alignItems: "center", gap: 8 }}>
+    <div style={{ background: bg, border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "11px 12px", display: "flex", alignItems: "center", gap: 8 }}>
       {image && (
         <div style={{ width: 32, height: 32, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.1)" }}>
           <img src={image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
