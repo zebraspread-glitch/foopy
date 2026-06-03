@@ -1353,7 +1353,9 @@ free_kicks?: {
       }>;
     };
 
-    const allStats = liveGameStats as unknown as Record<string, RawGame>;
+    // Use only the static bundled stats (complete, authoritative data).
+    // match_cache data is often incomplete for recent rounds, causing wrong streak counts.
+    const allStats = matchStatsRaw as unknown as Record<string, RawGame>;
     const statGames = Object.values(allStats);
     const statGameIds = new Set(statGames.map((g) => String(g.gameId)).filter(Boolean));
     const statGameIdByDateAndTeams = new Map<string, string>();
@@ -1522,7 +1524,7 @@ free_kicks?: {
     results.sort((a, b) => b.streak - a.streak || a.name.localeCompare(b.name));
 
     return results.slice(0, 20);
-  }, [liveGameStats, games]);
+  }, [games]);
 
   function chooseRound(round: number) {
     setSelectedRound(round);
