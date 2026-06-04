@@ -1148,8 +1148,8 @@ function PicksLockedScreen({
             {contested.length > 0 && (
               <div>
                 <SectionHeader emoji="🔥" label="Contested" color="#f87171" />
-                <div style={{ background: "var(--surface-2)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 12, overflow: "hidden" }}>
-                  {contested.map(({ q, mp, op }, i) => renderPickRow(q, mp, op, i === contested.length - 1, "rgba(239,68,68,0.04)"))}
+                <div style={{ background: "var(--surface-2)", border: "1px solid var(--border-2)", borderRadius: 12, overflow: "hidden" }}>
+                  {contested.map(({ q, mp, op }, i) => renderPickRow(q, mp, op, i === contested.length - 1, "transparent"))}
                 </div>
               </div>
             )}
@@ -1158,8 +1158,8 @@ function PicksLockedScreen({
             {agreed.length > 0 && (
               <div>
                 <SectionHeader emoji="🤝" label="Agreed" color="#4ade80" />
-                <div style={{ background: "var(--surface-2)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 12, overflow: "hidden" }}>
-                  {agreed.map(({ q, mp, op }, i) => renderPickRow(q, mp, op, i === agreed.length - 1, "rgba(34,197,94,0.04)"))}
+                <div style={{ background: "var(--surface-2)", border: "1px solid var(--border-2)", borderRadius: 12, overflow: "hidden" }}>
+                  {agreed.map(({ q, mp, op }, i) => renderPickRow(q, mp, op, i === agreed.length - 1, "transparent"))}
                 </div>
               </div>
             )}
@@ -1179,7 +1179,7 @@ function PicksLockedScreen({
               return (
                 <div>
                   <SectionHeader emoji="🏆" label="Tiebreaker" color="#f59e0b" />
-                  <div style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.25)", borderRadius: 12, overflow: "hidden" }}>
+                  <div style={{ background: "var(--surface-2)", border: "1px solid var(--border-2)", borderRadius: 12, overflow: "hidden" }}>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 62px 1fr" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "14px 10px" }}>
                         <div style={{ width: 38, height: 38, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${myColor}20`, border: `2px solid ${myCorrect === true ? "#22c55e" : "#f59e0b"}55` }}>
