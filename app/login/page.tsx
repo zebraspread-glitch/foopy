@@ -86,6 +86,10 @@ function LoginPageInner() {
       setError("Username needs at least 3 characters (a–z, 0–9, _)");
       setLoading(false); return;
     }
+    if (!favouriteTeam) {
+      setError("Please pick your team.");
+      setLoading(false); return;
+    }
     const { data: existing } = await supabase.from("profiles").select("id").eq("username", cleanUsername).maybeSingle();
     if (existing) { setError("That username is already taken — try another."); setLoading(false); return; }
 
@@ -110,7 +114,7 @@ function LoginPageInner() {
         username: cleanUsername,
         display_name: cleanUsername,
         username_updated_at: new Date().toISOString(),
-        ...(favouriteTeam ? { favourite_team: favouriteTeam } : {}),
+        favourite_team: favouriteTeam,
       }, { onConflict: "id" });
       if (upsertErr) localStorage.setItem("foopy_pending_username", cleanUsername);
       router.push("/profile");
@@ -201,7 +205,7 @@ function LoginPageInner() {
           {mode === "signup" && (
             <div style={fieldGroup}>
               <label style={label}>
-                My Team <span style={{ opacity: 0.35, fontWeight: 500, textTransform: "none" }}>(optional)</span>
+                My Team
               </label>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 6 }}>
                 {AFL_TEAMS.map(team => {
