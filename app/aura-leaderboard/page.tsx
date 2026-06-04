@@ -96,9 +96,10 @@ export default function AuraLeaderboardPage() {
 function AuraLeaderboardInner() {
   const router       = useRouter();
   const searchParams = useSearchParams();
+  const viewUsername = searchParams?.get("user") ?? null; // username of profile being viewed
 
   const [mainTab, setMainTab]   = useState<MainTab>(
-    searchParams?.get("tab") === "history" ? "history" : "leaderboard"
+    searchParams?.get("tab") === "history" || viewUsername ? "history" : "leaderboard"
   );
   const [period, setPeriod]     = useState<Period>("overall");
   const [entries, setEntries]   = useState<Entry[]>([]);
@@ -106,6 +107,12 @@ function AuraLeaderboardInner() {
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [myRank, setMyRank]     = useState<number | null>(null);
   const [myAura, setMyAura]     = useState<number | null>(null);
+
+  // viewed user (when coming from someone else's profile)
+  const [viewUserId, setViewUserId]     = useState<string | null>(null);
+  const [viewDisplayName, setViewDisplayName] = useState<string | null>(null);
+  const [viewRank, setViewRank]         = useState<number | null>(null);
+  const [viewAura, setViewAura]         = useState<number | null>(null);
 
   // history
   const [history, setHistory]         = useState<AuraEvent[]>([]);
@@ -119,6 +126,19 @@ function AuraLeaderboardInner() {
     });
   }, []);
 
+  // resolve viewed user
+  useEffect(() => {
+    if (!viewUsername) return;
+    supabase.from("profiles").select("id, display_name, username, aura")
+      .eq("username", viewUsername).single()
+      .then(({ data }) => {
+        if (!data) return;
+        setViewUserId(data.id);
+        setViewDisplayName(data.display_name || data.username);
+        setViewAura(data.aura ?? 0);
+      });
+  }, [viewUsername]);
+
   // leaderboard data
   useEffect(() => {
     if (mainTab !== "leaderboard") return;
@@ -131,37 +151,42 @@ function AuraLeaderboardInner() {
       });
   }, [period, mainTab]);
 
-  // my rank
+  // rank for the relevant user (viewed user or self)
   useEffect(() => {
-    if (!myUserId || entries.length === 0) { setMyRank(null); setMyAura(null); return; }
-    const idx = entries.findIndex(e => e.user_id === myUserId);
-    if (idx !== -1) {
-      setMyRank(idx + 1);
-      setMyAura(entries[idx].aura_total);
-    } else if (period === "overall") {
-      supabase.from("profiles").select("aura").eq("id", myUserId).single()
-        .then(({ data }) => {
-          const total = data?.aura ?? 0;
-          setMyAura(total);
-          supabase.from("profiles").select("id", { count: "exact", head: true }).gt("aura", total)
-            .then(({ count }) => setMyRank((count ?? 0) + 1));
-        });
+    const targetId = viewUserId ?? myUserId;
+    if (!targetId || entries.length === 0) { setMyRank(null); setMyAura(null); setViewRank(null); return; }
+    const idx = entries.findIndex(e => e.user_id === targetId);
+    if (viewUserId) {
+      if (idx !== -1) { setViewRank(idx + 1); setViewAura(entries[idx].aura_total); }
+      else if (period === "overall" && viewAura !== null) {
+        supabase.from("profiles").select("id", { count: "exact", head: true }).gt("aura", viewAura)
+          .then(({ count }) => setViewRank((count ?? 0) + 1));
+      } else setViewRank(null);
     } else {
-      setMyRank(null); setMyAura(null);
+      if (idx !== -1) { setMyRank(idx + 1); setMyAura(entries[idx].aura_total); }
+      else if (period === "overall") {
+        supabase.from("profiles").select("aura").eq("id", targetId).single()
+          .then(({ data }) => {
+            const total = data?.aura ?? 0;
+            setMyAura(total);
+            supabase.from("profiles").select("id", { count: "exact", head: true }).gt("aura", total)
+              .then(({ count }) => setMyRank((count ?? 0) + 1));
+          });
+      } else { setMyRank(null); setMyAura(null); }
     }
-  }, [entries, myUserId, period]);
+  }, [entries, myUserId, viewUserId, viewAura, period]);
 
-  // history data
+  // history data — show viewed user's history if coming from their profile
   useEffect(() => {
-    if (mainTab !== "history" || !myUserId) return;
+    const histUserId = viewUserId ?? myUserId;
+    if (mainTab !== "history" || !histUserId) return;
     setHistLoading(true);
-    // Fetch actual total from profile (source of truth)
-    supabase.from("profiles").select("aura").eq("id", myUserId).single()
+    supabase.from("profiles").select("aura").eq("id", histUserId).single()
       .then(({ data }) => setProfileAura(data?.aura ?? 0));
     supabase
       .from("aura_events")
       .select("id, event_type, related_id, amount, created_at")
-      .eq("user_id", myUserId)
+      .eq("user_id", histUserId)
       .order("created_at", { ascending: false })
       .limit(100)
       .then(({ data, error }) => {
@@ -169,7 +194,7 @@ function AuraLeaderboardInner() {
         setHistory((data ?? []) as AuraEvent[]);
         setHistLoading(false);
       });
-  }, [mainTab, myUserId]);
+  }, [mainTab, myUserId, viewUserId]);
 
   return (
     <div style={{ minHeight: "100dvh", background: "var(--bg)", paddingBottom: 60 }}>
@@ -242,20 +267,27 @@ function AuraLeaderboardInner() {
       {/* ── Leaderboard tab ── */}
       {mainTab === "leaderboard" && (
         <div style={{ padding: "16px 16px 0" }}>
-          {myUserId && myRank !== null && myAura !== null && (
-            <div style={{ marginBottom: 16, padding: "12px 16px", borderRadius: 14, background: "linear-gradient(135deg, rgba(139,92,246,0.15), rgba(99,102,241,0.1))", border: "1px solid rgba(139,92,246,0.3)", display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ fontSize: 18 }}>✦</span>
-              <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-2)" }}>
-                You are{" "}
-                <span style={{ fontWeight: 900, background: "linear-gradient(135deg, #c084fc, #818cf8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-                  {ordinal(myRank)}
+          {(() => {
+            const showRank = viewUserId ? viewRank : myRank;
+            const showAura = viewUserId ? viewAura : myAura;
+            const showName = viewUserId ? (viewDisplayName ?? viewUsername) : null;
+            if (!showRank || showAura === null) return null;
+            return (
+              <div style={{ marginBottom: 16, padding: "12px 16px", borderRadius: 14, background: "linear-gradient(135deg, rgba(139,92,246,0.15), rgba(99,102,241,0.1))", border: "1px solid rgba(139,92,246,0.3)", display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 18 }}>✦</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-2)" }}>
+                  {showName ? <span style={{ fontWeight: 900, color: "var(--text-1)" }}>{showName}</span> : "You"}{" "}
+                  {showName ? "is" : "are"}{" "}
+                  <span style={{ fontWeight: 900, background: "linear-gradient(135deg, #c084fc, #818cf8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+                    {ordinal(showRank)}
+                  </span>
+                  {" "}with{" "}
+                  <span style={{ fontWeight: 900, color: "#c084fc" }}>{(showAura ?? 0).toLocaleString()}</span>
+                  {" "}Aura
                 </span>
-                {" "}with{" "}
-                <span style={{ fontWeight: 900, color: "#c084fc" }}>{myAura.toLocaleString()}</span>
-                {" "}Aura
-              </span>
-            </div>
-          )}
+              </div>
+            );
+          })()}
 
           <div style={{ borderRadius: 16, border: "1px solid var(--border-1)", background: "var(--surface-3)", overflow: "hidden" }}>
             {lbLoading ? (
