@@ -1059,30 +1059,33 @@ function PlayerAvatar({ name, team, size = 48 }: { name: any; team?: any; size?:
     setFailed(false);
   }, [src]);
 
+  const logo = getLogo(safeTeam);
   return (
-    <span
-      style={{
-        ...playerAvatarWrapStyle,
-        width: size,
-        height: size,
-        background: `${bg}80`,
-      }}
-    >
-      {!failed && src ? (
-        <Image
-          key={src}
-          src={src}
-          alt={safeName}
-          fill
-          sizes={`${size}px`}
-          style={playerAvatarImageStyle}
-          onError={() => setFailed(true)}
-        />
-      ) : (
-        <span style={{ ...playerInitialsStyle, fontSize: size < 44 ? 12 : 15 }}>{getInitials(safeName)}</span>
-      )}
-      {getLogo(safeTeam) && (
-        <img src={getLogo(safeTeam)!} alt="" style={{ position: "absolute", bottom: -2, right: -2, width: 16, height: 16, borderRadius: "50%", background: "var(--bg-1)", border: "1.5px solid var(--bg-1)", objectFit: "contain", pointerEvents: "none" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+    <span style={{ position: "relative", display: "inline-flex", flexShrink: 0, width: size, height: size }}>
+      <span
+        style={{
+          ...playerAvatarWrapStyle,
+          width: size,
+          height: size,
+          background: `${bg}80`,
+        }}
+      >
+        {!failed && src ? (
+          <Image
+            key={src}
+            src={src}
+            alt={safeName}
+            fill
+            sizes={`${size}px`}
+            style={playerAvatarImageStyle}
+            onError={() => setFailed(true)}
+          />
+        ) : (
+          <span style={{ ...playerInitialsStyle, fontSize: size < 44 ? 12 : 15 }}>{getInitials(safeName)}</span>
+        )}
+      </span>
+      {logo && (
+        <img src={logo} alt="" style={{ position: "absolute", bottom: -2, right: -2, width: 16, height: 16, borderRadius: "50%", background: "var(--bg-1)", border: "1.5px solid var(--bg-1)", objectFit: "contain", pointerEvents: "none" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
       )}
     </span>
   );
