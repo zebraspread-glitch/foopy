@@ -1330,16 +1330,12 @@ function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating }: { 
     <div>
       {isLive && <div style={liveStatsBadgeStyle}>LIVE PLAYER STATS</div>}
       <style>{`
+        .st-wrap { overflow-x: auto; overflow-y: auto; max-height: calc(100vh - 180px); }
         @media (max-width: 600px) {
-          .st th { padding: 6px 2px; font-size: 9px; }
-          .st td { padding: 8px 2px; font-size: 10px; }
-          .st .st-player-td { min-width: 0; max-width: 110px; }
-          .st .st-player-gap { gap: 5px !important; }
-          .st .st-avatar > span { width: 28px !important; height: 28px !important; }
-          .st .st-avatar > span > span:first-child { width: 28px !important; height: 28px !important; }
-          .st .st-avatar img[style] { bottom: -1px !important; right: -1px !important; width: 11px !important; height: 11px !important; }
-          .st .st-name { max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; font-size: 10px; }
-          .st .st-rating { min-width: 34px !important; padding: 3px 4px !important; font-size: 10px !important; }
+          .st th { padding: 7px 3px; font-size: 9px; }
+          .st td { padding: 10px 3px; font-size: 11px; }
+          .st .st-avatar { display: none; }
+          .st .st-player-col { min-width: 70px; }
         }
       `}</style>
       <div className="st-wrap" style={{ overflowX: "auto", overflowY: "auto", maxHeight: "calc(100vh - 180px)" }}>
@@ -1407,10 +1403,10 @@ function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating }: { 
                   style={{ cursor: "pointer" }}
                   onClick={() => router.push(`/match/${gameId}/${encodeURIComponent(playerKey)}?${playerParams}`)}
                 >
-                  <td className="st-player-td" style={tdPlayerStyle}>
-                    <span className="st-player-gap" style={playerNameCellStyle}>
+                  <td style={tdPlayerStyle}>
+                    <span style={playerNameCellStyle}>
                       <span className="st-avatar"><PlayerAvatar name={name} team={rowTeam} /></span>
-                      <span className="st-name">{name}</span>
+                      <span>{name}</span>
                     </span>
                   </td>
 
@@ -1420,7 +1416,7 @@ function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating }: { 
                         {rating > 0 && (() => {
                           const isBest = isFinal && bestRating > 0 && rating === bestRating;
                           return (
-                            <span className="st-rating" style={{ ...ratingPillStyle, background: foopyColor(rating), ...(isBest ? { display: "inline-flex", alignItems: "center", gap: 3 } : {}) }}>
+                            <span style={{ ...ratingPillStyle, background: foopyColor(rating), ...(isBest ? { display: "inline-flex", alignItems: "center", gap: 3 } : {}) }}>
                               {isBest && (
                                 <svg width="11" height="11" viewBox="0 0 24 24" fill="white" style={{ flexShrink: 0, filter: "drop-shadow(0 1px 1px rgba(0,0,0,.4))" }}>
                                   <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
