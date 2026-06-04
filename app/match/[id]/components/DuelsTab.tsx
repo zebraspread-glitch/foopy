@@ -1037,9 +1037,10 @@ function PicksLockedScreen({
       </div>
 
       {/* ── Pick table ── */}
+      <style>{`@media (max-width: 480px) { .dp-name { display: none !important; } }`}</style>
       <div style={{ background: "var(--surface-2)", border: "1px solid var(--border-2)", borderRadius: 14, overflow: "hidden" }}>
         {/* Column headers */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 86px 1fr", background: "rgba(255,255,255,0.03)", borderBottom: "1px solid var(--border-2)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 68px 1fr", background: "rgba(255,255,255,0.03)", borderBottom: "1px solid var(--border-2)" }}>
           <div style={{ padding: "8px 12px", fontSize: 10, fontWeight: 900, letterSpacing: "0.08em", color: "#3b82f6" }}>— YOU</div>
           <div />
           <div style={{ padding: "8px 12px", fontSize: 10, fontWeight: 900, letterSpacing: "0.08em", color: "var(--text-3)", textAlign: "right" as const }}>Opponent —</div>
@@ -1120,7 +1121,7 @@ function PicksLockedScreen({
                     {myTeam && <img src={teamLogoUrl(myTeam)} alt="" style={{ position: "absolute", bottom: -1, right: -1, width: 14, height: 14, borderRadius: "50%", background: "var(--bg-1)", border: "1px solid var(--bg-1)", objectFit: "contain" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
                   </div>
                   <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontSize: 11, fontWeight: myWins === true ? 900 : 600, color: myWins === false ? "var(--text-4)" : "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{myName}</div>
+                    <div className="dp-name" style={{ fontSize: 11, fontWeight: myWins === true ? 900 : 600, color: myWins === false ? "var(--text-4)" : "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{myName}</div>
                     {myVal && <div style={{ fontSize: 15, fontWeight: 900, color: myWins === true ? "#22c55e" : myWins === false ? "var(--text-3)" : "var(--text-2)", letterSpacing: "-0.03em", lineHeight: 1 }}>{myVal}</div>}
                   </div>
                 </div>
@@ -1149,7 +1150,7 @@ function PicksLockedScreen({
                   </div>
                   {op ? (
                     <div style={{ minWidth: 0, flex: 1, textAlign: "right" as const }}>
-                      <div style={{ fontSize: 11, fontWeight: oppWins === true ? 900 : 600, color: oppWins === false ? "var(--text-4)" : "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{oppName}</div>
+                      <div className="dp-name" style={{ fontSize: 11, fontWeight: oppWins === true ? 900 : 600, color: oppWins === false ? "var(--text-4)" : "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{oppName}</div>
                       {oppVal && <div style={{ fontSize: 15, fontWeight: 900, color: oppWins === true ? "#22c55e" : oppWins === false ? "var(--text-3)" : "var(--text-2)", letterSpacing: "-0.03em", lineHeight: 1 }}>{oppVal}</div>}
                     </div>
                   ) : (
