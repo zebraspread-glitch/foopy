@@ -6155,7 +6155,7 @@ const countdownBoxStyle: CSSProperties = {
 };
 const countdownLabelStyle: CSSProperties = { color: "#facc15", fontSize: 11, fontWeight: 1000, letterSpacing: ".16em" };
 const countdownTimeStyle: CSSProperties = { marginTop: 8, color: "var(--text-1)", fontSize: 36, lineHeight: 1, fontWeight: 1000, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" };
-const tableWrapStyle: CSSProperties = { overflowX: "auto", overflowY: "auto", maxHeight: "calc(100vh - 180px)" };
+const tableWrapStyle: CSSProperties = { overflowX: "auto" };
 const tableStyle: CSSProperties = { width: "100%", borderCollapse: "collapse" };
 const thStyle: CSSProperties = { position: "sticky", top: 0, zIndex: 2, background: "var(--bg-1, #0a0a0f)", textAlign: "left", padding: "9px 10px", borderBottom: "1px solid var(--border-2)", whiteSpace: "nowrap", fontSize: 10, fontWeight: 900, textTransform: "uppercase" as const, letterSpacing: "0.08em", color: "var(--text-3)" };
 const thPlayerStyle: CSSProperties = { ...thStyle, minWidth: 180 };
