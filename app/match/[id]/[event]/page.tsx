@@ -665,6 +665,9 @@ function EventCommentsPageInner() {
 
   function startReply(comment: Comment) {
     setReplyTo(comment);
+    // Pre-fill with @username like Instagram
+    const name = comment.profile?.username || comment.profile?.display_name;
+    if (name) setBody(`@${name} `);
     // Auto-expand the parent thread so the reply will be visible after submit
     const parentId = comment.parent_id ?? comment.id;
     setExpandedIds(prev => new Set(prev).add(parentId));

@@ -4215,6 +4215,8 @@ function MatchComments({ gameId, highlight }: { gameId: number; highlight: strin
   function startReply(comment: MatchComment) {
     setReplyThreadId(null);
     setReplyTo(comment);
+    const name = comment.profile?.username || comment.profile?.display_name;
+    if (name) setBody(`@${name} `);
     setTimeout(() => inputRef.current?.focus(), 50);
   }
 
@@ -4675,7 +4677,13 @@ function MatchRepliesPopup({ comment, userId, onClose, onLike, onDelete, onViewR
             <div style={matchReplyEmptyStyle}>No replies yet.</div>
           ) : (
             comment.replies!.map((reply) => (
-              <MCRow key={reply.id} comment={reply} userId={userId} onLike={onLike} onDelete={onDelete} onReply={() => focusReplyInput()} onViewReplies={onViewReplies} liking={liking} />
+              <MCRow key={reply.id} comment={reply} userId={userId} onLike={onLike} onDelete={onDelete}
+                onReply={() => {
+                  const name = reply.profile?.username || reply.profile?.display_name;
+                  if (name) setReplyBody(`@${name} `);
+                  focusReplyInput();
+                }}
+                onViewReplies={onViewReplies} liking={liking} />
             ))
           )}
         </div>
