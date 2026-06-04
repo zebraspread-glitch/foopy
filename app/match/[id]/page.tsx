@@ -5133,67 +5133,54 @@ function PollLeaderboard({
   if (entries.length === 0) return null;
 
   return (
-    <div style={{ background: "rgba(251,191,36,0.06)", border: "1.5px solid rgba(251,191,36,0.2)", borderRadius: 18, overflow: "hidden", marginBottom: 4 }}>
+    <div style={{ background: "var(--surface-2)", border: "1px solid var(--border-1)", borderRadius: 16, overflow: "hidden", marginBottom: 4 }}>
       {/* Header */}
-      <div style={{ padding: "14px 16px 10px", display: "flex", alignItems: "center", gap: 8, borderBottom: "1px solid var(--border-1)" }}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-        </svg>
-        <span style={{ fontSize: 13, fontWeight: 900, color: "#fbbf24", letterSpacing: "0.04em" }}>POLL LEADERBOARD</span>
-        <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.35)", marginLeft: "auto" }}>Aura from polls</span>
+      <div style={{ padding: "12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid var(--border-1)" }}>
+        <span style={{ fontSize: 11, fontWeight: 900, color: "var(--text-3)", letterSpacing: "0.08em", textTransform: "uppercase" as const }}>Poll Leaderboard</span>
+        <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-4)" }}>Aura from polls</span>
       </div>
 
       {/* Rows */}
       {entries.map((e, i) => {
         const label = e.username || e.displayName || "User";
         const initials = label.trim().split(/\s+/).map((w: string) => w[0]).join("").toUpperCase().slice(0, 2);
-        const isTop3 = i < 3;
-        const medalColor = i === 0 ? "#fbbf24" : i === 1 ? "#94a3b8" : i === 2 ? "#cd7c32" : "rgba(255,255,255,0.2)";
 
         return (
           <div
             key={e.userId}
             onClick={() => e.username && router.push(`/album/${e.username}`)}
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              padding: "10px 16px",
-              borderBottom: i < entries.length - 1 ? "1px solid var(--border-1)" : "none",
-              background: i === 0 ? "rgba(251,191,36,0.05)" : "transparent",
+              display: "flex", alignItems: "center", gap: 12,
+              padding: "11px 14px",
+              borderTop: i > 0 ? "1px solid var(--border-1)" : "none",
               cursor: e.username ? "pointer" : "default",
             }}
           >
             {/* Rank */}
-            <div style={{ width: 24, textAlign: "center", flexShrink: 0 }}>
-              {isTop3 ? (
-                <span style={{ fontSize: 16 }}>{i === 0 ? "🥇" : i === 1 ? "🥈" : "🥉"}</span>
-              ) : (
-                <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.3)" }}>{i + 1}</span>
-              )}
+            <div style={{ width: 22, textAlign: "center", flexShrink: 0 }}>
+              {i < 3
+                ? <span style={{ fontSize: 15 }}>{i === 0 ? "🥇" : i === 1 ? "🥈" : "🥉"}</span>
+                : <span style={{ fontSize: 12, fontWeight: 800, color: "var(--text-4)" }}>{i + 1}</span>
+              }
             </div>
 
             {/* Avatar */}
-            <div style={{ width: 34, height: 34, borderRadius: "50%", flexShrink: 0, overflow: "hidden", border: `2px solid ${isTop3 ? medalColor : "var(--border-2)"}`, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--surface-3)" }}>
+            <div style={{ width: 34, height: 34, borderRadius: "50%", flexShrink: 0, overflow: "hidden", border: "2px solid var(--border-2)", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--surface-3)" }}>
               {e.avatarUrl
                 ? <img src={e.avatarUrl} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                : <span style={{ fontSize: 13, fontWeight: 900, color: isTop3 ? medalColor : "rgba(255,255,255,0.5)" }}>{initials}</span>
+                : <span style={{ fontSize: 12, fontWeight: 900, color: "var(--text-3)" }}>{initials}</span>
               }
             </div>
 
             {/* Name */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: i === 0 ? "#fef3c7" : "#f1f5f9", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {e.username ? `@${e.username}` : e.displayName || "User"}
-              </div>
+            <div style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 700, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
+              {e.username ? `@${e.username}` : e.displayName || "User"}
             </div>
 
-            {/* XP badge */}
-            <div style={{ flexShrink: 0, background: isTop3 ? `rgba(${i === 0 ? "251,191,36" : i === 1 ? "148,163,184" : "205,124,50"},0.15)` : "var(--border-1)", border: `1px solid ${isTop3 ? medalColor + "44" : "var(--border-2)"}`, borderRadius: 999, padding: "4px 10px" }}>
-              <span style={{ fontSize: 13, fontWeight: 900, color: isTop3 ? (i === 0 ? "#fbbf24" : i === 1 ? "#94a3b8" : "#cd7c32") : "rgba(255,255,255,0.6)" }}>
-                +{e.xp} Aura
-              </span>
-            </div>
+            {/* Aura */}
+            <span style={{ flexShrink: 0, fontSize: 14, fontWeight: 900, background: "linear-gradient(135deg, #c084fc, #818cf8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+              +{e.xp}
+            </span>
           </div>
         );
       })}
