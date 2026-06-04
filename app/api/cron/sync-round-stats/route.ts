@@ -130,8 +130,15 @@ export async function GET(req: Request) {
   // it means the game recently finished — trigger a player season stats refresh
   // so the /stats page updates without anyone having to run a script.
   if (newlyFinalised.length > 0) {
+    // Trigger season stats refresh and duel resolution when a game just finished
     fetch(`${origin}/api/cron/sync-player-season-stats`, {
       headers: { authorization: `Bearer ${secret}` },
+      cache: "no-store",
+    }).catch(() => {});
+
+    fetch(`${origin}/api/cron/resolve-duels`, {
+      method: "POST",
+      headers: { "x-cron-secret": secret },
       cache: "no-store",
     }).catch(() => {});
   }

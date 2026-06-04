@@ -11,10 +11,6 @@
     {
       "path": "/api/cron/sync-stats-by-date",
       "schedule": "*/30 * * * *"
-    },
-    {
-      "path": "/api/cron/resolve-duels",
-      "schedule": "*/5 * * * *"
     }
   ]
 }
