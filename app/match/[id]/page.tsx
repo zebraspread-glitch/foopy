@@ -1081,6 +1081,9 @@ function PlayerAvatar({ name, team, size = 48 }: { name: any; team?: any; size?:
       ) : (
         <span style={{ ...playerInitialsStyle, fontSize: size < 44 ? 12 : 15 }}>{getInitials(safeName)}</span>
       )}
+      {getLogo(safeTeam) && (
+        <img src={getLogo(safeTeam)!} alt="" style={{ position: "absolute", bottom: -2, right: -2, width: 16, height: 16, borderRadius: "50%", background: "var(--bg-1)", border: "1.5px solid var(--bg-1)", objectFit: "contain", pointerEvents: "none" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+      )}
     </span>
   );
 }
