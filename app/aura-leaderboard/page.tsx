@@ -56,6 +56,17 @@ function getEventMeta(type: string) {
   };
 }
 
+/** Extract player/team name from pass_reward related_id, or null for old UUID-based entries */
+function parsePassName(relatedId: string): string | null {
+  if (!relatedId?.startsWith("pass_reward:")) return null;
+  const parts = relatedId.split(":");
+  if (parts.length < 3) return null;
+  const name = parts[2];
+  // Old format used a UUID — don't show those
+  if (/^[0-9a-f-]{36}$/i.test(name)) return null;
+  return name;
+}
+
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const m = Math.floor(diff / 60_000);
@@ -320,6 +331,7 @@ function AuraLeaderboardInner() {
               {/* Event list — flat, no box */}
               {history.map((ev, i) => {
                 const meta = getEventMeta(ev.event_type);
+                const passName = ev.event_type === "pass_reward" ? parsePassName(ev.related_id) : null;
                 return (
                   <div
                     key={ev.id}
@@ -327,7 +339,7 @@ function AuraLeaderboardInner() {
                   >
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-1)" }}>
-                        {meta.label}
+                        {passName ? `${passName} · ${meta.label}` : meta.label}
                       </div>
                       <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 500, marginTop: 2 }}>
                         {timeAgo(ev.created_at)}

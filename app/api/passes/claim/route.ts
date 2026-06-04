@@ -87,7 +87,8 @@ export async function POST(req: Request) {
   // Award aura: awardAura inserts into aura_events; the DB trigger updates profiles.aura.
   // Dedup via unique constraint means repeated calls are always safe.
   for (const reward of claimed) {
-    const relatedId = `pass_reward:${reward.pass_type}:${reward.pass_id}:${reward.match_id}`;
+    const passName = (reward as any).player_name || (reward as any).team_name || reward.pass_id;
+    const relatedId = `pass_reward:${reward.pass_type}:${passName}:${reward.match_id}`;
     await awardAura(user.id, "pass_reward", relatedId, reward.aura_reward);
   }
 
