@@ -23,8 +23,9 @@ export async function GET(req: Request) {
 
   const home = data.filter((v) => v.side === "home").length;
   const away = data.filter((v) => v.side === "away").length;
+  const draw = data.filter((v) => v.side === "draw").length;
 
-  return NextResponse.json({ home, away, total: home + away });
+  return NextResponse.json({ home, away, draw, total: home + away + draw });
 }
 
 export async function POST(req: Request) {
@@ -75,10 +76,11 @@ export async function POST(req: Request) {
 
   const home = (data ?? []).filter((v) => v.side === "home").length;
   const away = (data ?? []).filter((v) => v.side === "away").length;
+  const draw = (data ?? []).filter((v) => v.side === "draw").length;
 
   const auraResult = authedUserId
     ? await awardAura(authedUserId, "winner_pick", String(matchId))
     : { awarded: false };
 
-  return NextResponse.json({ ok: true, home, away, total: home + away, aura_awarded: auraResult.awarded });
+  return NextResponse.json({ ok: true, home, away, draw, total: home + away + draw, aura_awarded: auraResult.awarded });
 }
