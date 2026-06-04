@@ -28,7 +28,7 @@ export async function GET(req: Request) {
   try {
     if (isSyncCall) {
       const { data, fromCache } = await withCache(
-        id, "player_stats", isFinal ? 90 : 65, () => fetchPlayerStats(id), isFinal
+        id, "player_stats", isFinal ? 90 : 10, () => fetchPlayerStats(id), isFinal
       );
       const res = NextResponse.json({ ...(data as any), cached: fromCache });
       res.headers.set("x-from-cache", fromCache ? "1" : "0");
