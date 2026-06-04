@@ -784,7 +784,7 @@ export default function PublicProfilePage() {
           </div>
 
           {/* Bio */}
-          <div style={{ margin: "0 14px", padding: "14px 16px", borderRadius: 16, background: "var(--surface-2)", border: "1px solid var(--border-2)" }}>
+          <div style={{ margin: "0 14px", padding: "4px 0 8px" }}>
             <p style={{ margin: 0, color: profile.bio ? "#cbd5e1" : "#475569", fontSize: 14, fontWeight: 600, lineHeight: 1.6, fontStyle: profile.bio ? "normal" : "italic" }}>
               {profile.bio || "No bio yet."}
             </p>
