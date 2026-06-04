@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/app/lib/supabase";
 import { supabaseServer } from "@/app/lib/supabase-server";
 import { awardAura } from "@/app/lib/aura";
+
+const db = supabaseServer;
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -11,7 +12,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ home: 0, away: 0, total: 0 });
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("winner_picks")
     .select("side")
     .eq("match_id", matchId);
@@ -40,12 +41,12 @@ export async function POST(req: Request) {
   const authHeader = req.headers.get("authorization");
   const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
   if (token) {
-    const { data: { user } } = await supabaseServer.auth.getUser(token);
+    const { data: { user } } = await dbServer.auth.getUser(token);
     authedUserId = user?.id ?? null;
   }
 
   // Remove any existing vote this device made for this match
-  const { error: deleteError } = await supabase
+  const { error: deleteError } = await db
     .from("winner_picks")
     .delete()
     .eq("match_id", String(matchId))
@@ -56,7 +57,7 @@ export async function POST(req: Request) {
   }
 
   // Insert the new vote
-  const { error: insertError } = await supabase.from("winner_picks").insert({
+  const { error: insertError } = await db.from("winner_picks").insert({
     match_id: String(matchId),
     team,
     side,
@@ -69,7 +70,7 @@ export async function POST(req: Request) {
   }
 
   // Return fresh counts immediately so UI can update without a second fetch
-  const { data } = await supabase
+  const { data } = await db
     .from("winner_picks")
     .select("side")
     .eq("match_id", String(matchId));
