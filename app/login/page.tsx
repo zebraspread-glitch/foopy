@@ -91,7 +91,18 @@ function LoginPageInner() {
 
     const { data, error: err } = await supabase.auth.signUp({ email, password });
     if (err) { setError(err.message); setLoading(false); return; }
+
+    // Guard 1: empty identities means email already registered (Supabase standard check)
     if (!data.user?.identities?.length) { setError("An account with this email already exists. Try signing in."); setLoading(false); return; }
+
+    // Guard 2: if the account was created more than 30s ago it's an existing account
+    // (catches cases where signUp silently returns the existing user's session)
+    const accountAge = Date.now() - new Date(data.user?.created_at ?? 0).getTime();
+    if (accountAge > 30_000) {
+      await supabase.auth.signOut();
+      setError("An account with this email already exists. Try signing in.");
+      setLoading(false); return;
+    }
 
     if (data.session && data.user) {
       const { error: upsertErr } = await supabase.from("profiles").upsert({
