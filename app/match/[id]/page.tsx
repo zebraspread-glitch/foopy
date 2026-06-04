@@ -2941,9 +2941,6 @@ function MatchPageInner() {
     if (!showStatsTabs && activeTab !== "feed" && activeTab !== "chat" && activeTab !== "polls" && activeTab !== "duels") setActiveTab("feed");
   }, [showStatsTabs, activeTab]);
 
-  useEffect(() => {
-    if (isSignedIn === false && activeTab !== "feed") setActiveTab("feed");
-  }, [isSignedIn, activeTab]);
 
   useEffect(() => {
     if (!id) return;
@@ -3575,8 +3572,8 @@ function MatchPageInner() {
         {/* ── Sticky header + tabs ── */}
         {(() => {
           const tabList: string[] = [
-            ...(isSignedIn ? ["feed","chat","polls", ...(hasDuelGame ? ["duels"] : [])] : ["feed"]),
-            ...(showStatsTabs && isSignedIn ? ["game", "home", "away"] : []),
+            "feed", "chat", "polls", ...(hasDuelGame ? ["duels"] : []),
+            ...(showStatsTabs ? ["game", "home", "away"] : []),
           ];
           const activeIdx = tabList.indexOf(activeTab);
           const tabCount = tabList.length;
@@ -3687,7 +3684,7 @@ function MatchPageInner() {
                   transition: "left 0.2s cubic-bezier(0.4,0,0.2,1), width 0.2s cubic-bezier(0.4,0,0.2,1)",
                   pointerEvents: "none",
                 }} />
-                {(isSignedIn ? ["feed","chat","polls", ...(hasDuelGame ? ["duels" as const] : [])] as const : ["feed"] as const).map(t => (
+                {(["feed","chat","polls", ...(hasDuelGame ? ["duels" as const] : [])] as const).map(t => (
                   <button key={t} type="button" onClick={() => setActiveTab(t)} style={{
                     flex: 1, padding: "13px 4px 11px",
                     background: "none", border: "none",
@@ -3712,7 +3709,7 @@ function MatchPageInner() {
                     )}
                   </button>
                 ))}
-                {showStatsTabs && isSignedIn && (
+                {showStatsTabs && (
                   <>
                     {(["game","home","away"] as const).map((t) => {
                       const label = t === "game" ? "Stats" : t === "home" ? homeAbbr : awayAbbr;
