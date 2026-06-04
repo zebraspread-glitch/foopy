@@ -4265,8 +4265,21 @@ function MatchComments({ gameId, highlight }: { gameId: number; highlight: strin
     const topLevel: MatchComment[] = [];
     for (const c of all) byId[c.id] = c;
     for (const c of all) {
-      if (c.parent_id && byId[c.parent_id]) byId[c.parent_id].replies!.push(c);
-      else topLevel.push(c);
+      if (c.parent_id) {
+        const directParent = byId[c.parent_id];
+        if (directParent) {
+          // Flatten to 2 levels: if the direct parent is itself a reply,
+          // attach this comment under the grandparent instead
+          const effectiveParent = directParent.parent_id
+            ? (byId[directParent.parent_id] ?? directParent)
+            : directParent;
+          effectiveParent.replies!.push(c);
+        } else {
+          topLevel.push(c); // orphan — parent was deleted
+        }
+      } else {
+        topLevel.push(c);
+      }
     }
 
     setComments(topLevel);
@@ -4295,7 +4308,9 @@ function MatchComments({ gameId, highlight }: { gameId: number; highlight: strin
     setSubmitting(true);
     const trimmedBody = text.trim();
     const { data: inserted, error } = await supabase.from("feed_comments").insert({
-      game_id: gameId, user_id: userId, parent_id: replyTarget?.id ?? null,
+      game_id: gameId, user_id: userId,
+      // Flatten to 2 levels: reply to a reply links to the original top-level comment
+      parent_id: replyTarget ? (replyTarget.parent_id ?? replyTarget.id) : null,
       body: trimmedBody, event_key: null,
     }).select("id").single();
     if (error) {
