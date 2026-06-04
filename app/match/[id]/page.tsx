@@ -1330,20 +1330,19 @@ function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating }: { 
     <div>
       {isLive && <div style={liveStatsBadgeStyle}>LIVE PLAYER STATS</div>}
 
-      <div style={statSwitchWrapStyle}>
-        <button onClick={() => setStatMode("basic")} style={statMode === "basic" ? activeStatSwitchStyle : statSwitchStyle}>
-          Basic
-        </button>
-        <button onClick={() => setStatMode("advanced")} style={statMode === "advanced" ? activeStatSwitchStyle : statSwitchStyle}>
-          Advanced
-        </button>
-      </div>
-
       <div style={tableWrapStyle}>
         <table style={tableStyle}>
           <thead>
             <tr>
-              <th style={thPlayerStyle}>Player</th>
+              <th style={thPlayerStyle}>
+                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  Player
+                  <span style={{ display: "flex", gap: 3 }}>
+                    <button onClick={() => setStatMode("basic")} style={statMode === "basic" ? activeStatSwitchStyle : statSwitchStyle}>Basic</button>
+                    <button onClick={() => setStatMode("advanced")} style={statMode === "advanced" ? activeStatSwitchStyle : statSwitchStyle}>Advanced</button>
+                  </span>
+                </span>
+              </th>
               {statMode === "basic" ? (
                 <>
                   {sortHeader("Foopy", "foopy")}
@@ -3987,21 +3986,18 @@ function MatchPageInner() {
             <>
               {activeTab === "players" && playerSubTab === "all" && (
                 <section style={sectionStyle}>
-                  <h2 style={sectionHeadingStyle}>All Players</h2>
                   <StatTable stats={allMatchPlayers} isLive={isLiveGame} isFinal={status === "FINAL"} gameId={Number(id)} bestRating={bestRating} />
                 </section>
               )}
 
               {activeTab === "players" && playerSubTab === "home" && (
                 <section style={sectionStyle}>
-                  <h2 style={sectionHeadingStyle}>{homeAbbr} Player Stats</h2>
                   <StatTable stats={displayHomeStats} isLive={isLiveGame} isFinal={status === "FINAL"} team={game.hteam} gameId={Number(id)} bestRating={bestRating} />
                 </section>
               )}
 
               {activeTab === "players" && playerSubTab === "away" && (
                 <section style={sectionStyle}>
-                  <h2 style={sectionHeadingStyle}>{awayAbbr} Player Stats</h2>
                   <StatTable stats={displayAwayStats} isLive={isLiveGame} isFinal={status === "FINAL"} team={game.ateam} gameId={Number(id)} bestRating={bestRating} />
                 </section>
               )}
@@ -6169,7 +6165,7 @@ const tdPlayerStyle: CSSProperties = { ...tdStyle, fontWeight: 800, fontSize: 14
 const playerNameCellStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 14 };
 const ratingPillStyle: CSSProperties = { display: "inline-block", minWidth: 48, padding: "5px 9px", borderRadius: 8, color: "var(--text-1)", fontWeight: 900, fontSize: 13, border: "1.5px solid rgba(0,0,0,0.3)", textAlign: "center" };
 const statSwitchWrapStyle: CSSProperties = { display: "flex", justifyContent: "center", gap: 6, marginBottom: 14 };
-const statSwitchStyle: CSSProperties = { appearance: "none", border: "1px solid var(--border-2)", background: "var(--surface-2)", color: "var(--text-2)", borderRadius: 999, padding: "8px 16px", fontSize: 12, fontWeight: 800, cursor: "pointer", letterSpacing: "0.01em" };
+const statSwitchStyle: CSSProperties = { appearance: "none", border: "1px solid var(--border-2)", background: "var(--surface-2)", color: "var(--text-2)", borderRadius: 999, padding: "3px 8px", fontSize: 10, fontWeight: 800, cursor: "pointer", letterSpacing: "0.01em" };
 const activeStatSwitchStyle: CSSProperties = { ...statSwitchStyle, background: "#3b82f6", color: "var(--text-1)", border: "1px solid #3b82f6" };
 const noStatsStyle: CSSProperties = { background: "var(--surface-2)", border: "1px solid var(--border-1)", borderRadius: 14, padding: "20px 16px", color: "var(--text-3)", display: "flex", flexDirection: "column", gap: 6, fontSize: 14, fontWeight: 600, textAlign: "center" };
 const mutedStyle: CSSProperties = { color: "#9ca3af" };
