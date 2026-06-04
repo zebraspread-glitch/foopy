@@ -34,14 +34,18 @@ const PERIOD_TABS: { label: string; value: Period }[] = [
 ];
 
 const EVENT_META: Record<string, { label: string; icon: string }> = {
-  live_game_view: { label: "Viewed a live game",   icon: "📺" },
-  daily_login:    { label: "Daily login",           icon: "🌅" },
-  poll_correct:   { label: "Won a poll",            icon: "🎯" },
-  winner_pick:    { label: "Picked the winner",     icon: "🏆" },
-  pass_reward:    { label: "Pass reward",           icon: "🎫" },
-  comment_post:   { label: "Posted a comment",      icon: "💬" },
-  like_given:     { label: "Liked a post",          icon: "👍" },
-  like_received:  { label: "Received a like",       icon: "❤️" },
+  live_game_view:         { label: "Viewed a live game",       icon: "📺" },
+  daily_login:            { label: "Daily login",              icon: "🌅" },
+  poll_correct:           { label: "Won a poll",               icon: "🎯" },
+  winner_pick:            { label: "Picked the winner",        icon: "🏆" },
+  pass_reward:            { label: "Pass reward",              icon: "🎫" },
+  comment_post:           { label: "Posted a comment",         icon: "💬" },
+  like_given:             { label: "Liked a post",             icon: "👍" },
+  like_received:          { label: "Received a like",          icon: "❤️" },
+  duel_win:               { label: "Won a duel",               icon: "⚔️" },
+  duel_loss:              { label: "Lost a duel",              icon: "🛡️" },
+  badge_first_blood:      { label: "Badge: First Blood",       icon: "🩸" },
+  badge_perfect_duellist: { label: "Badge: Perfect Duellist",  icon: "💯" },
 };
 
 function getEventMeta(type: string) {

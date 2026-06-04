@@ -32,31 +32,32 @@ export async function GET(req: Request) {
   const squiggleData = await squiggleRes.json();
   const games: any[] = squiggleData.games ?? squiggleData ?? [];
 
-  // Only process games that are complete
-  const finalGames = games.filter(
-    g => Number(g.complete ?? 0) >= 100 || g.is_final === 1
+  // Only process games that are complete AND finished in the last 14 days
+  // (older games are already finalized — no need to reprocess every hour)
+  const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const finalGames = games.filter(g =>
+    (Number(g.complete ?? 0) >= 100 || g.is_final === 1) &&
+    (g.date ?? "") >= cutoff
   );
 
   const origin = new URL(req.url).origin;
-  const results: { game_id: number; result: any }[] = [];
 
-  for (const game of finalGames) {
-    const gameId = Number(game.id);
-    if (!gameId) continue;
-
-    try {
+  // Process all recent final games in parallel so we don't time out
+  const settled = await Promise.allSettled(
+    finalGames.map(async (game) => {
+      const gameId = Number(game.id);
+      if (!gameId) return null;
       const res = await fetch(`${origin}/api/polls/finalize?game_id=${gameId}`, {
         cache: "no-store",
       });
       const data = await res.json();
-      // Only log games where we actually awarded something
-      if (data.awarded > 0) {
-        results.push({ game_id: gameId, result: data });
-      }
-    } catch (e: any) {
-      results.push({ game_id: gameId, result: { error: e.message } });
-    }
-  }
+      return data.awarded > 0 ? { game_id: gameId, result: data } : null;
+    })
+  );
+
+  const results = settled
+    .filter(s => s.status === "fulfilled" && s.value !== null)
+    .map(s => (s as PromiseFulfilledResult<any>).value);
 
   // Also resolve any completed duels
   try {
