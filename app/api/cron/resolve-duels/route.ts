@@ -270,11 +270,14 @@ async function runResolution() {
         if (g) {
           hScore = num(g.hscore);
           aScore = num(g.ascore);
-          // Auto-complete: Squiggle shows 100% done AND the last update was
-          // at least 7 minutes ago (enough time for API-Sports stats to publish)
-          if (!gameIsComplete && num(g.complete) >= 100 && g.updated) {
-            const msSinceUpdate = Date.now() - new Date(g.updated).getTime();
-            if (msSinceUpdate >= 7 * 60 * 1000) {
+          // Auto-complete: Squiggle shows 100% done AND stats have had time to settle.
+          // Wait 3 minutes after last update so API-Sports stats are fully published.
+          // If Squiggle doesn't provide an `updated` timestamp, complete immediately
+          // (game is final and we have no way to know when it ended).
+          if (!gameIsComplete && num(g.complete) >= 100) {
+            const readyToComplete = !g.updated ||
+              (Date.now() - new Date(g.updated).getTime() >= 3 * 60 * 1000);
+            if (readyToComplete) {
               gameIsComplete = true;
               await db.from("duel_games").update({ status: "complete" }).eq("id", duelGame.id);
             }
