@@ -3839,7 +3839,7 @@ function MatchPageInner() {
 
         {activeTab === "feed" && (
           <section style={sectionStyle}>
-            {game.date && (Date.parse(game.date) - Date.now()) < 10 * 24 * 60 * 60 * 1000 && (
+            {status === "UPCOMING" && game.date && (Date.parse(game.date) - Date.now()) < 10 * 24 * 60 * 60 * 1000 && (
               <div style={{ padding: "16px 16px 0" }}>
                 <WinnerPick
                   matchId={id}
@@ -4069,6 +4069,17 @@ function MatchPageInner() {
               </div>
 
               <div style={freeKickMessageStyle}>{umpireText}</div>
+            </div>
+
+            <div style={{ padding: "0 16px 16px" }}>
+              <WinnerPick
+                matchId={id}
+                homeTeam={game.hteam}
+                awayTeam={game.ateam}
+                gameStatus={status}
+                homeScore={game.hscore}
+                awayScore={game.ascore}
+              />
             </div>
           </section>
         )}
