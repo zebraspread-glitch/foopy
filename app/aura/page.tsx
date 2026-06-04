@@ -334,7 +334,7 @@ function AuraPageInner() {
                 background: "linear-gradient(135deg, #c084fc 0%, #818cf8 50%, #fbbf24 100%)",
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
               }}>
-                {formatAura(myAura)}
+                {myAura.toLocaleString()}
               </div>
               <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.45)", marginTop: 4, letterSpacing: "0.06em" }}>
                 YOUR AURA{myRank ? ` · ${ordinal(myRank)} globally` : ""}
