@@ -1336,7 +1336,6 @@ function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating }: { 
             <tr>
               <th style={thPlayerStyle}>
                 <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  Player
                   <span style={{ display: "flex", gap: 3 }}>
                     <button onClick={() => setStatMode("basic")} style={statMode === "basic" ? activeStatSwitchStyle : statSwitchStyle}>Basic</button>
                     <button onClick={() => setStatMode("advanced")} style={statMode === "advanced" ? activeStatSwitchStyle : statSwitchStyle}>Advanced</button>
