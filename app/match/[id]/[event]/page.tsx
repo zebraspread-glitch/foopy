@@ -503,8 +503,17 @@ function EventCommentsPageInner() {
     for (const comment of allComments) byId.set(comment.id, comment);
 
     for (const comment of allComments) {
-      if (comment.parent_id && byId.has(comment.parent_id)) {
-        byId.get(comment.parent_id)!.replies.push(comment);
+      if (comment.parent_id) {
+        const directParent = byId.get(comment.parent_id);
+        if (directParent) {
+          // Flatten to 2 levels: reply-of-reply goes under the grandparent
+          const effectiveParent = directParent.parent_id
+            ? (byId.get(directParent.parent_id) ?? directParent)
+            : directParent;
+          effectiveParent.replies.push(comment);
+        } else {
+          topLevel.push(comment);
+        }
       } else {
         topLevel.push(comment);
       }
@@ -541,7 +550,8 @@ function EventCommentsPageInner() {
     const insertPayload = {
       game_id: gameId,
       user_id: userId,
-      parent_id: parent?.id ?? null,
+      // Flatten to 2 levels: reply-of-reply links to the top-level comment
+      parent_id: parent ? (parent.parent_id ?? parent.id) : null,
       body: cleanBody,
       event_key: canonicalEventKey,
     };
