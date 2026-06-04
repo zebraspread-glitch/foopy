@@ -2656,7 +2656,7 @@ function MatchPageInner() {
   );
   const [playerSubTab, setPlayerSubTab] = useState<"all" | "home" | "away">("all");
   const [seasonStats, setSeasonStats] = useState<any[]>([]);
-  const [squadPlayers, setSquadPlayers] = useState<{ home: string[]; away: string[] } | null>(null);
+  const [squadPlayers, setSquadPlayers] = useState<{ home: number[]; away: number[] } | null>(null);
   const [unansweredPollCount, setUnansweredPollCount] = useState(0);
   const [hasDuelGame, setHasDuelGame] = useState(false);
   const [game, setGame] = useState<MatchGame | null>(null);
