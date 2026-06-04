@@ -531,7 +531,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
     { label: "Kicks",      value: computedSeason?.kicks?.toFixed(1)       ?? "—", rank: leagueRank("kicks") },
     { label: "Marks",      value: computedSeason?.marks?.toFixed(1)       ?? "—", rank: leagueRank("marks") },
     { label: "Tackles",    value: computedSeason?.tackles?.toFixed(1)     ?? "—", rank: leagueRank("tackles") },
-    { label: "Hitouts",    value: computedSeason?.hitouts?.toFixed(1)     ?? "—", rank: leagueRank("hitouts") },
+    ...(( computedSeason?.hitouts ?? 0) > 1 ? [{ label: "Hitouts", value: computedSeason!.hitouts!.toFixed(1), rank: leagueRank("hitouts") }] : []),
     { label: "Clearances", value: computedSeason?.clearances?.toFixed(1)  ?? "—", rank: leagueRank("clearances") },
     { label: "Games",      value: games > 0 ? String(games) : "—",                rank: null },
   ];
