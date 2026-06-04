@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { withCache } from "@/app/lib/matchCache";
+import { withCache, readCacheOnly } from "@/app/lib/matchCache";
 
 export const dynamic = "force-dynamic";
 
@@ -22,15 +22,18 @@ export async function GET(req: Request) {
 
   if (!id) return NextResponse.json({ error: "Missing game id" }, { status: 400 });
 
+  const syncSecret = process.env.CRON_SECRET;
+  const isSyncCall = syncSecret && req.headers.get("x-sync-secret") === syncSecret;
+
   try {
-    const { data, fromCache } = await withCache(
-      id,
-      "quarters",
-      30,
-      () => fetchQuarters(id),
-      isFinal
-    );
-    return NextResponse.json({ ...(data as any), cached: fromCache });
+    if (isSyncCall) {
+      const { data, fromCache } = await withCache(id, "quarters", 30, () => fetchQuarters(id), isFinal);
+      return NextResponse.json({ ...(data as any), cached: fromCache });
+    }
+
+    const { data, found } = await readCacheOnly(id, "quarters");
+    if (!found) return NextResponse.json({ response: [] });
+    return NextResponse.json({ ...(data as any), cached: true });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

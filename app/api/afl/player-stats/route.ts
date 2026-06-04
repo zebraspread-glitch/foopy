@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { withCache } from "@/app/lib/matchCache";
+import { withCache, readCacheOnly } from "@/app/lib/matchCache";
 
 export const dynamic = "force-dynamic";
 
@@ -22,16 +22,23 @@ export async function GET(req: Request) {
 
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
+  const syncSecret = process.env.CRON_SECRET;
+  const isSyncCall = syncSecret && req.headers.get("x-sync-secret") === syncSecret;
+
   try {
-    const { data, fromCache } = await withCache(
-      id,
-      "player_stats",
-      isFinal ? 90 : 10, // live games: 10s TTL to stay fresh; final: 90s is fine
-      () => fetchPlayerStats(id),
-      isFinal
-    );
-    const res = NextResponse.json({ ...(data as any), cached: fromCache });
-    res.headers.set("x-from-cache", fromCache ? "1" : "0");
+    if (isSyncCall) {
+      const { data, fromCache } = await withCache(
+        id, "player_stats", isFinal ? 90 : 10, () => fetchPlayerStats(id), isFinal
+      );
+      const res = NextResponse.json({ ...(data as any), cached: fromCache });
+      res.headers.set("x-from-cache", fromCache ? "1" : "0");
+      return res;
+    }
+
+    const { data, found } = await readCacheOnly(id, "player_stats");
+    if (!found) return NextResponse.json({ response: [], cached: false });
+    const res = NextResponse.json({ ...(data as any), cached: true });
+    res.headers.set("x-from-cache", "1");
     return res;
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });

@@ -7,7 +7,7 @@ function adminSupabase() {
   );
 }
 
-export type DataType = "events" | "player_stats" | "quarters" | "sync";
+export type DataType = "events" | "player_stats" | "quarters" | "sync" | "team_stats";
 
 // In-process deduplication: one fetch at a time per (gameId, dataType) within a single instance
 const inFlight = new Map<string, Promise<unknown>>();
@@ -108,6 +108,19 @@ export async function withCache<T>(
  * Returns true if the cooldown has expired and the caller should proceed.
  * Stamps the new fetch time immediately to block other instances.
  */
+/**
+ * Read from cache only — never calls API-Sports. Used by user-facing routes
+ * so that only cron jobs ever touch the upstream API.
+ */
+export async function readCacheOnly<T>(
+  gameId: string,
+  dataType: DataType,
+): Promise<{ data: T | null; found: boolean }> {
+  const cached = await readRow(gameId, dataType);
+  if (!cached?.payload) return { data: null, found: false };
+  return { data: cached.payload as T, found: true };
+}
+
 export async function claimSync(gameId: string, ttlSeconds: number): Promise<boolean> {
   const row = await readRow(gameId, "sync");
   if (row?.is_final) return false;

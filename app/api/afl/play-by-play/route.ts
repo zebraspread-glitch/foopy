@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { withCache } from "@/app/lib/matchCache";
+import { withCache, readCacheOnly } from "@/app/lib/matchCache";
 
 export const dynamic = "force-dynamic";
 
@@ -23,9 +23,7 @@ async function fetchEvents(gameId: string) {
     teamId: event.team?.id,
     playerId: event.player?.id,
     playerName: event.player?.name ?? null,
-    text: `${String(event.type || "event").toUpperCase()} · Team ID ${
-      event.team?.id ?? "-"
-    } · Player ID ${event.player?.id ?? "-"}`,
+    text: `${String(event.type || "event").toUpperCase()} · Team ID ${event.team?.id ?? "-"} · Player ID ${event.player?.id ?? "-"}`,
   }));
 
   return { gameId, events, total: events.length };
@@ -38,21 +36,31 @@ export async function GET(req: Request) {
 
   if (!gameId) return NextResponse.json({ error: "Missing game id" }, { status: 400 });
 
-  try {
-    const { data: payload, fromCache } = await withCache(
-      gameId,
-      "events",
-      10,
-      () => fetchEvents(gameId),
-      isFinal
-    );
+  const syncSecret = process.env.CRON_SECRET;
+  const isSyncCall = syncSecret && req.headers.get("x-sync-secret") === syncSecret;
 
+  try {
+    let payload: any;
+
+    if (isSyncCall) {
+      const { data, fromCache } = await withCache(gameId, "events", 10, () => fetchEvents(gameId), isFinal);
+      payload = data;
+      const knownTotal = searchParams.get("knownTotal");
+      if (knownTotal !== null && parseInt(knownTotal) === (payload as any).total) {
+        return NextResponse.json({ total: (payload as any).total, unchanged: true });
+      }
+      return NextResponse.json({ ...(payload as any), cached: fromCache });
+    }
+
+    const { data, found } = await readCacheOnly(gameId, "events");
+    if (!found) return NextResponse.json({ gameId, events: [], total: 0, cached: false });
+
+    payload = data;
     const knownTotal = searchParams.get("knownTotal");
     if (knownTotal !== null && parseInt(knownTotal) === (payload as any).total) {
       return NextResponse.json({ total: (payload as any).total, unchanged: true });
     }
-
-    return NextResponse.json({ ...(payload as any), cached: fromCache });
+    return NextResponse.json({ ...(payload as any), cached: true });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 502 });
   }

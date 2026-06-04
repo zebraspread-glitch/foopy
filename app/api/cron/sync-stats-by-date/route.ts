@@ -58,7 +58,15 @@ export async function GET(req: Request) {
   const supabase = adminSupabase();
   const results: any[] = [];
 
+  const origin = new URL(req.url).origin;
+  const syncHeaders = { "x-sync-secret": secret };
+
   for (const date of dates) {
+    // Warm the team-stats cache for this date (cache-only users read from this)
+    fetch(`${origin}/api/afl/team-stats?date=${date}`, {
+      headers: syncHeaders, cache: "no-store",
+    }).catch(() => {});
+
     let playerGames: any[] = [];
     try {
       playerGames = await fetchByDate("/games/statistics/players", date);
