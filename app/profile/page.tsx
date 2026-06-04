@@ -1,6 +1,6 @@
 "use client";
 
-import { formatAura } from "@/app/lib/format";
+import { formatAura, formatCoins } from "@/app/lib/format";
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
@@ -1767,7 +1767,7 @@ export default function ProfilePage() {
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                     <img src="/coin/coin.png" alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />
-                    <span style={{ fontSize: 20, fontWeight: 900, color: "var(--text-1)", lineHeight: 1 }}>{(profile?.coins ?? 0).toLocaleString()}</span>
+                    <span style={{ fontSize: 20, fontWeight: 900, color: "var(--text-1)", lineHeight: 1 }}>{formatCoins(profile?.coins ?? 0)}</span>
                   </div>
                   <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.05em", textTransform: "uppercase" }}>Coins</span>
                 </div>

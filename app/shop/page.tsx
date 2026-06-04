@@ -1,5 +1,6 @@
 "use client";
 
+import { formatCoins } from "@/app/lib/format";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import type { User } from "@supabase/supabase-js";
@@ -521,7 +522,7 @@ export default function ShopPage() {
         <div style={{ display: "flex", justifyContent: "flex-end", padding: "16px 20px 0", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--surface-2)", borderRadius: 99, padding: "7px 16px", border: "1px solid var(--border-2)" }}>
             <CoinIcon size={16} />
-            <span style={{ fontWeight: 900, fontSize: 15, color: "#fbbf24" }}>{coins.toLocaleString()}</span>
+            <span style={{ fontWeight: 900, fontSize: 15, color: "#fbbf24" }}>{formatCoins(coins)}</span>
           </div>
         </div>
       )}

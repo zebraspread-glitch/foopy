@@ -1,7 +1,7 @@
 "use client";
 
 import { supabase } from "@/app/lib/supabase";
-import { formatAura } from "@/app/lib/format";
+import { formatAura, formatCoins } from "@/app/lib/format";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -312,7 +312,7 @@ export default function GlobalSideDrawer() {
                 <span style={{ color: "var(--border-2)" }}>·</span>
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
                   <img src="/coin/coin.png" alt="" style={{ width: 13, height: 13, objectFit: "contain" }} />
-                  <span style={{ fontSize: 13, fontWeight: 800, color: "var(--text-1)" }}>{coins.toLocaleString()}</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: "var(--text-1)" }}>{formatCoins(coins)}</span>
                 </div>
               </div>
             )}

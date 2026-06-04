@@ -1,5 +1,6 @@
 "use client";
 
+import { formatCoins } from "@/app/lib/format";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import Image from "next/image";
@@ -720,7 +721,7 @@ export default function CardsPage() {
               </button>
               <div style={coinBadgeStyle}>
                 <CoinIcon />
-                <span style={{ fontWeight: 900, fontSize: 15, color: "#fbbf24" }}>{coins.toLocaleString()}</span>
+                <span style={{ fontWeight: 900, fontSize: 15, color: "#fbbf24" }}>{formatCoins(coins)}</span>
               </div>
             </>
           )}
