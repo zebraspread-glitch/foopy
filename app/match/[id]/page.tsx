@@ -3842,6 +3842,16 @@ function MatchPageInner() {
 
         {activeTab === "feed" && (
           <section style={sectionStyle}>
+            <div style={{ padding: "16px 16px 0" }}>
+              <WinnerPick
+                matchId={id}
+                homeTeam={game.hteam}
+                awayTeam={game.ateam}
+                gameStatus={status}
+                homeScore={game.hscore}
+                awayScore={game.ascore}
+              />
+            </div>
             {/* Active in-game polls pinned at top of feed */}
             {isLiveGame && currentPeriod > 0 && (
               <FeedActivePolls
@@ -4116,16 +4126,6 @@ function MatchPageInner() {
 
         {activeTab === "polls" && (
           <section style={sectionStyle}>
-            <div style={{ padding: "16px 16px 0" }}>
-              <WinnerPick
-                matchId={id}
-                homeTeam={game.hteam}
-                awayTeam={game.ateam}
-                gameStatus={status}
-                homeScore={game.hscore}
-                awayScore={game.ascore}
-              />
-            </div>
             <MatchPolls
               gameId={Number(id)}
               status={status}
