@@ -983,7 +983,7 @@ function PicksLockedScreen({
       `}</style>
 
       {/* ── Matchup header card ── */}
-      <div style={{ background: "var(--surface-2)", border: "1px solid var(--border-2)", borderRadius: 14, padding: "16px" }}>
+      <div style={{ padding: "16px 4px 8px" }}>
         {/* Status pill */}
         <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "center", marginBottom: 16 }}>
           <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", animation: "lpr-pulse 2s ease-in-out infinite", flexShrink: 0 }} />
