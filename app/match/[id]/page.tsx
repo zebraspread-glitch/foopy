@@ -3750,7 +3750,7 @@ function MatchPageInner() {
                       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
                     </svg>
                     <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-2)" }}>
-                      {status === "FINAL" ? (totalViewerCount ?? "—") : totalViewerCount != null ? totalViewerCount : Math.max(1, liveViewerCount)}
+                      {status === "FINAL" ? (totalViewerCount ?? "—") : Math.max(1, liveViewerCount)}
                     </span>
                   </div>
                 )}
