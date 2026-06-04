@@ -611,7 +611,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
         {season && games > 0 && (
           <section style={cardStyle}>
             {/* Header */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
               <div style={sectionLabel}>Season averages</div>
               <span style={{ fontSize: 11, fontWeight: 800, color: "var(--text-3)", background: "var(--surface-3)", border: "1px solid var(--border-2)", borderRadius: 999, padding: "3px 10px", letterSpacing: "0.04em" }}>
                 {games} games
@@ -619,46 +619,46 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
             </div>
 
             {/* Hero stats — Goals & Disposals */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0, marginBottom: 18, borderBottom: "1px solid var(--border-1)", paddingBottom: 18 }}>
               {[
                 { label: "Goals", value: statGrid[0].value, rank: statGrid[0].rank, accent: true },
                 { label: "Disposals", value: statGrid[1].value, rank: statGrid[1].rank, accent: false },
-              ].map(({ label, value, rank, accent }) => (
+              ].map(({ label, value, rank, accent }, i) => (
                 <div key={label} style={{
-                  background: accent ? `${color}18` : "var(--border-1)",
-                  border: `1px solid ${accent ? `${color}35` : "var(--border-1)"}`,
-                  borderRadius: 16,
-                  padding: "16px 14px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 4,
+                  padding: "0 4px",
+                  borderLeft: i > 0 ? "1px solid var(--border-1)" : undefined,
+                  paddingLeft: i > 0 ? 20 : 4,
                 }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <div style={{ fontSize: 11, fontWeight: 800, color: accent ? `${color}cc` : "#475569", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>{label}</div>
-                    {rank && <div style={{ fontSize: 10, fontWeight: 800, color: rank <= 10 ? "#fbbf24" : "var(--text-4)", background: "var(--surface-3)", borderRadius: 999, padding: "1px 7px" }}>{ordSuffix(rank)}</div>}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: accent ? `${color}cc` : "var(--text-3)", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>{label}</div>
+                    {rank && <div style={{ fontSize: 10, fontWeight: 800, color: rank <= 10 ? "#fbbf24" : "var(--text-4)", background: "var(--surface-3)", borderRadius: 999, padding: "1px 6px" }}>{ordSuffix(rank)}</div>}
                   </div>
-                  <div style={{ fontSize: 32, fontWeight: 950, letterSpacing: "-0.04em", lineHeight: 1, color: accent ? color : "#f8fafc" }}>{value}</div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-4)" }}>per game</div>
+                  <div style={{ fontSize: 34, fontWeight: 950, letterSpacing: "-0.04em", lineHeight: 1, color: accent ? color : "var(--text-1)" }}>{value}</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-4)", marginTop: 3 }}>per game</div>
                 </div>
               ))}
             </div>
 
-            {/* Secondary stats — 3-col grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-              {statGrid.slice(2).map(({ label, value, rank }) => (
-                <div key={label} style={{
-                  background: "var(--surface-2)",
-                  border: "1px solid var(--border-1)",
-                  borderRadius: 12,
-                  padding: "11px 10px",
-                  textAlign: "center" as const,
-                  position: "relative" as const,
-                }}>
-                  {rank && <div style={{ position: "absolute", top: 5, right: 7, fontSize: 9, fontWeight: 800, color: rank <= 10 ? "#fbbf24" : "var(--text-4)" }}>{ordSuffix(rank)}</div>}
-                  <div style={{ fontSize: 19, fontWeight: 950, letterSpacing: "-0.03em", color: "var(--text-1)", lineHeight: 1 }}>{value}</div>
-                  <div style={{ fontSize: 9, fontWeight: 800, color: "var(--text-3)", marginTop: 4, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>{label}</div>
-                </div>
-              ))}
+            {/* Secondary stats — clean rows, no boxes */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+              {(() => {
+                const pairs = [];
+                const sec = statGrid.slice(2);
+                for (let i = 0; i < sec.length; i += 2) pairs.push(sec.slice(i, i + 2));
+                return pairs.map((pair, pi) => (
+                  <div key={pi} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderTop: pi > 0 ? "1px solid var(--border-1)" : undefined, paddingTop: pi > 0 ? 12 : 0, paddingBottom: 12 }}>
+                    {pair.map(({ label, value, rank }) => (
+                      <div key={label} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: "-0.03em", color: "var(--text-1)", minWidth: 44 }}>{value}</div>
+                        <div>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-2)", textTransform: "uppercase" as const, letterSpacing: "0.04em" }}>{label}</div>
+                          {rank && <div style={{ fontSize: 10, fontWeight: 800, color: rank <= 10 ? "#fbbf24" : "var(--text-4)" }}>{ordSuffix(rank)}</div>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ));
+              })()}
             </div>
           </section>
         )}
