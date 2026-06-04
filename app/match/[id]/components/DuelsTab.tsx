@@ -975,6 +975,38 @@ function PicksLockedScreen({
   const tbMp = tbQuestion ? myPicks.find(p  => p.question_id === tbQuestion.id) ?? null : null;
   const tbOp = tbQuestion ? oppPicks.find(p => p.question_id === tbQuestion.id) ?? null : null;
 
+  // ── Live score calculation ─────────────────────────────────────────────────
+  let myScore = 0, oppScore = 0;
+  for (const { q, mp, op } of withPicks) {
+    if (!!(mp && op && mp.pick === op.pick)) continue; // agreed picks don't count
+    const myCorrect = mp?.is_correct ?? null;
+    const oppCorrect = op?.is_correct ?? null;
+    if (myCorrect !== null) {
+      if (myCorrect  === true) myScore++;
+      if (oppCorrect === true) oppScore++;
+    } else if (liveGameStats && mp && op) {
+      const cat = DUEL_STAT_CATS[q.category_key ?? ""] ?? null;
+      if (cat?.type === "player") {
+        const normFn = (s: string) => s.toLowerCase().replace(/[^a-z]/g, "");
+        const lastFn = (s: string) => s.trim().split(/\s+/).pop()?.toLowerCase() ?? "";
+        const getV = (name: string | null): number | null => {
+          if (!name) return null;
+          let p = liveGameStats.players.find((pl: any) => normFn(pl.name) === normFn(name));
+          if (!p) p = liveGameStats.players.find((pl: any) => lastFn(pl.name) === lastFn(name));
+          if (!p) return null;
+          return cat.key === "foopy" ? liveStatFoopy(p) : Number((p as any)[cat.key] ?? 0);
+        };
+        const mv = getV(mp.pick === "a" ? q.option_a : q.option_b);
+        const ov = getV(op.pick === "a" ? q.option_a : q.option_b);
+        if (mv !== null && ov !== null) {
+          if (mv > ov) myScore++;
+          else if (ov > mv) oppScore++;
+          // tied = no points for either
+        }
+      }
+    }
+  }
+
   return (
     <div style={{ padding: "12px 12px 60px", display: "flex", flexDirection: "column", gap: 12 }}>
       <style>{`
@@ -1014,7 +1046,14 @@ function PicksLockedScreen({
             </div>
           </Link>
 
-          <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.1em" }}>VS</span>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 36, fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1, color: myScore > oppScore ? "#22c55e" : myScore < oppScore ? "var(--text-3)" : "var(--text-1)" }}>{myScore}</span>
+              <span style={{ fontSize: 16, fontWeight: 700, color: "var(--text-4)" }}>—</span>
+              <span style={{ fontSize: 36, fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1, color: oppScore > myScore ? "#22c55e" : oppScore < myScore ? "var(--text-3)" : "var(--text-1)" }}>{oppScore}</span>
+            </div>
+            <span style={{ fontSize: 9, fontWeight: 700, color: "var(--text-4)", letterSpacing: "0.1em", textTransform: "uppercase" as const }}>Score</span>
+          </div>
 
           {/* Opponent */}
           <Link href={opponent?.username ? `/profile/${opponent.username}` : "#"} style={{ textDecoration: "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
