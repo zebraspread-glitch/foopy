@@ -643,9 +643,9 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
         {playedGames.length > 0 && (
           <section style={cardStyle}>
             <div style={sectionLabel}>Season performances</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ display: "flex", flexDirection: "column" }}>
               {playedGames.map((g, i) => (
-                <Link key={i} href={g.squiggleId ? `/match/${g.squiggleId}` : "#"} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 14, background: "var(--surface-2)", border: "1px solid var(--border-1)", textDecoration: "none", color: "inherit" }}>
+                <Link key={i} href={g.squiggleId ? `/match/${g.squiggleId}` : "#"} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 4px", borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : undefined, textDecoration: "none", color: "inherit" }}>
                   <div style={{ minWidth: 52, display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, gap: 4 }}>
                     {g.round !== null
                       ? <div style={{ fontSize: 11, fontWeight: 900, color: "var(--text-3)", whiteSpace: "nowrap" }}>Rd {g.round}</div>
