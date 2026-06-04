@@ -2592,6 +2592,7 @@ function MatchPageInner() {
   const [activeTab, setActiveTab] = useState<TabKey>(() =>
     (searchParams?.get("tab") as TabKey) ?? "feed"
   );
+  const [playerSubTab, setPlayerSubTab] = useState<"all" | "home" | "away">("all");
   const [unansweredPollCount, setUnansweredPollCount] = useState(0);
   const [hasDuelGame, setHasDuelGame] = useState(false);
   const [game, setGame] = useState<MatchGame | null>(null);
@@ -3576,7 +3577,7 @@ function MatchPageInner() {
         {(() => {
           const tabList: string[] = [
             "feed", "chat", "polls", ...(hasDuelGame ? ["duels"] : []),
-            ...(showStatsTabs ? ["game", "home", "away"] : []),
+            ...(showStatsTabs ? ["game", "players"] : []),
           ];
           const activeIdx = tabList.indexOf(activeTab);
           const tabCount = tabList.length;
@@ -3714,25 +3715,43 @@ function MatchPageInner() {
                 ))}
                 {showStatsTabs && (
                   <>
-                    {(["game","home","away"] as const).map((t) => {
-                      const label = t === "game" ? "Stats" : t === "home" ? homeAbbr : awayAbbr;
-                      return (
-                        <button key={t} type="button" onClick={() => setActiveTab(t)} style={{
-                          flex: 1, padding: "13px 4px 11px",
-                          background: "none", border: "none",
-                          borderBottom: "2px solid transparent",
-                          color: activeTab === t ? "#fff" : "#64748b",
-                          fontSize: 13, fontWeight: activeTab === t ? 700 : 500,
-                          cursor: "pointer", whiteSpace: "nowrap",
-                          transition: "color 0.15s ease",
-                        }}>
-                          {label}
-                        </button>
-                      );
-                    })}
+                    {(["game","players"] as const).map((t) => (
+                      <button key={t} type="button" onClick={() => setActiveTab(t)} style={{
+                        flex: 1, padding: "13px 4px 11px",
+                        background: "none", border: "none",
+                        borderBottom: "2px solid transparent",
+                        color: activeTab === t ? "#fff" : "#64748b",
+                        fontSize: 13, fontWeight: activeTab === t ? 700 : 500,
+                        cursor: "pointer", whiteSpace: "nowrap",
+                        textTransform: "capitalize",
+                        transition: "color 0.15s ease",
+                      }}>
+                        {t === "game" ? "Stats" : "Players"}
+                      </button>
+                    ))}
                   </>
                 )}
               </nav>
+              {activeTab === "players" && (
+                <nav style={{ display: "flex", borderTop: "1px solid var(--border-2)" }}>
+                  {(["all", "home", "away"] as const).map(t => {
+                    const label = t === "all" ? "All" : t === "home" ? homeAbbr : awayAbbr;
+                    return (
+                      <button key={t} type="button" onClick={() => setPlayerSubTab(t)} style={{
+                        flex: 1, padding: "9px 4px",
+                        background: "none", border: "none",
+                        borderBottom: `2px solid ${playerSubTab === t ? "#fff" : "transparent"}`,
+                        color: playerSubTab === t ? "#fff" : "#64748b",
+                        fontSize: 12, fontWeight: playerSubTab === t ? 700 : 500,
+                        cursor: "pointer", whiteSpace: "nowrap",
+                        transition: "color 0.15s ease",
+                      }}>
+                        {label}
+                      </button>
+                    );
+                  })}
+                </nav>
+              )}
             </div>
           );
         })()}
@@ -3966,14 +3985,14 @@ function MatchPageInner() {
           const bestRating = allMatchPlayers.reduce((best, p) => Math.max(best, foopyRating(p)), 0);
           return (
             <>
-              {activeTab === "home" && (
+              {activeTab === "players" && (playerSubTab === "home" || playerSubTab === "all") && (
                 <section style={sectionStyle}>
                   <h2 style={sectionHeadingStyle}>{homeAbbr} Player Stats</h2>
                   <StatTable stats={displayHomeStats} isLive={isLiveGame} isFinal={status === "FINAL"} team={game.hteam} gameId={Number(id)} bestRating={bestRating} />
                 </section>
               )}
 
-              {activeTab === "away" && (
+              {activeTab === "players" && (playerSubTab === "away" || playerSubTab === "all") && (
                 <section style={sectionStyle}>
                   <h2 style={sectionHeadingStyle}>{awayAbbr} Player Stats</h2>
                   <StatTable stats={displayAwayStats} isLive={isLiveGame} isFinal={status === "FINAL"} team={game.ateam} gameId={Number(id)} bestRating={bestRating} />
