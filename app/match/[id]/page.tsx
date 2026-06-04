@@ -1299,7 +1299,7 @@ function SeasonAvgTable({ stats }: { stats: any[] }) {
       <table style={tableStyle}>
         <thead>
           <tr>
-            <th style={thPlayerStyle}><span style={{ fontSize: 9, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-4)" }}>Season Avg</span></th>
+            <th style={thPlayerStyle}><span style={{ fontSize: 9, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-4)" }}>Player</span></th>
             <th style={{ ...thStyle, color: "#0ea5e9", cursor: "pointer" }} onClick={() => setSortDir(d => d === "desc" ? "asc" : "desc")}>
               Foopy {sortDir === "desc" ? "↓" : "↑"}
             </th>
