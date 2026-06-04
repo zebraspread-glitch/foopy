@@ -177,7 +177,7 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, ho
                 gap: showPcts ? 6 : 0,
                 padding: "14px 8px",
                 borderRadius: 12,
-                border: `1.5px solid ${isWrong ? "#ef4444" : selected ? color : "var(--border-2)"}`,
+                border: showPcts ? "1.5px solid transparent" : `1.5px solid ${isWrong ? "#ef4444" : selected ? color : "var(--border-2)"}`,
                 background: isWrong ? "rgba(239,68,68,.1)" : selected ? `${color}18` : "rgba(255,255,255,0.03)",
                 cursor: locked ? "default" : "pointer",
                 transition: "border-color 0.2s, background 0.2s",
