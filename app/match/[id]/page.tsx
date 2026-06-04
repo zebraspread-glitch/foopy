@@ -2656,6 +2656,7 @@ function MatchPageInner() {
   );
   const [playerSubTab, setPlayerSubTab] = useState<"all" | "home" | "away">("all");
   const [seasonStats, setSeasonStats] = useState<any[]>([]);
+  const [squadPlayers, setSquadPlayers] = useState<{ home: string[]; away: string[] } | null>(null);
   const [unansweredPollCount, setUnansweredPollCount] = useState(0);
   const [hasDuelGame, setHasDuelGame] = useState(false);
   const [game, setGame] = useState<MatchGame | null>(null);
@@ -3017,6 +3018,14 @@ function MatchPageInner() {
       .then(data => setSeasonStats(Array.isArray(data) ? data : []))
       .catch(() => {});
   }, [status, seasonStats.length]);
+
+  useEffect(() => {
+    if (status !== "UPCOMING" || !game?.hteam || !game?.ateam || squadPlayers) return;
+    fetch(`/api/match-players?home=${encodeURIComponent(game.hteam)}&away=${encodeURIComponent(game.ateam)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setSquadPlayers(data); })
+      .catch(() => {});
+  }, [status, game?.hteam, game?.ateam, squadPlayers]);
 
 
   useEffect(() => {
@@ -4060,8 +4069,16 @@ function MatchPageInner() {
           return (
             <>
               {activeTab === "players" && status === "UPCOMING" && (() => {
-                const homeSeasonStats = seasonStats.filter(p => teamsMatch(p.team, game.hteam ?? ""));
-                const awaySeasonStats = seasonStats.filter(p => teamsMatch(p.team, game.ateam ?? ""));
+                function normName(s: string) { return s.toLowerCase().replace(/[^a-z]/g, ""); }
+                function inSquad(p: any, names: string[]) {
+                  if (!names.length) return true;
+                  const pn = normName(p.name ?? "");
+                  return names.some(n => normName(n) === pn);
+                }
+                const homeNames = squadPlayers?.home ?? [];
+                const awayNames = squadPlayers?.away ?? [];
+                const homeSeasonStats = seasonStats.filter(p => teamsMatch(p.team, game.hteam ?? "") && inSquad(p, homeNames));
+                const awaySeasonStats = seasonStats.filter(p => teamsMatch(p.team, game.ateam ?? "") && inSquad(p, awayNames));
                 const allSeasonStats = [...homeSeasonStats, ...awaySeasonStats];
                 const shown = playerSubTab === "all" ? allSeasonStats : playerSubTab === "home" ? homeSeasonStats : awaySeasonStats;
                 return (
