@@ -1266,6 +1266,74 @@ function QuarterBreakFeedBox({ label }: any) {
   );
 }
 
+function SeasonAvgTable({ stats }: { stats: any[] }) {
+  const [sortKey, setSortKey] = useState<"foopy" | "disposals" | "marks" | "tackles" | "hitouts">("foopy");
+  const [sortDir, setSortDir] = useState<"desc" | "asc">("desc");
+
+  const withRating = stats.map(p => ({ ...p, _foopy: foopyRating({ ...p, goals: p.goalAvg ?? 0 } as any) }));
+  const sorted = [...withRating].sort((a, b) => {
+    const av = sortKey === "foopy" ? a._foopy : Number(a[sortKey] ?? 0);
+    const bv = sortKey === "foopy" ? b._foopy : Number(b[sortKey] ?? 0);
+    return sortDir === "desc" ? bv - av : av - bv;
+  });
+
+  function hdr(label: string, key: typeof sortKey) {
+    const active = sortKey === key;
+    return (
+      <th style={{ ...thStyle, color: active ? "#0ea5e9" : "#9ca3af", cursor: "pointer" }}
+        onClick={() => { if (sortKey === key) setSortDir(d => d === "desc" ? "asc" : "desc"); else { setSortKey(key); setSortDir("desc"); } }}>
+        {label}{active ? (sortDir === "desc" ? " ↓" : " ↑") : ""}
+      </th>
+    );
+  }
+
+  if (!sorted.length) return <div style={{ padding: "20px 16px", color: "var(--text-3)", textAlign: "center", fontSize: 14 }}>No season stats available yet.</div>;
+
+  return (
+    <div style={tableWrapStyle}>
+      <table style={tableStyle}>
+        <thead>
+          <tr>
+            <th style={thPlayerStyle}><span style={{ fontSize: 9, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-4)" }}>Season Avg</span></th>
+            {hdr("Foopy", "foopy")}
+            {hdr("D", "disposals")}
+            {hdr("M", "marks")}
+            {hdr("T", "tackles")}
+            {hdr("HO", "hitouts")}
+            <th style={thStyle} />
+          </tr>
+        </thead>
+        <tbody>
+          {sorted.map((p, i) => {
+            const name = safePlayerName(p.name, i + 1);
+            const rowTeam = safeText(p.team, "");
+            const rating = p._foopy;
+            const hitouts = Number(p.hitouts ?? 0);
+            return (
+              <tr key={`${name}-${i}`}>
+                <td style={tdPlayerStyle}>
+                  <span style={playerNameCellStyle}>
+                    <PlayerAvatar name={name} team={rowTeam} size={38} />
+                    <span>{name}</span>
+                  </span>
+                </td>
+                <td style={tdStyle}>
+                  {rating > 0 && <span style={{ ...ratingPillStyle, background: foopyColor(rating) }}>{rating}</span>}
+                </td>
+                <td style={tdStyle}>{Number(p.disposals ?? 0).toFixed(1)}</td>
+                <td style={tdStyle}>{Number(p.marks ?? 0).toFixed(1)}</td>
+                <td style={tdStyle}>{Number(p.tackles ?? 0).toFixed(1)}</td>
+                <td style={tdStyle}>{hitouts > 1 ? hitouts.toFixed(1) : ""}</td>
+                <td style={{ ...tdStyle, paddingRight: 12 }} />
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating }: { stats: PlayerStat[]; isLive?: boolean; isFinal?: boolean; team?: string; gameId: number; bestRating: number }) {
   const [sortKey, setSortKey] = useState<SortKey>("foopy");
   const [sortDir, setSortDir] = useState<"desc" | "asc">("desc");
@@ -2591,6 +2659,7 @@ function MatchPageInner() {
     (searchParams?.get("tab") as TabKey) ?? "feed"
   );
   const [playerSubTab, setPlayerSubTab] = useState<"all" | "home" | "away">("all");
+  const [seasonStats, setSeasonStats] = useState<any[]>([]);
   const [unansweredPollCount, setUnansweredPollCount] = useState(0);
   const [hasDuelGame, setHasDuelGame] = useState(false);
   const [game, setGame] = useState<MatchGame | null>(null);
@@ -2835,6 +2904,7 @@ function MatchPageInner() {
   const status = getStatus(game);
   const isLiveGame = status === "LIVE";
   const showStatsTabs = status === "LIVE" || status === "FINAL";
+  const showPlayersTabs = status === "LIVE" || status === "FINAL" || status === "UPCOMING";
 
   // Current quarter number — max of live events period AND the period parsed from game.timestr
   // (game.timestr like "Q4 2:14" updates faster than events, so avoids stale period after a quarter break)
@@ -2940,8 +3010,17 @@ function MatchPageInner() {
   }, []);
 
   useEffect(() => {
-    if (!showStatsTabs && activeTab !== "feed" && activeTab !== "chat" && activeTab !== "polls" && activeTab !== "duels") setActiveTab("feed");
-  }, [showStatsTabs, activeTab]);
+    if (activeTab === "game" && !showStatsTabs) setActiveTab("feed");
+    if (activeTab === "players" && !showPlayersTabs) setActiveTab("feed");
+  }, [showStatsTabs, showPlayersTabs, activeTab]);
+
+  useEffect(() => {
+    if (status !== "UPCOMING" || seasonStats.length > 0) return;
+    fetch("/api/player-season-stats")
+      .then(r => r.ok ? r.json() : [])
+      .then(data => setSeasonStats(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, [status, seasonStats.length]);
 
 
   useEffect(() => {
@@ -3575,7 +3654,8 @@ function MatchPageInner() {
         {(() => {
           const tabList: string[] = [
             "feed", "chat", "polls", ...(hasDuelGame ? ["duels"] : []),
-            ...(showStatsTabs ? ["game", "players"] : []),
+            ...(showStatsTabs ? ["game"] : []),
+            ...(showPlayersTabs ? ["players"] : []),
           ];
           const activeIdx = tabList.indexOf(activeTab);
           const tabCount = tabList.length;
@@ -3711,9 +3791,9 @@ function MatchPageInner() {
                     )}
                   </button>
                 ))}
-                {showStatsTabs && (
+                {(showStatsTabs || showPlayersTabs) && (
                   <>
-                    {(["game","players"] as const).map((t) => (
+                    {([...(showStatsTabs ? ["game"] : []), ...(showPlayersTabs ? ["players"] : [])] as const).map((t) => (
                       <button key={t} type="button" onClick={() => setActiveTab(t)} style={{
                         flex: 1, padding: "13px 4px 11px",
                         background: "none", border: "none",
@@ -3983,19 +4063,31 @@ function MatchPageInner() {
           const bestRating = allMatchPlayers.reduce((best, p) => Math.max(best, foopyRating(p)), 0);
           return (
             <>
-              {activeTab === "players" && playerSubTab === "all" && (
+              {activeTab === "players" && status === "UPCOMING" && (() => {
+                const homeSeasonStats = seasonStats.filter(p => teamsMatch(p.team, game.hteam ?? ""));
+                const awaySeasonStats = seasonStats.filter(p => teamsMatch(p.team, game.ateam ?? ""));
+                const allSeasonStats = [...homeSeasonStats, ...awaySeasonStats];
+                const shown = playerSubTab === "all" ? allSeasonStats : playerSubTab === "home" ? homeSeasonStats : awaySeasonStats;
+                return (
+                  <section style={sectionStyle}>
+                    <SeasonAvgTable stats={shown} />
+                  </section>
+                );
+              })()}
+
+              {activeTab === "players" && status !== "UPCOMING" && playerSubTab === "all" && (
                 <section style={sectionStyle}>
                   <StatTable stats={allMatchPlayers} isLive={isLiveGame} isFinal={status === "FINAL"} gameId={Number(id)} bestRating={bestRating} />
                 </section>
               )}
 
-              {activeTab === "players" && playerSubTab === "home" && (
+              {activeTab === "players" && status !== "UPCOMING" && playerSubTab === "home" && (
                 <section style={sectionStyle}>
                   <StatTable stats={displayHomeStats} isLive={isLiveGame} isFinal={status === "FINAL"} team={game.hteam} gameId={Number(id)} bestRating={bestRating} />
                 </section>
               )}
 
-              {activeTab === "players" && playerSubTab === "away" && (
+              {activeTab === "players" && status !== "UPCOMING" && playerSubTab === "away" && (
                 <section style={sectionStyle}>
                   <StatTable stats={displayAwayStats} isLive={isLiveGame} isFinal={status === "FINAL"} team={game.ateam} gameId={Number(id)} bestRating={bestRating} />
                 </section>
