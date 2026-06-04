@@ -1266,7 +1266,7 @@ function QuarterBreakFeedBox({ label }: any) {
   );
 }
 
-function StatTable({ stats, isLive, isFinal, team, gameId, bestRating }: { stats: PlayerStat[]; isLive?: boolean; isFinal?: boolean; team: string; gameId: number; bestRating: number }) {
+function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating }: { stats: PlayerStat[]; isLive?: boolean; isFinal?: boolean; team?: string; gameId: number; bestRating: number }) {
   const [sortKey, setSortKey] = useState<SortKey>("foopy");
   const [sortDir, setSortDir] = useState<"desc" | "asc">("desc");
   const [statMode, setStatMode] = useState<StatMode>("basic");
