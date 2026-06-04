@@ -78,7 +78,7 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, ho
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [loadVotes]);
 
-  const votingLocked = !!gameStatus && gameStatus !== "UPCOMING";
+  const votingLocked = !!gameStatus && gameStatus !== "UPCOMING" || hasVoted;
 
   const finalResult = useMemo<Side | null>(() => {
     if (gameStatus !== "FINAL") return null;
@@ -90,15 +90,14 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, ho
   }, [gameStatus, homeScore, awayScore]);
 
   const pct = useMemo(() => {
-    if (votes.total <= 0) return { home: 33, draw: 34, away: 33 };
+    if (votes.total <= 0) return { home: 50, away: 50 };
     return {
       home: Math.round((votes.home / votes.total) * 100),
-      draw: Math.round((votes.draw / votes.total) * 100),
       away: Math.round((votes.away / votes.total) * 100),
     };
   }, [votes]);
 
-  const maxPct = Math.max(pct.home, pct.draw, pct.away);
+  const maxPct = Math.max(pct.home, pct.away);
 
   async function pick(side: Side) {
     if (!authed) { router.push("/login"); return; }
@@ -139,9 +138,8 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, ho
   const showPcts = hasVoted || votingLocked;
   const locked   = authed === false || votingLocked;
 
-  const options: { side: Side; label?: string; logo?: string; color: string }[] = [
+  const options: { side: Side; logo: string; color: string }[] = [
     { side: "home", logo: getLogo(homeTeam), color: teamColor(homeTeam) },
-    { side: "draw", label: "Draw",           color: "#94a3b8" },
     { side: "away", logo: getLogo(awayTeam), color: teamColor(awayTeam) },
   ];
 
@@ -157,7 +155,7 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, ho
 
       {/* Buttons */}
       <div style={{ display: "flex", gap: 10, opacity: authed === false && !hasVoted ? 0.5 : 1, pointerEvents: locked ? "none" : "auto" }}>
-        {options.map(({ side, label, logo, color }) => {
+        {options.map(({ side, logo, color }) => {
           const selected  = myPick === side;
           const isCorrect = !!finalResult && finalResult === side;
           const isWrong   = !!finalResult && selected && !isCorrect;
@@ -186,10 +184,7 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, ho
                 minHeight: 72,
               }}
             >
-              {logo
-                ? <img src={logo} alt={label} style={{ width: 44, height: 44, objectFit: "contain" }} />
-                : <span style={{ fontSize: 15, fontWeight: 800, color: selected ? color : "var(--text-2)" }}>{label}</span>
-              }
+              <img src={logo} alt="" style={{ width: 48, height: 48, objectFit: "cover", borderRadius: "50%" }} />
               {showPcts && (
                 <span style={{ fontSize: 16, fontWeight: 900, color: isCorrect ? "#22c55e" : isLeading ? "#22c55e" : "var(--text-3)", lineHeight: 1 }}>
                   {p}%
