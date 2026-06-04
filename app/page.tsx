@@ -1409,7 +1409,7 @@ free_kicks?: {
 
       <div style={{ height: "calc(92px + env(safe-area-inset-top))" }} />
       <div style={{ padding: "10px 12px 0" }}>
-        <DuelHomepageCard />
+        <DuelHomepageCard currentRound={currentRound} />
       </div>
       <section style={wrapStyle}>
         <div style={listStyle} className={loading ? undefined : "stagger"}>
@@ -2833,7 +2833,7 @@ type DuelCardData = {
   isDraw?: boolean;
 };
 
-function DuelHomepageCard() {
+function DuelHomepageCard({ currentRound }: { currentRound: number }) {
   const [card, setCard]     = useState<DuelCardData | null>(null);
   const [checked, setChecked] = useState(false);
 
@@ -2896,6 +2896,7 @@ function DuelHomepageCard() {
   }, []);
 
   if (!checked || !card) return null;
+  if (currentRound && card.round && card.round !== currentRound) return null;
 
   const href = `/match/${card.gameId}?tab=duels`;
 
