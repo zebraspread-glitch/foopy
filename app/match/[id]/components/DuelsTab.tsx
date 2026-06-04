@@ -1216,10 +1216,6 @@ function PicksLockedScreen({
         );
       })()}
 
-      {/* spacer for legend replacement */}
-      <div style={{ display: "none" }}>
-        </div>
-      </div>
     </div>
   );
 }
