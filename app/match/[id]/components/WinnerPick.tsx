@@ -164,37 +164,39 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, ho
           const isLeading = showPcts && p === maxPct && p > 0;
 
           return (
-            <button
-              key={side}
-              type="button"
-              onClick={() => pick(side)}
-              disabled={submitting}
-              style={{
-                flex: 1,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: showPcts ? 6 : 0,
-                padding: "14px 8px",
-                borderRadius: 12,
-                border: showPcts ? "1.5px solid transparent" : `1.5px solid ${isWrong ? "#ef4444" : selected ? color : "var(--border-2)"}`,
-                background: showPcts ? "transparent" : isWrong ? "rgba(239,68,68,.1)" : selected ? `${color}18` : "rgba(255,255,255,0.03)",
-                cursor: locked ? "default" : "pointer",
-                transition: "border-color 0.2s, background 0.2s",
-                minHeight: 72,
-              }}
-            >
-              <img src={logo} alt="" style={{ width: 48, height: 48, objectFit: "cover", borderRadius: "50%" }} />
-              {showPcts && (
-                <span style={{ fontSize: 16, fontWeight: 900, color: isCorrect ? "#22c55e" : isLeading ? "#22c55e" : "var(--text-3)", lineHeight: 1 }}>
-                  {p}%
-                </span>
+            <>
+              <button
+                key={side}
+                type="button"
+                onClick={() => pick(side)}
+                disabled={submitting}
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: showPcts ? 6 : 0,
+                  padding: "14px 8px",
+                  borderRadius: 12,
+                  border: showPcts ? "1.5px solid transparent" : `1.5px solid ${isWrong ? "#ef4444" : selected ? color : "var(--border-2)"}`,
+                  background: showPcts ? "transparent" : isWrong ? "rgba(239,68,68,.1)" : selected ? `${color}18` : "rgba(255,255,255,0.03)",
+                  cursor: locked ? "default" : "pointer",
+                  transition: "border-color 0.2s, background 0.2s",
+                  minHeight: 72,
+                }}
+              >
+                <img src={logo} alt="" style={{ width: 48, height: 48, objectFit: "cover", borderRadius: "50%" }} />
+                {showPcts && (
+                  <span style={{ fontSize: 16, fontWeight: 900, color: isCorrect ? "#22c55e" : isLeading ? "#22c55e" : "var(--text-3)", lineHeight: 1 }}>
+                    {p}%
+                  </span>
+                )}
+              </button>
+              {!isLast && (
+                <span style={{ fontSize: 13, fontWeight: 900, color: "var(--text-4)", flexShrink: 0 }}>VS</span>
               )}
-            </button>
-            {!isLast && (
-              <span style={{ fontSize: 13, fontWeight: 900, color: "var(--text-4)", flexShrink: 0 }}>VS</span>
-            )}
+            </>
           );
         })}
       </div>
