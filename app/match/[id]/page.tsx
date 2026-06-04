@@ -3985,14 +3985,21 @@ function MatchPageInner() {
           const bestRating = allMatchPlayers.reduce((best, p) => Math.max(best, foopyRating(p)), 0);
           return (
             <>
-              {activeTab === "players" && (playerSubTab === "home" || playerSubTab === "all") && (
+              {activeTab === "players" && playerSubTab === "all" && (
+                <section style={sectionStyle}>
+                  <h2 style={sectionHeadingStyle}>All Players</h2>
+                  <StatTable stats={allMatchPlayers} isLive={isLiveGame} isFinal={status === "FINAL"} gameId={Number(id)} bestRating={bestRating} />
+                </section>
+              )}
+
+              {activeTab === "players" && playerSubTab === "home" && (
                 <section style={sectionStyle}>
                   <h2 style={sectionHeadingStyle}>{homeAbbr} Player Stats</h2>
                   <StatTable stats={displayHomeStats} isLive={isLiveGame} isFinal={status === "FINAL"} team={game.hteam} gameId={Number(id)} bestRating={bestRating} />
                 </section>
               )}
 
-              {activeTab === "players" && (playerSubTab === "away" || playerSubTab === "all") && (
+              {activeTab === "players" && playerSubTab === "away" && (
                 <section style={sectionStyle}>
                   <h2 style={sectionHeadingStyle}>{awayAbbr} Player Stats</h2>
                   <StatTable stats={displayAwayStats} isLive={isLiveGame} isFinal={status === "FINAL"} team={game.ateam} gameId={Number(id)} bestRating={bestRating} />
