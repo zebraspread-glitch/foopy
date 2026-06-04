@@ -1102,62 +1102,59 @@ function PicksLockedScreen({
             const oppColor = safeTeamColor(oppTeam, "#475569");
             const isLast = i === arr.length - 1 && !tbQuestion;
 
+            const avatarSize = 34;
             return (
               <div key={q.id} style={{
-                display: "grid", gridTemplateColumns: "1fr 86px 1fr",
+                display: "grid", gridTemplateColumns: "1fr 68px 1fr",
                 borderBottom: isLast ? "none" : "1px solid var(--border-1)",
               }}>
                 {/* YOU */}
                 <div style={{
-                  display: "flex", alignItems: "center", gap: 8, padding: "12px 12px",
+                  display: "flex", alignItems: "center", gap: 6, padding: "10px 8px",
                   background: myWins === true ? "rgba(34,197,94,0.07)" : myWins === false ? "rgba(239,68,68,0.04)" : undefined,
                 }}>
-                  <div style={{ position: "relative", width: 38, height: 38, flexShrink: 0 }}>
-                    <div style={{ width: 38, height: 38, borderRadius: "50%", overflow: "hidden", background: `${myColor}20`, border: `2px solid ${myWins === true ? "#22c55e" : myColor}55` }}>
+                  <div style={{ position: "relative", width: avatarSize, height: avatarSize, flexShrink: 0 }}>
+                    <div style={{ width: avatarSize, height: avatarSize, borderRadius: "50%", overflow: "hidden", background: `${myColor}20`, border: `2px solid ${myWins === true ? "#22c55e" : myColor}55` }}>
                       {myImg && <img src={myImg} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
                     </div>
-                    {myTeam && <img src={teamLogoUrl(myTeam)} alt="" style={{ position: "absolute", bottom: -2, right: -2, width: 16, height: 16, borderRadius: "50%", background: "var(--bg-1)", border: "1.5px solid var(--bg-1)", objectFit: "contain" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+                    {myTeam && <img src={teamLogoUrl(myTeam)} alt="" style={{ position: "absolute", bottom: -1, right: -1, width: 14, height: 14, borderRadius: "50%", background: "var(--bg-1)", border: "1px solid var(--bg-1)", objectFit: "contain" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
                   </div>
                   <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontSize: 12, fontWeight: myWins === true ? 900 : 600, color: myWins === false ? "var(--text-4)" : "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{myName}</div>
-                    {myVal && <div style={{ fontSize: 16, fontWeight: 900, color: myWins === true ? "#22c55e" : myWins === false ? "var(--text-3)" : "var(--text-2)", letterSpacing: "-0.03em", lineHeight: 1 }}>{myVal}</div>}
+                    <div style={{ fontSize: 11, fontWeight: myWins === true ? 900 : 600, color: myWins === false ? "var(--text-4)" : "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{myName}</div>
+                    {myVal && <div style={{ fontSize: 15, fontWeight: 900, color: myWins === true ? "#22c55e" : myWins === false ? "var(--text-3)" : "var(--text-2)", letterSpacing: "-0.03em", lineHeight: 1 }}>{myVal}</div>}
                   </div>
-                  {myWins === true && <span style={{ fontSize: 14, color: "#22c55e", flexShrink: 0 }}>✓</span>}
-                  {myWins === false && <span style={{ fontSize: 14, color: "#ef4444", flexShrink: 0 }}>✗</span>}
                 </div>
 
                 {/* CENTER — category label with lines */}
                 <div style={{
                   display: "flex", alignItems: "center", justifyContent: "center",
                   background: `linear-gradient(to right, ${lineColor} 2px, transparent 2px, transparent calc(100% - 2px), ${lineColor} calc(100% - 2px))`,
-                  padding: "0 5px",
+                  padding: "0 4px",
                 }}>
-                  <span style={{ fontSize: 11, fontWeight: 900, color: lineColor, letterSpacing: "0.05em", textTransform: "uppercase" as const, textAlign: "center" as const, lineHeight: 1.2, whiteSpace: "nowrap" as const }}>
+                  <span style={{ fontSize: 10, fontWeight: 900, color: lineColor, letterSpacing: "0.04em", textTransform: "uppercase" as const, textAlign: "center" as const, lineHeight: 1.2, whiteSpace: "nowrap" as const }}>
                     {catLabel}
                   </span>
                 </div>
 
                 {/* OPP */}
                 <div style={{
-                  display: "flex", alignItems: "center", gap: 8, padding: "12px 12px", flexDirection: "row-reverse",
+                  display: "flex", alignItems: "center", gap: 6, padding: "10px 8px", flexDirection: "row-reverse",
                   background: oppWins === true ? "rgba(34,197,94,0.07)" : oppWins === false ? "rgba(239,68,68,0.04)" : undefined,
                 }}>
-                  <div style={{ position: "relative", width: 38, height: 38, flexShrink: 0 }}>
-                    <div style={{ width: 38, height: 38, borderRadius: "50%", overflow: "hidden", background: `${oppColor}20`, border: `2px solid ${oppWins === true ? "#22c55e" : oppColor}55` }}>
+                  <div style={{ position: "relative", width: avatarSize, height: avatarSize, flexShrink: 0 }}>
+                    <div style={{ width: avatarSize, height: avatarSize, borderRadius: "50%", overflow: "hidden", background: `${oppColor}20`, border: `2px solid ${oppWins === true ? "#22c55e" : oppColor}55` }}>
                       {oppImg && <img src={oppImg} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
                     </div>
-                    {oppTeam && <img src={teamLogoUrl(oppTeam)} alt="" style={{ position: "absolute", bottom: -2, right: -2, width: 16, height: 16, borderRadius: "50%", background: "var(--bg-1)", border: "1.5px solid var(--bg-1)", objectFit: "contain" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+                    {oppTeam && <img src={teamLogoUrl(oppTeam)} alt="" style={{ position: "absolute", bottom: -1, right: -1, width: 14, height: 14, borderRadius: "50%", background: "var(--bg-1)", border: "1px solid var(--bg-1)", objectFit: "contain" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
                   </div>
                   {op ? (
                     <div style={{ minWidth: 0, flex: 1, textAlign: "right" as const }}>
-                      <div style={{ fontSize: 12, fontWeight: oppWins === true ? 900 : 600, color: oppWins === false ? "var(--text-4)" : "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{oppName}</div>
-                      {oppVal && <div style={{ fontSize: 16, fontWeight: 900, color: oppWins === true ? "#22c55e" : oppWins === false ? "var(--text-3)" : "var(--text-2)", letterSpacing: "-0.03em", lineHeight: 1 }}>{oppVal}</div>}
+                      <div style={{ fontSize: 11, fontWeight: oppWins === true ? 900 : 600, color: oppWins === false ? "var(--text-4)" : "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{oppName}</div>
+                      {oppVal && <div style={{ fontSize: 15, fontWeight: 900, color: oppWins === true ? "#22c55e" : oppWins === false ? "var(--text-3)" : "var(--text-2)", letterSpacing: "-0.03em", lineHeight: 1 }}>{oppVal}</div>}
                     </div>
                   ) : (
                     <span style={{ fontSize: 11, color: "var(--text-4)", fontStyle: "italic", flex: 1, textAlign: "right" as const }}>Pending…</span>
                   )}
-                  {oppWins === true && <span style={{ fontSize: 14, color: "#22c55e", flexShrink: 0 }}>✓</span>}
-                  {oppWins === false && <span style={{ fontSize: 14, color: "#ef4444", flexShrink: 0 }}>✗</span>}
                 </div>
               </div>
             );
