@@ -2761,6 +2761,15 @@ function MatchPageInner() {
   useEffect(() => {
     if (!mounted) return;
 
+    // On desktop (non-touch, pointer device) the mouse-wheel fires in large
+    // discrete jumps that make height-based animations look jerky.
+    // Keep the header fully expanded on desktop; only animate on touch/mobile.
+    const isDesktop = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    if (isDesktop) {
+      applyScrollVars(0); // always expanded on desktop
+      return;
+    }
+
     const update = () => {
       const sp = matchScrollProgress(window.scrollY || window.pageYOffset || 0);
       scrollRef.current = sp;
