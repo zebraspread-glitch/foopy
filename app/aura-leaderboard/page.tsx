@@ -300,7 +300,7 @@ function AuraLeaderboardInner() {
               </div>
             ) : entries.map((e, i) => {
               const rank  = i + 1;
-              const isMe  = e.user_id === myUserId;
+              const isMe  = viewUserId ? e.user_id === viewUserId : e.user_id === myUserId;
               const label = e.display_name || e.username || "Unknown";
               return (
                 <Link
