@@ -509,15 +509,31 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
   const foopyRank = playerAvg !== null ? allAvgs.indexOf(playerAvg) + 1 : null;
   const foopyTotal = allAvgs.length;
 
+  // Rank each stat vs all players in seasonData (only players with >= 1 game)
+  function leagueRank(key: keyof SeasonStats): number | null {
+    if (!computedSeason) return null;
+    const myVal = computedSeason[key] as number | null | undefined;
+    if (!myVal || myVal <= 0) return null;
+    const qualified = seasonData.filter(p => p.id !== slug && (p.games ?? 0) >= 1);
+    const rank = qualified.filter(p => ((p[key] as number) ?? 0) > myVal).length + 1;
+    return rank;
+  }
+  function ordSuffix(n: number) {
+    const v = n % 100;
+    if (v >= 11 && v <= 13) return `${n}th`;
+    const s = ["th","st","nd","rd"];
+    return `${n}${s[n % 10] ?? "th"}`;
+  }
+
   const statGrid = [
-    { label: "Goals",      value: computedSeason?.goalAvg?.toFixed(1)    ?? "—" },
-    { label: "Disposals",  value: computedSeason?.disposals?.toFixed(1)  ?? "—" },
-    { label: "Kicks",      value: computedSeason?.kicks?.toFixed(1)       ?? "—" },
-    { label: "Marks",      value: computedSeason?.marks?.toFixed(1)       ?? "—" },
-    { label: "Tackles",    value: computedSeason?.tackles?.toFixed(1)     ?? "—" },
-    { label: "Hitouts",    value: computedSeason?.hitouts?.toFixed(1)     ?? "—" },
-    { label: "Clearances", value: computedSeason?.clearances?.toFixed(1)  ?? "—" },
-    { label: "Games",      value: games > 0 ? String(games) : "—" },
+    { label: "Goals",      value: computedSeason?.goalAvg?.toFixed(1)    ?? "—", rank: leagueRank("goalAvg") },
+    { label: "Disposals",  value: computedSeason?.disposals?.toFixed(1)  ?? "—", rank: leagueRank("disposals") },
+    { label: "Kicks",      value: computedSeason?.kicks?.toFixed(1)       ?? "—", rank: leagueRank("kicks") },
+    { label: "Marks",      value: computedSeason?.marks?.toFixed(1)       ?? "—", rank: leagueRank("marks") },
+    { label: "Tackles",    value: computedSeason?.tackles?.toFixed(1)     ?? "—", rank: leagueRank("tackles") },
+    { label: "Hitouts",    value: computedSeason?.hitouts?.toFixed(1)     ?? "—", rank: leagueRank("hitouts") },
+    { label: "Clearances", value: computedSeason?.clearances?.toFixed(1)  ?? "—", rank: leagueRank("clearances") },
+    { label: "Games",      value: games > 0 ? String(games) : "—",                rank: null },
   ];
 
   return (
@@ -605,9 +621,9 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
             {/* Hero stats — Goals & Disposals */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
               {[
-                { label: "Goals", value: statGrid[0].value, accent: true },
-                { label: "Disposals", value: statGrid[1].value, accent: false },
-              ].map(({ label, value, accent }) => (
+                { label: "Goals", value: statGrid[0].value, rank: statGrid[0].rank, accent: true },
+                { label: "Disposals", value: statGrid[1].value, rank: statGrid[1].rank, accent: false },
+              ].map(({ label, value, rank, accent }) => (
                 <div key={label} style={{
                   background: accent ? `${color}18` : "var(--border-1)",
                   border: `1px solid ${accent ? `${color}35` : "var(--border-1)"}`,
@@ -617,7 +633,10 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                   flexDirection: "column",
                   gap: 4,
                 }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: accent ? `${color}cc` : "#475569", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>{label}</div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: accent ? `${color}cc` : "#475569", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>{label}</div>
+                    {rank && <div style={{ fontSize: 10, fontWeight: 800, color: rank <= 10 ? "#fbbf24" : "var(--text-4)", background: "var(--surface-3)", borderRadius: 999, padding: "1px 7px" }}>{ordSuffix(rank)}</div>}
+                  </div>
                   <div style={{ fontSize: 32, fontWeight: 950, letterSpacing: "-0.04em", lineHeight: 1, color: accent ? color : "#f8fafc" }}>{value}</div>
                   <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-4)" }}>per game</div>
                 </div>
@@ -626,14 +645,16 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
 
             {/* Secondary stats — 3-col grid */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-              {statGrid.slice(2).map(({ label, value }) => (
+              {statGrid.slice(2).map(({ label, value, rank }) => (
                 <div key={label} style={{
                   background: "var(--surface-2)",
                   border: "1px solid var(--border-1)",
                   borderRadius: 12,
                   padding: "11px 10px",
                   textAlign: "center" as const,
+                  position: "relative" as const,
                 }}>
+                  {rank && <div style={{ position: "absolute", top: 5, right: 7, fontSize: 9, fontWeight: 800, color: rank <= 10 ? "#fbbf24" : "var(--text-4)" }}>{ordSuffix(rank)}</div>}
                   <div style={{ fontSize: 19, fontWeight: 950, letterSpacing: "-0.03em", color: "var(--text-1)", lineHeight: 1 }}>{value}</div>
                   <div style={{ fontSize: 9, fontWeight: 800, color: "var(--text-3)", marginTop: 4, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>{label}</div>
                 </div>
