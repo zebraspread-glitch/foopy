@@ -1,4 +1,5 @@
 -- Run this in your Supabase SQL editor
+-- Uses Australia/Melbourne timezone so Today/Week/Month reset at midnight Melbourne time
 
 CREATE OR REPLACE FUNCTION get_aura_leaderboard(period text DEFAULT 'overall', limit_n integer DEFAULT 50)
 RETURNS TABLE(
@@ -22,26 +23,29 @@ BEGIN
       LIMIT limit_n;
 
   ELSIF period = 'day' THEN
+    -- Since midnight today Melbourne time
     RETURN QUERY
       SELECT p.id, p.username, p.display_name, p.avatar_url, SUM(ae.amount)::bigint, COALESCE(p.verified, false)
       FROM aura_events ae JOIN profiles p ON p.id = ae.user_id
-      WHERE ae.created_at >= NOW() - INTERVAL '1 day'
+      WHERE ae.created_at >= DATE_TRUNC('day', NOW() AT TIME ZONE 'Australia/Melbourne') AT TIME ZONE 'Australia/Melbourne'
       GROUP BY p.id, p.username, p.display_name, p.avatar_url, p.verified
       ORDER BY SUM(ae.amount) DESC LIMIT limit_n;
 
   ELSIF period = 'week' THEN
+    -- Since Monday this week Melbourne time
     RETURN QUERY
       SELECT p.id, p.username, p.display_name, p.avatar_url, SUM(ae.amount)::bigint, COALESCE(p.verified, false)
       FROM aura_events ae JOIN profiles p ON p.id = ae.user_id
-      WHERE ae.created_at >= NOW() - INTERVAL '7 days'
+      WHERE ae.created_at >= DATE_TRUNC('week', NOW() AT TIME ZONE 'Australia/Melbourne') AT TIME ZONE 'Australia/Melbourne'
       GROUP BY p.id, p.username, p.display_name, p.avatar_url, p.verified
       ORDER BY SUM(ae.amount) DESC LIMIT limit_n;
 
   ELSIF period = 'month' THEN
+    -- Since the 1st of this month Melbourne time
     RETURN QUERY
       SELECT p.id, p.username, p.display_name, p.avatar_url, SUM(ae.amount)::bigint, COALESCE(p.verified, false)
       FROM aura_events ae JOIN profiles p ON p.id = ae.user_id
-      WHERE ae.created_at >= NOW() - INTERVAL '30 days'
+      WHERE ae.created_at >= DATE_TRUNC('month', NOW() AT TIME ZONE 'Australia/Melbourne') AT TIME ZONE 'Australia/Melbourne'
       GROUP BY p.id, p.username, p.display_name, p.avatar_url, p.verified
       ORDER BY SUM(ae.amount) DESC LIMIT limit_n;
   END IF;
