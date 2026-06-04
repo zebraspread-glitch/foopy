@@ -41,7 +41,7 @@ export async function POST(req: Request) {
   const authHeader = req.headers.get("authorization");
   const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
   if (token) {
-    const { data: { user } } = await dbServer.auth.getUser(token);
+    const { data: { user } } = await db.auth.getUser(token);
     authedUserId = user?.id ?? null;
   }
 
