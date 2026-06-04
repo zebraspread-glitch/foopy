@@ -611,54 +611,30 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
         {season && games > 0 && (
           <section style={cardStyle}>
             {/* Header */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-              <div style={sectionLabel}>Season averages</div>
-              <span style={{ fontSize: 11, fontWeight: 800, color: "var(--text-3)", background: "var(--surface-3)", border: "1px solid var(--border-2)", borderRadius: 999, padding: "3px 10px", letterSpacing: "0.04em" }}>
-                {games} games
-              </span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, paddingBottom: 10, borderBottom: "1px solid var(--border-1)" }}>
+              <div style={{ fontSize: 13, fontWeight: 900, color: "var(--text-1)", letterSpacing: "0.01em" }}>2026 Season</div>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)" }}>{games} games</span>
             </div>
 
-            {/* Hero stats — Goals & Disposals */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0, marginBottom: 18, borderBottom: "1px solid var(--border-1)", paddingBottom: 18 }}>
-              {[
-                { label: "Goals", value: statGrid[0].value, rank: statGrid[0].rank, accent: true },
-                { label: "Disposals", value: statGrid[1].value, rank: statGrid[1].rank, accent: false },
-              ].map(({ label, value, rank, accent }, i) => (
+            {/* All stats in one horizontal scrollable row */}
+            <div style={{ display: "flex", overflowX: "auto", gap: 0, paddingBottom: 2 }}>
+              {statGrid.map(({ label, value, rank }, i) => (
                 <div key={label} style={{
-                  padding: "0 4px",
+                  display: "flex", flexDirection: "column", alignItems: "center",
+                  flex: "0 0 auto", minWidth: 52,
+                  paddingLeft: i === 0 ? 0 : 12,
                   borderLeft: i > 0 ? "1px solid var(--border-1)" : undefined,
-                  paddingLeft: i > 0 ? 20 : 4,
+                  marginLeft: i > 0 ? 12 : 0,
                 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                    <div style={{ fontSize: 11, fontWeight: 800, color: accent ? `${color}cc` : "var(--text-3)", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>{label}</div>
-                    {rank && <div style={{ fontSize: 10, fontWeight: 800, color: rank <= 10 ? "#fbbf24" : "var(--text-4)", background: "var(--surface-3)", borderRadius: 999, padding: "1px 6px" }}>{ordSuffix(rank)}</div>}
+                  <div style={{ fontSize: 10, fontWeight: 800, color: "var(--text-3)", letterSpacing: "0.06em", textTransform: "uppercase" as const, marginBottom: 4, whiteSpace: "nowrap" as const }}>
+                    {label === "Disposals" ? "DISP" : label === "Clearances" ? "CLR" : label === "Hitouts" ? "HO" : label.toUpperCase()}
                   </div>
-                  <div style={{ fontSize: 34, fontWeight: 950, letterSpacing: "-0.04em", lineHeight: 1, color: accent ? color : "var(--text-1)" }}>{value}</div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-4)", marginTop: 3 }}>per game</div>
+                  <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: "-0.03em", color: "var(--text-1)", lineHeight: 1 }}>{value}</div>
+                  <div style={{ fontSize: 10, fontWeight: 800, color: rank && rank <= 10 ? "#fbbf24" : "var(--text-4)", marginTop: 3, minHeight: 14 }}>
+                    {rank ? ordSuffix(rank) : ""}
+                  </div>
                 </div>
               ))}
-            </div>
-
-            {/* Secondary stats — clean rows, no boxes */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-              {(() => {
-                const pairs = [];
-                const sec = statGrid.slice(2);
-                for (let i = 0; i < sec.length; i += 2) pairs.push(sec.slice(i, i + 2));
-                return pairs.map((pair, pi) => (
-                  <div key={pi} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderTop: pi > 0 ? "1px solid var(--border-1)" : undefined, paddingTop: pi > 0 ? 12 : 0, paddingBottom: 12 }}>
-                    {pair.map(({ label, value, rank }) => (
-                      <div key={label} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: "-0.03em", color: "var(--text-1)", minWidth: 44 }}>{value}</div>
-                        <div>
-                          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-2)", textTransform: "uppercase" as const, letterSpacing: "0.04em" }}>{label}</div>
-                          {rank && <div style={{ fontSize: 10, fontWeight: 800, color: rank <= 10 ? "#fbbf24" : "var(--text-4)" }}>{ordSuffix(rank)}</div>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ));
-              })()}
             </div>
           </section>
         )}
