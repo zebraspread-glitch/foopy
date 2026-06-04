@@ -39,11 +39,10 @@ async function fetchByDate(endpoint: string, date: string) {
 
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
-  if (secret) {
-    const auth = req.headers.get("authorization");
-    if (auth !== `Bearer ${secret}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  if (!secret) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const auth = req.headers.get("authorization");
+  if (auth !== `Bearer ${secret}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   // Check today AND yesterday (handles late-finishing games / timezone edge cases)

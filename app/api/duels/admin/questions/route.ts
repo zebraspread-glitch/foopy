@@ -3,8 +3,6 @@ import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
-const ADMIN_SECRET = process.env.ADMIN_SECRET ?? "foopy123";
-
 function adminSupabase() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -27,8 +25,10 @@ type QuestionInput = {
 
 // POST /api/duels/admin/questions — upsert all 11 questions for a duel game
 export async function POST(req: Request) {
-  const secret = req.headers.get("x-admin-secret");
-  if (secret !== ADMIN_SECRET) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const adminSecret = process.env.ADMIN_SECRET;
+  if (!adminSecret || req.headers.get("x-admin-secret") !== adminSecret) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Invalid body" }, { status: 400 });

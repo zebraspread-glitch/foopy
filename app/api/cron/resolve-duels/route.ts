@@ -14,8 +14,7 @@ const PLAYER_NAME_BY_ID = new Map<number, string>(
 
 export const dynamic = "force-dynamic";
 
-const CRON_SECRET = process.env.CRON_SECRET ?? "";
-const API_BASE    = "https://v1.afl.api-sports.io";
+const API_BASE = "https://v1.afl.api-sports.io";
 
 // Margins are now stored as exact numeric strings (e.g. "30")
 // Kept for backward compat with any old range-format picks still in the DB
@@ -204,15 +203,19 @@ function parseTeams(teams: any[]): StatRow[] {
 // Vercel cron jobs send GET with "Authorization: Bearer <secret>"
 // Keep POST for backward compat (manual triggers)
 export async function GET(req: Request) {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const auth = req.headers.get("authorization");
-  if (auth !== `Bearer ${CRON_SECRET}`) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (auth !== `Bearer ${cronSecret}`) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   return runResolution();
 }
 
 export async function POST(req: Request) {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const secret = req.headers.get("x-cron-secret");
   const auth   = req.headers.get("authorization");
-  if (secret !== CRON_SECRET && auth !== `Bearer ${CRON_SECRET}`) {
+  if (secret !== cronSecret && auth !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   return runResolution();

@@ -16,8 +16,7 @@ export const maxDuration = 300;
  * Protected by CRON_SECRET env var.
  */
 
-const CRON_SECRET = process.env.CRON_SECRET ?? "";
-const API_BASE    = "https://v1.afl.api-sports.io";
+const API_BASE = "https://v1.afl.api-sports.io";
 const SEASON      = new Date().getFullYear().toString();
 
 // API-Sports team IDs 1-18 cover all AFL teams
@@ -44,8 +43,10 @@ function n(v: any) {
 }
 
 export async function GET(req: Request) {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const auth = req.headers.get("authorization");
-  if (auth !== `Bearer ${CRON_SECRET}`) {
+  if (auth !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

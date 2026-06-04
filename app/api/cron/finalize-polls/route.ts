@@ -14,11 +14,10 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   // Verify cron secret so random callers can't spam it
   const secret = process.env.CRON_SECRET;
-  if (secret) {
-    const auth = req.headers.get("authorization");
-    if (auth !== `Bearer ${secret}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  if (!secret) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const auth = req.headers.get("authorization");
+  if (auth !== `Bearer ${secret}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   // Fetch all games this year from Squiggle
@@ -63,7 +62,7 @@ export async function GET(req: Request) {
   try {
     await fetch(`${origin}/api/cron/resolve-duels`, {
       method: "POST",
-      headers: { "x-cron-secret": process.env.CRON_SECRET ?? "" },
+      headers: { "x-cron-secret": secret },
       cache: "no-store",
     });
   } catch {}

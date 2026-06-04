@@ -3,7 +3,13 @@ import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
-const ADMIN_SECRET = process.env.ADMIN_SECRET ?? "foopy123";
+const VALID_STATUSES = ["open", "live", "complete", "cancelled"] as const;
+
+function checkAdmin(req: Request): boolean {
+  const adminSecret = process.env.ADMIN_SECRET;
+  if (!adminSecret) return false;
+  return req.headers.get("x-admin-secret") === adminSecret;
+}
 
 function adminSupabase() {
   return createClient(
@@ -14,8 +20,7 @@ function adminSupabase() {
 
 // GET /api/duels/admin/games — list all duel games
 export async function GET(req: Request) {
-  const secret = req.headers.get("x-admin-secret");
-  if (secret !== ADMIN_SECRET) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!checkAdmin(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const db = adminSupabase();
   const { data, error } = await db
@@ -29,8 +34,7 @@ export async function GET(req: Request) {
 
 // POST /api/duels/admin/games — create a duel game
 export async function POST(req: Request) {
-  const secret = req.headers.get("x-admin-secret");
-  if (secret !== ADMIN_SECRET) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!checkAdmin(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Invalid body" }, { status: 400 });
@@ -61,14 +65,16 @@ export async function POST(req: Request) {
 
 // PATCH /api/duels/admin/games — update status
 export async function PATCH(req: Request) {
-  const secret = req.headers.get("x-admin-secret");
-  if (secret !== ADMIN_SECRET) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!checkAdmin(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Invalid body" }, { status: 400 });
 
   const { id, status } = body as { id: string; status: string };
   if (!id || !status) return NextResponse.json({ error: "Missing id or status" }, { status: 400 });
+  if (!(VALID_STATUSES as readonly string[]).includes(status)) {
+    return NextResponse.json({ error: `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}` }, { status: 400 });
+  }
 
   const db = adminSupabase();
   const { data, error } = await db
@@ -84,8 +90,7 @@ export async function PATCH(req: Request) {
 
 // DELETE /api/duels/admin/games — delete a duel game
 export async function DELETE(req: Request) {
-  const secret = req.headers.get("x-admin-secret");
-  if (secret !== ADMIN_SECRET) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!checkAdmin(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
