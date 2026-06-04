@@ -1270,7 +1270,24 @@ function SeasonAvgTable({ stats }: { stats: any[] }) {
   const [sortKey, setSortKey] = useState<"foopy" | "disposals" | "marks" | "tackles" | "hitouts">("foopy");
   const [sortDir, setSortDir] = useState<"desc" | "asc">("desc");
 
-  const withRating = stats.map(p => ({ ...p, _foopy: foopyRating({ ...p, goals: p.goalAvg ?? 0 } as any) }));
+  const withRating = stats.map(p => {
+    const g = p.games || 1;
+    const _foopy = foopyRating({
+      goals:        p.goalAvg          ?? 0,
+      goalAssists:  (p.goalAssists     ?? 0) / g,
+      behinds:      (p.behinds         ?? 0) / g,
+      kicks:        p.kicks            ?? 0,
+      handballs:    p.handballs        ?? 0,
+      disposals:    p.disposals        ?? 0,
+      marks:        p.marks            ?? 0,
+      tackles:      p.tackles          ?? 0,
+      hitouts:      p.hitouts          ?? 0,
+      clearances:   p.clearances       ?? 0,
+      freesFor:     p.freesForAvg      ?? (p.freesFor     ?? 0) / g,
+      freesAgainst: (p.freesAgainst    ?? 0) / g,
+    } as any);
+    return { ...p, _foopy };
+  });
   const sorted = [...withRating].sort((a, b) => {
     const av = sortKey === "foopy" ? a._foopy : Number(a[sortKey] ?? 0);
     const bv = sortKey === "foopy" ? b._foopy : Number(b[sortKey] ?? 0);
