@@ -860,10 +860,7 @@ function QuarterScoresTable({
     lbl,
     home: quarterScores.home[i] ?? null,
     away: quarterScores.away[i] ?? null,
-    played: i < currentPeriod || (quarterScores.home[i] != null && quarterScores.away[i] != null),
-  })).filter(c => c.played);
-
-  if (!cols.length) return null;
+  }));
 
   const sep = "1px solid var(--border-2)";
 
