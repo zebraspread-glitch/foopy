@@ -154,8 +154,9 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, ho
       </div>
 
       {/* Buttons */}
-      <div style={{ display: "flex", gap: 10, opacity: authed === false && !hasVoted ? 0.5 : 1, pointerEvents: locked ? "none" : "auto" }}>
-        {options.map(({ side, logo, color }) => {
+      <div style={{ display: "flex", gap: 10, alignItems: "center", opacity: authed === false && !hasVoted ? 0.5 : 1, pointerEvents: locked ? "none" : "auto" }}>
+        {options.map(({ side, logo, color }, i) => {
+          const isLast = i === options.length - 1;
           const selected  = myPick === side;
           const isCorrect = !!finalResult && finalResult === side;
           const isWrong   = !!finalResult && selected && !isCorrect;
@@ -191,6 +192,9 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, ho
                 </span>
               )}
             </button>
+            {!isLast && (
+              <span style={{ fontSize: 13, fontWeight: 900, color: "var(--text-4)", flexShrink: 0 }}>VS</span>
+            )}
           );
         })}
       </div>
