@@ -1267,8 +1267,8 @@ function QuarterBreakFeedBox({ label }: any) {
 }
 
 function SeasonAvgTable({ stats }: { stats: any[] }) {
-  const [sortKey, setSortKey] = useState<"foopy" | "disposals" | "marks" | "tackles" | "hitouts">("foopy");
   const [sortDir, setSortDir] = useState<"desc" | "asc">("desc");
+  const router = useRouter();
 
   const withRating = stats.map(p => {
     const g = p.games || 1;
@@ -1288,21 +1288,9 @@ function SeasonAvgTable({ stats }: { stats: any[] }) {
     } as any);
     return { ...p, _foopy };
   });
-  const sorted = [...withRating].sort((a, b) => {
-    const av = sortKey === "foopy" ? a._foopy : Number(a[sortKey] ?? 0);
-    const bv = sortKey === "foopy" ? b._foopy : Number(b[sortKey] ?? 0);
-    return sortDir === "desc" ? bv - av : av - bv;
-  });
-
-  function hdr(label: string, key: typeof sortKey) {
-    const active = sortKey === key;
-    return (
-      <th style={{ ...thStyle, color: active ? "#0ea5e9" : "#9ca3af", cursor: "pointer" }}
-        onClick={() => { if (sortKey === key) setSortDir(d => d === "desc" ? "asc" : "desc"); else { setSortKey(key); setSortDir("desc"); } }}>
-        {label}{active ? (sortDir === "desc" ? " ↓" : " ↑") : ""}
-      </th>
-    );
-  }
+  const sorted = [...withRating].sort((a, b) =>
+    sortDir === "desc" ? b._foopy - a._foopy : a._foopy - b._foopy
+  );
 
   if (!sorted.length) return <div style={{ padding: "20px 16px", color: "var(--text-3)", textAlign: "center", fontSize: 14 }}>No season stats available yet.</div>;
 
@@ -1312,12 +1300,9 @@ function SeasonAvgTable({ stats }: { stats: any[] }) {
         <thead>
           <tr>
             <th style={thPlayerStyle}><span style={{ fontSize: 9, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-4)" }}>Season Avg</span></th>
-            {hdr("Foopy", "foopy")}
-            {hdr("D", "disposals")}
-            {hdr("M", "marks")}
-            {hdr("T", "tackles")}
-            {hdr("HO", "hitouts")}
-            <th style={thStyle} />
+            <th style={{ ...thStyle, color: "#0ea5e9", cursor: "pointer" }} onClick={() => setSortDir(d => d === "desc" ? "asc" : "desc")}>
+              Foopy {sortDir === "desc" ? "↓" : "↑"}
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -1325,9 +1310,8 @@ function SeasonAvgTable({ stats }: { stats: any[] }) {
             const name = safePlayerName(p.name, i + 1);
             const rowTeam = safeText(p.team, "");
             const rating = p._foopy;
-            const hitouts = Number(p.hitouts ?? 0);
             return (
-              <tr key={`${name}-${i}`}>
+              <tr key={`${name}-${i}`} style={{ cursor: "pointer" }} onClick={() => p.id && router.push(`/player/${p.id}`)}>
                 <td style={tdPlayerStyle}>
                   <span style={playerNameCellStyle}>
                     <PlayerAvatar name={name} team={rowTeam} size={38} />
@@ -1337,11 +1321,6 @@ function SeasonAvgTable({ stats }: { stats: any[] }) {
                 <td style={tdStyle}>
                   {rating > 0 && <span style={{ ...ratingPillStyle, background: foopyColor(rating) }}>{rating}</span>}
                 </td>
-                <td style={tdStyle}>{Number(p.disposals ?? 0).toFixed(1)}</td>
-                <td style={tdStyle}>{Number(p.marks ?? 0).toFixed(1)}</td>
-                <td style={tdStyle}>{Number(p.tackles ?? 0).toFixed(1)}</td>
-                <td style={tdStyle}>{hitouts > 1 ? hitouts.toFixed(1) : ""}</td>
-                <td style={{ ...tdStyle, paddingRight: 12 }} />
               </tr>
             );
           })}
