@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
@@ -11,66 +10,59 @@ const TEAM_BY_ID: Record<number, string> = {
   17:"Gold Coast",18:"GWS",
 };
 
-function norm(s: string) {
-  return s.toLowerCase().replace(/[^a-z]/g, "");
-}
-
+function norm(s: string) { return s.toLowerCase().replace(/[^a-z]/g, ""); }
 function teamsMatch(a: string, b: string) {
   const ak = norm(a); const bk = norm(b);
   return !!ak && !!bk && (ak === bk || ak.includes(bk) || bk.includes(ak));
 }
 
-// GET /api/match-players?home=<team>&away=<team>
-// Returns player names from the most recent completed game for each team,
-// used to filter the season stats list to a realistic squad for upcoming games.
+// GET /api/match-players?date=YYYY-MM-DD&home=<team>&away=<team>
+// Calls API-Sports games/statistics/players for the date and returns
+// player IDs for the matching game so the client can filter season stats.
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const homeTeam = searchParams.get("home") ?? "";
-  const awayTeam = searchParams.get("away") ?? "";
+  const date     = searchParams.get("date")  ?? "";
+  const homeTeam = searchParams.get("home")  ?? "";
+  const awayTeam = searchParams.get("away")  ?? "";
 
-  if (!homeTeam || !awayTeam) return NextResponse.json({ home: [], away: [] });
+  if (!date || !homeTeam || !awayTeam) return NextResponse.json({ home: [], away: [] });
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const apiKey = process.env.API_SPORTS_AFL_KEY;
+  if (!apiKey) return NextResponse.json({ home: [], away: [] });
 
-  const { data: rows } = await supabase
-    .from("match_cache")
-    .select("payload")
-    .eq("data_type", "player_stats")
-    .eq("is_final", true)
-    .order("fetched_at", { ascending: false })
-    .limit(80);
+  try {
+    const res = await fetch(
+      `https://v1.afl.api-sports.io/games/statistics/players?date=${date}`,
+      { headers: { "x-apisports-key": apiKey }, cache: "no-store" }
+    );
+    if (!res.ok) return NextResponse.json({ home: [], away: [] });
 
-  const homePlayers: string[] = [];
-  const awayPlayers: string[] = [];
+    const json = await res.json();
+    const games: any[] = json.response ?? [];
 
-  for (const row of rows ?? []) {
-    if (homePlayers.length > 0 && awayPlayers.length > 0) break;
+    // Find the game matching our home/away teams
+    const game = games.find(g => {
+      const teams: any[] = g.teams ?? [];
+      const names = teams.map(t => TEAM_BY_ID[Number(t.team?.id)] ?? "");
+      return names.some(n => teamsMatch(n, homeTeam)) && names.some(n => teamsMatch(n, awayTeam));
+    });
 
-    const teams: any[] = (row.payload as any)?.response?.[0]?.teams ?? [];
+    if (!game) return NextResponse.json({ home: [], away: [] });
 
-    for (const teamData of teams) {
-      const tName = teamData.team?.name ?? TEAM_BY_ID[Number(teamData.team?.id)] ?? "";
+    const homePlayers: number[] = [];
+    const awayPlayers: number[] = [];
 
-      if (homePlayers.length === 0 && teamsMatch(tName, homeTeam)) {
-        for (const pe of teamData.players ?? []) {
-          const name = pe.player?.name ?? "";
-          if (name) homePlayers.push(name);
-        }
-      }
-
-      if (awayPlayers.length === 0 && teamsMatch(tName, awayTeam)) {
-        for (const pe of teamData.players ?? []) {
-          const name = pe.player?.name ?? "";
-          if (name) awayPlayers.push(name);
-        }
-      }
+    for (const teamData of game.teams ?? []) {
+      const tName = TEAM_BY_ID[Number(teamData.team?.id)] ?? "";
+      const ids = (teamData.players ?? []).map((p: any) => Number(p.player?.id)).filter(Boolean);
+      if (teamsMatch(tName, homeTeam)) homePlayers.push(...ids);
+      else awayPlayers.push(...ids);
     }
-  }
 
-  return NextResponse.json({ home: homePlayers, away: awayPlayers }, {
-    headers: { "Cache-Control": "public, max-age=3600, stale-while-revalidate=7200" },
-  });
+    return NextResponse.json({ home: homePlayers, away: awayPlayers }, {
+      headers: { "Cache-Control": "public, max-age=1800, stale-while-revalidate=3600" },
+    });
+  } catch {
+    return NextResponse.json({ home: [], away: [] });
+  }
 }
