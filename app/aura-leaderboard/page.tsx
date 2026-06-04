@@ -39,6 +39,7 @@ const EVENT_META: Record<string, { label: string; icon: string }> = {
   daily_login:            { label: "Daily login",              icon: "🌅" },
   poll_correct:           { label: "Won a poll",               icon: "🎯" },
   winner_pick:            { label: "Picked the winner",        icon: "🏆" },
+  winner_pick_correct:    { label: "Correct winner pick",       icon: "🎉" },
   pass_reward:            { label: "Pass reward",              icon: "🎫" },
   comment_post:           { label: "Posted a comment",         icon: "💬" },
   like_given:             { label: "Liked a post",             icon: "👍" },

@@ -318,5 +318,46 @@ async function finalize(squiggleGameId: number | undefined) {
     }
   }
 
+  // 6. Award bonus aura for correct "Who will win?" picks
+  if (hScore !== aScore) {
+    const winningSide = hScore > aScore ? "home" : "away";
+    const { data: picks } = await admin
+      .from("winner_picks")
+      .select("voter_id, side")
+      .eq("match_id", String(squiggleGameId));
+
+    if (picks && picks.length > 0) {
+      const correctPicks = picks.filter((p: any) => p.side === winningSide);
+      const totalPicks   = picks.length;
+      const correctCount = correctPicks.length;
+      // Bonus scales with how bold the pick was (underdog pays more)
+      const pctCorrect = correctCount / totalPicks;
+      const bonusAura  = pctCorrect < 0.4 ? 20 : pctCorrect < 0.6 ? 10 : 5;
+
+      for (const pick of correctPicks) {
+        if (!pick.voter_id) continue;
+        // Look up auth user by voter_id (voter_id is stored as user_id for auth'd users)
+        const result = await awardAura(
+          pick.voter_id,
+          "winner_pick_correct",
+          `winner_pick_correct:${squiggleGameId}`,
+          bonusAura
+        );
+        if (result.awarded) {
+          totalAwarded++;
+          try {
+            await admin.from("notifications").insert({
+              user_id: pick.voter_id,
+              type: "poll_win",
+              actor_id: null,
+              data: { poll_title: `${homeTeam} vs ${awayTeam} — correct winner pick`, aura: bonusAura },
+              read: false,
+            });
+          } catch {}
+        }
+      }
+    }
+  }
+
   return NextResponse.json({ ok: true, awarded: totalAwarded });
 }
