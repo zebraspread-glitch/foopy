@@ -59,13 +59,19 @@ export async function GET(req: Request) {
     .filter(s => s.status === "fulfilled" && s.value !== null)
     .map(s => (s as PromiseFulfilledResult<any>).value);
 
-  // Also resolve any completed duels
+  // Also resolve any completed duels and refresh player season stats
   try {
     await fetch(`${origin}/api/cron/resolve-duels`, {
       method: "POST",
       headers: { "x-cron-secret": secret },
       cache: "no-store",
     });
+  } catch {}
+  try {
+    fetch(`${origin}/api/cron/sync-player-season-stats`, {
+      headers: { authorization: `Bearer ${secret}` },
+      cache: "no-store",
+    }).catch(() => {});
   } catch {}
 
   return NextResponse.json({ ok: true, processed: finalGames.length, awarded: results });
