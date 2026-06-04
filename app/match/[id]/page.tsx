@@ -3793,7 +3793,7 @@ function MatchPageInner() {
                 ))}
                 {(showStatsTabs || showPlayersTabs) && (
                   <>
-                    {([...(showStatsTabs ? ["game"] : []), ...(showPlayersTabs ? ["players"] : [])] as const).map((t) => (
+                    {([...(showStatsTabs ? ["game" as TabKey] : []), ...(showPlayersTabs ? ["players" as TabKey] : [])]).map((t) => (
                       <button key={t} type="button" onClick={() => setActiveTab(t)} style={{
                         flex: 1, padding: "13px 4px 11px",
                         background: "none", border: "none",
