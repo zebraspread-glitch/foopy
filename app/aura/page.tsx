@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { formatAura } from "@/app/lib/format";
 import { supabase } from "@/app/lib/supabase";
 import { getLogo } from "@/app/match/[id]/utils";
 import { AFL_TEAMS } from "@/app/lib/passes";
@@ -86,7 +87,7 @@ function LeaderboardRow({ entry, rank, isMe }: { entry: Entry; rank: number; isM
         {entry.username ? `@${entry.username}` : label}
       </div>
       <div style={{ fontSize: 14, fontWeight: 900, background: "linear-gradient(135deg, #c084fc, #818cf8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", flexShrink: 0, letterSpacing: "-0.01em" }}>
-        ✦ {Number(entry.aura_total).toLocaleString()}
+        ✦ {formatAura(Number(entry.aura_total))}
       </div>
     </Link>
   );
@@ -333,7 +334,7 @@ function AuraPageInner() {
                 background: "linear-gradient(135deg, #c084fc 0%, #818cf8 50%, #fbbf24 100%)",
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
               }}>
-                {myAura.toLocaleString()}
+                {formatAura(myAura)}
               </div>
               <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.45)", marginTop: 4, letterSpacing: "0.06em" }}>
                 YOUR AURA{myRank ? ` · ${ordinal(myRank)} globally` : ""}
@@ -418,7 +419,7 @@ function AuraPageInner() {
                 <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 12, background: "linear-gradient(135deg, rgba(139,92,246,0.12), rgba(99,102,241,0.08))", border: "1px solid rgba(139,92,246,0.25)", display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ fontSize: 15 }}>✦</span>
                   <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-2)" }}>
-                    You're <span style={{ fontWeight: 900, color: "#c084fc" }}>{ordinal(myRank)}</span> with <span style={{ fontWeight: 900, color: "#c084fc" }}>{myAura.toLocaleString()}</span> Aura
+                    You're <span style={{ fontWeight: 900, color: "#c084fc" }}>{ordinal(myRank)}</span> with <span style={{ fontWeight: 900, color: "#c084fc" }}>{formatAura(myAura)}</span> Aura
                   </span>
                 </div>
               )}

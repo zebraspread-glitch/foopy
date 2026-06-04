@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { formatAura } from "@/app/lib/format";
 import { supabase } from "@/app/lib/supabase";
 import { VerifiedBadge } from "@/app/components/VerifiedBadge";
 
@@ -282,7 +283,7 @@ function AuraLeaderboardInner() {
                     </div>
                   </div>
                   <div style={{ fontSize: 15, fontWeight: 900, background: "linear-gradient(135deg, #c084fc, #818cf8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", flexShrink: 0 }}>
-                    {Number(e.aura_total).toLocaleString()}
+                    {formatAura(Number(e.aura_total))}
                   </div>
                 </Link>
               );

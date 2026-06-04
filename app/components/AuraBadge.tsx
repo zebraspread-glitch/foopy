@@ -1,11 +1,12 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import { formatAura } from "@/app/lib/format";
 
 export default function AuraBadge({ aura, href }: { aura: number; href?: string }) {
   const badge = (
     <div style={badgeStyle}>
       <span style={sparkStyle}>✦</span>
-      <span style={labelStyle}>{aura.toLocaleString()} Aura</span>
+      <span style={labelStyle}>{formatAura(aura)} Aura</span>
     </div>
   );
 

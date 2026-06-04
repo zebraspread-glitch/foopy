@@ -1,6 +1,7 @@
 "use client";
 
 import { supabase } from "@/app/lib/supabase";
+import { formatAura } from "@/app/lib/format";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -306,7 +307,7 @@ export default function GlobalSideDrawer() {
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 5 }}>
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
                   <span style={{ fontSize: 12, background: "linear-gradient(135deg, #c084fc, #60a5fa, #fbbf24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", lineHeight: 1 }}>✦</span>
-                  <span style={{ fontSize: 13, fontWeight: 800, background: "linear-gradient(135deg, #c084fc 0%, #818cf8 50%, #fbbf24 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>{aura.toLocaleString()} Aura</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, background: "linear-gradient(135deg, #c084fc 0%, #818cf8 50%, #fbbf24 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>{formatAura(aura)} Aura</span>
                 </div>
                 <span style={{ color: "var(--border-2)" }}>·</span>
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
