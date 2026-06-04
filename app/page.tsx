@@ -1409,7 +1409,7 @@ free_kicks?: {
 
       <div style={{ height: "calc(92px + env(safe-area-inset-top))" }} />
       <div style={{ padding: "10px 12px 0" }}>
-        <DuelHomepageCard currentRound={currentRound} />
+        <DuelHomepageCard currentRound={selectedRound} />
       </div>
       <section style={wrapStyle}>
         <div style={listStyle} className={loading ? undefined : "stagger"}>
