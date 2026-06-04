@@ -99,12 +99,10 @@ export async function GET(req: Request) {
       const isFinal = status === "COMPLETED";
       const statsUrl = `${origin}/api/afl/player-stats?id=${apiId}${isFinal ? "&final=true" : ""}`;
       const quartersUrl = `${origin}/api/afl/quarters?id=${apiId}${isFinal ? "&final=true" : ""}`;
-      const syncHeaders = { "x-sync-secret": secret, "cache-control": "no-store" };
-
       try {
         const [statsRes] = await Promise.all([
-          fetch(statsUrl, { cache: "no-store", headers: syncHeaders }),
-          fetch(quartersUrl, { cache: "no-store", headers: syncHeaders }),
+          fetch(statsUrl, { cache: "no-store" }),
+          fetch(quartersUrl, { cache: "no-store" }),
           // For live games also sync feed events
           status === "LIVE"
             ? fetch(`${origin}/api/afl/sync-events?id=${apiId}`, { cache: "no-store" })
