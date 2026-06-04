@@ -1329,20 +1329,12 @@ function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating }: { 
   return (
     <div>
       {isLive && <div style={liveStatsBadgeStyle}>LIVE PLAYER STATS</div>}
-      <style>{`
-        .st-wrap { overflow-x: auto; overflow-y: auto; max-height: calc(100vh - 180px); }
-        @media (max-width: 600px) {
-          .st th { padding: 7px 3px; font-size: 9px; }
-          .st td { padding: 10px 3px; font-size: 11px; }
-          .st .st-avatar { display: none; }
-          .st .st-player-col { min-width: 70px; }
-        }
-      `}</style>
-      <div className="st-wrap" style={{ overflowX: "auto", overflowY: "auto", maxHeight: "calc(100vh - 180px)" }}>
-        <table className="st" style={tableStyle}>
+
+      <div style={tableWrapStyle}>
+        <table style={tableStyle}>
           <thead>
             <tr>
-              <th className="st-player-col" style={thPlayerStyle}>
+              <th style={thPlayerStyle}>
                 <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <span style={{ display: "flex", gap: 3 }}>
                     <button onClick={() => setStatMode("basic")} style={statMode === "basic" ? activeStatSwitchStyle : statSwitchStyle}>Basic</button>
@@ -1405,7 +1397,7 @@ function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating }: { 
                 >
                   <td style={tdPlayerStyle}>
                     <span style={playerNameCellStyle}>
-                      <span className="st-avatar"><PlayerAvatar name={name} team={rowTeam} /></span>
+                      <PlayerAvatar name={name} team={rowTeam} />
                       <span>{name}</span>
                     </span>
                   </td>
