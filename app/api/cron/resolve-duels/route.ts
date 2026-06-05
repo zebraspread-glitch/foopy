@@ -243,7 +243,8 @@ async function runResolution() {
   }
 
   // Find active duels — fetch duel_game separately to avoid FK join issues
-  const { data: activeDuels } = await db.from("duels").select("*").eq("status", "active");
+  const { data: activeDuels, error: activeErr } = await db.from("duels").select("*").eq("status", "active");
+  console.log(`[resolve-duels] active duels: ${activeDuels?.length ?? 0}${activeErr ? " ERR=" + activeErr.message : ""}`);
 
   // Prefetch all relevant duel_game rows in one query
   const duelGameIds = [...new Set((activeDuels ?? []).map((d: any) => d.duel_game_id).filter(Boolean))];
@@ -254,7 +255,7 @@ async function runResolution() {
 
   for (const duel of activeDuels ?? []) {
     const duelGame = duelGameMap.get(duel.duel_game_id);
-    if (!duelGame) continue;
+    if (!duelGame) { console.log(`[resolve-duels] duel ${duel.id}: no duel_game row for ${duel.duel_game_id} — SKIP`); continue; }
 
     // Fetch score from Squiggle — also used to auto-complete duel_game when
     // the AFL game finishes (complete=100) and stats have had time to settle
@@ -274,24 +275,28 @@ async function runResolution() {
           // Wait 3 minutes after last update so API-Sports stats are fully published.
           // If Squiggle doesn't provide an `updated` timestamp, complete immediately
           // (game is final and we have no way to know when it ended).
+          console.log(`[resolve-duels] duel ${duel.id} game ${duelGame.game_id}: squiggle complete=${g.complete} score=${hScore}-${aScore} dbStatus=${duelGame.status} updated=${g.updated ?? "none"}`);
           if (!gameIsComplete && num(g.complete) >= 100) {
             const readyToComplete = !g.updated ||
               (Date.now() - new Date(g.updated).getTime() >= 3 * 60 * 1000);
             if (readyToComplete) {
               gameIsComplete = true;
               await db.from("duel_games").update({ status: "complete" }).eq("id", duelGame.id);
+            } else {
+              console.log(`[resolve-duels] duel ${duel.id}: game 100% but waiting 3min settle (updated ${g.updated})`);
             }
           }
         }
       }
-    } catch {}
+    } catch (e: any) { console.log(`[resolve-duels] duel ${duel.id}: squiggle fetch error ${e?.message}`); }
 
-    if (!gameIsComplete) continue;
+    if (!gameIsComplete) { console.log(`[resolve-duels] duel ${duel.id}: game NOT complete — SKIP`); continue; }
 
     // Fetch player stats from API-Sports
     const apiSportsId = API_SPORTS_MATCH_IDS[String(duelGame.game_id)];
     let allStats: StatRow[] = [];
     if (apiSportsId) allStats = await fetchPlayerStats(String(apiSportsId));
+    console.log(`[resolve-duels] duel ${duel.id}: gameComplete=true apiSportsId=${apiSportsId ?? "MISSING"} statsRows=${allStats.length}`);
     const homeStats = allStats.filter(p => p.isHome);
     const awayStats = allStats.filter(p => !p.isHome);
 
@@ -301,7 +306,7 @@ async function runResolution() {
       .select("*")
       .eq("duel_game_id", duel.duel_game_id);
 
-    if (!questions?.length) continue;
+    if (!questions?.length) { console.log(`[resolve-duels] duel ${duel.id}: no questions — SKIP`); continue; }
 
     // Set correct_answer on each question from stats
     for (const q of questions) {
@@ -350,10 +355,11 @@ async function runResolution() {
       await finaliseDuel(db, duel, duel.challenger_id, false, false, false, true);
       resolved++; continue;
     }
-    if (challengerPicks.length === 0 && opponentPicks.length === 0) continue;
+    if (challengerPicks.length === 0 && opponentPicks.length === 0) { console.log(`[resolve-duels] duel ${duel.id}: no picks from either player — SKIP`); continue; }
 
     const regularQs = questions.filter(q => !q.is_tiebreaker && q.correct_answer);
     const tbQuestion = questions.find(q => q.is_tiebreaker && q.correct_answer);
+    console.log(`[resolve-duels] duel ${duel.id}: resolvedQs=${regularQs.length}/${questions.filter(q=>!q.is_tiebreaker).length} tiebreakerResolved=${!!tbQuestion} cPicks=${challengerPicks.length} oPicks=${opponentPicks.length}`);
 
     let challengerScore = 0, opponentScore = 0;
 
@@ -412,10 +418,12 @@ async function runResolution() {
       isDraw = true;
     }
 
+    console.log(`[resolve-duels] duel ${duel.id}: FINALISING score ${challengerScore}-${opponentScore} winner=${winnerId ?? (isDraw?"draw":"none")}`);
     await finaliseDuel(db, duel, winnerId, isDraw, challengerPerfect, false, false, challengerScore, opponentScore, opponentPerfect);
     resolved++;
   }
 
+  console.log(`[resolve-duels] DONE resolved=${resolved} cancelled=${cancelled}`);
   return NextResponse.json({ resolved, cancelled });
 }
 
