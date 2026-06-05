@@ -1392,7 +1392,6 @@ function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating }: { 
 
   return (
     <div>
-      {isLive && <div style={liveStatsBadgeStyle}>LIVE PLAYER STATS</div>}
 
       <div style={tableWrapStyle}>
         <table style={tableStyle}>
