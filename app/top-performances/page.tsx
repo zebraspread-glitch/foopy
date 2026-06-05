@@ -262,7 +262,7 @@ function TopPerformancesInner() {
               <div style={{
                 flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center",
                 background: ratingColor, borderRadius: 8, padding: "5px 10px", minWidth: 48,
-                boxShadow: `0 2px 8px ${ratingColor}66`,
+                boxShadow: ratingColor.startsWith("linear") ? "0 2px 12px rgba(255,180,0,0.45)" : `0 2px 8px ${ratingColor}66`,
               }}>
                 <span style={{ fontSize: 17, fontWeight: 900, color: "#fff", lineHeight: 1, letterSpacing: "-0.02em" }}>
                   {entry.rating.toFixed(1)}

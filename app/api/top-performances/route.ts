@@ -235,25 +235,8 @@ export async function GET(req: Request) {
     const teams: any[] = gameEntry.teams ?? [];
 
     for (const teamEntry of teams) {
-      // Determine this team's name — try game data first, fall back to players.json
-      const teamName = String(teamEntry.team?.name ?? "");
-
-      // Work out opponent from Squiggle data (reliable team names)
-      let opponent: string | null = null;
-      if (sqInfo) {
-        const normTeam = norm(teamName);
-        const normH = norm(sqInfo.hteam);
-        const normA = norm(sqInfo.ateam);
-        // Match this entry's team against home/away
-        if (normTeam && normH && normA) {
-          opponent = normTeam === normH || normH.includes(normTeam) || normTeam.includes(normH)
-            ? sqInfo.ateam
-            : sqInfo.hteam;
-        } else {
-          // Fall back: opponent is whichever of h/a we can't match to this team
-          opponent = sqInfo.ateam || sqInfo.hteam || null;
-        }
-      }
+      // Determine this team's name — try game data first (resolved per-player below)
+      const teamNameFromData = String(teamEntry.team?.name ?? "");
 
       for (const pe of teamEntry.players ?? []) {
         const apiPlayerId = Number(pe.player?.id ?? 0);
@@ -261,8 +244,24 @@ export async function GET(req: Request) {
 
         const info = playerById.get(apiPlayerId);
         const name = info?.name || String(pe.player?.name ?? "");
-        const team = info?.team || teamName;
+        // Use players.json team (reliable) > game data team
+        const team = info?.team || teamNameFromData;
         if (!name) continue;
+
+        // Work out opponent using the player's known team against Squiggle home/away
+        let opponent: string | null = null;
+        if (sqInfo) {
+          const normTeam = norm(team); // use resolved team, not raw teamNameFromData
+          const normH = norm(sqInfo.hteam);
+          const normA = norm(sqInfo.ateam);
+          if (normTeam && normH && normA) {
+            opponent = normTeam === normH || normH.includes(normTeam) || normTeam.includes(normH)
+              ? sqInfo.ateam
+              : sqInfo.hteam;
+          } else {
+            opponent = sqInfo.ateam || sqInfo.hteam || null;
+          }
+        }
 
         const s = pe.statistics ?? pe;
         const n = (v: any) => { const x = Number(v ?? 0); return Number.isFinite(x) ? x : 0; };

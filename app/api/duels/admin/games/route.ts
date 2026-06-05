@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
-const VALID_STATUSES = ["open", "live", "complete", "cancelled"] as const;
+const VALID_STATUSES = ["open", "locked", "live", "complete", "cancelled"] as const;
 
 function checkAdmin(req: Request): boolean {
   const adminSecret = process.env.ADMIN_SECRET;
