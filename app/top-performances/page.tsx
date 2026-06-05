@@ -232,7 +232,11 @@ function TopPerformancesInner() {
                 </div>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {entry.name}
+                    {(() => {
+                      const parts = entry.name.trim().split(" ");
+                      if (parts.length < 2) return entry.name;
+                      return `${parts[0][0]}. ${parts.slice(1).join(" ")}`;
+                    })()}
                   </div>
                   <div style={{ fontSize: 10, fontWeight: 600, color: "var(--text-4)", marginTop: 1, whiteSpace: "nowrap" }}>
                     {entry.round != null ? `Rd ${entry.round}` : ""}
