@@ -4652,6 +4652,7 @@ function MatchRepliesPopup({ comment, userId, onClose, onLike, onDelete, onViewR
 }) {
   const replyCount = comment.replies?.length ?? 0;
   const [replyBody, setReplyBody] = useState("");
+  const [sortDir, setSortDir] = useState<"newest" | "oldest">("oldest");
   const popupInputRef = useRef<HTMLTextAreaElement>(null);
   const replyPlaceholder = cooldown > 0 ? `Wait ${cooldown}s...` : "Reply...";
   const submitReply = async () => {
@@ -4668,7 +4669,18 @@ function MatchRepliesPopup({ comment, userId, onClose, onLike, onDelete, onViewR
             Replies
             <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-3)" }}>{replyCount > 0 ? replyCount : ""}</span>
           </span>
-          <button onClick={onClose} style={matchReplyModalCloseStyle}>×</button>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {replyCount > 1 && (
+              <div style={{ display: "flex", borderRadius: 999, border: "1px solid var(--border-2)", overflow: "hidden" }}>
+                {(["oldest", "newest"] as const).map(dir => (
+                  <button key={dir} onClick={() => setSortDir(dir)} style={{ padding: "4px 10px", fontSize: 11, fontWeight: 700, border: "none", cursor: "pointer", background: sortDir === dir ? "var(--surface-3)" : "transparent", color: sortDir === dir ? "var(--text-1)" : "var(--text-3)" }}>
+                    {dir === "oldest" ? "Oldest" : "Newest"}
+                  </button>
+                ))}
+              </div>
+            )}
+            <button onClick={onClose} style={matchReplyModalCloseStyle}>×</button>
+          </div>
         </div>
         <div style={matchReplyParentStyle}>
           <MCRow comment={comment} userId={userId} onLike={onLike} onDelete={onDelete} onReply={() => focusReplyInput()} onViewReplies={onViewReplies} liking={liking} hideRepliesToggle />
@@ -4677,15 +4689,21 @@ function MatchRepliesPopup({ comment, userId, onClose, onLike, onDelete, onViewR
           {replyCount === 0 ? (
             <div style={matchReplyEmptyStyle}>No replies yet.</div>
           ) : (
-            comment.replies!.map((reply) => (
-              <MCRow key={reply.id} comment={reply} userId={userId} onLike={onLike} onDelete={onDelete}
-                onReply={() => {
-                  const name = reply.profile?.username || reply.profile?.display_name;
-                  if (name) setReplyBody(`@${name} `);
-                  focusReplyInput();
-                }}
-                onViewReplies={onViewReplies} liking={liking} />
-            ))
+            [...comment.replies!]
+              .sort((a, b) => {
+                const ta = new Date(a.created_at).getTime();
+                const tb = new Date(b.created_at).getTime();
+                return sortDir === "newest" ? tb - ta : ta - tb;
+              })
+              .map((reply) => (
+                <MCRow key={reply.id} comment={reply} userId={userId} onLike={onLike} onDelete={onDelete}
+                  onReply={() => {
+                    const name = reply.profile?.username || reply.profile?.display_name;
+                    if (name) setReplyBody(`@${name} `);
+                    focusReplyInput();
+                  }}
+                  onViewReplies={onViewReplies} liking={liking} />
+              ))
           )}
         </div>
         <div style={matchReplyComposerStyle}>
