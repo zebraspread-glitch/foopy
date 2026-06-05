@@ -286,12 +286,16 @@ function eventKeyAliases(event: LiveEvent, index = 0) {
 
 // Mirrors stableEventKey() on the event page so the match page looks up
 // comments under the EXACT same key the event page stores them under.
+// IMPORTANT: the player-identity key (q{quarter}_m{min}_t{type}_p{playerId})
+// is preferred because it's stable across live→final — score-based keys only
+// appear once the game finishes and would not match comments made live.
 function canonicalKeyForEvent(event: LiveEvent, index = 0): string {
   const keys = eventKeyAliases(event, index);
   return (
+    keys.find((key) => /^qQ?\d.*_p\d+$/.test(key)) ??
+    keys.find((key) => key.startsWith("player_")) ??
     keys.find((key) => key.startsWith("score_") && key.endsWith("_SCORE")) ??
     keys.find((key) => key.startsWith("score_")) ??
-    keys.find((key) => key.startsWith("player_")) ??
     keys.find((key) => !key.startsWith("feed_")) ??
     keys[0] ?? ""
   );

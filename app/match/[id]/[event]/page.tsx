@@ -94,9 +94,12 @@ function eventKeyAliasesFromParams(eventKey: string, rawAliases: string | null) 
 
 function stableEventKey(keys: string[], fallback: string) {
   return (
+    // Prefer the stable player-identity key (q{quarter}_m{min}_t{type}_p{id}) —
+    // it doesn't change when the game goes final, unlike score-based keys.
+    keys.find((key) => /^qQ?\d.*_p\d+$/.test(key)) ??
+    keys.find((key) => key.startsWith("player_")) ??
     keys.find((key) => key.startsWith("score_") && key.endsWith("_SCORE")) ??
     keys.find((key) => key.startsWith("score_")) ??
-    keys.find((key) => key.startsWith("player_")) ??
     keys.find((key) => !key.startsWith("feed_")) ??
     fallback
   );
@@ -173,7 +176,7 @@ function EventCommentsPageInner() {
     !rawEvent.startsWith("score_") &&
     !rawEvent.startsWith("poll_") &&
     !rawEvent.startsWith("player_") &&
-    !/^q\d/.test(rawEvent) // quarter events: q1_m12_t...
+    !/^qQ?\d/.test(rawEvent) // quarter events: q1_m12_t... or qQ1_m12_t...
   ) ? `player_${rawEvent}` : rawEvent;
   const aliasParam = searchParams.get("aliases");
   const eventKeys = useMemo(
