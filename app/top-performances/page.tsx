@@ -16,6 +16,11 @@ type PerformanceEntry = {
   opponent: string | null;
   image: string;
   gameApiSportsId: string;
+  goals: number;
+  disposals: number;
+  kicks: number;
+  marks: number;
+  tackles: number;
 };
 
 type Filter = "round" | "month" | "season" | "season_worst";
