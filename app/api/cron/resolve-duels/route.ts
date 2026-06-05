@@ -258,7 +258,7 @@ async function runResolution() {
     if (!duelGame) { console.log(`[resolve-duels] duel ${duel.id}: no duel_game row for ${duel.duel_game_id} — SKIP`); continue; }
 
     // Fetch score from Squiggle — also used to auto-complete duel_game when
-    // the AFL game finishes (complete=100) and stats have had time to settle
+    // the AFL game finishes (complete=100).
     let hScore = 0, aScore = 0;
     let gameIsComplete = duelGame.status === "complete";
     try {
@@ -271,20 +271,15 @@ async function runResolution() {
         if (g) {
           hScore = num(g.hscore);
           aScore = num(g.ascore);
-          // Auto-complete: Squiggle shows 100% done AND stats have had time to settle.
-          // Wait 3 minutes after last update so API-Sports stats are fully published.
-          // If Squiggle doesn't provide an `updated` timestamp, complete immediately
-          // (game is final and we have no way to know when it ended).
-          console.log(`[resolve-duels] duel ${duel.id} game ${duelGame.game_id}: squiggle complete=${g.complete} score=${hScore}-${aScore} dbStatus=${duelGame.status} updated=${g.updated ?? "none"}`);
+          console.log(`[resolve-duels] duel ${duel.id} game ${duelGame.game_id}: squiggle complete=${g.complete} score=${hScore}-${aScore} dbStatus=${duelGame.status}`);
+          // Mark the game complete as soon as Squiggle reports 100%.
+          // We intentionally do NOT gate on Squiggle's `updated` timestamp —
+          // it's in Australian local time with no tz marker, so parsing it on a
+          // UTC server gives a time ~10h in the future and the duel never resolves.
+          // Instead we gate the actual resolution on stats being published (below).
           if (!gameIsComplete && num(g.complete) >= 100) {
-            const readyToComplete = !g.updated ||
-              (Date.now() - new Date(g.updated).getTime() >= 3 * 60 * 1000);
-            if (readyToComplete) {
-              gameIsComplete = true;
-              await db.from("duel_games").update({ status: "complete" }).eq("id", duelGame.id);
-            } else {
-              console.log(`[resolve-duels] duel ${duel.id}: game 100% but waiting 3min settle (updated ${g.updated})`);
-            }
+            gameIsComplete = true;
+            await db.from("duel_games").update({ status: "complete" }).eq("id", duelGame.id);
           }
         }
       }
@@ -297,6 +292,15 @@ async function runResolution() {
     let allStats: StatRow[] = [];
     if (apiSportsId) allStats = await fetchPlayerStats(String(apiSportsId));
     console.log(`[resolve-duels] duel ${duel.id}: gameComplete=true apiSportsId=${apiSportsId ?? "MISSING"} statsRows=${allStats.length}`);
+
+    // If we have a stats mapping but the player stats haven't published yet,
+    // wait for a later cron run rather than finalising with incomplete data.
+    // (No mapping at all → proceed; team_winner/tiebreaker resolve from the score.)
+    if (apiSportsId && allStats.length === 0) {
+      console.log(`[resolve-duels] duel ${duel.id}: game complete but player stats not published yet — waiting for next run`);
+      continue;
+    }
+
     const homeStats = allStats.filter(p => p.isHome);
     const awayStats = allStats.filter(p => !p.isHome);
 
