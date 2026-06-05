@@ -3899,7 +3899,11 @@ function MatchPageInner() {
               </>
             )}
 
-            {!feedLoading && !feedError && displayLiveEvents.length === 0 && status !== "UPCOMING" && (
+            {!feedLoading && !feedError && displayLiveEvents.length === 0 && status === "LIVE" && (
+              <QuarterBreakFeedBox label="MATCH STARTED" />
+            )}
+
+            {!feedLoading && !feedError && displayLiveEvents.length === 0 && status === "FINAL" && (
               <div style={emptyFeedStyle}>
                 <strong>No live feed events available yet.</strong>
               </div>
