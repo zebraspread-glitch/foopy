@@ -724,7 +724,12 @@ function EventCommentsPageInner() {
 
       {playerCard && (
         <section style={playerCardStyle}>
-          <PlayerCardHeader name={label} img={playerCard.img} team={playerCard.team} rating={playerCard.rating} slug={playerSlug(label)} />
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <PlayerCardHeader name={label} img={playerCard.img} team={playerCard.team} rating={playerCard.rating} slug={playerSlug(label)} />
+            </div>
+            <ShareButton name={label} rating={playerCard.rating} />
+          </div>
           <div style={statChipsStyle}>
             {[
               { label: "G.B", value: playerCard.gb },
@@ -1081,6 +1086,56 @@ function EventCard({ playerName, team, img, type, quarter, minute }: {
         </div>
       </div>
     </div>
+  );
+}
+
+function ShareButton({ name, rating }: { name: string; rating: string }) {
+  const [copied, setCopied] = useState(false);
+
+  function handleShare() {
+    const url = window.location.href;
+    const text = rating
+      ? `${name} rated ${parseFloat(rating).toFixed(1)} Foopy on Foopy AFL`
+      : `Check out ${name}'s performance on Foopy AFL`;
+
+    if (navigator.share) {
+      navigator.share({ title: name, text, url }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(url).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      });
+    }
+  }
+
+  return (
+    <button
+      onClick={handleShare}
+      title="Share"
+      style={{
+        flexShrink: 0,
+        marginTop: 12,
+        display: "flex", alignItems: "center", gap: 5,
+        padding: "6px 12px", borderRadius: 999,
+        background: copied ? "rgba(34,197,94,0.15)" : "var(--surface-3)",
+        border: `1px solid ${copied ? "rgba(34,197,94,0.4)" : "var(--border-2)"}`,
+        color: copied ? "#4ade80" : "var(--text-2)",
+        fontSize: 12, fontWeight: 700, cursor: "pointer",
+        transition: "all 0.15s",
+      }}
+    >
+      {copied ? (
+        <>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Copied
+        </>
+      ) : (
+        <>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          Share
+        </>
+      )}
+    </button>
   );
 }
 
