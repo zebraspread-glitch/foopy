@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { CSSProperties } from "react";
 import seasonsData from "@/app/data/seasons.json";
+import { venueDisplayName } from "@/app/data/venues";
 
 type Season = {
   year: number;
@@ -253,7 +254,7 @@ function GameCard({ game, isWide, year }: { game: Game; isWide: boolean; year?: 
       <div style={gameCardInnerStyle}>
         <TeamBar team={game.hteam} score={game.hscore} goals={game.hgoals} behinds={game.hbehinds} faded={!hWon && aWon} isWide={isWide} year={year} />
         <TeamBar team={game.ateam} score={game.ascore} goals={game.agoals} behinds={game.abehinds} faded={!aWon && hWon} isWide={isWide} year={year} />
-        {game.venue ? <div style={venueStyle}>{game.venue}</div> : null}
+        {game.venue ? <div style={venueStyle}>{venueDisplayName(game.venue)}</div> : null}
       </div>
     </div>
   );

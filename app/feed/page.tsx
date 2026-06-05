@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { TrendingUp, Zap, Calendar } from "lucide-react";
 import PageHeader from "@/app/components/PageHeader";
 import { getGames } from "@/app/lib/gameCache";
+import { venueDisplayName } from "@/app/data/venues";
 import CommentSheet from "./CommentSheet";
 
 type Game = {
@@ -330,7 +331,7 @@ function GameCard({
 
         {/* Footer */}
         <div style={footerStyle}>
-          <span style={footerTextStyle}>{game.venue || "Venue TBA"}</span>
+          <span style={footerTextStyle}>{game.venue ? venueDisplayName(game.venue) : "Venue TBA"}</span>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             {game.date && <span style={footerTextStyle}>{formatDate(game.date)}</span>}
             <span style={commentHintStyle}>

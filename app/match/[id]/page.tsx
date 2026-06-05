@@ -10,7 +10,7 @@ import matchStatsJson from "@/app/data/game-stats.json";
 import teamStatsJson from "@/app/data/team-stats.json";
 import playerStatsJson from "@/app/data/players.json";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
-import { lookupVenue } from "@/app/data/venues";
+import { lookupVenue, venueDisplayName } from "@/app/data/venues";
 import WinnerPick from "./components/WinnerPick";
 import DuelsTab from "./components/DuelsTab";
 import { teamColors } from "./utils";
@@ -3938,7 +3938,7 @@ function MatchPageInner() {
                 {/* Bottom line — venue (upcoming) or viewer count (live/final) */}
                 {status === "UPCOMING" ? (
                   <div className="mh-venue" style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.45)" }}>
-                    Round {game.round ?? "–"} · {game.venue || "Venue TBA"} · {formatDate(game.date)}
+                    Round {game.round ?? "–"} · {game.venue ? venueDisplayName(game.venue) : "Venue TBA"} · {formatDate(game.date)}
                   </div>
                 ) : (
                   <div className="mh-venue" style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 4 }}>

@@ -6,6 +6,7 @@ import TradesInboxModal from "./components/TradesInboxModal";
 import matchStatsRaw from "./data/game-stats.json";
 import playerStatsRaw from "./data/players.json";
 import { API_SPORTS_MATCH_IDS } from "./data/apiSportsMatchIds";
+import { venueDisplayName } from "./data/venues";
 import { getGames, getGamesCached, invalidateGames } from "./lib/gameCache";
 import { foopyRating } from "./match/[id]/utils";
 import { haptic } from "./lib/haptic";
@@ -1518,7 +1519,7 @@ free_kicks?: {
                           {getTimeOnly(game)}
                         </span>
                         {game.venue ? <span style={cardMetaSeparatorStyle}>·</span> : null}
-                        {game.venue ? <span style={cardVenueTextStyle}>{game.venue}</span> : null}
+                        {game.venue ? <span style={cardVenueTextStyle}>{venueDisplayName(game.venue)}</span> : null}
                       </div>
                     </Link>
                   );
@@ -2021,7 +2022,7 @@ function MobileMatchRow({
           {timeText}
         </span>
         {venue ? <span style={cardMetaSeparatorStyle}>·</span> : null}
-        {venue ? <span style={mobileVenueStyle}>{venue}</span> : null}
+        {venue ? <span style={mobileVenueStyle}>{venueDisplayName(venue)}</span> : null}
       </div>
     </div>
   );

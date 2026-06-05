@@ -70,6 +70,12 @@ const ALIASES: Record<string, string> = {
 
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
+/** The real/sponsor display name for a Squiggle venue, or the raw name if unknown. */
+export function venueDisplayName(name: string | null | undefined): string {
+  if (!name) return "";
+  return lookupVenue(name)?.displayName ?? name;
+}
+
 /** Resolve a Squiggle venue name to its VenueInfo (or null if unknown). */
 export function lookupVenue(name: string | null | undefined): VenueInfo | null {
   if (!name) return null;
