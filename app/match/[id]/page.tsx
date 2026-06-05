@@ -4110,26 +4110,26 @@ function MatchPageInner() {
                 const allSeasonStats = [...homeSeasonStats, ...awaySeasonStats];
                 const shown = playerSubTab === "all" ? allSeasonStats : playerSubTab === "home" ? homeSeasonStats : awaySeasonStats;
                 return (
-                  <section style={sectionStyle}>
+                  <section style={{ borderBottom: "1px solid var(--border-2)" }}>
                     <SeasonAvgTable stats={shown} />
                   </section>
                 );
               })()}
 
               {activeTab === "players" && status !== "UPCOMING" && playerSubTab === "all" && (
-                <section style={sectionStyle}>
+                <section style={{ borderBottom: "1px solid var(--border-2)" }}>
                   <StatTable stats={allMatchPlayers} isLive={isLiveGame} isFinal={status === "FINAL"} gameId={Number(id)} bestRating={bestRating} />
                 </section>
               )}
 
               {activeTab === "players" && status !== "UPCOMING" && playerSubTab === "home" && (
-                <section style={sectionStyle}>
+                <section style={{ borderBottom: "1px solid var(--border-2)" }}>
                   <StatTable stats={displayHomeStats} isLive={isLiveGame} isFinal={status === "FINAL"} team={game.hteam} gameId={Number(id)} bestRating={bestRating} />
                 </section>
               )}
 
               {activeTab === "players" && status !== "UPCOMING" && playerSubTab === "away" && (
-                <section style={sectionStyle}>
+                <section style={{ borderBottom: "1px solid var(--border-2)" }}>
                   <StatTable stats={displayAwayStats} isLive={isLiveGame} isFinal={status === "FINAL"} team={game.ateam} gameId={Number(id)} bestRating={bestRating} />
                 </section>
               )}
