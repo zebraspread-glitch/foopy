@@ -260,7 +260,10 @@ async function runResolution() {
     // Fetch score from Squiggle — also used to auto-complete duel_game when
     // the AFL game finishes (complete=100).
     let hScore = 0, aScore = 0;
-    let gameIsComplete = duelGame.status === "complete";
+    // Was the game ALREADY marked complete on a previous cron run?
+    const wasAlreadyComplete = duelGame.status === "complete";
+    let gameIsComplete = wasAlreadyComplete;
+    let justMarkedComplete = false;
     try {
       const sq = await fetch(`https://api.squiggle.com.au/?q=games;game=${duelGame.game_id}`, {
         headers: { "User-Agent": "Foopy AFL App" }, cache: "no-store",
@@ -276,9 +279,9 @@ async function runResolution() {
           // We intentionally do NOT gate on Squiggle's `updated` timestamp —
           // it's in Australian local time with no tz marker, so parsing it on a
           // UTC server gives a time ~10h in the future and the duel never resolves.
-          // Instead we gate the actual resolution on stats being published (below).
           if (!gameIsComplete && num(g.complete) >= 100) {
             gameIsComplete = true;
+            justMarkedComplete = true;
             await db.from("duel_games").update({ status: "complete" }).eq("id", duelGame.id);
           }
         }
@@ -286,6 +289,15 @@ async function runResolution() {
     } catch (e: any) { console.log(`[resolve-duels] duel ${duel.id}: squiggle fetch error ${e?.message}`); }
 
     if (!gameIsComplete) { console.log(`[resolve-duels] duel ${duel.id}: game NOT complete — SKIP`); continue; }
+
+    // Settle delay: only resolve once the game has been complete since a PRIOR
+    // cron run. If it just finished this run, wait one cycle (~10 min) so the
+    // final player stats have time to fully publish in API-Sports — otherwise a
+    // late goal/disposal can be missing and a question scores incorrectly.
+    if (justMarkedComplete) {
+      console.log(`[resolve-duels] duel ${duel.id}: just marked complete this run — waiting one cycle for stats to settle`);
+      continue;
+    }
 
     // Fetch player stats from API-Sports
     const apiSportsId = API_SPORTS_MATCH_IDS[String(duelGame.game_id)];
