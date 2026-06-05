@@ -2291,9 +2291,11 @@ function VenueCard({ venue, date, gameId }: { venue: string; date?: string; game
   if (!venue) return null;
   // Show the real/sponsor name when we know it, else fall back to Squiggle's name.
   const title = info?.displayName ?? venue;
-  const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(
-    info ? `${info.displayName} ${info.location}` : venue
-  )}`;
+  // Known venue → drop a pin at its exact coordinates (precise); otherwise
+  // fall back to a text search on the venue name.
+  const mapsUrl = info
+    ? `https://www.google.com/maps/search/?api=1&query=${info.lat},${info.lon}`
+    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue)}`;
 
   const divider = <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "0 18px" }} />;
 
