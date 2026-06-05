@@ -2319,10 +2319,6 @@ function VenueCard({ venue, date }: { venue: string; date?: string }) {
               <span style={{ fontSize: 15, fontWeight: 800, color: "var(--text-1)" }}>Capacity</span>
               <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>{info.capacity}</span>
             </div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-              <span style={{ fontSize: 15, fontWeight: 800, color: "var(--text-1)" }}>Surface</span>
-              <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>{info.surface}</span>
-            </div>
           </div>
         </>
       )}
