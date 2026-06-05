@@ -2269,9 +2269,30 @@ const WEATHER_DESC: Record<number, string> = {
   95:"Thunderstorms", 96:"Thunderstorms", 99:"Severe thunderstorms",
 };
 
-function VenueCard({ venue }: { venue: string; date?: string }) {
-  if (!venue) return null;
+function VenueCard({ venue, date }: { venue: string; date?: string }) {
   const info = matchVenue(venue);
+  const [weather, setWeather] = useState<{ temp: number; code: number } | null>(null);
+
+  useEffect(() => {
+    if (!info || !date) return;
+    const day = date.slice(0, 10);
+    let cancelled = false;
+    fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${info.lat}&longitude=${info.lon}` +
+      `&daily=temperature_2m_max,weathercode&timezone=auto&start_date=${day}&end_date=${day}`
+    )
+      .then(r => r.json())
+      .then(d => {
+        if (cancelled) return;
+        const temp = d?.daily?.temperature_2m_max?.[0];
+        const code = d?.daily?.weathercode?.[0];
+        if (temp != null && code != null) setWeather({ temp: Math.round(temp), code });
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [info, date]);
+
+  if (!venue) return null;
   const mapsUrl = info
     ? `https://www.google.com/maps/search/${info.mapsQuery}`
     : `https://www.google.com/maps/search/${encodeURIComponent(venue)}`;
@@ -2325,15 +2346,19 @@ function VenueCard({ venue }: { venue: string; date?: string }) {
         </>
       )}
 
-      {/* Weather — placeholder, wired up later */}
-      {divider}
-      <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 18px 17px" }}>
-        <span style={{ fontSize: 16, fontWeight: 800, color: "var(--text-1)" }}>Weather forecast</span>
-        <span style={{ fontSize: 30, lineHeight: 1 }}>⛈️</span>
-        <span style={{ fontSize: 20, fontWeight: 800, color: "var(--text-1)" }}>22°C</span>
-        <span style={{ width: 1, height: 20, background: "rgba(255,255,255,0.15)", flexShrink: 0 }} />
-        <span style={{ fontSize: 16, fontWeight: 600, color: "var(--text-1)" }}>Thunderstorms</span>
-      </div>
+      {/* Weather forecast — live from Open-Meteo for game day */}
+      {weather && (
+        <>
+          {divider}
+          <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 18px 17px" }}>
+            <span style={{ fontSize: 16, fontWeight: 800, color: "var(--text-1)" }}>Weather forecast</span>
+            <span style={{ fontSize: 30, lineHeight: 1 }}>{WEATHER_ICONS[weather.code] ?? "🌡️"}</span>
+            <span style={{ fontSize: 20, fontWeight: 800, color: "var(--text-1)" }}>{weather.temp}°C</span>
+            <span style={{ width: 1, height: 20, background: "rgba(255,255,255,0.15)", flexShrink: 0 }} />
+            <span style={{ fontSize: 16, fontWeight: 600, color: "var(--text-1)" }}>{WEATHER_DESC[weather.code] ?? "—"}</span>
+          </div>
+        </>
+      )}
     </div>
   );
 }
