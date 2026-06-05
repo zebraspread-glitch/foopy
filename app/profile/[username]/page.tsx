@@ -567,18 +567,13 @@ export default function PublicProfilePage() {
         .eq("user_id", p.id);
       setCardCount(count ?? 0);
 
-      const { data: rows } = await supabase
-        .from("friendships")
-        .select("requester_id, addressee_id")
-        .eq("status", "accepted")
-        .or(`requester_id.eq.${p.id},addressee_id.eq.${p.id}`);
-
-      const ids = (rows ?? []).map(r => r.requester_id === p.id ? r.addressee_id : r.requester_id);
-
-      if (ids.length) {
-        const { data } = await supabase.from("profiles").select("id, username, avatar_url, verified").in("id", ids);
-        setFriends((data ?? []) as FriendEntry[]);
-      } else {
+      // Fetch friends via server API (bypasses RLS so we always see the
+      // profile owner's friends, not just the logged-in user's own friendships)
+      try {
+        const friendsRes = await fetch(`/api/profile/friends?user_id=${p.id}`);
+        const friendsJson = await friendsRes.json();
+        setFriends((friendsJson.friends ?? []) as FriendEntry[]);
+      } catch {
         setFriends([]);
       }
 
