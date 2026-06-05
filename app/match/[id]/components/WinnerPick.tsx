@@ -27,6 +27,10 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, ho
   const [myPick, setMyPick]         = useState<Side | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [hasVoted, setHasVoted]     = useState(false);
+  // True until both auth state and existing-vote fetch have resolved —
+  // prevents the race condition where a fast tap submits before we know
+  // the user already voted.
+  const [loadingVotes, setLoadingVotes] = useState(true);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -35,7 +39,7 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, ho
     });
   }, []);
 
-  const loadVotes = useCallback(async (token?: string | null) => {
+  const loadVotes = useCallback(async (token?: string | null, initial = false) => {
     try {
       const headers: Record<string, string> = {};
       const t = token ?? authToken;
@@ -57,12 +61,14 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, ho
         setHasVoted(true);
       }
     } catch {}
+    if (initial) setLoadingVotes(false);
   }, [matchId, authToken]);
 
-  // Load votes once auth is resolved so we can restore the user's pick
+  // Load votes once auth is resolved so we can restore the user's pick.
+  // Pass initial=true so loadingVotes is cleared after the first fetch.
   useEffect(() => {
     if (!matchId || authed === null) return;
-    loadVotes(authToken);
+    loadVotes(authToken, true);
   }, [matchId, authed, authToken, loadVotes]);
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -94,7 +100,7 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, ho
 
   async function pick(side: Side) {
     if (!authed) { router.push("/login"); return; }
-    if (submitting || votingLocked) return;
+    if (submitting || votingLocked || loadingVotes) return;
     if (!authToken) return;
 
     const team = side === "home" ? homeTeam : side === "away" ? awayTeam : "draw";
@@ -125,7 +131,7 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, ho
   }
 
   const showPcts = hasVoted || votingLocked;
-  const locked   = authed === false || votingLocked;
+  const locked   = loadingVotes || authed === false || votingLocked;
 
   const options: { side: Side; logo: string; color: string }[] = [
     { side: "home", logo: getLogo(homeTeam), color: teamColor(homeTeam) },
