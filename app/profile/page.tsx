@@ -42,9 +42,26 @@ const TEAM_PICKER_LIST = [
   { name: "West Coast Eagles", slug: "eagles",    color: "#003087" },
   { name: "Western Bulldogs",  slug: "bulldogs",  color: "#1a5fd4" },
 ];
-const TEAM_LOGO_SLUG: Record<string, string> = Object.fromEntries(
-  TEAM_PICKER_LIST.map(t => [t.name, t.slug])
-);
+const TEAM_LOGO_SLUG: Record<string, string> = {
+  ...Object.fromEntries(TEAM_PICKER_LIST.map(t => [t.name, t.slug])),
+  // Short-name aliases stored by the Settings page
+  Adelaide: "crows", Brisbane: "lions", Geelong: "cats",
+  "Gold Coast": "suns", GWS: "giants", Sydney: "swans",
+  "West Coast": "eagles",
+};
+
+// Resolves favourite_team (stored as either short or full name) to
+// the matching TEAM_PICKER_LIST entry so colour + logo always work.
+function resolveTeam(name: string | null | undefined) {
+  if (!name) return undefined;
+  return (
+    TEAM_PICKER_LIST.find(t => t.name === name) ??
+    TEAM_PICKER_LIST.find(t =>
+      t.name.toLowerCase().startsWith(name.toLowerCase()) ||
+      name.toLowerCase().startsWith(t.name.toLowerCase().split(" ")[0])
+    )
+  );
+}
 
 /* ─────────────────── Types ─────────────────── */
 type FeaturedCardSlot = { player_id: string; rarity: string };
@@ -1762,7 +1779,7 @@ export default function ProfilePage() {
               {/* Favourite team badge */}
               {profile?.favourite_team ? (
                 <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
-                  <div style={{ width: 18, height: 18, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${TEAM_PICKER_LIST.find(t => t.name === profile.favourite_team)?.color ?? "#3b82f6"}18` }}>
+                  <div style={{ width: 18, height: 18, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${resolveTeam(profile.favourite_team)?.color ?? "#3b82f6"}18` }}>
                     <img src={`/team-logos/${TEAM_LOGO_SLUG[profile.favourite_team] ?? "unknown"}.png`} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                   </div>
                   <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-3)", letterSpacing: "-0.01em" }}>{profile.favourite_team}</span>
@@ -2286,7 +2303,8 @@ export default function ProfilePage() {
                 </p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: "52dvh", overflowY: "auto" }}>
                   {TEAM_PICKER_LIST.map(({ name, slug, color }) => {
-                    const active = profile?.favourite_team === name;
+                    const active = profile?.favourite_team === name ||
+                      resolveTeam(profile?.favourite_team)?.name === name;
                     return (
                       <button
                         key={name}
