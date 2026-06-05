@@ -118,8 +118,8 @@ function TopPerformancesInner() {
 
   const filterLabel = FILTERS.find(f => f.key === filter)?.label ?? "Top Performances";
   const subtitle = filter === "round" && round > 0 ? `Round ${round}` :
-    filter === "month" ? new Date().toLocaleString("en-AU", { month: "long", year: "numeric" }) :
-    filter === "season" ? String(new Date().getFullYear()) : "";
+    filter === "month" ? "Last 30 days" :
+    filter === "season" || filter === "season_worst" ? String(new Date().getFullYear()) : "";
 
   return (
     <main style={{ maxWidth: 600, margin: "0 auto", padding: "0 0 60px" }}>

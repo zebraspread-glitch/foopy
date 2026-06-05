@@ -146,9 +146,8 @@ export async function GET(req: Request) {
       }
     } catch {}
   } else if (filter === "month") {
-    // Use Squiggle to find games played this calendar month (same approach as round filter)
-    const now = new Date();
-    const monthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    // Use Squiggle to find completed games in the last 30 days
+    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
     try {
       const sq = await fetch(
         `https://api.squiggle.com.au/?q=games;year=${SEASON}`,
@@ -156,10 +155,12 @@ export async function GET(req: Request) {
       );
       if (sq.ok) {
         const sqData = await sq.json();
-        // Games whose date falls in this month AND are complete
         const squiggleIds = new Set<string>(
           (sqData.games ?? [])
-            .filter((g: any) => String(g.date ?? "").startsWith(monthPrefix) && Number(g.complete) >= 100)
+            .filter((g: any) => {
+              const gameDate = String(g.date ?? "").slice(0, 10);
+              return gameDate >= cutoff && Number(g.complete) >= 100;
+            })
             .map((g: any) => String(g.id))
         );
         allowedGameIds = new Set<string>();
