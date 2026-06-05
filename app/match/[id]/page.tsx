@@ -1433,28 +1433,15 @@ function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating }: { 
               const knownPlayer = findPlayerInfo(name);
               const rowTeam = safeText(knownPlayer?.club ?? knownPlayer?.team ?? p.team ?? team, "");
               const rating = foopyRating(p);
-              const playerKey = `player_${slugName(name)}`;
-              const count = playerCommentCounts[playerKey] ?? 0;
-              const gb = `${statValue(p.goals)}.${statValue(p.behinds)}`;
-
-              const playerParams = new URLSearchParams({
-                label: name,
-                team: rowTeam,
-                rating: String(rating),
-                gb,
-                d: String(statValue(p.disposals)),
-                k: String(statValue(p.kicks)),
-                h: String(statValue(p.handballs)),
-                m: String(statValue(p.marks)),
-                t: String(statValue(p.tackles)),
-                ho: String(statValue(p.hitouts)),
-              });
+              const playerSlugUrl = slugName(name);
+              const playerDbKey = `player_${playerSlugUrl}`; // DB event_key still uses player_ prefix
+              const count = playerCommentCounts[playerDbKey] ?? 0;
 
               return (
                 <tr
                   key={`${name}-${index}`}
                   style={{ cursor: "pointer" }}
-                  onClick={() => router.push(`/match/${gameId}/${encodeURIComponent(playerKey)}?${playerParams}`)}
+                  onClick={() => router.push(`/match/${gameId}/${playerSlugUrl}`)}
                 >
                   <td style={tdPlayerStyle}>
                     <span style={playerNameCellStyle}>

@@ -165,7 +165,16 @@ function EventCommentsPageInner() {
   const searchParams = useSearchParams();
 
   const gameId = Number(params?.id ?? 0);
-  const eventKey = String(params?.event ?? "");
+  const rawEvent = String(params?.event ?? "");
+  // A plain lowercase slug (no known event-type prefix) is a player page.
+  // Normalise it to the internal player_ prefix so all DB / comment / stats
+  // lookups work identically whether the URL is /player_jordandawson or /jordandawson.
+  const eventKey = (
+    !rawEvent.startsWith("score_") &&
+    !rawEvent.startsWith("poll_") &&
+    !rawEvent.startsWith("player_") &&
+    !/^q\d/.test(rawEvent) // quarter events: q1_m12_t...
+  ) ? `player_${rawEvent}` : rawEvent;
   const aliasParam = searchParams.get("aliases");
   const eventKeys = useMemo(
     () => eventKeyAliasesFromParams(eventKey, aliasParam),
