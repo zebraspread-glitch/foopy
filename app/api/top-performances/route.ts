@@ -81,6 +81,7 @@ export type PerformanceEntry = {
   opponent: string | null;
   image: string;
   gameApiSportsId: string;
+  squiggleGameId: string | null;
   goals: number;
   disposals: number;
   kicks: number;
@@ -131,77 +132,19 @@ export async function GET(req: Request) {
     }
   } catch {}
 
-  // ── 2. Determine which game IDs to include based on filter ────────────────
-  let allowedGameIds: Set<string> | null = null; // null = all
-
-  if (filter === "round" && roundNum > 0) {
-    // Fetch Squiggle games for this round to get their IDs
-    try {
-      const sq = await fetch(
-        `https://api.squiggle.com.au/?q=games;year=${SEASON};round=${roundNum}`,
-        { headers: { "User-Agent": "Foopy AFL App" }, cache: "no-store" }
-      );
-      if (sq.ok) {
-        const sqData = await sq.json();
-        const squiggleIds = new Set<string>((sqData.games ?? []).map((g: any) => String(g.id)));
-        allowedGameIds = new Set<string>();
-        for (const [sqId, apiId] of Object.entries(API_SPORTS_MATCH_IDS as Record<string, string>)) {
-          if (squiggleIds.has(sqId)) allowedGameIds.add(String(apiId));
-        }
-      }
-    } catch {}
-  } else if (filter === "month") {
-    // Use Squiggle to find completed games in the last 30 days
-    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    try {
-      const sq = await fetch(
-        `https://api.squiggle.com.au/?q=games;year=${SEASON}`,
-        { headers: { "User-Agent": "Foopy AFL App" }, cache: "no-store" }
-      );
-      if (sq.ok) {
-        const sqData = await sq.json();
-        const squiggleIds = new Set<string>(
-          (sqData.games ?? [])
-            .filter((g: any) => {
-              const gameDate = String(g.date ?? "").slice(0, 10);
-              return gameDate >= cutoff && Number(g.complete) >= 100;
-            })
-            .map((g: any) => String(g.id))
-        );
-        allowedGameIds = new Set<string>();
-        for (const [sqId, apiId] of Object.entries(API_SPORTS_MATCH_IDS as Record<string, string>)) {
-          if (squiggleIds.has(sqId)) allowedGameIds.add(String(apiId));
-        }
-      }
-    } catch {}
-  } else if (filter === "season") {
-    allowedGameIds = new Set<string>(
-      Object.entries(gameStats)
-        .filter(([, g]) => String(g.date ?? "").startsWith(SEASON))
-        .map(([id]) => id)
-    );
-  }
-  // "season_worst" → allowedGameIds stays null (all current-season games handled in loop)
-
-  // ── 3. Build player lookup by apiSportsId ──────────────────────────────────
-  const playerById = new Map<number, { name: string; team: string }>();
-  for (const p of playersArr) {
-    if (p.apiSportsId) {
-      playerById.set(Number(p.apiSportsId), {
-        name: String(p.name ?? p.player ?? ""),
-        team: String(p.team ?? p.club ?? ""),
-      });
-    }
-  }
-
-  // ── 4. Fetch Squiggle game info (round + teams) BEFORE the entry loop ────────
-  // apiSportsId → { round, hteam, ateam }
+  // ── 2. Build apiSportsId ↔ squiggleId maps ───────────────────────────────
   const apiToSquiggle = new Map<string, string>();
+  const squiggleToApi = new Map<string, string>();
   for (const [sqId, apiId] of Object.entries(API_SPORTS_MATCH_IDS as Record<string, string>)) {
     apiToSquiggle.set(String(apiId), sqId);
+    squiggleToApi.set(sqId, String(apiId));
   }
 
-  const squiggleGameInfo = new Map<string, { round: number; hteam: string; ateam: string }>();
+  // ── 3. Fetch ALL season Squiggle games once — used for filtering AND enrichment
+  type SqGame = { id: string; round: number; hteam: string; ateam: string; date: string; complete: number };
+  const squiggleGames: SqGame[] = [];
+  // squiggleId → SqGame
+  const squiggleGameInfo = new Map<string, SqGame>();
   try {
     const sq = await fetch(
       `https://api.squiggle.com.au/?q=games;year=${SEASON}`,
@@ -210,19 +153,69 @@ export async function GET(req: Request) {
     if (sq.ok) {
       const sqData = await sq.json();
       for (const g of sqData.games ?? []) {
-        // keyed by squiggle ID
-        squiggleGameInfo.set(String(g.id), {
-          round: Number(g.round),
-          hteam: String(g.hteam ?? ""),
-          ateam: String(g.ateam ?? ""),
-        });
+        const entry: SqGame = {
+          id:       String(g.id),
+          round:    Number(g.round),
+          hteam:    String(g.hteam ?? ""),
+          ateam:    String(g.ateam ?? ""),
+          date:     String(g.date ?? "").slice(0, 10),
+          complete: Number(g.complete ?? 0),
+        };
+        squiggleGames.push(entry);
+        squiggleGameInfo.set(entry.id, entry);
       }
     }
   } catch {}
 
-  function getSquiggleInfo(apiSportsId: string) {
+  function getSquiggleInfo(apiSportsId: string): SqGame | null {
     const sqId = apiToSquiggle.get(apiSportsId);
     return sqId ? squiggleGameInfo.get(sqId) ?? null : null;
+  }
+
+  // ── 4. Determine which game IDs to include based on filter ────────────────
+  let allowedGameIds: Set<string> | null = null; // null = all games
+
+  if (filter === "round") {
+    // If no round supplied, auto-detect the latest completed round
+    let targetRound = roundNum;
+    if (targetRound <= 0 && squiggleGames.length > 0) {
+      const completed = squiggleGames.filter(g => g.complete >= 100);
+      targetRound = completed.length ? Math.max(...completed.map(g => g.round)) : 1;
+    }
+    allowedGameIds = new Set<string>();
+    for (const g of squiggleGames) {
+      if (g.round === targetRound && g.complete >= 100) {
+        const apiId = squiggleToApi.get(g.id);
+        if (apiId) allowedGameIds.add(apiId);
+      }
+    }
+  } else if (filter === "month") {
+    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    allowedGameIds = new Set<string>();
+    for (const g of squiggleGames) {
+      if (g.date >= cutoff && g.complete >= 100) {
+        const apiId = squiggleToApi.get(g.id);
+        if (apiId) allowedGameIds.add(apiId);
+      }
+    }
+  } else if (filter === "season") {
+    allowedGameIds = new Set<string>(
+      Object.entries(gameStats)
+        .filter(([, g]) => String(g.date ?? "").startsWith(SEASON))
+        .map(([id]) => id)
+    );
+  }
+  // "season_worst" → allowedGameIds stays null (season filter applied in loop)
+
+  // ── 5. Build player lookup by apiSportsId ─────────────────────────────────
+  const playerById = new Map<number, { name: string; team: string }>();
+  for (const p of playersArr) {
+    if (p.apiSportsId) {
+      playerById.set(Number(p.apiSportsId), {
+        name: String(p.name ?? p.player ?? ""),
+        team: String(p.team ?? p.club ?? ""),
+      });
+    }
   }
 
   const norm = (s: string) => s.toLowerCase().replace(/[^a-z]/g, "");
@@ -305,6 +298,7 @@ export async function GET(req: Request) {
           opponent,
           image: playerImagePath(name, team),
           gameApiSportsId: gameId,
+          squiggleGameId: apiToSquiggle.get(gameId) ?? null,
           goals,
           disposals,
           kicks,
