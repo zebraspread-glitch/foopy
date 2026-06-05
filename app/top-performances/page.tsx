@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
 import Link from "next/link";
@@ -91,20 +91,23 @@ function TopPerformancesInner() {
   const [entries, setEntries] = useState<PerformanceEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const load = useCallback(async (f: Filter, r: number) => {
+  useEffect(() => {
+    const controller = new AbortController();
     setLoading(true);
     setEntries([]);
-    try {
-      const params = new URLSearchParams({ filter: f });
-      if (f === "round" && r > 0) params.set("round", String(r));
-      const res = await fetch(`/api/top-performances?${params}`);
-      const json = await res.json();
-      setEntries(json.entries ?? []);
-    } catch {}
-    setLoading(false);
-  }, []);
-
-  useEffect(() => { load(filter, round); }, [filter, round, load]);
+    const params = new URLSearchParams({ filter });
+    if (filter === "round" && round > 0) params.set("round", String(round));
+    fetch(`/api/top-performances?${params}`, { signal: controller.signal, cache: "no-store" })
+      .then(r => r.json())
+      .then(json => {
+        setEntries(json.entries ?? []);
+        setLoading(false);
+      })
+      .catch(err => {
+        if (err.name !== "AbortError") setLoading(false);
+      });
+    return () => controller.abort();
+  }, [filter, round]);
 
   function changeFilter(f: Filter) {
     setFilter(f);
