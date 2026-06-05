@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { surname } from "@/app/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -94,7 +95,7 @@ const TradeMiniCard = memo(function TradeMiniCard({ rarity, playerName, team, pl
         </div>
         {/* Name */}
         <div style={{ position: "absolute", bottom: 2, left: 0, right: 0, textAlign: "center", fontSize: 5.5, fontWeight: 900, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", padding: "0 2px", textShadow: `0 0 6px ${meta.glow}` }}>
-          {playerName.split(" ").pop()}
+          {surname(playerName)}
         </div>
       </div>
     </div>

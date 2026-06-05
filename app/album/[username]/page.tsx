@@ -7,6 +7,7 @@ import { getPassLevel, xpProgressLabel, PLAYER_PASS_LEVELS, TEAM_PASS_LEVELS, de
 import PassLeaderboard from "@/app/components/PassLeaderboard";
 import TeamPassLeaderboard from "@/app/components/TeamPassLeaderboard";
 import { supabase } from "@/app/lib/supabase";
+import { surname } from "@/app/lib/format";
 import { PlayerCard as SharedPlayerCard } from "@/app/components/PlayerCard";
 
 type Rarity = "bronze" | "silver" | "gold" | "emerald" | "sapphire" | "ruby" | "amethyst" | "diamond" | "pinkdiamond" | "mythic";
@@ -892,7 +893,7 @@ function MiniCard({ card, player, selected, onToggle }: {
           textAlign: "center", fontSize: 7.5, fontWeight: 900, color: "#fff",
           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           textShadow: `0 0 8px ${meta.glow}`,
-        }}>{card.player_name.split(" ").pop()}</div>
+        }}>{surname(card.player_name)}</div>
       </div>
       {/* Check badge */}
       {selected && (

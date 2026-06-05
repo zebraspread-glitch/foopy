@@ -9,6 +9,7 @@ import { API_SPORTS_MATCH_IDS } from "./data/apiSportsMatchIds";
 import { getGames, getGamesCached, invalidateGames } from "./lib/gameCache";
 import { foopyRating } from "./match/[id]/utils";
 import { haptic } from "./lib/haptic";
+import { surname } from "./lib/format";
 import { supabase } from "./lib/supabase";
 
 type Game = {
@@ -1654,7 +1655,7 @@ free_kicks?: {
                         whiteSpace: "nowrap",
                         display: "block",
                       }}>
-                        {player.name.split(" ").pop()}
+                        {surname(player.name)}
                       </span>
                     </div>
                   );
@@ -1704,7 +1705,7 @@ free_kicks?: {
 
                   {/* Primary player info */}
                   <div style={{ padding: "10px 12px 4px" }}>
-                    <div style={statLeaderNameStyle}>{top.name.split(" ").pop()}</div>
+                    <div style={statLeaderNameStyle}>{surname(top.name)}</div>
                   </div>
 
                   {/* 2nd and 3rd */}
@@ -1723,7 +1724,7 @@ free_kicks?: {
                           initials={getInitials(p.name)}
                         />
                       </div>
-                      <span style={{ flex: 1, minWidth: 0, fontSize: "11px", fontWeight: 700, color: "rgba(255,255,255,0.6)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name.split(" ").pop()}</span>
+                      <span style={{ flex: 1, minWidth: 0, fontSize: "11px", fontWeight: 700, color: "rgba(255,255,255,0.6)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{surname(p.name)}</span>
                       <span style={{ fontSize: "13px", fontWeight: 800, color: "var(--text-2)", flexShrink: 0 }}>{p.value}<span style={{ fontSize: "9px", opacity: 0.55, marginLeft: 1 }}>{unit}</span></span>
                     </div>
                     );
