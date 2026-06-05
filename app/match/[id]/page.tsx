@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, use
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Check, ChevronLeft } from "lucide-react";
 import matchStatsJson from "@/app/data/game-stats.json";
 import teamStatsJson from "@/app/data/team-stats.json";
@@ -2710,6 +2710,7 @@ function ScoreWorm({
 function MatchPageInner() {
   const params = useParams();
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const id = String(params?.id ?? "");
 
@@ -3556,35 +3557,48 @@ function MatchPageInner() {
       });
   }, [id, liveEvents]);
 
-  // Re-fetch comment counts when user returns to this tab/page.
-  // This catches the case where the user navigated to the event comment page,
-  // posted a comment, then came back — the Next.js router cache keeps this
-  // component mounted so the initial effect never re-runs.
+  // Refetch event comment counts whenever the user navigates back to this page
+  // (e.g. after posting a comment on an event subpage). usePathname() changes
+  // on every client-side navigation so this runs each time the path becomes
+  // /match/[id] again, even when Next.js keeps the component in its router cache.
   useEffect(() => {
     if (!id) return;
+    // Only run when we're on the match root — not on event subpages
+    if (pathname !== `/match/${id}`) return;
     const gameId = Number(id);
-
-    function refetchCounts() {
-      supabase
-        .from("feed_comments")
-        .select("event_key")
-        .eq("game_id", gameId)
-        .not("event_key", "is", null)
-        .then(({ data }) => {
-          if (!data) return;
-          const counts: Record<string, number> = {};
-          for (const row of data as { event_key: string }[]) {
-            counts[row.event_key] = (counts[row.event_key] ?? 0) + 1;
+    supabase
+      .from("feed_comments")
+      .select("event_key, body, likes, user_id, parent_id")
+      .eq("game_id", gameId)
+      .not("event_key", "is", null)
+      .then(async ({ data }) => {
+        if (!data) return;
+        const counts: Record<string, number> = {};
+        const topCandidates: Record<string, { body: string; likes: number; user_id: string }> = {};
+        for (const row of data as { event_key: string; body: string; likes: number | null; user_id: string; parent_id: string | null }[]) {
+          counts[row.event_key] = (counts[row.event_key] ?? 0) + 1;
+          if (!row.parent_id) {
+            const likes = row.likes ?? 0;
+            const existing = topCandidates[row.event_key];
+            if (!existing || likes > existing.likes) {
+              topCandidates[row.event_key] = { body: row.body, likes, user_id: row.user_id };
+            }
           }
-          setEventCommentCounts(counts);
-        });
-    }
-
-    // Refetch when the tab becomes visible again (user returns from event page)
-    function onVisible() { if (document.visibilityState === "visible") refetchCounts(); }
-    document.addEventListener("visibilitychange", onVisible);
-    return () => document.removeEventListener("visibilitychange", onVisible);
-  }, [id]);
+        }
+        setEventCommentCounts(counts);
+        const userIds = Array.from(new Set(Object.values(topCandidates).map(c => c.user_id)));
+        if (!userIds.length) return;
+        const { data: profiles } = await supabase.from("profiles").select("id, username, display_name, avatar_url").in("id", userIds);
+        const profileMap: Record<string, { name: string; avatar: string | null }> = {};
+        for (const p of profiles ?? []) profileMap[(p as any).id] = { name: (p as any).display_name || (p as any).username || "User", avatar: (p as any).avatar_url ?? null };
+        const topMap: Record<string, { body: string; username: string; avatar: string | null }> = {};
+        for (const [key, c] of Object.entries(topCandidates)) {
+          const prof = profileMap[c.user_id];
+          topMap[key] = { body: c.body, username: prof?.name ?? "User", avatar: prof?.avatar ?? null };
+        }
+        setEventTopComments(topMap);
+      });
+  }, [id, pathname]);
 
   // Declared here (before any early returns) so hook call count is always stable.
   // Use live/final API stats when available; fall back to static JSON for older games.
