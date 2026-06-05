@@ -10,6 +10,7 @@ import matchStatsJson from "@/app/data/game-stats.json";
 import teamStatsJson from "@/app/data/team-stats.json";
 import playerStatsJson from "@/app/data/players.json";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
+import { lookupVenue } from "@/app/data/venues";
 import WinnerPick from "./components/WinnerPick";
 import DuelsTab from "./components/DuelsTab";
 import { teamColors } from "./utils";
@@ -2219,44 +2220,6 @@ function buildLadder(games: MatchGame[]): (LadderTeam & { rank: number })[] {
   return sorted.map((t, i) => ({ ...t, rank: i + 1 }));
 }
 
-// ── AFL Venues lookup ─────────────────────────────────────────────────────────
-const AFL_VENUES: Record<string, { city: string; capacity: string; surface: string; lat: number; lon: number; mapsQuery: string }> = {
-  "MCG":               { city: "Melbourne, VIC",    capacity: "100,024", surface: "Grass",       lat: -37.8200, lon: 144.9834, mapsQuery: "MCG+Melbourne" },
-  "Marvel Stadium":    { city: "Melbourne, VIC",    capacity: "56,347",  surface: "Artificial",  lat: -37.8165, lon: 144.9476, mapsQuery: "Marvel+Stadium+Melbourne" },
-  "Docklands":         { city: "Melbourne, VIC",    capacity: "56,347",  surface: "Artificial",  lat: -37.8165, lon: 144.9476, mapsQuery: "Marvel+Stadium+Melbourne" },
-  "Adelaide Oval":     { city: "Adelaide, SA",      capacity: "53,583",  surface: "Grass",       lat: -34.9156, lon: 138.5961, mapsQuery: "Adelaide+Oval" },
-  "Norwood Oval":      { city: "Adelaide, SA",      capacity: "12,000",  surface: "Grass",       lat: -34.9200, lon: 138.6389, mapsQuery: "Norwood+Oval+Adelaide" },
-  "Optus Stadium":     { city: "Perth, WA",         capacity: "60,000",  surface: "Grass",       lat: -31.9505, lon: 115.8890, mapsQuery: "Optus+Stadium+Perth" },
-  "GABBA":             { city: "Brisbane, QLD",     capacity: "42,000",  surface: "Grass",       lat: -27.4858, lon: 153.0381, mapsQuery: "GABBA+Brisbane" },
-  "Metricon Stadium":  { city: "Gold Coast, QLD",   capacity: "25,000",  surface: "Grass",       lat: -28.0076, lon: 153.3990, mapsQuery: "Metricon+Stadium+Gold+Coast" },
-  "People First Stadium": { city: "Gold Coast, QLD", capacity: "25,000", surface: "Grass",       lat: -28.0076, lon: 153.3990, mapsQuery: "People+First+Stadium+Gold+Coast" },
-  "SCG":               { city: "Sydney, NSW",       capacity: "48,013",  surface: "Grass",       lat: -33.8913, lon: 151.2247, mapsQuery: "SCG+Sydney" },
-  "Accor Stadium":     { city: "Sydney, NSW",       capacity: "83,500",  surface: "Grass",       lat: -33.8471, lon: 151.0630, mapsQuery: "Accor+Stadium+Sydney" },
-  "GMHBA Stadium":     { city: "Geelong, VIC",      capacity: "36,000",  surface: "Grass",       lat: -38.1550, lon: 144.3550, mapsQuery: "GMHBA+Stadium+Geelong" },
-  "Kardinia Park":     { city: "Geelong, VIC",      capacity: "36,000",  surface: "Grass",       lat: -38.1550, lon: 144.3550, mapsQuery: "GMHBA+Stadium+Geelong" },
-  "Blundstone Arena":  { city: "Hobart, TAS",       capacity: "16,200",  surface: "Grass",       lat: -42.8694, lon: 147.3347, mapsQuery: "Blundstone+Arena+Hobart" },
-  "Manuka Oval":       { city: "Canberra, ACT",     capacity: "15,000",  surface: "Grass",       lat: -35.3155, lon: 149.1265, mapsQuery: "Manuka+Oval+Canberra" },
-  "Cazaly's Stadium":  { city: "Cairns, QLD",       capacity: "13,500",  surface: "Grass",       lat: -16.9186, lon: 145.7781, mapsQuery: "Cazalys+Stadium+Cairns" },
-  "Mars Stadium":      { city: "Ballarat, VIC",     capacity: "12,000",  surface: "Grass",       lat: -37.5541, lon: 143.8483, mapsQuery: "Mars+Stadium+Ballarat" },
-  "TIO Traeger Park":  { city: "Alice Springs, NT", capacity: "10,000",  surface: "Grass",       lat: -23.7050, lon: 133.8803, mapsQuery: "TIO+Traeger+Park+Alice+Springs" },
-  "TIO Stadium":       { city: "Darwin, NT",        capacity: "12,500",  surface: "Grass",       lat: -12.3992, lon: 130.8854, mapsQuery: "TIO+Stadium+Marrara+Darwin" },
-  "Marrara Oval":      { city: "Darwin, NT",        capacity: "12,500",  surface: "Grass",       lat: -12.3992, lon: 130.8854, mapsQuery: "TIO+Stadium+Marrara+Darwin" },
-  "UTAS Stadium":      { city: "Launceston, TAS",   capacity: "20,000",  surface: "Grass",       lat: -41.4349, lon: 147.1426, mapsQuery: "UTAS+Stadium+Launceston" },
-  "Hands Oval":        { city: "Bunbury, WA",       capacity: "8,000",   surface: "Grass",       lat: -33.3289, lon: 115.6447, mapsQuery: "Hands+Oval+Bunbury" },
-  "Summit Sport and Recreation Park": { city: "Mount Barker, SA", capacity: "10,000", surface: "Grass", lat: -35.0697, lon: 138.8597, mapsQuery: "Summit+Sport+Recreation+Park+Mount+Barker" },
-  "Sydney Showground Stadium": { city: "Sydney, NSW", capacity: "24,000", surface: "Grass",      lat: -33.8451, lon: 151.0680, mapsQuery: "Sydney+Showground+Stadium" },
-};
-
-function matchVenue(name: string): typeof AFL_VENUES[string] | null {
-  if (!name) return null;
-  const n = name.toLowerCase().replace(/[^a-z0-9]/g, "");
-  for (const [key, val] of Object.entries(AFL_VENUES)) {
-    if (n.includes(key.toLowerCase().replace(/[^a-z0-9]/g, "")) ||
-        key.toLowerCase().replace(/[^a-z0-9]/g, "").includes(n)) return val;
-  }
-  return null;
-}
-
 const WEATHER_ICONS: Record<number, string> = {
   0:"☀️", 1:"🌤️", 2:"⛅", 3:"☁️", 45:"🌫️", 48:"🌫️",
   51:"🌦️", 53:"🌦️", 55:"🌧️", 61:"🌧️", 63:"🌧️", 65:"🌧️",
@@ -2274,7 +2237,7 @@ const WEATHER_DESC: Record<number, string> = {
 };
 
 function VenueCard({ venue, date }: { venue: string; date?: string }) {
-  const info = matchVenue(venue);
+  const info = lookupVenue(venue);
   const [weather, setWeather] = useState<{ temp: number; code: number } | null>(null);
 
   useEffect(() => {
@@ -2314,9 +2277,11 @@ function VenueCard({ venue, date }: { venue: string; date?: string }) {
   }, [info, date, venue]);
 
   if (!venue) return null;
-  const mapsUrl = info
-    ? `https://www.google.com/maps/search/${info.mapsQuery}`
-    : `https://www.google.com/maps/search/${encodeURIComponent(venue)}`;
+  // Show the real/sponsor name when we know it, else fall back to Squiggle's name.
+  const title = info?.displayName ?? venue;
+  const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(
+    info ? `${info.displayName} ${info.location}` : venue
+  )}`;
 
   const divider = <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "0 18px" }} />;
 
@@ -2332,8 +2297,8 @@ function VenueCard({ venue, date }: { venue: string; date?: string }) {
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "18px 18px 16px" }}>
         <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: "var(--text-1)", letterSpacing: "-0.02em", lineHeight: 1.15 }}>{venue}</div>
-            {info?.city && <div style={{ fontSize: 13, color: "var(--text-3)", fontWeight: 500, marginTop: 4 }}>{info.city}</div>}
+            <div style={{ fontSize: 18, fontWeight: 800, color: "var(--text-1)", letterSpacing: "-0.02em", lineHeight: 1.15 }}>{title}</div>
+            {info?.location && <div style={{ fontSize: 13, color: "var(--text-3)", fontWeight: 500, marginTop: 4 }}>{info.location}</div>}
           </div>
         </div>
         <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", flexShrink: 0 }}>
