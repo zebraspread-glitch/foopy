@@ -4086,7 +4086,6 @@ function MatchPageInner() {
                 <div style={{ ...freeKickBarRightStyle, width: `${awayFreePct}%`, background: teamColor(game.ateam, "away") }} />
               </div>
 
-              <div style={freeKickMessageStyle}>{umpireText}</div>
             </div>
 
             <div style={{ padding: "0 16px 16px" }}>
