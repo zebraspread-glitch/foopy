@@ -419,7 +419,7 @@ export default function AdminDuelsPage() {
                 <TeamOption logo={getTeamLogo(selectedGame.ateam)} name={selectedGame.ateam} />
               </div>
               <div style={{ fontSize: 12, color: "#64748b", marginTop: 8 }}>
-                Margin ranges: {MARGIN_RANGES.join(", ")} · auto-scored from final score
+                Exact margin · closest guess wins · auto-scored from final score
               </div>
             </div>
           </div>

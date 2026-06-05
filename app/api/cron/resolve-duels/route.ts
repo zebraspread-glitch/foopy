@@ -397,7 +397,8 @@ async function runResolution() {
         winnerId = duel.challenger_id;
       } else if (oTeamRight && !cTeamRight) {
         winnerId = duel.opponent_id;
-      } else if (cTeamRight && oTeamRight && tbQuestion.correct_margin) {
+      } else if (tbQuestion.correct_margin) {
+        // Both picked same team (right or wrong) — closest margin wins
         const correctMid = pickMarginNum(tbQuestion.correct_margin);
         const cpDist = Math.abs(pickMarginNum(cp?.pick_margin) - correctMid);
         const opDist = Math.abs(pickMarginNum(op?.pick_margin) - correctMid);
