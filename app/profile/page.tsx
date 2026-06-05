@@ -2532,8 +2532,8 @@ export default function ProfilePage() {
               </button>
             </div>
 
-            {/* Body */}
-            <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", paddingBottom: "calc(16px + env(safe-area-inset-bottom))" }}>
+            {/* Body — key resets scroll to top whenever a different popup opens */}
+            <div key={statsPopup} style={{ flex: 1, overflowY: "auto", padding: "16px 20px", paddingBottom: "calc(16px + env(safe-area-inset-bottom))" }}>
 
               {/* Games popup */}
               {statsPopup === "games" && (
