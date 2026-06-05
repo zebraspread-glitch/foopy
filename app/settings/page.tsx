@@ -620,6 +620,17 @@ export default function SettingsPage() {
             </Row>
           </Section>
 
+          {/* ── Disclaimer ── */}
+          <p style={{
+            fontSize: 11.5, lineHeight: 1.6, color: "var(--text-3)", fontWeight: 500,
+            textAlign: "center", padding: "0 14px", margin: 0,
+          }}>
+            Foopy is an unofficial fan-made app. It is not affiliated with,
+            endorsed by, or associated with the Australian Football League (AFL),
+            the AFL Players' Association, or any AFL club. All team names, logos,
+            player names and related marks are the property of their respective owners.
+          </p>
+
         </div>
 
         {/* ── Team Picker popup ── */}
