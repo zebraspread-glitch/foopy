@@ -23,6 +23,21 @@ type PerformanceEntry = {
   tackles: number;
 };
 
+const TEAM_ABBR: Record<string, string> = {
+  Adelaide:"ADE","Adelaide Crows":"ADE",Brisbane:"BRI","Brisbane Lions":"BRI",
+  Carlton:"CAR",Collingwood:"COL",Essendon:"ESS",Fremantle:"FRE",
+  Geelong:"GEE","Geelong Cats":"GEE","Gold Coast":"GC","Gold Coast Suns":"GC",
+  GWS:"GWS","GWS Giants":"GWS","Greater Western Sydney":"GWS",
+  Hawthorn:"HAW",Melbourne:"MEL","North Melbourne":"NM","Port Adelaide":"PA",
+  Richmond:"RIC","St Kilda":"STK",Sydney:"SYD","Sydney Swans":"SYD",
+  "West Coast":"WCE","West Coast Eagles":"WCE","Western Bulldogs":"WB",
+};
+
+function abbr(team: string | null): string {
+  if (!team) return "";
+  return TEAM_ABBR[team] ?? team.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 3);
+}
+
 type Filter = "round" | "month" | "season" | "season_worst";
 
 const FILTERS: { key: Filter; label: string }[] = [
@@ -217,15 +232,11 @@ function TopPerformancesInner() {
                 </div>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {entry.name.split(" ").slice(-1)[0]}
+                    {entry.name}
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 1 }}>
-                    {entry.round != null && (
-                      <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text-4)" }}>Rd {entry.round}</span>
-                    )}
-                    {entry.opponent && (
-                      <span style={{ fontSize: 10, color: "var(--text-4)" }}>vs {entry.opponent.split(" ").slice(-1)[0]}</span>
-                    )}
+                  <div style={{ fontSize: 10, fontWeight: 600, color: "var(--text-4)", marginTop: 1, whiteSpace: "nowrap" }}>
+                    {entry.round != null ? `Rd ${entry.round}` : ""}
+                    {entry.round != null && entry.opponent ? ` vs ${abbr(entry.opponent)}` : ""}
                   </div>
                 </div>
               </div>
@@ -240,12 +251,16 @@ function TopPerformancesInner() {
                 ))}
               </div>
 
-              {/* Rating */}
-              <div style={{ flexShrink: 0, textAlign: "right", minWidth: 40 }}>
-                <div style={{ fontSize: 18, fontWeight: 900, color: ratingColor, lineHeight: 1, letterSpacing: "-0.02em" }}>
+              {/* Rating box */}
+              <div style={{
+                flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center",
+                background: ratingColor, borderRadius: 8, padding: "5px 10px", minWidth: 48,
+                boxShadow: `0 2px 8px ${ratingColor}66`,
+              }}>
+                <span style={{ fontSize: 17, fontWeight: 900, color: "#fff", lineHeight: 1, letterSpacing: "-0.02em" }}>
                   {entry.rating.toFixed(1)}
-                </div>
-                <div style={{ fontSize: 8, fontWeight: 800, color: "var(--text-4)", letterSpacing: "0.1em", marginTop: 2 }}>FOOPY</div>
+                </span>
+                <span style={{ fontSize: 8, fontWeight: 800, color: "rgba(255,255,255,0.7)", letterSpacing: "0.1em", marginTop: 2 }}>FOOPY</span>
               </div>
             </div>
           );
