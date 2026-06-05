@@ -1120,7 +1120,7 @@ function PicksLockedScreen({
           return (
             <div key={q.id} style={{ display: "grid", gridTemplateColumns: "1fr 62px 1fr", borderBottom: isLast ? "none" : "1px solid rgba(255,255,255,0.05)", background: rowBg }}>
               {/* YOU */}
-              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 10px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 4px 10px 8px" }}>
                 <div style={{ position: "relative", width: az, height: az, flexShrink: 0 }}>
                   <div style={{ width: az, height: az, borderRadius: "50%", overflow: "hidden", background: `${myColor}20`, border: `2px solid ${myWins === true ? "#22c55e" : myWins === false ? myColor + "22" : myColor + "55"}` }}>
                     {myImg && <img src={myImg} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
@@ -1129,7 +1129,7 @@ function PicksLockedScreen({
                 </div>
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div className="dp-name" style={{ fontSize: 11, fontWeight: 600, color: myWins === false ? "var(--text-4)" : "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{myName}</div>
-                  {myVal && <div style={{ fontSize: 16, fontWeight: 900, color: myWins === true ? "#22c55e" : myWins === false ? "var(--text-4)" : "var(--text-2)", textShadow: myWins === true ? "0 0 10px rgba(34,197,94,0.45)" : undefined, letterSpacing: "-0.03em", lineHeight: 1 }}>{myVal}</div>}
+                  {myVal && <div style={{ fontSize: 22, fontWeight: 900, color: myWins === true ? "#22c55e" : myWins === false ? "var(--text-4)" : "var(--text-2)", textShadow: myWins === true ? "0 0 10px rgba(34,197,94,0.45)" : undefined, letterSpacing: "-0.04em", lineHeight: 1 }}>{myVal}</div>}
                 </div>
               </div>
               {/* CENTER pill */}
@@ -1137,7 +1137,7 @@ function PicksLockedScreen({
                 <span style={{ fontSize: 9, fontWeight: 800, color: "var(--text-4)", letterSpacing: "0.05em", textTransform: "uppercase" as const, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 999, padding: "3px 7px", whiteSpace: "nowrap" as const }}>{catLabel}</span>
               </div>
               {/* OPP */}
-              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 10px", flexDirection: "row-reverse" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 8px 10px 4px", flexDirection: "row-reverse" }}>
                 <div style={{ position: "relative", width: az, height: az, flexShrink: 0 }}>
                   <div style={{ width: az, height: az, borderRadius: "50%", overflow: "hidden", background: `${oppColor}20`, border: `2px solid ${oppWins === true ? "#22c55e" : oppWins === false ? oppColor + "22" : oppColor + "55"}` }}>
                     {oppImg && <img src={oppImg} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
@@ -1147,7 +1147,7 @@ function PicksLockedScreen({
                 {op ? (
                   <div style={{ minWidth: 0, flex: 1, textAlign: "right" as const }}>
                     <div className="dp-name" style={{ fontSize: 11, fontWeight: 600, color: oppWins === false ? "var(--text-4)" : "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{oppName}</div>
-                    {oppVal && <div style={{ fontSize: 16, fontWeight: 900, color: oppWins === true ? "#22c55e" : oppWins === false ? "var(--text-4)" : "var(--text-2)", textShadow: oppWins === true ? "0 0 10px rgba(34,197,94,0.45)" : undefined, letterSpacing: "-0.03em", lineHeight: 1 }}>{oppVal}</div>}
+                    {oppVal && <div style={{ fontSize: 22, fontWeight: 900, color: oppWins === true ? "#22c55e" : oppWins === false ? "var(--text-4)" : "var(--text-2)", textShadow: oppWins === true ? "0 0 10px rgba(34,197,94,0.45)" : undefined, letterSpacing: "-0.04em", lineHeight: 1 }}>{oppVal}</div>}
                   </div>
                 ) : (
                   <span style={{ fontSize: 11, color: "var(--text-4)", fontStyle: "italic", flex: 1, textAlign: "right" as const }}>Pending…</span>
