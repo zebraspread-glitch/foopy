@@ -2659,6 +2659,10 @@ function MatchPageInner() {
   const [eventCommentCounts, setEventCommentCounts] = useState<Record<string, number>>({});
   const [eventTopComments, setEventTopComments] = useState<Record<string, { body: string; username: string; avatar: string | null }>>({});
   const seenEventKeys = useRef(new Set<string>());
+  // Snapshot of each player's FP at the moment their event first appeared.
+  // Keyed by the event's scoreEventKey so the displayed FP never changes as
+  // the player accumulates more points during the game.
+  const eventFPSnapshots = useRef<Record<string, number>>({});
   const initialFeedLoaded = useRef(false);
   const lastScoreRef = useRef<{ home: number; away: number } | null>(null);
   const [freshEventKeys, setFreshEventKeys] = useState(new Set<string>());
@@ -2997,6 +3001,28 @@ function MatchPageInner() {
     }
   }, [displayLiveEvents]);
 
+  // Snapshot each player's FP the first time their event appears. This runs
+  // whenever events or live stats change. Already-snapshotted events are skipped
+  // so their stored value never gets overwritten as the game progresses.
+  useEffect(() => {
+    const allStats = [...displayHomeStats, ...displayAwayStats];
+    if (allStats.length === 0) return;
+    displayLiveEvents.forEach((event, index) => {
+      if (event.type === "QUARTER_BREAK") return;
+      const ek = scoreEventKey(event, index);
+      if (eventFPSnapshots.current[ek] != null) return; // already snapshotted
+      if ((event as any).playerFP != null) {
+        eventFPSnapshots.current[ek] = (event as any).playerFP;
+        return;
+      }
+      const player = findPlayerForLiveEvent(event, safeText(game?.hteam, ""), safeText(game?.ateam, ""));
+      if (!player) return;
+      const stat = allStats.find(p =>
+        ((p as any).name || (p as any).player || "").toLowerCase() === (player.name || "").toLowerCase()
+      );
+      if (stat) eventFPSnapshots.current[ek] = fantasyPoints(stat);
+    });
+  }, [displayLiveEvents, displayHomeStats, displayAwayStats, game]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setIsSignedIn(!!data.session));
@@ -3911,16 +3937,8 @@ function MatchPageInner() {
                   const ek = scoreEventKey(event, index);
                   const commentKey = commentKeyForEvent(eventCommentCounts, event, index);
                   const isFresh = freshEventKeys.has(ek);
-                  // Use the FP snapshot stored at event time; fall back to current live FP if not yet stored
-                  const eventPlayerFP: number | null = (() => {
-                    if ((event as any).playerFP != null) return (event as any).playerFP as number;
-                    const eventPlayer = findPlayerForLiveEvent(event, safeText(game.hteam, ""), safeText(game.ateam, ""));
-                    if (!eventPlayer) return null;
-                    const stat = [...displayHomeStats, ...displayAwayStats].find(p =>
-                      ((p as any).name || (p as any).player || "").toLowerCase() === (eventPlayer.name || "").toLowerCase()
-                    );
-                    return stat ? fantasyPoints(stat) : null;
-                  })();
+                  // Use the FP snapshot captured when this event first appeared.
+                  const eventPlayerFP: number | null = eventFPSnapshots.current[ek] ?? null;
 
                   return (
                     <div
