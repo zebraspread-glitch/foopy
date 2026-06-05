@@ -10,6 +10,7 @@ import { hapticLight } from "@/app/lib/haptics";
 export default function HapticsProvider() {
   useEffect(() => {
     function onTouchStart(e: TouchEvent) {
+      if (localStorage.getItem("foopy_haptics") === "false") return;
       const target = e.target as Element | null;
       if (!target) return;
       if (target.closest('button, a, [role="button"], .pressable, .pressable-row, .tab-item')) {

@@ -133,7 +133,9 @@ function RoundStatsInner() {
   const router = useRouter();
   const tabsRef = useRef<HTMLDivElement>(null);
 
-  const [stat, setStat] = useState(params.get("stat") ?? "disposals");
+  const [stat, setStat] = useState(
+    params.get("stat") ?? (typeof window !== "undefined" ? localStorage.getItem("foopy_default_stat") ?? "disposals" : "disposals")
+  );
   const [round, setRound] = useState(Number(params.get("round") ?? 1));
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);

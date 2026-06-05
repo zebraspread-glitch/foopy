@@ -194,14 +194,9 @@ export default function SettingsPage() {
   const [initials, setInitials]     = useState("?");
 
   // Preferences (localStorage)
-  const [favTeam, setFavTeam]           = useState("");
-  const [defaultStat, setDefaultStat]   = useState("disposals");
-  const [notifGames, setNotifGames]     = useState(true);
-  const [notifPacks, setNotifPacks]     = useState(true);
-  const [notifTrades, setNotifTrades]   = useState(false);
-  const [notifNews, setNotifNews]       = useState(true);
-  const [showJerseyNum, setShowJerseyNum] = useState(true);
-  const [themeMode, setThemeMode]       = useState<FoopyThemeMode>("default");
+  const [favTeam, setFavTeam]         = useState("");
+  const [defaultStat, setDefaultStat] = useState("disposals");
+  const [themeMode, setThemeMode]     = useState<FoopyThemeMode>("default");
 
   // Messaging
   const [chatBubbleColor, setChatBubbleColor] = useState("#22c55e");
@@ -209,9 +204,9 @@ export default function SettingsPage() {
   // My Team features
   const [teamFeaturedMatch, setTeamFeaturedMatch] = useState(true);
   const [teamBorderColor, setTeamBorderColor]     = useState("#c9962a");
-  const [teamNotifStart, setTeamNotifStart]       = useState(true);
-  const [teamNotifFinal, setTeamNotifFinal]       = useState(true);
-  const [teamNotifLive, setTeamNotifLive]         = useState(false);
+
+  // Display
+  const [hapticsOn, setHapticsOn] = useState(true);
 
   // UI
   const [showTeamPicker, setShowTeamPicker] = useState(false);
@@ -244,17 +239,11 @@ export default function SettingsPage() {
     // Load prefs (team is loaded from DB above, other prefs are localStorage-only)
     setFavTeam(localStorage.getItem("foopy_fav_team") ?? "");
     setDefaultStat(localStorage.getItem("foopy_default_stat") ?? "disposals");
-    setNotifGames(localStorage.getItem("foopy_notif_games") !== "false");
-    setNotifPacks(localStorage.getItem("foopy_notif_packs") !== "false");
-    setNotifTrades(localStorage.getItem("foopy_notif_trades") === "true");
-    setNotifNews(localStorage.getItem("foopy_notif_news") !== "false");
-    setShowJerseyNum(localStorage.getItem("foopy_show_jersey") !== "false");
+
     setChatBubbleColor(localStorage.getItem("foopy_dm_bubble_color") ?? "#22c55e");
     setTeamFeaturedMatch(localStorage.getItem("foopy_team_featured") !== "false");
     setTeamBorderColor(localStorage.getItem("foopy_team_border_color") ?? "#c9962a");
-    setTeamNotifStart(localStorage.getItem("foopy_team_notif_start") !== "false");
-    setTeamNotifFinal(localStorage.getItem("foopy_team_notif_final") !== "false");
-    setTeamNotifLive(localStorage.getItem("foopy_team_notif_live") === "true");
+    setHapticsOn(localStorage.getItem("foopy_haptics") !== "false");
 
     const storedThemeMode = normalizeThemeMode(localStorage.getItem(FOOPY_THEME_KEY));
     setThemeMode(storedThemeMode);
@@ -454,30 +443,6 @@ export default function SettingsPage() {
               </div>
             </Row>}
 
-            <Row
-              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
-              label="Game Start Alert"
-              sub="Notify when your team's game begins"
-            >
-              <Toggle on={teamNotifStart} onToggle={() => toggle("foopy_team_notif_start", teamNotifStart, setTeamNotifStart)} />
-            </Row>
-
-            <Row
-              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4a2 2 0 0 1-2-2V5h4"/><path d="M18 9h2a2 2 0 0 0 2-2V5h-4"/><path d="M12 17v4"/><path d="M8 21h8"/><path d="M6 5h12v8a6 6 0 0 1-12 0V5z"/></svg>}
-              label="Final Score Alert"
-              sub="Notify when your team's game ends"
-            >
-              <Toggle on={teamNotifFinal} onToggle={() => toggle("foopy_team_notif_final", teamNotifFinal, setTeamNotifFinal)} />
-            </Row>
-
-            <Row
-              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" fill="currentColor"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>}
-              label="Live Score Updates"
-              sub="Quarter-by-quarter score alerts"
-              last
-            >
-              <Toggle on={teamNotifLive} onToggle={() => toggle("foopy_team_notif_live", teamNotifLive, setTeamNotifLive)} />
-            </Row>
           </Section>
 
           {/* ── Stats Preferences ── */}
@@ -506,38 +471,6 @@ export default function SettingsPage() {
             </Row>
           </Section>
 
-          {/* ── Notifications ── */}
-          <Section label="Notifications">
-            <Row
-              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>}
-              label="Game Day Alerts"
-              sub="Notify me when a game starts"
-            >
-              <Toggle on={notifGames} onToggle={() => toggle("foopy_notif_games", notifGames, setNotifGames)} />
-            </Row>
-            <Row
-              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>}
-              label="Card Pack Drops"
-              sub="New packs available"
-            >
-              <Toggle on={notifPacks} onToggle={() => toggle("foopy_notif_packs", notifPacks, setNotifPacks)} />
-            </Row>
-            <Row
-              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>}
-              label="Trade Alerts"
-              sub="When someone offers a trade"
-            >
-              <Toggle on={notifTrades} onToggle={() => toggle("foopy_notif_trades", notifTrades, setNotifTrades)} />
-            </Row>
-            <Row
-              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>}
-              label="Foopy News"
-              sub="App updates and announcements"
-              last
-            >
-              <Toggle on={notifNews} onToggle={() => toggle("foopy_notif_news", notifNews, setNotifNews)} />
-            </Row>
-          </Section>
 
           {/* ── Messaging ── */}
           <Section label="Messaging">
@@ -647,26 +580,15 @@ export default function SettingsPage() {
               </div>
             </Row>
             <Row
-              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>}
-              label="Show Jersey Numbers"
-              sub="Display #number on player cards"
+              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 18h.01"/><path d="M8 6c0-2.2 1.8-4 4-4s4 1.8 4 4c0 3-4 5-4 5"/><path d="M12 22v.01"/></svg>}
+              label="Haptic Feedback"
+              sub="Vibrate on taps (iPhone)"
               last
             >
-              <Toggle on={showJerseyNum} onToggle={() => toggle("foopy_show_jersey", showJerseyNum, setShowJerseyNum)} />
+              <Toggle on={hapticsOn} onToggle={() => toggle("foopy_haptics", hapticsOn, setHapticsOn)} />
             </Row>
           </Section>
 
-          {/* ── Data ── */}
-          <Section label="Data">
-            <Row
-              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>}
-              label="Player Stats"
-              sub="Run fetch:stats to update"
-              last
-            >
-              <span style={{ fontSize: 11, color: "var(--text-2)", fontWeight: 600 }}>2026 Season</span>
-            </Row>
-          </Section>
 
           {/* ── Account ── */}
           <Section label="Account">
@@ -692,20 +614,10 @@ export default function SettingsPage() {
             <Row
               icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>}
               label="Season"
+              last
             >
               <span style={{ fontSize: 12, color: "var(--text-2)", fontWeight: 600 }}>AFL 2026</span>
             </Row>
-            <Row
-              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>}
-              label="Privacy Policy"
-              onPress={() => {}}
-            />
-            <Row
-              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>}
-              label="Terms of Service"
-              onPress={() => {}}
-              last
-            />
           </Section>
 
         </div>
