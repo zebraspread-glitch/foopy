@@ -1131,7 +1131,10 @@ function ShareButton({ name, rating }: { name: string; rating: string }) {
         </>
       ) : (
         <>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 13C4 11.9 4.9 11 6 11H8C8.55 11 9 11.45 9 12C9 12.55 8.55 13 8 13H6V20H18V13H16C15.45 13 15 12.55 15 12C15 11.45 15.45 11 16 11H18C19.1 11 20 11.9 20 13V20C20 21.1 19.1 22 18 22H6C4.9 22 4 21.1 4 20V13Z"/>
+            <path d="M16.707 7.707L13 4V14C13 14.55 12.55 15 12 15C11.45 15 11 14.55 11 14V4L7.293 7.707C6.902 8.098 6.269 8.098 5.879 7.707C5.488 7.317 5.488 6.683 5.879 6.293L11.293 0.879C11.683 0.488 12.317 0.488 12.707 0.879L18.121 6.293C18.512 6.683 18.512 7.317 18.121 7.707C17.731 8.098 17.098 8.098 16.707 7.707Z"/>
+          </svg>
           Share
         </>
       )}
