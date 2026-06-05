@@ -166,7 +166,7 @@ function TopPerformancesInner() {
       </div>
 
       {/* List */}
-      <div style={{ marginTop: 16, padding: "0 16px", display: "flex", flexDirection: "column", gap: 6 }}>
+      <div style={{ marginTop: 12 }}>
         {loading && (
           <div style={{ display: "flex", justifyContent: "center", padding: "48px 0" }}>
             <div style={{ width: 28, height: 28, borderRadius: "50%", border: "3px solid rgba(255,255,255,0.1)", borderTopColor: "#3b82f6", animation: "spin 0.75s linear infinite" }} />
@@ -181,77 +181,66 @@ function TopPerformancesInner() {
           </div>
         )}
 
-        {!loading && entries.map((entry) => {
-          const bg = foopyColor(entry.rating);
-          const isBg = bg.startsWith("linear");
-          const dateStr = entry.date
-            ? new Date(entry.date + "T12:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })
-            : "";
+        {!loading && entries.map((entry, idx) => {
+          const ratingColor = foopyColor(entry.rating);
+          const isFirst = idx === 0;
+          const stats = [
+            { val: entry.goals,     label: "G" },
+            { val: entry.disposals, label: "D" },
+            { val: entry.kicks,     label: "K" },
+            { val: entry.marks,     label: "M" },
+            { val: entry.tackles,   label: "T" },
+          ];
 
           return (
             <div key={`${entry.name}-${entry.gameApiSportsId}`} style={{
-              display: "flex", alignItems: "center", gap: 12,
-              padding: "10px 14px",
-              borderRadius: 14,
-              background: "var(--surface-2)",
-              border: "1px solid var(--border-2)",
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "11px 16px",
+              borderTop: isFirst ? "1px solid var(--border-2)" : "none",
+              borderBottom: "1px solid var(--border-2)",
             }}>
-              {/* Rank */}
-              <div style={{ width: 26, textAlign: "center", flexShrink: 0 }}>
+              {/* Left: rank + photo + name/team */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, width: 160, flexShrink: 0, minWidth: 0 }}>
                 <span style={{
-                  fontSize: entry.rank <= 3 ? 15 : 13,
-                  fontWeight: 900,
-                  color: entry.rank === 1 ? "#ffd700" : entry.rank === 2 ? "#cbd5e1" : entry.rank === 3 ? "#cd7f32" : "var(--text-3)",
+                  fontSize: 12, fontWeight: 900, flexShrink: 0, width: 18, textAlign: "center",
+                  color: entry.rank === 1 ? "#ffd700" : entry.rank === 2 ? "#cbd5e1" : entry.rank === 3 ? "#cd7f32" : "var(--text-4)",
                 }}>
                   {entry.rank}
                 </span>
-              </div>
-
-              {/* Player photo */}
-              <div style={{
-                width: 44, height: 44, borderRadius: "50%", overflow: "hidden", flexShrink: 0,
-                background: "var(--surface-3)", border: "2px solid var(--border-2)",
-              }}>
-                <PlayerImage src={entry.image} name={entry.name} team={entry.team} />
-              </div>
-
-              {/* Name / meta */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 800, fontSize: 14, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {entry.name}
+                <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "var(--surface-3)" }}>
+                  <PlayerImage src={entry.image} name={entry.name} team={entry.team} />
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 600 }}>{entry.team}</span>
-                  {entry.opponent && (
-                    <>
-                      <span style={{ fontSize: 10, color: "var(--text-4)" }}>vs</span>
-                      <span style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 600 }}>{entry.opponent}</span>
-                    </>
-                  )}
-                  {entry.round != null && (
-                    <span style={{ fontSize: 10, color: "var(--text-4)", background: "var(--surface-3)", padding: "1px 6px", borderRadius: 999, fontWeight: 700 }}>
-                      R{entry.round}
-                    </span>
-                  )}
-                  {dateStr && (
-                    <span style={{ fontSize: 10, color: "var(--text-4)" }}>{dateStr}</span>
-                  )}
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {entry.name.split(" ").slice(-1)[0]}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 1 }}>
+                    {entry.round != null && (
+                      <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text-4)" }}>Rd {entry.round}</span>
+                    )}
+                    {entry.opponent && (
+                      <span style={{ fontSize: 10, color: "var(--text-4)" }}>vs {entry.opponent.split(" ").slice(-1)[0]}</span>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {/* Rating badge */}
-              <div style={{
-                flexShrink: 0,
-                minWidth: 44,
-                padding: "5px 10px",
-                borderRadius: 8,
-                background: isBg ? bg : bg,
-                textAlign: "center",
-                boxShadow: `0 2px 8px ${isBg ? "rgba(255,180,0,0.35)" : bg + "55"}`,
-              }}>
-                <span style={{ fontSize: 16, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em" }}>
+              {/* Stats: G D K M T */}
+              <div style={{ display: "flex", gap: 10, flex: 1, justifyContent: "center" }}>
+                {stats.map(({ val, label }) => (
+                  <div key={label} style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 22 }}>
+                    <span style={{ fontSize: 14, fontWeight: 900, color: "var(--text-1)", lineHeight: 1 }}>{val}</span>
+                    <span style={{ fontSize: 9, fontWeight: 700, color: "var(--text-4)", letterSpacing: "0.05em", marginTop: 2 }}>{label}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Rating */}
+              <div style={{ flexShrink: 0, textAlign: "right", minWidth: 40 }}>
+                <div style={{ fontSize: 18, fontWeight: 900, color: ratingColor, lineHeight: 1, letterSpacing: "-0.02em" }}>
                   {entry.rating.toFixed(1)}
-                </span>
+                </div>
+                <div style={{ fontSize: 8, fontWeight: 800, color: "var(--text-4)", letterSpacing: "0.1em", marginTop: 2 }}>FOOPY</div>
               </div>
             </div>
           );

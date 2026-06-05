@@ -81,6 +81,11 @@ export type PerformanceEntry = {
   opponent: string | null;
   image: string;
   gameApiSportsId: string;
+  goals: number;
+  disposals: number;
+  kicks: number;
+  marks: number;
+  tackles: number;
 };
 
 export async function GET(req: Request) {
@@ -219,26 +224,29 @@ export async function GET(req: Request) {
         if (!name) continue;
 
         const s = pe.statistics ?? pe;
+        const n = (v: any) => { const x = Number(v ?? 0); return Number.isFinite(x) ? x : 0; };
+        const goals     = n(s.goals?.total ?? s.goals);
+        const kicks     = n(s.kicks);
+        const handballs = n(s.handballs);
+        const disposals = n(s.disposals) || kicks + handballs;
+        const marks     = n(s.marks);
+        const tackles   = n(s.tackles);
         const rating = foopyRating({
-          goals:        s.goals?.total ?? s.goals,
+          goals,
           goalAssists:  s.goals?.assists ?? s.goalAssists ?? s.goal_assists,
           behinds:      s.behinds,
-          kicks:        s.kicks,
-          handballs:    s.handballs,
-          marks:        s.marks,
-          tackles:      s.tackles,
+          kicks,
+          handballs,
+          marks,
+          tackles,
           hitouts:      s.hitouts,
-          disposals:    s.disposals,
+          disposals,
           clearances:   s.clearances?.total ?? s.clearances,
           freesFor:     s.free_kicks?.for   ?? s.freesFor    ?? s.frees_for,
           freesAgainst: s.free_kicks?.against ?? s.freesAgainst ?? s.frees_against,
         });
 
-        if (filter === "lowest") {
-          if (rating <= 0) continue; // skip players who didn't play
-        } else {
-          if (rating <= 0) continue;
-        }
+        if (rating <= 0) continue;
 
         entries.push({
           name,
@@ -249,6 +257,11 @@ export async function GET(req: Request) {
           opponent,
           image: playerImagePath(name, team),
           gameApiSportsId: gameId,
+          goals,
+          disposals,
+          kicks,
+          marks,
+          tackles,
         });
       }
     }
