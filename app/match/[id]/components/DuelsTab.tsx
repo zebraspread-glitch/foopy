@@ -1017,15 +1017,6 @@ function PicksLockedScreen({
 
       {/* ── Matchup header card ── */}
       <div style={{ padding: "16px 4px 8px" }}>
-        {/* Status pill */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "center", marginBottom: 16 }}>
-          <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", animation: "lpr-pulse 2s ease-in-out infinite", flexShrink: 0 }} />
-          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", color: "#22c55e" }}>PICKS LOCKED</span>
-          <span style={{ color: "var(--border-2)" }}>·</span>
-          <span style={{ fontSize: 10, fontWeight: 600, color: "var(--text-3)" }}>
-            R{duelGame.round} · {duelGame.home_team} vs {duelGame.away_team}
-          </span>
-        </div>
 
         {/* Players */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 8 }}>
