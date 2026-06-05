@@ -2245,84 +2245,64 @@ const WEATHER_DESC: Record<number, string> = {
   95:"Thunderstorms", 96:"Thunderstorms", 99:"Severe thunderstorms",
 };
 
-function VenueCard({ venue, date }: { venue: string; date?: string }) {
-  const info = matchVenue(venue);
-  const [weather, setWeather] = useState<{ temp: number; code: number } | null>(null);
-  const [weatherLoading, setWeatherLoading] = useState(false);
-
-  useEffect(() => {
-    if (!info || !date) return;
-    const gameDate = date.slice(0, 10);
-    setWeatherLoading(true);
-    fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${info.lat}&longitude=${info.lon}` +
-      `&daily=temperature_2m_max,weathercode&timezone=auto&start_date=${gameDate}&end_date=${gameDate}`
-    )
-      .then(r => r.json())
-      .then(d => {
-        const temp = d?.daily?.temperature_2m_max?.[0];
-        const code = d?.daily?.weathercode?.[0];
-        if (temp != null && code != null) setWeather({ temp: Math.round(temp), code });
-      })
-      .catch(() => {})
-      .finally(() => setWeatherLoading(false));
-  }, [info, date]);
-
+function VenueCard({ venue }: { venue: string; date?: string }) {
   if (!venue) return null;
-
-  const displayName = venue;
-  const city = info?.city ?? "";
-  const mapsUrl = info ? `https://www.google.com/maps/search/${info.mapsQuery}` : `https://www.google.com/maps/search/${encodeURIComponent(venue)}`;
+  const info = matchVenue(venue);
+  const mapsUrl = info
+    ? `https://www.google.com/maps/search/${info.mapsQuery}`
+    : `https://www.google.com/maps/search/${encodeURIComponent(venue)}`;
 
   return (
-    <div style={{ margin: "0 0 2px", padding: "14px 16px", background: "var(--surface-1)", borderBottom: "1px solid var(--border-2)" }}>
-      {/* Header row */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}>
-            <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/>
+    <div style={{
+      margin: "12px 12px 4px",
+      borderRadius: 16,
+      background: "var(--surface-2)",
+      border: "1px solid var(--border-2)",
+      overflow: "hidden",
+    }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "16px 16px 14px" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+          {/* Stadium icon */}
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--text-2)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}>
+            <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/>
           </svg>
           <div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: "var(--text-1)", letterSpacing: "-0.01em" }}>{displayName}</div>
-            {city && <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 500, marginTop: 2 }}>{city}</div>}
+            <div style={{ fontSize: 17, fontWeight: 900, color: "var(--text-1)", letterSpacing: "-0.02em", lineHeight: 1.2 }}>{venue}</div>
+            {info?.city && <div style={{ fontSize: 13, color: "var(--text-3)", fontWeight: 500, marginTop: 3 }}>{info.city}</div>}
           </div>
         </div>
         <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", flexShrink: 0 }}>
-          <div style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--surface-3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="#22c55e"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+          <div style={{ width: 40, height: 40, borderRadius: "50%", background: "var(--surface-3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#22c55e">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+            </svg>
           </div>
         </a>
       </div>
 
       {/* Capacity + Surface */}
       {info && (
-        <div style={{ display: "flex", gap: 24, borderTop: "1px solid var(--border-2)", borderBottom: "1px solid var(--border-2)", padding: "10px 0", marginBottom: 10 }}>
-          <div>
-            <span style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 600 }}>Capacity </span>
-            <span style={{ fontSize: 13, fontWeight: 800, color: "var(--text-1)" }}>{info.capacity}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 28, padding: "12px 16px", borderTop: "1px solid var(--border-2)", borderBottom: "1px solid var(--border-2)" }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-1)" }}>Capacity</span>
+            <span style={{ fontSize: 15, fontWeight: 900, color: "var(--text-1)" }}>{info.capacity}</span>
           </div>
-          <div>
-            <span style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 600 }}>Surface </span>
-            <span style={{ fontSize: 13, fontWeight: 800, color: "var(--text-1)" }}>{info.surface}</span>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-1)" }}>Surface</span>
+            <span style={{ fontSize: 15, fontWeight: 900, color: "var(--text-1)" }}>{info.surface}</span>
           </div>
         </div>
       )}
 
-      {/* Weather */}
-      {date && info && (
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 700 }}>Weather forecast</span>
-          {weatherLoading && <span style={{ fontSize: 12, color: "var(--text-4)" }}>Loading…</span>}
-          {weather && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 22 }}>{WEATHER_ICONS[weather.code] ?? "🌡️"}</span>
-              <span style={{ fontSize: 15, fontWeight: 900, color: "var(--text-1)" }}>{weather.temp}°C</span>
-              <span style={{ width: 1, height: 16, background: "var(--border-2)", flexShrink: 0 }} />
-              <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-2)" }}>{WEATHER_DESC[weather.code] ?? "—"}</span>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Weather — placeholder, wired up later */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px" }}>
+        <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-1)" }}>Weather forecast</span>
+        <span style={{ fontSize: 28, lineHeight: 1 }}>⛈️</span>
+        <span style={{ fontSize: 18, fontWeight: 900, color: "var(--text-1)" }}>22°C</span>
+        <span style={{ width: 1, height: 18, background: "var(--border-2)", flexShrink: 0 }} />
+        <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>Thunderstorms</span>
+      </div>
     </div>
   );
 }
@@ -4045,6 +4025,7 @@ function MatchPageInner() {
 
             {!feedLoading && !feedError && displayLiveEvents.length === 0 && status === "UPCOMING" && (
               <>
+                {game.venue && <VenueCard venue={game.venue} date={game.date} />}
                 <TeamFormBox
                   homeTeam={safeText(game.hteam, "")}
                   awayTeam={safeText(game.ateam, "")}
@@ -4057,7 +4038,6 @@ function MatchPageInner() {
                   allGames={allGames}
                   currentGame={game}
                 />
-                {game.venue && <VenueCard venue={game.venue} date={game.date} />}
                 <LadderPositionsBox
                   homeTeam={safeText(game.hteam, "")}
                   awayTeam={safeText(game.ateam, "")}
