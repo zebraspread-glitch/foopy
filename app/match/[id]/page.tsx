@@ -3899,17 +3899,13 @@ function MatchPageInner() {
               </>
             )}
 
-            {!feedLoading && !feedError && displayLiveEvents.length === 0 && status === "LIVE" && (
-              <QuarterBreakFeedBox label="MATCH STARTED" />
-            )}
-
             {!feedLoading && !feedError && displayLiveEvents.length === 0 && status === "FINAL" && (
               <div style={emptyFeedStyle}>
                 <strong>No live feed events available yet.</strong>
               </div>
             )}
 
-            {displayLiveEvents.length > 0 && (
+            {!feedLoading && (displayLiveEvents.length > 0 || status === "LIVE") && (
               <div style={liveFeedListStyle}>
                 {displayLiveEvents.map((event, index) => {
                   const ek = scoreEventKey(event, index);
@@ -3980,6 +3976,8 @@ function MatchPageInner() {
                     </div>
                   );
                 })}
+                {/* Always show MATCH STARTED at the bottom — it's the chronological first event */}
+                <QuarterBreakFeedBox label="MATCH STARTED" />
               </div>
             )}
           </section>
