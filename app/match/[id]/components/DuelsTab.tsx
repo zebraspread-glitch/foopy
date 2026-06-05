@@ -1035,7 +1035,7 @@ function PicksLockedScreen({
               <UserAvatar user={me ?? { username: "You", display_name: "You", avatar_url: null }} size={52} />
             </div>
             <div style={{ textAlign: "center" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 4, fontWeight: 800, fontSize: 14, color: "var(--text-1)" }}>{me?.display_name || me?.username || "You"}{me?.verified && <VerifiedBadge size={13} />}</div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, fontWeight: 800, fontSize: 14, color: "var(--text-1)" }}>{me?.display_name || me?.username || "You"}{me?.verified && <VerifiedBadge size={13} />}</div>
               {me?.favourite_team && (
                 <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 3, justifyContent: "center" }}>
                   <img src={teamLogoUrl(me.favourite_team)} alt="" style={{ width: 14, height: 14, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
@@ -1062,7 +1062,7 @@ function PicksLockedScreen({
               <UserAvatar user={opponent ?? { username: "?", display_name: "?", avatar_url: null }} size={52} />
             </div>
             <div style={{ textAlign: "center" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 4, fontWeight: 800, fontSize: 14, color: "var(--text-1)" }}>{opponent?.display_name || opponent?.username || "Opponent"}{opponent?.verified && <VerifiedBadge size={13} />}</div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, fontWeight: 800, fontSize: 14, color: "var(--text-1)" }}>{opponent?.display_name || opponent?.username || "Opponent"}{opponent?.verified && <VerifiedBadge size={13} />}</div>
               {opponent?.favourite_team && (
                 <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 3, justifyContent: "center" }}>
                   <img src={teamLogoUrl(opponent.favourite_team)} alt="" style={{ width: 14, height: 14, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
@@ -1541,7 +1541,7 @@ function ResultScreen({
               <UserAvatar user={me ?? { username: "You", display_name: "You", avatar_url: null }} size={52} />
             </div>
             <div style={{ textAlign: "center" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 4, fontWeight: 800, fontSize: 14, color: "var(--text-1)" }}>{me?.display_name || me?.username || "You"}{me?.verified && <VerifiedBadge size={13} />}</div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, fontWeight: 800, fontSize: 14, color: "var(--text-1)" }}>{me?.display_name || me?.username || "You"}{me?.verified && <VerifiedBadge size={13} />}</div>
               {me?.favourite_team && (
                 <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 3, justifyContent: "center" }}>
                   <img src={teamLogoUrl(me.favourite_team)} alt="" style={{ width: 14, height: 14, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
@@ -1568,7 +1568,7 @@ function ResultScreen({
               <UserAvatar user={opponent ?? { username: "?", display_name: "?", avatar_url: null }} size={52} />
             </div>
             <div style={{ textAlign: "center" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 4, fontWeight: 800, fontSize: 14, color: "var(--text-1)" }}>{opponent?.display_name || opponent?.username || "Opponent"}{opponent?.verified && <VerifiedBadge size={13} />}</div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, fontWeight: 800, fontSize: 14, color: "var(--text-1)" }}>{opponent?.display_name || opponent?.username || "Opponent"}{opponent?.verified && <VerifiedBadge size={13} />}</div>
               {opponent?.favourite_team && (
                 <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 3, justifyContent: "center" }}>
                   <img src={teamLogoUrl(opponent.favourite_team)} alt="" style={{ width: 14, height: 14, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
