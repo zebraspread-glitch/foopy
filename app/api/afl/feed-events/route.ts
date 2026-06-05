@@ -22,8 +22,9 @@ export async function GET(req: Request) {
     .from("live_game_feed")
     .select("*")
     .eq("api_game_id", gameId)
-    .order("period", { ascending: true })
-    .order("minute", { ascending: true });
+    .order("period",  { ascending: true })
+    .order("minute",  { ascending: true })
+    .order("id",      { ascending: true }); // tiebreak by insertion order within the same minute
 
   if (error) {
     console.error("[feed-events] select error:", error.message);
