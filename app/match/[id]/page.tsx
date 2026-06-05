@@ -2331,11 +2331,6 @@ function VenueCard({ venue, date }: { venue: string; date?: string }) {
       {/* Header */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "18px 18px 16px" }}>
         <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
-          {/* Stadium icon */}
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.92)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}>
-            <rect x="3" y="3" width="18" height="18" rx="5"/>
-            <ellipse cx="12" cy="12" rx="6.5" ry="3.5"/>
-          </svg>
           <div>
             <div style={{ fontSize: 18, fontWeight: 800, color: "var(--text-1)", letterSpacing: "-0.02em", lineHeight: 1.15 }}>{venue}</div>
             {info?.city && <div style={{ fontSize: 13, color: "var(--text-3)", fontWeight: 500, marginTop: 4 }}>{info.city}</div>}
