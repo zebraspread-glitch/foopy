@@ -3556,28 +3556,34 @@ function MatchPageInner() {
       });
   }, [id, liveEvents]);
 
-  // Realtime: increment eventCommentCounts when a new event comment is inserted
-  // (catches the user's own comment when returning from the event page, plus
-  //  comments from other users without needing a full page reload).
+  // Re-fetch comment counts when user returns to this tab/page.
+  // This catches the case where the user navigated to the event comment page,
+  // posted a comment, then came back — the Next.js router cache keeps this
+  // component mounted so the initial effect never re-runs.
   useEffect(() => {
     if (!id) return;
     const gameId = Number(id);
-    const channel = supabase
-      .channel(`event-comments-${gameId}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "feed_comments", filter: `game_id=eq.${gameId}` },
-        (payload: any) => {
-          const eventKey = payload.new?.event_key;
-          if (!eventKey) return;
-          setEventCommentCounts(prev => ({
-            ...prev,
-            [eventKey]: (prev[eventKey] ?? 0) + 1,
-          }));
-        }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+
+    function refetchCounts() {
+      supabase
+        .from("feed_comments")
+        .select("event_key")
+        .eq("game_id", gameId)
+        .not("event_key", "is", null)
+        .then(({ data }) => {
+          if (!data) return;
+          const counts: Record<string, number> = {};
+          for (const row of data as { event_key: string }[]) {
+            counts[row.event_key] = (counts[row.event_key] ?? 0) + 1;
+          }
+          setEventCommentCounts(counts);
+        });
+    }
+
+    // Refetch when the tab becomes visible again (user returns from event page)
+    function onVisible() { if (document.visibilityState === "visible") refetchCounts(); }
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
   }, [id]);
 
   // Declared here (before any early returns) so hook call count is always stable.
