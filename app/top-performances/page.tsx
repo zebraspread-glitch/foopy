@@ -214,16 +214,14 @@ function TopPerformancesInner() {
           ];
 
           const href = entry.squiggleGameId ? `/match/${entry.squiggleGameId}` : null;
-          const RowEl = href ? Link : "div";
-          return (
-            <RowEl key={`${entry.name}-${entry.gameApiSportsId}`} {...(href ? { href } : {})} style={{
+          const rowContent = (
+            <div style={{
               display: "flex", alignItems: "center", gap: 10,
               padding: "11px 16px",
               borderTop: isFirst ? "1px solid var(--border-2)" : "none",
               borderBottom: "1px solid var(--border-2)",
-              textDecoration: "none", color: "inherit",
               cursor: href ? "pointer" : "default",
-            } as React.CSSProperties}>
+            }}>
               {/* Left: rank + photo + name/team */}
               <div style={{ display: "flex", alignItems: "center", gap: 10, width: 160, flexShrink: 0, minWidth: 0 }}>
                 <span style={{
@@ -261,7 +259,7 @@ function TopPerformancesInner() {
               </div>
 
               {/* Rating box */}
-              <div onClick={e => e.stopPropagation()} style={{
+              <div style={{
                 flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center",
                 background: ratingColor, borderRadius: 8, padding: "5px 10px", minWidth: 48,
                 boxShadow: `0 2px 8px ${ratingColor}66`,
@@ -271,8 +269,11 @@ function TopPerformancesInner() {
                 </span>
                 <span style={{ fontSize: 8, fontWeight: 800, color: "rgba(255,255,255,0.7)", letterSpacing: "0.1em", marginTop: 2 }}>FOOPY</span>
               </div>
-            </RowEl>
+            </div>
           );
+          return href
+            ? <Link key={`${entry.name}-${entry.gameApiSportsId}`} href={href} style={{ textDecoration: "none", color: "inherit", display: "block" }}>{rowContent}</Link>
+            : <div key={`${entry.name}-${entry.gameApiSportsId}`}>{rowContent}</div>;
         })}
       </div>
     </main>
