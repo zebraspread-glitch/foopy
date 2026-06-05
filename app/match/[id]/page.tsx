@@ -2195,6 +2195,138 @@ function buildLadder(games: MatchGame[]): (LadderTeam & { rank: number })[] {
   return sorted.map((t, i) => ({ ...t, rank: i + 1 }));
 }
 
+// ── AFL Venues lookup ─────────────────────────────────────────────────────────
+const AFL_VENUES: Record<string, { city: string; capacity: string; surface: string; lat: number; lon: number; mapsQuery: string }> = {
+  "MCG":               { city: "Melbourne, VIC",    capacity: "100,024", surface: "Grass",       lat: -37.8200, lon: 144.9834, mapsQuery: "MCG+Melbourne" },
+  "Marvel Stadium":    { city: "Melbourne, VIC",    capacity: "56,347",  surface: "Artificial",  lat: -37.8165, lon: 144.9476, mapsQuery: "Marvel+Stadium+Melbourne" },
+  "Docklands":         { city: "Melbourne, VIC",    capacity: "56,347",  surface: "Artificial",  lat: -37.8165, lon: 144.9476, mapsQuery: "Marvel+Stadium+Melbourne" },
+  "Adelaide Oval":     { city: "Adelaide, SA",      capacity: "53,583",  surface: "Grass",       lat: -34.9156, lon: 138.5961, mapsQuery: "Adelaide+Oval" },
+  "Norwood Oval":      { city: "Adelaide, SA",      capacity: "12,000",  surface: "Grass",       lat: -34.9200, lon: 138.6389, mapsQuery: "Norwood+Oval+Adelaide" },
+  "Optus Stadium":     { city: "Perth, WA",         capacity: "60,000",  surface: "Grass",       lat: -31.9505, lon: 115.8890, mapsQuery: "Optus+Stadium+Perth" },
+  "GABBA":             { city: "Brisbane, QLD",     capacity: "42,000",  surface: "Grass",       lat: -27.4858, lon: 153.0381, mapsQuery: "GABBA+Brisbane" },
+  "Metricon Stadium":  { city: "Gold Coast, QLD",   capacity: "25,000",  surface: "Grass",       lat: -28.0076, lon: 153.3990, mapsQuery: "Metricon+Stadium+Gold+Coast" },
+  "People First Stadium": { city: "Gold Coast, QLD", capacity: "25,000", surface: "Grass",       lat: -28.0076, lon: 153.3990, mapsQuery: "People+First+Stadium+Gold+Coast" },
+  "SCG":               { city: "Sydney, NSW",       capacity: "48,013",  surface: "Grass",       lat: -33.8913, lon: 151.2247, mapsQuery: "SCG+Sydney" },
+  "Accor Stadium":     { city: "Sydney, NSW",       capacity: "83,500",  surface: "Grass",       lat: -33.8471, lon: 151.0630, mapsQuery: "Accor+Stadium+Sydney" },
+  "GMHBA Stadium":     { city: "Geelong, VIC",      capacity: "36,000",  surface: "Grass",       lat: -38.1550, lon: 144.3550, mapsQuery: "GMHBA+Stadium+Geelong" },
+  "Kardinia Park":     { city: "Geelong, VIC",      capacity: "36,000",  surface: "Grass",       lat: -38.1550, lon: 144.3550, mapsQuery: "GMHBA+Stadium+Geelong" },
+  "Blundstone Arena":  { city: "Hobart, TAS",       capacity: "16,200",  surface: "Grass",       lat: -42.8694, lon: 147.3347, mapsQuery: "Blundstone+Arena+Hobart" },
+  "Manuka Oval":       { city: "Canberra, ACT",     capacity: "15,000",  surface: "Grass",       lat: -35.3155, lon: 149.1265, mapsQuery: "Manuka+Oval+Canberra" },
+  "Cazaly's Stadium":  { city: "Cairns, QLD",       capacity: "13,500",  surface: "Grass",       lat: -16.9186, lon: 145.7781, mapsQuery: "Cazalys+Stadium+Cairns" },
+  "Mars Stadium":      { city: "Ballarat, VIC",     capacity: "12,000",  surface: "Grass",       lat: -37.5541, lon: 143.8483, mapsQuery: "Mars+Stadium+Ballarat" },
+  "TIO Traeger Park":  { city: "Alice Springs, NT", capacity: "10,000",  surface: "Grass",       lat: -23.7050, lon: 133.8803, mapsQuery: "TIO+Traeger+Park+Alice+Springs" },
+  "UTAS Stadium":      { city: "Launceston, TAS",   capacity: "20,000",  surface: "Grass",       lat: -41.4349, lon: 147.1426, mapsQuery: "UTAS+Stadium+Launceston" },
+  "Sydney Showground Stadium": { city: "Sydney, NSW", capacity: "24,000", surface: "Grass",      lat: -33.8451, lon: 151.0680, mapsQuery: "Sydney+Showground+Stadium" },
+};
+
+function matchVenue(name: string): typeof AFL_VENUES[string] | null {
+  if (!name) return null;
+  const n = name.toLowerCase().replace(/[^a-z0-9]/g, "");
+  for (const [key, val] of Object.entries(AFL_VENUES)) {
+    if (n.includes(key.toLowerCase().replace(/[^a-z0-9]/g, "")) ||
+        key.toLowerCase().replace(/[^a-z0-9]/g, "").includes(n)) return val;
+  }
+  return null;
+}
+
+const WEATHER_ICONS: Record<number, string> = {
+  0:"☀️", 1:"🌤️", 2:"⛅", 3:"☁️", 45:"🌫️", 48:"🌫️",
+  51:"🌦️", 53:"🌦️", 55:"🌧️", 61:"🌧️", 63:"🌧️", 65:"🌧️",
+  71:"🌨️", 73:"🌨️", 75:"❄️", 77:"❄️",
+  80:"🌦️", 81:"🌧️", 82:"⛈️",
+  95:"⛈️", 96:"⛈️", 99:"⛈️",
+};
+const WEATHER_DESC: Record<number, string> = {
+  0:"Sunny", 1:"Mostly sunny", 2:"Partly cloudy", 3:"Overcast",
+  45:"Foggy", 48:"Icy fog", 51:"Light drizzle", 53:"Drizzle", 55:"Heavy drizzle",
+  61:"Light rain", 63:"Rain", 65:"Heavy rain",
+  71:"Light snow", 73:"Snow", 75:"Heavy snow", 77:"Snow grains",
+  80:"Showers", 81:"Heavy showers", 82:"Violent showers",
+  95:"Thunderstorms", 96:"Thunderstorms", 99:"Severe thunderstorms",
+};
+
+function VenueCard({ venue, date }: { venue: string; date?: string }) {
+  const info = matchVenue(venue);
+  const [weather, setWeather] = useState<{ temp: number; code: number } | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState(false);
+
+  useEffect(() => {
+    if (!info || !date) return;
+    const gameDate = date.slice(0, 10);
+    setWeatherLoading(true);
+    fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${info.lat}&longitude=${info.lon}` +
+      `&daily=temperature_2m_max,weathercode&timezone=auto&start_date=${gameDate}&end_date=${gameDate}`
+    )
+      .then(r => r.json())
+      .then(d => {
+        const temp = d?.daily?.temperature_2m_max?.[0];
+        const code = d?.daily?.weathercode?.[0];
+        if (temp != null && code != null) setWeather({ temp: Math.round(temp), code });
+      })
+      .catch(() => {})
+      .finally(() => setWeatherLoading(false));
+  }, [info, date]);
+
+  if (!venue) return null;
+
+  const displayName = venue;
+  const city = info?.city ?? "";
+  const mapsUrl = info ? `https://www.google.com/maps/search/${info.mapsQuery}` : `https://www.google.com/maps/search/${encodeURIComponent(venue)}`;
+
+  return (
+    <div style={{ margin: "0 0 2px", padding: "14px 16px", background: "var(--surface-1)", borderBottom: "1px solid var(--border-2)" }}>
+      {/* Header row */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}>
+            <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/>
+          </svg>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "var(--text-1)", letterSpacing: "-0.01em" }}>{displayName}</div>
+            {city && <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 500, marginTop: 2 }}>{city}</div>}
+          </div>
+        </div>
+        <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", flexShrink: 0 }}>
+          <div style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--surface-3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#22c55e"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+          </div>
+        </a>
+      </div>
+
+      {/* Capacity + Surface */}
+      {info && (
+        <div style={{ display: "flex", gap: 24, borderTop: "1px solid var(--border-2)", borderBottom: "1px solid var(--border-2)", padding: "10px 0", marginBottom: 10 }}>
+          <div>
+            <span style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 600 }}>Capacity </span>
+            <span style={{ fontSize: 13, fontWeight: 800, color: "var(--text-1)" }}>{info.capacity}</span>
+          </div>
+          <div>
+            <span style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 600 }}>Surface </span>
+            <span style={{ fontSize: 13, fontWeight: 800, color: "var(--text-1)" }}>{info.surface}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Weather */}
+      {date && info && (
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 700 }}>Weather forecast</span>
+          {weatherLoading && <span style={{ fontSize: 12, color: "var(--text-4)" }}>Loading…</span>}
+          {weather && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 22 }}>{WEATHER_ICONS[weather.code] ?? "🌡️"}</span>
+              <span style={{ fontSize: 15, fontWeight: 900, color: "var(--text-1)" }}>{weather.temp}°C</span>
+              <span style={{ width: 1, height: 16, background: "var(--border-2)", flexShrink: 0 }} />
+              <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-2)" }}>{WEATHER_DESC[weather.code] ?? "—"}</span>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function LadderPositionsBox({ homeTeam, awayTeam, allGames }: { homeTeam: string; awayTeam: string; allGames: MatchGame[] }) {
   const ladder = useMemo(() => buildLadder(allGames), [allGames]);
   const rows = ladder.filter(t => flexMatchTeam(t.team, homeTeam) || flexMatchTeam(t.team, awayTeam));
@@ -3925,6 +4057,7 @@ function MatchPageInner() {
                   allGames={allGames}
                   currentGame={game}
                 />
+                {game.venue && <VenueCard venue={game.venue} date={game.date} />}
                 <LadderPositionsBox
                   homeTeam={safeText(game.hteam, "")}
                   awayTeam={safeText(game.ateam, "")}
