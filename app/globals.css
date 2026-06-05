@@ -365,6 +365,9 @@ a.pressable:active {
   position: sticky;
   top: 0;
   z-index: 50;
+  /* Reach up into the page-shell safe-area padding so the header
+     covers the notch — without this the header would sit below it. */
+  margin-top: calc(-1 * env(safe-area-inset-top, 0px));
   height: calc(56px + env(safe-area-inset-top));
   display: flex;
   align-items: center;
@@ -429,6 +432,9 @@ a.pressable:active {
   background: var(--bg);
   border-left: 1px solid var(--shell-border);
   border-right: 1px solid var(--shell-border);
+  /* Push all page content below the iPhone notch/status bar.
+     Headers cancel this out with a matching negative margin-top. */
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 body.full-width-page .page-shell {
@@ -1386,6 +1392,7 @@ textarea::placeholder { color: var(--text-3); }
   position: sticky;
   top: 0;
   z-index: 50;
+  margin-top: calc(-1 * env(safe-area-inset-top, 0px));
   height: calc(56px + env(safe-area-inset-top));
   padding-top: env(safe-area-inset-top);
   display: flex;
