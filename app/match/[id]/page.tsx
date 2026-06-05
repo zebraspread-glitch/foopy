@@ -1330,10 +1330,13 @@ function SeasonAvgTable({ stats }: { stats: any[] }) {
   );
 }
 
-function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating, stickyTop = 0 }: { stats: PlayerStat[]; isLive?: boolean; isFinal?: boolean; team?: string; gameId: number; bestRating: number; stickyTop?: number }) {
-  const [sortKey, setSortKey] = useState<SortKey>("foopy");
-  const [sortDir, setSortDir] = useState<"desc" | "asc">("desc");
-  const [statMode, setStatMode] = useState<StatMode>("basic");
+function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating, stickyTop = 0, statMode: statModeProp, sortKey: sortKeyProp, sortDir: sortDirProp, onSort }: { stats: PlayerStat[]; isLive?: boolean; isFinal?: boolean; team?: string; gameId: number; bestRating: number; stickyTop?: number; statMode?: StatMode; sortKey?: SortKey; sortDir?: "desc"|"asc"; onSort?: (k: SortKey) => void }) {
+  const [sortKeyLocal, setSortKeyLocal] = useState<SortKey>("foopy");
+  const [sortDirLocal, setSortDirLocal] = useState<"desc" | "asc">("desc");
+  const [statModeLocal, setStatModeLocal] = useState<StatMode>("basic");
+  const sortKey  = sortKeyProp  ?? sortKeyLocal;
+  const sortDir  = sortDirProp  ?? sortDirLocal;
+  const statMode = statModeProp ?? statModeLocal;
   const [playerCommentCounts, setPlayerCommentCounts] = useState<Record<string, number>>({});
   const router = useRouter();
 
@@ -1363,20 +1366,16 @@ function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating, stic
 
   function sortHeader(label: string, key: SortKey) {
     const active = sortKey === key;
-
     return (
       <th
         style={{ ...thStyle, top: stickyTop, color: active ? "#0ea5e9" : "#9ca3af", cursor: "pointer" }}
         onClick={() => {
-          if (sortKey === key) setSortDir(sortDir === "desc" ? "asc" : "desc");
-          else {
-            setSortKey(key);
-            setSortDir("desc");
-          }
+          if (onSort) { onSort(key); return; }
+          if (sortKey === key) setSortDirLocal(sortDir === "desc" ? "asc" : "desc");
+          else { setSortKeyLocal(key); setSortDirLocal("desc"); }
         }}
       >
-        {label}
-        {active ? (sortDir === "desc" ? " ↓" : " ↑") : ""}
+        {label}{active ? (sortDir === "desc" ? " ↓" : " ↑") : ""}
       </th>
     );
   }
@@ -1395,40 +1394,6 @@ function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating, stic
 
       <div style={tableWrapStyle}>
         <table style={tableStyle}>
-          <thead>
-            <tr>
-              <th style={{ ...thPlayerStyle, top: stickyTop }}>
-                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ display: "flex", gap: 3 }}>
-                    <button onClick={() => setStatMode("basic")} style={statMode === "basic" ? activeStatSwitchStyle : statSwitchStyle}>Basic</button>
-                    <button onClick={() => setStatMode("advanced")} style={statMode === "advanced" ? activeStatSwitchStyle : statSwitchStyle}>Advanced</button>
-                  </span>
-                </span>
-              </th>
-              {statMode === "basic" ? (
-                <>
-                  {sortHeader("Foopy", "foopy")}
-                  {sortHeader("G.B", "goals")}
-                  {sortHeader("D", "disposals")}
-                  {sortHeader("K", "kicks")}
-                  {sortHeader("H", "handballs")}
-                  {sortHeader("M", "marks")}
-                  {sortHeader("T", "tackles")}
-                  {sortHeader("HO", "hitouts")}
-                </>
-              ) : (
-                <>
-  {sortHeader("FP", "fantasy")}
-  {sortHeader("CLR", "clearances")}
-  {sortHeader("GA", "goalAssists")}
-  {sortHeader("FF", "freesFor")}
-  {sortHeader("FA", "freesAgainst")}
-</>
-              )}
-              <th style={{ ...thStyle, top: stickyTop }} />
-            </tr>
-          </thead>
-
           <tbody>
             {sortedStats.map((p, index) => {
               const name = safePlayerName(p.name ?? p.player, index + 1);
@@ -2641,6 +2606,9 @@ function MatchPageInner() {
     (searchParams?.get("tab") as TabKey) ?? "feed"
   );
   const [playerSubTab, setPlayerSubTab] = useState<"all" | "home" | "away">("all");
+  const [playerStatMode, setPlayerStatMode] = useState<StatMode>("basic");
+  const [playerSortKey, setPlayerSortKey] = useState<SortKey>("foopy");
+  const [playerSortDir, setPlayerSortDir] = useState<"desc" | "asc">("desc");
   const [seasonStats, setSeasonStats] = useState<any[]>([]);
   const [squadPlayers, setSquadPlayers] = useState<{ home: number[]; away: number[] } | null>(null);
   const [unansweredPollCount, setUnansweredPollCount] = useState(0);
@@ -3868,6 +3836,39 @@ function MatchPageInner() {
                   })}
                 </nav>
               )}
+              {activeTab === "players" && status !== "UPCOMING" && (
+                <div style={{ display: "flex", alignItems: "center", padding: "6px 10px", borderTop: "1px solid var(--border-2)", background: "var(--bg)", gap: 4 }}>
+                  <div style={{ display: "flex", gap: 3, marginRight: "auto" }}>
+                    <button onClick={() => setPlayerStatMode("basic")} style={playerStatMode === "basic" ? activeStatSwitchStyle : statSwitchStyle}>Basic</button>
+                    <button onClick={() => setPlayerStatMode("advanced")} style={playerStatMode === "advanced" ? activeStatSwitchStyle : statSwitchStyle}>Advanced</button>
+                  </div>
+                  {(playerStatMode === "basic"
+                    ? (["foopy","goals","disposals","kicks","handballs","marks","tackles","hitouts"] as SortKey[])
+                    : (["fantasy","clearances","goalAssists","freesFor","freesAgainst"] as SortKey[])
+                  ).map(key => {
+                    const labels: Partial<Record<SortKey, string>> = {
+                      foopy:"FOOPY", goals:"G.B", disposals:"D", kicks:"K", handballs:"H",
+                      marks:"M", tackles:"T", hitouts:"HO",
+                      fantasy:"FP", clearances:"CLR", goalAssists:"GA", freesFor:"FF", freesAgainst:"FA",
+                    };
+                    const active = playerSortKey === key;
+                    return (
+                      <button key={key} onClick={() => {
+                        if (playerSortKey === key) setPlayerSortDir(d => d === "desc" ? "asc" : "desc");
+                        else { setPlayerSortKey(key); setPlayerSortDir("desc"); }
+                      }} style={{
+                        background: "none", border: "none", cursor: "pointer", padding: "2px 6px",
+                        fontSize: 10, fontWeight: 900, letterSpacing: "0.08em",
+                        textTransform: "uppercase" as const, whiteSpace: "nowrap" as const,
+                        color: active ? "#0ea5e9" : "#9ca3af",
+                      }}>
+                        {labels[key]}{active ? (playerSortDir === "desc" ? " ↓" : " ↑") : ""}
+                      </button>
+                    );
+                  })}
+                  <div style={{ width: 28, flexShrink: 0 }} />
+                </div>
+              )}
             </div>
           );
         })()}
@@ -4137,19 +4138,19 @@ function MatchPageInner() {
 
               {activeTab === "players" && status !== "UPCOMING" && playerSubTab === "all" && (
                 <section style={{ borderBottom: "1px solid var(--border-2)" }}>
-                  <StatTable stats={allMatchPlayers} isLive={isLiveGame} isFinal={status === "FINAL"} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} />
+                  <StatTable stats={allMatchPlayers} isLive={isLiveGame} isFinal={status === "FINAL"} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} statMode={playerStatMode} sortKey={playerSortKey} sortDir={playerSortDir} onSort={(k) => { if(playerSortKey===k) setPlayerSortDir(d=>d==="desc"?"asc":"desc"); else{setPlayerSortKey(k);setPlayerSortDir("desc");} }} />
                 </section>
               )}
 
               {activeTab === "players" && status !== "UPCOMING" && playerSubTab === "home" && (
                 <section style={{ borderBottom: "1px solid var(--border-2)" }}>
-                  <StatTable stats={displayHomeStats} isLive={isLiveGame} isFinal={status === "FINAL"} team={game.hteam} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} />
+                  <StatTable stats={displayHomeStats} isLive={isLiveGame} isFinal={status === "FINAL"} team={game.hteam} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} statMode={playerStatMode} sortKey={playerSortKey} sortDir={playerSortDir} onSort={(k) => { if(playerSortKey===k) setPlayerSortDir(d=>d==="desc"?"asc":"desc"); else{setPlayerSortKey(k);setPlayerSortDir("desc");} }} />
                 </section>
               )}
 
               {activeTab === "players" && status !== "UPCOMING" && playerSubTab === "away" && (
                 <section style={{ borderBottom: "1px solid var(--border-2)" }}>
-                  <StatTable stats={displayAwayStats} isLive={isLiveGame} isFinal={status === "FINAL"} team={game.ateam} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} />
+                  <StatTable stats={displayAwayStats} isLive={isLiveGame} isFinal={status === "FINAL"} team={game.ateam} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} statMode={playerStatMode} sortKey={playerSortKey} sortDir={playerSortDir} onSort={(k) => { if(playerSortKey===k) setPlayerSortDir(d=>d==="desc"?"asc":"desc"); else{setPlayerSortKey(k);setPlayerSortDir("desc");} }} />
                 </section>
               )}
             </>
