@@ -733,12 +733,7 @@ function EventCommentsPageInner() {
 
       {playerCard && (
         <section style={playerCardStyle}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <PlayerCardHeader name={label} img={playerCard.img} team={playerCard.team} rating={playerCard.rating} slug={playerSlug(label)} />
-            </div>
-            <ShareButton name={label} rating={playerCard.rating} />
-          </div>
+          <PlayerCardHeader name={label} img={playerCard.img} team={playerCard.team} rating={playerCard.rating} slug={playerSlug(label)} />
           <div style={statChipsStyle}>
             {[
               { label: "G.B", value: playerCard.gb },
@@ -1098,58 +1093,6 @@ function EventCard({ playerName, team, img, type, quarter, minute }: {
   );
 }
 
-function ShareButton({ name, rating }: { name: string; rating: string }) {
-  const [copied, setCopied] = useState(false);
-
-  function handleShare() {
-    const url = window.location.href;
-    const text = rating
-      ? `${name} rated ${parseFloat(rating).toFixed(1)} Foopy on Foopy AFL`
-      : `Check out ${name}'s performance on Foopy AFL`;
-
-    if (navigator.share) {
-      navigator.share({ title: name, text, url }).catch(() => {});
-    } else {
-      navigator.clipboard.writeText(url).then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      });
-    }
-  }
-
-  return (
-    <button
-      onClick={handleShare}
-      title="Share"
-      style={{
-        flexShrink: 0,
-        marginTop: 12,
-        display: "flex", alignItems: "center", gap: 5,
-        padding: "6px 12px", borderRadius: 999,
-        background: copied ? "rgba(34,197,94,0.15)" : "var(--surface-3)",
-        border: `1px solid ${copied ? "rgba(34,197,94,0.4)" : "var(--border-2)"}`,
-        color: copied ? "#4ade80" : "var(--text-2)",
-        fontSize: 12, fontWeight: 700, cursor: "pointer",
-        transition: "all 0.15s",
-      }}
-    >
-      {copied ? (
-        <>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          Copied
-        </>
-      ) : (
-        <>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-            <path d="M4 13C4 11.9 4.9 11 6 11H8C8.55 11 9 11.45 9 12C9 12.55 8.55 13 8 13H6V20H18V13H16C15.45 13 15 12.55 15 12C15 11.45 15.45 11 16 11H18C19.1 11 20 11.9 20 13V20C20 21.1 19.1 22 18 22H6C4.9 22 4 21.1 4 20V13Z"/>
-            <path d="M16.707 7.707L13 4V14C13 14.55 12.55 15 12 15C11.45 15 11 14.55 11 14V4L7.293 7.707C6.902 8.098 6.269 8.098 5.879 7.707C5.488 7.317 5.488 6.683 5.879 6.293L11.293 0.879C11.683 0.488 12.317 0.488 12.707 0.879L18.121 6.293C18.512 6.683 18.512 7.317 18.121 7.707C17.731 8.098 17.098 8.098 16.707 7.707Z"/>
-          </svg>
-          Share
-        </>
-      )}
-    </button>
-  );
-}
 
 function PlayerCardHeader({ name, img, team, rating, slug }: { name: string; img: string; team: string; rating: string; slug?: string }) {
   const router = useRouter();
