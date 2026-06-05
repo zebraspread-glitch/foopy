@@ -1330,7 +1330,7 @@ function SeasonAvgTable({ stats }: { stats: any[] }) {
   );
 }
 
-function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating }: { stats: PlayerStat[]; isLive?: boolean; isFinal?: boolean; team?: string; gameId: number; bestRating: number }) {
+function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating, stickyTop = 0 }: { stats: PlayerStat[]; isLive?: boolean; isFinal?: boolean; team?: string; gameId: number; bestRating: number; stickyTop?: number }) {
   const [sortKey, setSortKey] = useState<SortKey>("foopy");
   const [sortDir, setSortDir] = useState<"desc" | "asc">("desc");
   const [statMode, setStatMode] = useState<StatMode>("basic");
@@ -1395,7 +1395,7 @@ function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating }: { 
 
       <div style={tableWrapStyle}>
         <table style={tableStyle}>
-          <thead>
+          <thead style={{ top: stickyTop }}>
             <tr>
               <th style={thPlayerStyle}>
                 <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -2676,6 +2676,7 @@ function MatchPageInner() {
   const matchSectionRef = useRef<HTMLElement>(null);
   const stickyHeaderRef    = useRef<HTMLDivElement>(null);
   const headerContainerRef = useRef<HTMLDivElement>(null); // receives --p; CSS does the rest
+  const [stickyHeaderH, setStickyHeaderH] = useState(0);
   /** Prevents re-fetching final stats on every 5-second game-poll tick */
   const finalStatsFetchedRef = useRef(false);
   const gameRef = useRef(game);
@@ -3002,6 +3003,16 @@ function MatchPageInner() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setIsSignedIn(!!data.session));
+  }, []);
+
+  // Track sticky header height so the table thead can stick just below it
+  useEffect(() => {
+    const el = stickyHeaderRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setStickyHeaderH(el.offsetHeight));
+    ro.observe(el);
+    setStickyHeaderH(el.offsetHeight);
+    return () => ro.disconnect();
   }, []);
 
   useEffect(() => {
@@ -4126,19 +4137,19 @@ function MatchPageInner() {
 
               {activeTab === "players" && status !== "UPCOMING" && playerSubTab === "all" && (
                 <section style={{ borderBottom: "1px solid var(--border-2)" }}>
-                  <StatTable stats={allMatchPlayers} isLive={isLiveGame} isFinal={status === "FINAL"} gameId={Number(id)} bestRating={bestRating} />
+                  <StatTable stats={allMatchPlayers} isLive={isLiveGame} isFinal={status === "FINAL"} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} />
                 </section>
               )}
 
               {activeTab === "players" && status !== "UPCOMING" && playerSubTab === "home" && (
                 <section style={{ borderBottom: "1px solid var(--border-2)" }}>
-                  <StatTable stats={displayHomeStats} isLive={isLiveGame} isFinal={status === "FINAL"} team={game.hteam} gameId={Number(id)} bestRating={bestRating} />
+                  <StatTable stats={displayHomeStats} isLive={isLiveGame} isFinal={status === "FINAL"} team={game.hteam} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} />
                 </section>
               )}
 
               {activeTab === "players" && status !== "UPCOMING" && playerSubTab === "away" && (
                 <section style={{ borderBottom: "1px solid var(--border-2)" }}>
-                  <StatTable stats={displayAwayStats} isLive={isLiveGame} isFinal={status === "FINAL"} team={game.ateam} gameId={Number(id)} bestRating={bestRating} />
+                  <StatTable stats={displayAwayStats} isLive={isLiveGame} isFinal={status === "FINAL"} team={game.ateam} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} />
                 </section>
               )}
             </>
