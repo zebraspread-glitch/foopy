@@ -2276,18 +2276,18 @@ function VenueCard({ venue }: { venue: string; date?: string }) {
     ? `https://www.google.com/maps/search/${info.mapsQuery}`
     : `https://www.google.com/maps/search/${encodeURIComponent(venue)}`;
 
-  const divider = <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "0 20px" }} />;
+  const divider = <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "0 18px" }} />;
 
   return (
     <div style={{
-      margin: "12px 12px 4px",
-      borderRadius: 22,
-      background: "var(--surface-2)",
-      border: "1px solid var(--border-2)",
+      margin: "0 0 14px",
+      borderRadius: 18,
+      background: "linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
+      border: "1px solid rgba(255,255,255,0.10)",
       overflow: "hidden",
     }}>
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "20px 20px 18px" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "18px 18px 16px" }}>
         <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
           {/* Stadium icon */}
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.92)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}>
@@ -2295,8 +2295,8 @@ function VenueCard({ venue }: { venue: string; date?: string }) {
             <ellipse cx="12" cy="12" rx="6.5" ry="3.5"/>
           </svg>
           <div>
-            <div style={{ fontSize: 19, fontWeight: 800, color: "var(--text-1)", letterSpacing: "-0.02em", lineHeight: 1.15 }}>{venue}</div>
-            {info?.city && <div style={{ fontSize: 14, color: "var(--text-3)", fontWeight: 500, marginTop: 4 }}>{info.city}</div>}
+            <div style={{ fontSize: 18, fontWeight: 800, color: "var(--text-1)", letterSpacing: "-0.02em", lineHeight: 1.15 }}>{venue}</div>
+            {info?.city && <div style={{ fontSize: 13, color: "var(--text-3)", fontWeight: 500, marginTop: 4 }}>{info.city}</div>}
           </div>
         </div>
         <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", flexShrink: 0 }}>
@@ -2312,14 +2312,14 @@ function VenueCard({ venue }: { venue: string; date?: string }) {
       {info && (
         <>
           {divider}
-          <div style={{ display: "flex", alignItems: "center", gap: 36, padding: "16px 20px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 36, padding: "15px 18px" }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-              <span style={{ fontSize: 16, fontWeight: 800, color: "var(--text-1)" }}>Capacity</span>
-              <span style={{ fontSize: 16, fontWeight: 700, color: "var(--text-1)" }}>{info.capacity}</span>
+              <span style={{ fontSize: 15, fontWeight: 800, color: "var(--text-1)" }}>Capacity</span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>{info.capacity}</span>
             </div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-              <span style={{ fontSize: 16, fontWeight: 800, color: "var(--text-1)" }}>Surface</span>
-              <span style={{ fontSize: 16, fontWeight: 700, color: "var(--text-1)" }}>{info.surface}</span>
+              <span style={{ fontSize: 15, fontWeight: 800, color: "var(--text-1)" }}>Surface</span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>{info.surface}</span>
             </div>
           </div>
         </>
@@ -2327,7 +2327,7 @@ function VenueCard({ venue }: { venue: string; date?: string }) {
 
       {/* Weather — placeholder, wired up later */}
       {divider}
-      <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 20px 18px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 18px 17px" }}>
         <span style={{ fontSize: 16, fontWeight: 800, color: "var(--text-1)" }}>Weather forecast</span>
         <span style={{ fontSize: 30, lineHeight: 1 }}>⛈️</span>
         <span style={{ fontSize: 20, fontWeight: 800, color: "var(--text-1)" }}>22°C</span>
