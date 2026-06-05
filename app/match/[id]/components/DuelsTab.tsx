@@ -1043,7 +1043,7 @@ function PicksLockedScreen({
                 </div>
               )}
               {me?.aura != null && <div style={{ fontSize: 11, fontWeight: 700, color: "#c084fc", marginTop: 2 }}>✦ {me.aura >= 1000 ? (me.aura / 1000).toFixed(1).replace(/\.0$/, "") + "k" : me.aura}</div>}
-              {me?.duelRecord && <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 2 }}>{me.duelRecord.wins}W·{me.duelRecord.draws}D·{me.duelRecord.losses}L</div>}
+              {me?.duelRecord && <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 2 }}>{me.duelRecord.wins}W{me.duelRecord.draws > 0 ? `·${me.duelRecord.draws}D` : ""}·{me.duelRecord.losses}L</div>}
             </div>
           </Link>
 
@@ -1070,7 +1070,7 @@ function PicksLockedScreen({
                 </div>
               )}
               {opponent?.aura != null && <div style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", marginTop: 2 }}>✦ {opponent.aura >= 1000 ? (opponent.aura / 1000).toFixed(1).replace(/\.0$/, "") + "k" : opponent.aura}</div>}
-              {opponent?.duelRecord && <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 2 }}>{opponent.duelRecord.wins}W·{opponent.duelRecord.draws}D·{opponent.duelRecord.losses}L</div>}
+              {opponent?.duelRecord && <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 2 }}>{opponent.duelRecord.wins}W{opponent.duelRecord.draws > 0 ? `·${opponent.duelRecord.draws}D` : ""}·{opponent.duelRecord.losses}L</div>}
             </div>
           </Link>
         </div>
@@ -1549,7 +1549,7 @@ function ResultScreen({
                 </div>
               )}
               {me?.aura != null && <div style={{ fontSize: 11, fontWeight: 700, color: "#c084fc", marginTop: 2 }}>✦ {me.aura >= 1000 ? (me.aura / 1000).toFixed(1).replace(/\.0$/, "") + "k" : me.aura}</div>}
-              {me?.duelRecord && <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 2 }}>{me.duelRecord.wins}W·{me.duelRecord.draws}D·{me.duelRecord.losses}L</div>}
+              {me?.duelRecord && <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 2 }}>{me.duelRecord.wins}W{me.duelRecord.draws > 0 ? `·${me.duelRecord.draws}D` : ""}·{me.duelRecord.losses}L</div>}
             </div>
           </Link>
 
@@ -1576,7 +1576,7 @@ function ResultScreen({
                 </div>
               )}
               {opponent?.aura != null && <div style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", marginTop: 2 }}>✦ {opponent.aura >= 1000 ? (opponent.aura / 1000).toFixed(1).replace(/\.0$/, "") + "k" : opponent.aura}</div>}
-              {opponent?.duelRecord && <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 2 }}>{opponent.duelRecord.wins}W·{opponent.duelRecord.draws}D·{opponent.duelRecord.losses}L</div>}
+              {opponent?.duelRecord && <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 2 }}>{opponent.duelRecord.wins}W{opponent.duelRecord.draws > 0 ? `·${opponent.duelRecord.draws}D` : ""}·{opponent.duelRecord.losses}L</div>}
             </div>
           </Link>
         </div>
