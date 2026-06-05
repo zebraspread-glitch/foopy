@@ -39,7 +39,7 @@ export const VENUES: Record<string, VenueInfo> = {
   "York Park":        { displayName: "UTAS Stadium",         location: "Launceston, TAS",          lat: -41.4259, lon: 147.1380, capacity: "21,000", surface: "Grass" },
 
   // ── Additional venues Squiggle may use (best-effort; update as needed) ──
-  "Kardinia Park":    { displayName: "GMHBA Stadium",        location: "South Geelong, VIC",       lat: -38.1580, lon: 144.3544, capacity: "40,000", surface: "Grass" },
+  "Kardinia Park":    { displayName: "GMHBA Stadium",        location: "Geelong, VIC",             lat: -38.1580, lon: 144.3544, capacity: "40,000", surface: "Grass" },
   "Norwood Oval":     { displayName: "Norwood Oval",         location: "Norwood, SA",              lat: -34.9200, lon: 138.6310, capacity: "12,000", surface: "Grass" },
   "Cazaly's Stadium": { displayName: "Cazaly's Stadium",     location: "Westcourt, QLD",           lat: -16.9356, lon: 145.7490, capacity: "13,500", surface: "Grass" },
   "Eureka Stadium":   { displayName: "Mars Stadium",         location: "Ballarat, VIC",            lat: -37.5404, lon: 143.8483, capacity: "12,000", surface: "Grass" },
