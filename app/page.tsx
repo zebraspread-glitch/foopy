@@ -1602,9 +1602,16 @@ free_kicks?: {
 
         {roundStarted && (
           <div style={topPlayersSectionStyle}>
-            <div style={topPlayersHeaderStyle}>
-              <h2 style={topPlayersTitleStyle}>Top Players</h2>
-            </div>
+            <Link
+              href={`/top-performances?filter=round&round=${selectedRound}`}
+              style={{ textDecoration: "none", color: "inherit" }}
+              prefetch={false}
+            >
+              <div style={{ ...topPlayersHeaderStyle, cursor: "pointer" }}>
+                <h2 style={topPlayersTitleStyle}>Top Players</h2>
+                <span style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 600 }}>See all →</span>
+              </div>
+            </Link>
 
             {topPlayers.length > 0 ? (
               <div style={topPlayersGridStyle} className="no-scrollbar">
@@ -2546,7 +2553,7 @@ const topPlayersSectionStyle: React.CSSProperties = {
 
 const topPlayersHeaderStyle: React.CSSProperties = {
   display: "flex",
-  justifyContent: "flex-start",
+  justifyContent: "space-between",
   alignItems: "center",
   marginBottom: "12px",
 };
