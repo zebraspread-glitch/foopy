@@ -998,6 +998,20 @@ export default function ProfilePage() {
     };
   }, [previewUrl]);
 
+  // Keep favourite_team in sync when changed from the Settings page
+  useEffect(() => {
+    function onSettingsChanged() {
+      const newTeam = localStorage.getItem("foopy_fav_team") ?? null;
+      setProfile(prev => {
+        if (!prev) return prev;
+        if (prev.favourite_team === newTeam) return prev;
+        return { ...prev, favourite_team: newTeam };
+      });
+    }
+    window.addEventListener("foopy-settings-changed", onSettingsChanged);
+    return () => window.removeEventListener("foopy-settings-changed", onSettingsChanged);
+  }, []);
+
   useEffect(() => {
     if (!user) return;
     // Card count (for stats row)
@@ -1098,7 +1112,10 @@ export default function ProfilePage() {
 
       setProfile((data ?? p) as Profile | null);
     } else {
-      setProfile(p);
+      // Never overwrite a valid loaded profile with null — a null result
+      // means the fetch failed (network blip, brief race after a settings
+      // update, etc.). Keep the existing data so the page doesn't blank out.
+      setProfile(prev => p ?? prev);
     }
   }
 
