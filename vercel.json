@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/resolve-duels",
       "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/cron/sync-attendances",
+      "schedule": "30 * * * *"
     }
   ]
 }

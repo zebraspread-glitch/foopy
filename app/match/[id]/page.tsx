@@ -2236,9 +2236,21 @@ const WEATHER_DESC: Record<number, string> = {
   95:"Thunderstorms", 96:"Thunderstorms", 99:"Severe thunderstorms",
 };
 
-function VenueCard({ venue, date }: { venue: string; date?: string }) {
+function VenueCard({ venue, date, gameId }: { venue: string; date?: string; gameId?: string | number }) {
   const info = lookupVenue(venue);
   const [weather, setWeather] = useState<{ temp: number; code: number } | null>(null);
+  const [attendance, setAttendance] = useState<number | null>(null);
+
+  // Fetch crowd attendance (populated post-game by the sync-attendances cron)
+  useEffect(() => {
+    if (!gameId) return;
+    let cancelled = false;
+    fetch(`/api/attendance?game_id=${gameId}`)
+      .then(r => r.json())
+      .then(d => { if (!cancelled && d?.attendance != null) setAttendance(Number(d.attendance)); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [gameId]);
 
   useEffect(() => {
     if (!date) return;
@@ -2310,18 +2322,44 @@ function VenueCard({ venue, date }: { venue: string; date?: string }) {
         </a>
       </div>
 
-      {/* Capacity + Surface */}
-      {info && (
-        <>
-          {divider}
-          <div style={{ display: "flex", alignItems: "center", gap: 36, padding: "15px 18px" }}>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-              <span style={{ fontSize: 15, fontWeight: 800, color: "var(--text-1)" }}>Capacity</span>
-              <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>{info.capacity}</span>
+      {/* Attendance + Capacity (with % filled bar once the crowd is known) */}
+      {info && (() => {
+        const capNum = Number(String(info.capacity).replace(/[^0-9]/g, "")) || 0;
+        const pct = attendance && capNum ? Math.min(100, Math.round((attendance / capNum) * 100)) : null;
+        return (
+          <>
+            {divider}
+            <div style={{ padding: "15px 18px" }}>
+              {attendance != null ? (
+                <>
+                  <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+                      <span style={{ fontSize: 15, fontWeight: 800, color: "var(--text-1)" }}>Attendance</span>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>{attendance.toLocaleString()}</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+                      <span style={{ fontSize: 15, fontWeight: 800, color: "var(--text-1)" }}>Capacity</span>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>{info.capacity}</span>
+                    </div>
+                  </div>
+                  {pct != null && (
+                    <div style={{ position: "relative", marginTop: 12, height: 14, borderRadius: 999, background: "rgba(255,255,255,0.08)" }}>
+                      <div style={{ position: "absolute", inset: 0, width: `${pct}%`, minWidth: 34, background: "linear-gradient(90deg, #16a34a, #22c55e)", borderRadius: 999, display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
+                        <span style={{ fontSize: 11, fontWeight: 900, color: "#04210f", padding: "0 8px", whiteSpace: "nowrap" }}>{pct}%</span>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+                  <span style={{ fontSize: 15, fontWeight: 800, color: "var(--text-1)" }}>Capacity</span>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>{info.capacity}</span>
+                </div>
+              )}
             </div>
-          </div>
-        </>
-      )}
+          </>
+        );
+      })()}
 
       {/* Weather forecast — live from Open-Meteo for game day */}
       {weather && (
@@ -4102,7 +4140,7 @@ function MatchPageInner() {
 
             {!feedLoading && !feedError && displayLiveEvents.length === 0 && status === "UPCOMING" && (
               <>
-                {game.venue && <VenueCard venue={game.venue} date={game.date} />}
+                {game.venue && <VenueCard venue={game.venue} date={game.date} gameId={id} />}
                 <TeamFormBox
                   homeTeam={safeText(game.hteam, "")}
                   awayTeam={safeText(game.ateam, "")}
@@ -4304,7 +4342,7 @@ function MatchPageInner() {
             {/* Venue card at the bottom of the stats page once the match has started */}
             {status !== "UPCOMING" && game.venue && (
               <div style={{ padding: "0 16px" }}>
-                <VenueCard venue={game.venue} date={game.date} />
+                <VenueCard venue={game.venue} date={game.date} gameId={id} />
               </div>
             )}
           </section>
