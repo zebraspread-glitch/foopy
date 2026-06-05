@@ -3466,6 +3466,34 @@ function MatchPageInner() {
       });
   }, [id, liveEvents]);
 
+  // Declared here (before any early returns) so hook call count is always stable.
+  // Use live/final API stats when available; fall back to static JSON for older games.
+  const useLiveStats = (isLiveGame || status === "FINAL") && liveHomeStats.length > 0;
+  const displayHomeStats = useLiveStats ? liveHomeStats : homeStats;
+  const displayAwayStats = useLiveStats ? liveAwayStats : awayStats;
+
+  // Snapshot each player's FP the first time their event appears.
+  // Already-snapshotted events are skipped so the stored value never changes.
+  useEffect(() => {
+    const allStats = [...displayHomeStats, ...displayAwayStats];
+    if (allStats.length === 0) return;
+    displayLiveEvents.forEach((event, index) => {
+      if (event.type === "QUARTER_BREAK") return;
+      const ek = scoreEventKey(event, index);
+      if (eventFPSnapshots.current[ek] != null) return;
+      if ((event as any).playerFP != null) {
+        eventFPSnapshots.current[ek] = (event as any).playerFP;
+        return;
+      }
+      const player = findPlayerForLiveEvent(event, safeText(game?.hteam, ""), safeText(game?.ateam, ""));
+      if (!player) return;
+      const stat = allStats.find(p =>
+        ((p as any).name || (p as any).player || "").toLowerCase() === (player.name || "").toLowerCase()
+      );
+      if (stat) eventFPSnapshots.current[ek] = fantasyPoints(stat);
+    });
+  }, [displayLiveEvents, displayHomeStats, displayAwayStats, game]);
+
   if (!mounted || loading) {
     return (
       <main style={pageStyle} className="page-enter">
@@ -3531,34 +3559,6 @@ function MatchPageInner() {
 
   const homeAbbr = getAbbr(game.hteam);
   const awayAbbr = getAbbr(game.ateam);
-
-  // Use live/final API stats when available; fall back to static JSON for older games
-  const useLiveStats = (isLiveGame || status === "FINAL") && liveHomeStats.length > 0;
-  const displayHomeStats = useLiveStats ? liveHomeStats : homeStats;
-  const displayAwayStats = useLiveStats ? liveAwayStats : awayStats;
-
-  // Snapshot each player's FP the first time their event appears — must be
-  // declared after displayHomeStats/displayAwayStats to satisfy TS block-scope.
-  // Already-snapshotted events are skipped so the stored value never changes.
-  useEffect(() => {
-    const allStats = [...displayHomeStats, ...displayAwayStats];
-    if (allStats.length === 0) return;
-    displayLiveEvents.forEach((event, index) => {
-      if (event.type === "QUARTER_BREAK") return;
-      const ek = scoreEventKey(event, index);
-      if (eventFPSnapshots.current[ek] != null) return;
-      if ((event as any).playerFP != null) {
-        eventFPSnapshots.current[ek] = (event as any).playerFP;
-        return;
-      }
-      const player = findPlayerForLiveEvent(event, safeText(game?.hteam, ""), safeText(game?.ateam, ""));
-      if (!player) return;
-      const stat = allStats.find(p =>
-        ((p as any).name || (p as any).player || "").toLowerCase() === (player.name || "").toLowerCase()
-      );
-      if (stat) eventFPSnapshots.current[ek] = fantasyPoints(stat);
-    });
-  }, [displayLiveEvents, displayHomeStats, displayAwayStats, game]);
 
   const homeApiTeamId = getApiTeamId(game.hteam);
   const awayApiTeamId = getApiTeamId(game.ateam);
