@@ -1366,7 +1366,7 @@ function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating, stic
 
     return (
       <th
-        style={{ ...thStyle, color: active ? "#0ea5e9" : "#9ca3af", cursor: "pointer" }}
+        style={{ ...thStyle, top: stickyTop, color: active ? "#0ea5e9" : "#9ca3af", cursor: "pointer" }}
         onClick={() => {
           if (sortKey === key) setSortDir(sortDir === "desc" ? "asc" : "desc");
           else {
@@ -1395,9 +1395,9 @@ function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating, stic
 
       <div style={tableWrapStyle}>
         <table style={tableStyle}>
-          <thead style={{ top: stickyTop }}>
+          <thead>
             <tr>
-              <th style={thPlayerStyle}>
+              <th style={{ ...thPlayerStyle, top: stickyTop }}>
                 <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <span style={{ display: "flex", gap: 3 }}>
                     <button onClick={() => setStatMode("basic")} style={statMode === "basic" ? activeStatSwitchStyle : statSwitchStyle}>Basic</button>
@@ -1425,7 +1425,7 @@ function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating, stic
   {sortHeader("FA", "freesAgainst")}
 </>
               )}
-              <th style={thStyle} />
+              <th style={{ ...thStyle, top: stickyTop }} />
             </tr>
           </thead>
 
