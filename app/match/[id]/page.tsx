@@ -284,11 +284,31 @@ function eventKeyAliases(event: LiveEvent, index = 0) {
   return Array.from(new Set(aliases.map((key) => safeText(key, "")).filter(Boolean)));
 }
 
+// Mirrors stableEventKey() on the event page so the match page looks up
+// comments under the EXACT same key the event page stores them under.
+function canonicalKeyForEvent(event: LiveEvent, index = 0): string {
+  const keys = eventKeyAliases(event, index);
+  return (
+    keys.find((key) => key.startsWith("score_") && key.endsWith("_SCORE")) ??
+    keys.find((key) => key.startsWith("score_")) ??
+    keys.find((key) => key.startsWith("player_")) ??
+    keys.find((key) => !key.startsWith("feed_")) ??
+    keys[0] ?? ""
+  );
+}
+
 function commentCountForEvent(counts: Record<string, number>, event: LiveEvent, index = 0) {
+  // Primary: the canonical key (what the event page stores under).
+  const canonical = canonicalKeyForEvent(event, index);
+  if ((counts[canonical] ?? 0) > 0) return counts[canonical];
+  // Fallback: any alias that has comments (covers legacy keys).
   return eventKeyAliases(event, index).reduce((sum, key) => sum + (counts[key] ?? 0), 0);
 }
 
 function commentKeyForEvent(counts: Record<string, number>, event: LiveEvent, index = 0) {
+  // Always navigate/look up under the canonical key so storage and read agree.
+  const canonical = canonicalKeyForEvent(event, index);
+  if (canonical) return canonical;
   const aliases = eventKeyAliases(event, index);
   return aliases.find((key) => (counts[key] ?? 0) > 0) ?? aliases[0];
 }
