@@ -3556,6 +3556,30 @@ function MatchPageInner() {
       });
   }, [id, liveEvents]);
 
+  // Realtime: increment eventCommentCounts when a new event comment is inserted
+  // (catches the user's own comment when returning from the event page, plus
+  //  comments from other users without needing a full page reload).
+  useEffect(() => {
+    if (!id) return;
+    const gameId = Number(id);
+    const channel = supabase
+      .channel(`event-comments-${gameId}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "feed_comments", filter: `game_id=eq.${gameId}` },
+        (payload: any) => {
+          const eventKey = payload.new?.event_key;
+          if (!eventKey) return;
+          setEventCommentCounts(prev => ({
+            ...prev,
+            [eventKey]: (prev[eventKey] ?? 0) + 1,
+          }));
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [id]);
+
   // Declared here (before any early returns) so hook call count is always stable.
   // Use live/final API stats when available; fall back to static JSON for older games.
   const useLiveStats = (isLiveGame || status === "FINAL") && liveHomeStats.length > 0;
