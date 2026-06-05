@@ -1542,7 +1542,7 @@
     "name": "Cody Weightman",
     "team": "Western Bulldogs",
     "aliases": [],
-    "apiSportsId": null,
+    "apiSportsId": 950,
     "eventIds": [],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.compp-western-bulldogs--cody-weightman"
@@ -2955,8 +2955,8 @@
     "name": "Hugo Hall-Kahan",
     "team": "Adelaide",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 2114,
+    "eventIds": [2114],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.compp-adelaide-crows--hugo-hall-kahan"
   },
