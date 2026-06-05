@@ -194,10 +194,40 @@ export async function GET(req: Request) {
     }
   }
 
-  // ── 4. Compute Foopy rating per player per game ────────────────────────────
-  // Also build squiggle game info for round/opponent lookup
-  const squiggleGameInfoMap = new Map<string, { round: number; homeTeam: string; awayTeam: string }>();
+  // ── 4. Fetch Squiggle game info (round + teams) BEFORE the entry loop ────────
+  // apiSportsId → { round, hteam, ateam }
+  const apiToSquiggle = new Map<string, string>();
+  for (const [sqId, apiId] of Object.entries(API_SPORTS_MATCH_IDS as Record<string, string>)) {
+    apiToSquiggle.set(String(apiId), sqId);
+  }
 
+  const squiggleGameInfo = new Map<string, { round: number; hteam: string; ateam: string }>();
+  try {
+    const sq = await fetch(
+      `https://api.squiggle.com.au/?q=games;year=${SEASON}`,
+      { headers: { "User-Agent": "Foopy AFL App" }, cache: "no-store" }
+    );
+    if (sq.ok) {
+      const sqData = await sq.json();
+      for (const g of sqData.games ?? []) {
+        // keyed by squiggle ID
+        squiggleGameInfo.set(String(g.id), {
+          round: Number(g.round),
+          hteam: String(g.hteam ?? ""),
+          ateam: String(g.ateam ?? ""),
+        });
+      }
+    }
+  } catch {}
+
+  function getSquiggleInfo(apiSportsId: string) {
+    const sqId = apiToSquiggle.get(apiSportsId);
+    return sqId ? squiggleGameInfo.get(sqId) ?? null : null;
+  }
+
+  const norm = (s: string) => s.toLowerCase().replace(/[^a-z]/g, "");
+
+  // ── 5. Compute Foopy rating per player per game ────────────────────────────
   const entries: Omit<PerformanceEntry, "rank">[] = [];
 
   for (const [gameId, gameEntry] of Object.entries(gameStats)) {
@@ -207,12 +237,30 @@ export async function GET(req: Request) {
       if (!String(gameEntry.date ?? "").startsWith(SEASON)) continue;
     }
 
+    const sqInfo = getSquiggleInfo(gameId);
+
     const teams: any[] = gameEntry.teams ?? [];
-    const teamNames = teams.map((t: any) => String(t.team?.name ?? "")).filter(Boolean);
 
     for (const teamEntry of teams) {
+      // Determine this team's name — try game data first, fall back to players.json
       const teamName = String(teamEntry.team?.name ?? "");
-      const opponent = teamNames.find(n => n !== teamName) ?? null;
+
+      // Work out opponent from Squiggle data (reliable team names)
+      let opponent: string | null = null;
+      if (sqInfo) {
+        const normTeam = norm(teamName);
+        const normH = norm(sqInfo.hteam);
+        const normA = norm(sqInfo.ateam);
+        // Match this entry's team against home/away
+        if (normTeam && normH && normA) {
+          opponent = normTeam === normH || normH.includes(normTeam) || normTeam.includes(normH)
+            ? sqInfo.ateam
+            : sqInfo.hteam;
+        } else {
+          // Fall back: opponent is whichever of h/a we can't match to this team
+          opponent = sqInfo.ateam || sqInfo.hteam || null;
+        }
+      }
 
       for (const pe of teamEntry.players ?? []) {
         const apiPlayerId = Number(pe.player?.id ?? 0);
@@ -253,7 +301,7 @@ export async function GET(req: Request) {
           team,
           rating,
           date: String(gameEntry.date ?? ""),
-          round: null, // filled below if we have squiggle data
+          round: sqInfo?.round ?? null,
           opponent,
           image: playerImagePath(name, team),
           gameApiSportsId: gameId,
@@ -265,34 +313,6 @@ export async function GET(req: Request) {
         });
       }
     }
-  }
-
-  // ── 5. Enrich with round numbers via Squiggle (best-effort) ───────────────
-  // Build a reverse map of squiggle game ID → round from all known games
-  // We do this by checking API_SPORTS_MATCH_IDS
-  const apiToSquiggle = new Map<string, string>();
-  for (const [sqId, apiId] of Object.entries(API_SPORTS_MATCH_IDS as Record<string, string>)) {
-    apiToSquiggle.set(String(apiId), sqId);
-  }
-
-  // Fetch all squiggle games for the season to get round info (cached-friendly)
-  let squiggleRoundByGameId = new Map<string, number>(); // squiggleId → round
-  try {
-    const sq = await fetch(
-      `https://api.squiggle.com.au/?q=games;year=${SEASON}`,
-      { headers: { "User-Agent": "Foopy AFL App" }, next: { revalidate: 3600 } as any }
-    );
-    if (sq.ok) {
-      const sqData = await sq.json();
-      for (const g of sqData.games ?? []) {
-        squiggleRoundByGameId.set(String(g.id), Number(g.round));
-      }
-    }
-  } catch {}
-
-  for (const entry of entries) {
-    const sqId = apiToSquiggle.get(entry.gameApiSportsId);
-    if (sqId) entry.round = squiggleRoundByGameId.get(sqId) ?? null;
   }
 
   // ── 6. Sort & trim ─────────────────────────────────────────────────────────
