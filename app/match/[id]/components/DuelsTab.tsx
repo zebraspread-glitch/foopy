@@ -613,6 +613,7 @@ export default function DuelsTab({
         myPicks={myPicks}
         oppPicks={oppPicks}
         userId={userId!}
+        liveGameStats={effectiveLiveStats}
       />
     );
   }
@@ -1447,13 +1448,14 @@ function LockedPickRow({ question, myPick, oppPick, isTiebreaker, index = 0, liv
 }
 
 function ResultScreen({
-  duel, questions, myPicks, oppPicks, userId,
+  duel, questions, myPicks, oppPicks, userId, liveGameStats,
 }: {
   duel: Duel;
   questions: DuelQuestion[];
   myPicks: Pick[];
   oppPicks: Pick[];
   userId: string;
+  liveGameStats?: LiveGameStats | null;
 }) {
   const isChallenger = duel.challenger_id === userId;
   const me       = isChallenger ? duel.challenger : duel.opponent;
@@ -1619,6 +1621,8 @@ function ResultScreen({
       {/* ── Pick sections (same layout as live screen) ── */}
       <style>{`@media (max-width: 480px) { .dp-name { display: none !important; } }`}</style>
       {(() => {
+        const norm     = (s: string) => s.toLowerCase().replace(/[^a-z]/g, "");
+        const lastName = (s: string) => s.trim().split(/\s+/).pop()?.toLowerCase() ?? "";
         const buildRow = (q: any, mp: any, op: any) => {
           const myCorrect  = mp?.is_correct ?? null;
           const oppCorrect = op?.is_correct ?? null;
@@ -1626,8 +1630,33 @@ function ResultScreen({
           const catLabel = cat ? cat.label.toUpperCase() : (q.category_key?.replace("player_","").replace("team_","").toUpperCase() ?? "—");
           const myWins:  boolean | null = myCorrect;
           const oppWins: boolean | null = oppCorrect;
+          const getVal = (optName: string | null): string | null => {
+            if (!liveGameStats || !cat || !optName) return null;
+            if (cat.type === "player") {
+              let p = liveGameStats.players.find(pl => norm(pl.name) === norm(optName));
+              if (!p) p = liveGameStats.players.find(pl => lastName(pl.name) === lastName(optName) && pl.name.length > 0);
+              if (!p) return null;
+              if (cat.key === "foopy") return String(liveStatFoopy(p));
+              return String((p as any)[cat.key] ?? 0);
+            }
+            if (cat.type === "team" && cat.key !== "score") {
+              const normOpt = norm(optName);
+              const isHome = normOpt === norm(liveGameStats.homeTeam);
+              const isAway = !isHome && normOpt === norm(liveGameStats.awayTeam);
+              if (!isHome && !isAway) return null;
+              const total = liveGameStats.players
+                .filter(p => isHome ? p.isHome : !p.isHome)
+                .reduce((sum, p) => sum + ((p as any)[cat.key] as number ?? 0), 0);
+              return String(total);
+            }
+            return null;
+          };
+          const myOptName  = mp ? (mp.pick === "a" ? q.option_a : q.option_b) : null;
+          const oppOptName = op ? (op.pick === "a" ? q.option_a : q.option_b) : null;
+          const myVal  = getVal(myOptName);
+          const oppVal = getVal(oppOptName);
           return {
-            catLabel, myWins, oppWins,
+            catLabel, myWins, oppWins, myVal, oppVal,
             myImg:  mp ? (mp.pick === "a" ? q.option_a_image : q.option_b_image) : null,
             oppImg: op ? (op.pick === "a" ? q.option_a_image : q.option_b_image) : null,
             myName:  mp ? (mp.pick === "a" ? q.option_a : q.option_b) : "—",
@@ -1638,7 +1667,7 @@ function ResultScreen({
         };
 
         const renderPickRow = (q: any, mp: any, op: any, isLast: boolean) => {
-          const { catLabel, myWins, oppWins, myImg, oppImg, myName, oppName, myTeam, oppTeam } = buildRow(q, mp, op);
+          const { catLabel, myWins, oppWins, myVal, oppVal, myImg, oppImg, myName, oppName, myTeam, oppTeam } = buildRow(q, mp, op);
           const myC  = safeTeamColor(myTeam,  "#3b82f6");
           const opC  = safeTeamColor(oppTeam, "#475569");
           const az = 34;
@@ -1654,7 +1683,10 @@ function ResultScreen({
                 </div>
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div className="dp-name" style={{ fontSize: 11, fontWeight: 600, color: myWins === false ? "var(--text-4)" : "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{myName}</div>
-                  {myWins !== null && <div style={{ fontSize: 15, fontWeight: 900, color: myWins ? "#22c55e" : "#ef4444", lineHeight: 1 }}>{myWins ? "✓" : "✗"}</div>}
+                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                    {myVal && <span style={{ fontSize: 15, fontWeight: 900, color: myWins === true ? "#22c55e" : myWins === false ? "var(--text-4)" : "var(--text-2)", letterSpacing: "-0.03em", lineHeight: 1 }}>{myVal}</span>}
+                    {myWins !== null && <span style={{ fontSize: 13, fontWeight: 900, color: myWins ? "#22c55e" : "#ef4444", lineHeight: 1 }}>{myWins ? "✓" : "✗"}</span>}
+                  </div>
                 </div>
               </div>
               {/* CENTER */}
@@ -1672,7 +1704,10 @@ function ResultScreen({
                 {op ? (
                   <div style={{ minWidth: 0, flex: 1, textAlign: "right" as const }}>
                     <div className="dp-name" style={{ fontSize: 11, fontWeight: 600, color: oppWins === false ? "var(--text-4)" : "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{oppName}</div>
-                    {oppWins !== null && <div style={{ fontSize: 15, fontWeight: 900, color: oppWins ? "#22c55e" : "#ef4444", lineHeight: 1, textAlign: "right" as const }}>{oppWins ? "✓" : "✗"}</div>}
+                    <div style={{ display: "flex", alignItems: "center", gap: 5, justifyContent: "flex-end" }}>
+                      {oppWins !== null && <span style={{ fontSize: 13, fontWeight: 900, color: oppWins ? "#22c55e" : "#ef4444", lineHeight: 1 }}>{oppWins ? "✓" : "✗"}</span>}
+                      {oppVal && <span style={{ fontSize: 15, fontWeight: 900, color: oppWins === true ? "#22c55e" : oppWins === false ? "var(--text-4)" : "var(--text-2)", letterSpacing: "-0.03em", lineHeight: 1 }}>{oppVal}</span>}
+                    </div>
                   </div>
                 ) : (
                   <span style={{ fontSize: 11, color: "var(--text-4)", fontStyle: "italic", flex: 1, textAlign: "right" as const }}>—</span>
