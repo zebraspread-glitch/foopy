@@ -4300,6 +4300,13 @@ function MatchPageInner() {
                 awayScore={game.ascore}
               />
             </div>
+
+            {/* Venue card at the bottom of the stats page once the match has started */}
+            {status !== "UPCOMING" && game.venue && (
+              <div style={{ padding: "0 16px" }}>
+                <VenueCard venue={game.venue} date={game.date} />
+              </div>
+            )}
           </section>
         )}
 
