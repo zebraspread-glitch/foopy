@@ -94,6 +94,7 @@ export async function GET(req: Request) {
           position:      null,
           games,
           goals:         n(stat.goals?.total?.total),
+          totalGoals:    n(stat.goals?.total?.total), // explicit alias for per-game calculation
           goalAssists:   n(stat.goals?.assists?.total),
           behinds:       n(stat.behinds?.total),
           totalDisposals:  n(stat.disposals?.total),

@@ -1269,19 +1269,22 @@ function SeasonAvgTable({ stats }: { stats: any[] }) {
 
   const withRating = stats.map(p => {
     const g = p.games || 1;
+    // Prefer dividing raw totals ourselves — API-Sports' pre-rounded .average
+    // fields can differ from FootyWire due to rounding and different denominators.
+    const avg = (total: number | null | undefined) => (total ?? 0) / g;
     const _foopy = foopyRating({
-      goals:        p.goalAvg          ?? 0,
-      goalAssists:  (p.goalAssists     ?? 0) / g,
-      behinds:      (p.behinds         ?? 0) / g,
-      kicks:        p.kicks            ?? 0,
-      handballs:    p.handballs        ?? 0,
-      disposals:    p.disposals        ?? 0,
-      marks:        p.marks            ?? 0,
-      tackles:      p.tackles          ?? 0,
-      hitouts:      p.hitouts          ?? 0,
-      clearances:   p.clearances       ?? 0,
-      freesFor:     p.freesForAvg      ?? (p.freesFor     ?? 0) / g,
-      freesAgainst: (p.freesAgainst    ?? 0) / g,
+      goals:        p.totalGoals       != null ? avg(p.totalGoals)       : (p.goalAvg      ?? 0),
+      goalAssists:  avg(p.goalAssists),
+      behinds:      avg(p.behinds),
+      kicks:        p.totalKicks       != null ? avg(p.totalKicks)       : (p.kicks        ?? 0),
+      handballs:    p.totalHandballs   != null ? avg(p.totalHandballs)   : (p.handballs    ?? 0),
+      disposals:    p.totalDisposals   != null ? avg(p.totalDisposals)   : (p.disposals    ?? 0),
+      marks:        p.totalMarks       != null ? avg(p.totalMarks)       : (p.marks        ?? 0),
+      tackles:      p.totalTackles     != null ? avg(p.totalTackles)     : (p.tackles      ?? 0),
+      hitouts:      p.totalHitouts     != null ? avg(p.totalHitouts)     : (p.hitouts      ?? 0),
+      clearances:   p.totalClearances  != null ? avg(p.totalClearances)  : (p.clearances   ?? 0),
+      freesFor:     p.freesFor         != null ? avg(p.freesFor)         : (p.freesForAvg  ?? 0),
+      freesAgainst: avg(p.freesAgainst),
     } as any);
     return { ...p, _foopy };
   });
