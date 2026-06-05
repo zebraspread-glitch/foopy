@@ -146,13 +146,28 @@ export async function GET(req: Request) {
       }
     } catch {}
   } else if (filter === "month") {
+    // Use Squiggle to find games played this calendar month (same approach as round filter)
     const now = new Date();
     const monthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-    allowedGameIds = new Set<string>(
-      Object.entries(gameStats)
-        .filter(([, g]) => String(g.date ?? "").startsWith(monthPrefix))
-        .map(([id]) => id)
-    );
+    try {
+      const sq = await fetch(
+        `https://api.squiggle.com.au/?q=games;year=${SEASON}`,
+        { headers: { "User-Agent": "Foopy AFL App" }, cache: "no-store" }
+      );
+      if (sq.ok) {
+        const sqData = await sq.json();
+        // Games whose date falls in this month AND are complete
+        const squiggleIds = new Set<string>(
+          (sqData.games ?? [])
+            .filter((g: any) => String(g.date ?? "").startsWith(monthPrefix) && Number(g.complete) >= 100)
+            .map((g: any) => String(g.id))
+        );
+        allowedGameIds = new Set<string>();
+        for (const [sqId, apiId] of Object.entries(API_SPORTS_MATCH_IDS as Record<string, string>)) {
+          if (squiggleIds.has(sqId)) allowedGameIds.add(String(apiId));
+        }
+      }
+    } catch {}
   } else if (filter === "season") {
     allowedGameIds = new Set<string>(
       Object.entries(gameStats)
@@ -160,7 +175,7 @@ export async function GET(req: Request) {
         .map(([id]) => id)
     );
   }
-  // "all" and "lowest" → allowedGameIds stays null (all games)
+  // "season_worst" → allowedGameIds stays null (all current-season games handled in loop)
 
   // ── 3. Build player lookup by apiSportsId ──────────────────────────────────
   const playerById = new Map<number, { name: string; team: string }>();
@@ -181,9 +196,9 @@ export async function GET(req: Request) {
 
   for (const [gameId, gameEntry] of Object.entries(gameStats)) {
     if (allowedGameIds !== null && !allowedGameIds.has(gameId)) continue;
-    if (filter === "season" || filter === "all" || filter === "lowest") {
-      // Only include current season for season, all current + past for all/lowest
-      if (filter === "season" && !String(gameEntry.date ?? "").startsWith(SEASON)) continue;
+    // season and season_worst only include current-season games
+    if (filter === "season" || filter === "season_worst") {
+      if (!String(gameEntry.date ?? "").startsWith(SEASON)) continue;
     }
 
     const teams: any[] = gameEntry.teams ?? [];
@@ -267,7 +282,7 @@ export async function GET(req: Request) {
   }
 
   // ── 6. Sort & trim ─────────────────────────────────────────────────────────
-  if (filter === "lowest") {
+  if (filter === "season_worst") {
     entries.sort((a, b) => a.rating - b.rating);
   } else {
     entries.sort((a, b) => b.rating - a.rating);

@@ -17,14 +17,13 @@ type PerformanceEntry = {
   gameApiSportsId: string;
 };
 
-type Filter = "round" | "month" | "season" | "all" | "lowest";
+type Filter = "round" | "month" | "season" | "season_worst";
 
 const FILTERS: { key: Filter; label: string }[] = [
-  { key: "round",  label: "This Round" },
-  { key: "month",  label: "This Month" },
-  { key: "season", label: "This Season" },
-  { key: "all",    label: "All Time Best" },
-  { key: "lowest", label: "All Time Worst" },
+  { key: "round",         label: "This Round" },
+  { key: "month",         label: "This Month" },
+  { key: "season",        label: "This Season" },
+  { key: "season_worst",  label: "Season Worst" },
 ];
 
 function foopyColor(value: number): string {
