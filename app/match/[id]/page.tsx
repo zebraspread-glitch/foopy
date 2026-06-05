@@ -2239,7 +2239,11 @@ const AFL_VENUES: Record<string, { city: string; capacity: string; surface: stri
   "Cazaly's Stadium":  { city: "Cairns, QLD",       capacity: "13,500",  surface: "Grass",       lat: -16.9186, lon: 145.7781, mapsQuery: "Cazalys+Stadium+Cairns" },
   "Mars Stadium":      { city: "Ballarat, VIC",     capacity: "12,000",  surface: "Grass",       lat: -37.5541, lon: 143.8483, mapsQuery: "Mars+Stadium+Ballarat" },
   "TIO Traeger Park":  { city: "Alice Springs, NT", capacity: "10,000",  surface: "Grass",       lat: -23.7050, lon: 133.8803, mapsQuery: "TIO+Traeger+Park+Alice+Springs" },
+  "TIO Stadium":       { city: "Darwin, NT",        capacity: "12,500",  surface: "Grass",       lat: -12.3992, lon: 130.8854, mapsQuery: "TIO+Stadium+Marrara+Darwin" },
+  "Marrara Oval":      { city: "Darwin, NT",        capacity: "12,500",  surface: "Grass",       lat: -12.3992, lon: 130.8854, mapsQuery: "TIO+Stadium+Marrara+Darwin" },
   "UTAS Stadium":      { city: "Launceston, TAS",   capacity: "20,000",  surface: "Grass",       lat: -41.4349, lon: 147.1426, mapsQuery: "UTAS+Stadium+Launceston" },
+  "Hands Oval":        { city: "Bunbury, WA",       capacity: "8,000",   surface: "Grass",       lat: -33.3289, lon: 115.6447, mapsQuery: "Hands+Oval+Bunbury" },
+  "Summit Sport and Recreation Park": { city: "Mount Barker, SA", capacity: "10,000", surface: "Grass", lat: -35.0697, lon: 138.8597, mapsQuery: "Summit+Sport+Recreation+Park+Mount+Barker" },
   "Sydney Showground Stadium": { city: "Sydney, NSW", capacity: "24,000", surface: "Grass",      lat: -33.8451, lon: 151.0680, mapsQuery: "Sydney+Showground+Stadium" },
 };
 
@@ -2274,23 +2278,40 @@ function VenueCard({ venue, date }: { venue: string; date?: string }) {
   const [weather, setWeather] = useState<{ temp: number; code: number } | null>(null);
 
   useEffect(() => {
-    if (!info || !date) return;
+    if (!date) return;
     const day = date.slice(0, 10);
     let cancelled = false;
-    fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${info.lat}&longitude=${info.lon}` +
-      `&daily=temperature_2m_max,weathercode&timezone=auto&start_date=${day}&end_date=${day}`
-    )
-      .then(r => r.json())
-      .then(d => {
-        if (cancelled) return;
-        const temp = d?.daily?.temperature_2m_max?.[0];
-        const code = d?.daily?.weathercode?.[0];
-        if (temp != null && code != null) setWeather({ temp: Math.round(temp), code });
-      })
-      .catch(() => {});
+
+    const fetchWeather = (lat: number, lon: number) =>
+      fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+        `&daily=temperature_2m_max,weathercode&timezone=auto&start_date=${day}&end_date=${day}`
+      )
+        .then(r => r.json())
+        .then(d => {
+          if (cancelled) return;
+          const temp = d?.daily?.temperature_2m_max?.[0];
+          const code = d?.daily?.weathercode?.[0];
+          if (temp != null && code != null) setWeather({ temp: Math.round(temp), code });
+        })
+        .catch(() => {});
+
+    if (info) {
+      // Known venue → use its exact coordinates.
+      fetchWeather(info.lat, info.lon);
+    } else {
+      // Unknown venue → geocode the venue name to get coordinates, then fetch.
+      fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(venue)}&count=1&country=AU`)
+        .then(r => r.json())
+        .then(g => {
+          if (cancelled) return;
+          const hit = g?.results?.[0];
+          if (hit?.latitude != null && hit?.longitude != null) fetchWeather(hit.latitude, hit.longitude);
+        })
+        .catch(() => {});
+    }
     return () => { cancelled = true; };
-  }, [info, date]);
+  }, [info, date, venue]);
 
   if (!venue) return null;
   const mapsUrl = info
