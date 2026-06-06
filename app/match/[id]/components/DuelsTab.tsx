@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
+import { foopyRating } from "@/app/lib/foopyRating";
 import { teamColors } from "../utils";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import { VerifiedBadge } from "@/app/components/VerifiedBadge";
@@ -48,6 +49,7 @@ const DUEL_STAT_CATS: Record<string, { key: string; label: string; type: "player
 
 type LiveStat = {
   name: string; isHome: boolean;
+  foopy?: unknown;
   goals: number; disposals: number; marks: number; kicks: number;
   handballs: number; tackles: number; hitouts: number; clearances: number;
   behinds: number; goalAssists: number; freesFor: number; freesAgainst: number;
@@ -60,21 +62,34 @@ type LiveGameStats = {
   awayTeam: string;
 };
 
-function liveStatFoopy(p: LiveStat): number {
-  let score = p.goals * 5.5 + p.goalAssists * 1.5 + p.behinds * 1.2 +
-    p.kicks * 0.75 + p.handballs * 0.55 + p.marks * 1.0 +
-    p.tackles * 1.8 + p.hitouts * 0.35 + p.clearances * 0.5 +
-    p.freesFor * 0.3 - p.freesAgainst * 0.4;
-  if (p.goals >= 3)      score += 3;
-  if (p.goals >= 5)      score += 5;
-  if (p.goals >= 7)      score += 10;
-  if (p.goals >= 10)     score += 18;
-  if (p.disposals >= 25) score += 3;
-  if (p.disposals >= 30) score += 4;
-  if (p.tackles >= 8)    score += 4;
-  if (p.marks >= 10)     score += 3;
-  if (score <= 0) return 0;
-  return Math.round(Math.max(1, Math.min(10, 10 * (1 - Math.exp(-score / 36)))) * 10) / 10;
+function numericValue(value: unknown): number | null {
+  if (value == null || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function liveStatHasStatLine(p: LiveStat): boolean {
+  return (
+    p.disposals +
+    p.kicks +
+    p.handballs +
+    p.marks +
+    p.tackles +
+    p.hitouts +
+    p.goals +
+    p.behinds +
+    p.clearances +
+    p.freesFor +
+    p.freesAgainst >
+    0
+  );
+}
+
+function liveStatFoopy(p: LiveStat): number | null {
+  const savedFoopy = numericValue(p.foopy);
+  if (savedFoopy !== null && (liveStatHasStatLine(p) || savedFoopy !== 0)) return savedFoopy;
+  if (!liveStatHasStatLine(p)) return null;
+  return foopyRating(p);
 }
 
 type DuelQuestion = {
@@ -180,6 +195,7 @@ export default function DuelsTab({
     const toStat = (p: any, isHome: boolean): LiveStat => ({
       name:         p.player || p.name || "",
       isHome,
+      foopy:        p.foopy,
       goals:        num(p.goals),
       disposals:    num(p.disposals),
       marks:        num(p.marks),
@@ -303,6 +319,7 @@ export default function DuelsTab({
             players.push({
               name:         pe.player?.name ?? "",
               isHome,
+              foopy:        s.foopy ?? s.Foopy ?? null,
               kicks, handballs: hb, disposals: kicks + hb,
               marks:        n(s.marks        ?? s.Marks),
               tackles:      n(s.tackles      ?? s.Tackles),
@@ -1085,7 +1102,10 @@ function PicksLockedScreen({
               let p = liveGameStats.players.find((pl: any) => norm(pl.name) === norm(optName));
               if (!p) p = liveGameStats.players.find((pl: any) => lastName(pl.name) === lastName(optName) && pl.name.length > 0);
               if (!p) return null;
-              if (cat.key === "foopy") return String(liveStatFoopy(p));
+              if (cat.key === "foopy") {
+                const rating = liveStatFoopy(p);
+                return rating === null ? null : String(rating);
+              }
               return String((p as any)[cat.key] ?? 0);
             }
             return null;
@@ -1307,7 +1327,10 @@ function LockedPickRow({ question, myPick, oppPick, isTiebreaker, index = 0, liv
       let p = liveGameStats.players.find(pl => norm(pl.name) === norm(optName));
       if (!p) p = liveGameStats.players.find(pl => lastName(pl.name) === lastName(optName) && pl.name.length > 0);
       if (!p) return null;
-      if (cat.key === "foopy") return { value: String(liveStatFoopy(p)), label: "foopy" };
+      if (cat.key === "foopy") {
+        const rating = liveStatFoopy(p);
+        return rating === null ? null : { value: String(rating), label: "foopy" };
+      }
       return { value: String((p as any)[cat.key] ?? 0), label: cat.label };
     }
     if (cat.type === "team" && cat.key !== "score") {
@@ -1591,7 +1614,10 @@ function ResultScreen({
               let p = liveGameStats.players.find(pl => norm(pl.name) === norm(optName));
               if (!p) p = liveGameStats.players.find(pl => lastName(pl.name) === lastName(optName) && pl.name.length > 0);
               if (!p) return null;
-              if (cat.key === "foopy") return String(liveStatFoopy(p));
+              if (cat.key === "foopy") {
+                const rating = liveStatFoopy(p);
+                return rating === null ? null : String(rating);
+              }
               return String((p as any)[cat.key] ?? 0);
             }
             if (cat.type === "team" && cat.key !== "score") {
