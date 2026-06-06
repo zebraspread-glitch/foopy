@@ -27,7 +27,7 @@ export const VENUES: Record<string, VenueInfo> = {
   "Gabba":          { displayName: "Gabba",          location: "Woolloongabba, QLD",       lat: -27.4858, lon: 153.0381, capacity: "42,000",  surface: "Grass" },
   "Traeger Park":   { displayName: "Traeger Park",   location: "Alice Springs, NT",        lat: -23.7050, lon: 133.8803, capacity: "10,000",  surface: "Grass" },
   "Manuka Oval":    { displayName: "Manuka Oval",    location: "Griffith, ACT",            lat: -35.3175, lon: 149.1347, capacity: "13,500",  surface: "Grass" },
-  "Hands Oval":     { displayName: "Hands Oval",     location: "Bunbury, WA",              lat: -33.346118, lon: 115.643025, capacity: "8,000", surface: "Grass" },
+  "Hands Oval":     { displayName: "Hands Oval",     location: "Bunbury, WA",              lat: -33.346118, lon: 115.643025, capacity: "14,350", surface: "Grass" },
 
   // ── Squiggle name != real name ──
   "Docklands":        { displayName: "Marvel Stadium",       location: "Docklands, VIC",           lat: -37.8165, lon: 144.9476, capacity: "53,359", surface: "Grass" },
