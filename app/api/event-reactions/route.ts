@@ -4,13 +4,24 @@ import { supabaseServer } from "@/app/lib/supabase-server";
 export const dynamic = "force-dynamic";
 
 const db = supabaseServer;
-const EVENT_REACTION_EMOJIS = ["🔥", "👏", "😂", "😮", "😭", "❤️"];
+const EVENT_REACTION_EMOJI_SECTIONS = [
+  ["🔥", "🐐", "😭", "🤣", "😮", "🧊", "🎯", "🚨", "🤡", "📈", "💀", "👏", "❤️", "😤", "👀", "🤯"],
+  ["😀", "😆", "😂", "🥲", "😬", "😡", "😎", "😍", "😈", "😴", "🙃", "😇", "😱", "🥶", "😵"],
+  ["👍", "👎", "🙌", "🙏", "🤝", "💪", "🫡", "🤌", "👌", "🫶", "🤲", "🫵"],
+  ["🏉", "🏆", "🥇", "⚡", "💥", "⭐", "🚀", "🫠", "🍿", "🛎️", "🚩", "🏁"],
+] as const;
+const EVENT_REACTION_EMOJIS: string[] = Array.from(new Set(EVENT_REACTION_EMOJI_SECTIONS.flat()));
 
 type ReactionRow = {
   event_key: string;
   emoji: string;
   visitor_id: string;
 };
+
+function emojiRank(emoji: string) {
+  const index = EVENT_REACTION_EMOJIS.indexOf(emoji);
+  return index === -1 ? 999 : index;
+}
 
 function cleanVisitorId(value: unknown) {
   return typeof value === "string" ? value.trim().slice(0, 80) : "";
@@ -35,7 +46,7 @@ function summarise(rows: ReactionRow[], visitorId = "") {
   for (const [eventKey, emojiCounts] of Object.entries(counts)) {
     reactions[eventKey] = Object.entries(emojiCounts)
       .map(([emoji, count]) => ({ emoji, count }))
-      .sort((a, b) => b.count - a.count || EVENT_REACTION_EMOJIS.indexOf(a.emoji) - EVENT_REACTION_EMOJIS.indexOf(b.emoji));
+      .sort((a, b) => b.count - a.count || emojiRank(a.emoji) - emojiRank(b.emoji));
   }
 
   return { reactions, mine };
@@ -94,16 +105,37 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unsupported reaction" }, { status: 400 });
   }
 
-  const { error } = await db.from("feed_event_reactions").upsert(
-    {
-      game_id: gameId,
-      event_key: eventKey,
-      visitor_id: visitorId,
-      emoji,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "game_id,event_key,visitor_id" }
-  );
+  const { data: existingRows, error: existingError } = await db
+    .from("feed_event_reactions")
+    .select("emoji")
+    .eq("game_id", gameId)
+    .eq("event_key", eventKey)
+    .eq("visitor_id", visitorId);
+
+  if (existingError) return NextResponse.json({ error: existingError.message }, { status: 500 });
+
+  const hasSameReaction = (existingRows ?? []).some((row: { emoji: string }) => row.emoji === emoji);
+
+  const { error: deleteError } = await db
+    .from("feed_event_reactions")
+    .delete()
+    .eq("game_id", gameId)
+    .eq("event_key", eventKey)
+    .eq("visitor_id", visitorId);
+
+  if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 });
+
+  if (hasSameReaction) {
+    return NextResponse.json({ ok: true, ...(await loadSummary(gameId, visitorId)) });
+  }
+
+  const { error } = await db.from("feed_event_reactions").insert({
+    game_id: gameId,
+    event_key: eventKey,
+    visitor_id: visitorId,
+    emoji,
+    updated_at: new Date().toISOString(),
+  });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true, ...(await loadSummary(gameId, visitorId)) });

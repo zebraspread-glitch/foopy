@@ -5,7 +5,7 @@ import type { CSSProperties } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Check, ChevronLeft, SmilePlus } from "lucide-react";
+import { Check, ChevronLeft, Plus, X } from "lucide-react";
 import matchStatsJson from "@/app/data/game-stats.json";
 import teamStatsJson from "@/app/data/team-stats.json";
 import playerStatsJson from "@/app/data/players.json";
@@ -86,11 +86,19 @@ const API_TEAM_NAME_BY_ID: Record<number, string> = Object.fromEntries(
   Object.entries(API_TEAM_ID_BY_NAME).map(([name, apiId]) => [apiId, name])
 ) as Record<number, string>;
 
-const EVENT_REACTION_EMOJIS = ["🔥", "👏", "😂", "😮", "😭", "❤️"] as const;
+const PRIMARY_EVENT_REACTIONS = ["🔥", "🐐", "😭", "🤣", "😮"] as const;
+const EVENT_REACTION_PICKER_SECTIONS = [
+  { label: "Foopy", emojis: ["🔥", "🐐", "😭", "🤣", "😮", "🧊", "🎯", "🚨", "🤡", "📈", "💀", "👏", "❤️", "😤", "👀", "🤯"] },
+  { label: "Faces", emojis: ["😀", "😆", "😂", "🥲", "😬", "😡", "😎", "😍", "😈", "😴", "🙃", "😇", "😱", "🥶", "😵"] },
+  { label: "Hands", emojis: ["👍", "👎", "🙌", "🙏", "🤝", "💪", "🫡", "🤌", "👌", "🫶", "🤲", "🫵"] },
+  { label: "Game", emojis: ["🏉", "🏆", "🥇", "⚡", "💥", "⭐", "🚀", "🫠", "🍿", "🛎️", "🚩", "🏁"] },
+] as const;
+const EVENT_REACTION_EMOJIS: string[] = Array.from(new Set(EVENT_REACTION_PICKER_SECTIONS.flatMap((section) => section.emojis)));
 
 type EventReactionSummary = { emoji: string; count: number };
 type EventReactionMap = Record<string, EventReactionSummary[]>;
 type MyEventReactionMap = Record<string, string>;
+type EventReactionPopupState = { eventKey: string; label: string } | null;
 
 function getEventReactionVisitorId() {
   if (typeof window === "undefined") return "";
@@ -106,6 +114,45 @@ function getEventReactionVisitorId() {
   } catch {
     return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   }
+}
+
+function eventReactionEmojiRank(emoji: string) {
+  const index = EVENT_REACTION_EMOJIS.indexOf(emoji);
+  return index === -1 ? 999 : index;
+}
+
+function sortEventReactionSummaries(reactions: EventReactionSummary[]) {
+  return [...reactions].sort((a, b) => b.count - a.count || eventReactionEmojiRank(a.emoji) - eventReactionEmojiRank(b.emoji));
+}
+
+function reactionCountForEmoji(reactions: EventReactionSummary[] | undefined, emoji: string) {
+  return reactions?.find((reaction) => reaction.emoji === emoji)?.count ?? 0;
+}
+
+function optimisticEventReactionMap(
+  current: EventReactionMap,
+  eventKey: string,
+  previousEmoji: string | null,
+  nextEmoji: string | null
+) {
+  const counts: Record<string, number> = {};
+  for (const reaction of current[eventKey] ?? []) {
+    counts[reaction.emoji] = reaction.count;
+  }
+
+  if (previousEmoji) counts[previousEmoji] = Math.max(0, (counts[previousEmoji] ?? 0) - 1);
+  if (nextEmoji) counts[nextEmoji] = (counts[nextEmoji] ?? 0) + 1;
+
+  const nextReactions = sortEventReactionSummaries(
+    Object.entries(counts)
+      .filter(([, count]) => count > 0)
+      .map(([emoji, count]) => ({ emoji, count }))
+  );
+
+  const nextMap = { ...current };
+  if (nextReactions.length > 0) nextMap[eventKey] = nextReactions;
+  else delete nextMap[eventKey];
+  return nextMap;
 }
 
 function safeText(value: any, fallback = "") {
@@ -339,6 +386,28 @@ function commentKeyForEvent(counts: Record<string, number>, event: LiveEvent, in
   if (canonical) return canonical;
   const aliases = eventKeyAliases(event, index);
   return aliases.find((key) => (counts[key] ?? 0) > 0) ?? aliases[0];
+}
+
+function liveFeedEventMeta(event: LiveEvent, index: number, homeTeam: any, awayTeam: any) {
+  const inferredTeam = safeText((event as any).teamName, "");
+  const apiTeam = teamNameFromEvent(event);
+  const eventTeam = safeText(inferredTeam || apiTeam, "");
+  const player = findPlayerForLiveEvent(event, safeText(homeTeam, ""), safeText(awayTeam, ""));
+  const team = safeText(eventTeam || player?.club || player?.team, "");
+  const name = ((event as any).optimistic || (event as any).inferred)
+    ? team || "Team"
+    : safePlayerName(player?.name || event.playerName, event.playerId || index + 1);
+  const type = safeText(event.type, "").toUpperCase();
+
+  return {
+    aliases: eventKeyAliases(event, index),
+    label: `${name} - ${type}`,
+    minute: String(event.minute ?? ""),
+    name,
+    quarter: eventQuarter(event),
+    team,
+    type,
+  };
 }
 
 function eventIdentityKey(event: LiveEvent) {
@@ -1149,9 +1218,8 @@ function LiveFeedPlayer({
   playerFP,
   reactions,
   myReaction,
-  reactionPickerOpen,
   onCommentClick,
-  onToggleReactions,
+  onOpenReactionPopup,
   onReactionSelect,
 }: {
   event: LiveEvent;
@@ -1163,9 +1231,8 @@ function LiveFeedPlayer({
   playerFP?: number | null;
   reactions?: EventReactionSummary[];
   myReaction?: string | null;
-  reactionPickerOpen?: boolean;
   onCommentClick?: () => void;
-  onToggleReactions?: () => void;
+  onOpenReactionPopup?: () => void;
   onReactionSelect?: (emoji: string) => void;
 }) {
   const isInferred = Boolean((event as any).optimistic) || Boolean((event as any).inferred);
@@ -1228,16 +1295,6 @@ function LiveFeedPlayer({
                 </span>
               )}
             </div>
-            {(reactions?.length ?? 0) > 0 && (
-              <div style={eventReactionSummaryStyle}>
-                {reactions!.slice(0, 4).map((reaction) => (
-                  <span key={reaction.emoji} style={eventReactionPillStyle}>
-                    <span>{reaction.emoji}</span>
-                    <span>{reaction.count}</span>
-                  </span>
-                ))}
-              </div>
-            )}
           </div>
 
           <div style={liveFeedRightStyle}>
@@ -1247,50 +1304,29 @@ function LiveFeedPlayer({
               <span style={liveFeedMinuteStyle}>{event.minute ?? "-"}'</span>
             </div>
 
-            <div style={eventActionRowStyle}>
+            {!topComment && (
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onToggleReactions?.();
+                  onCommentClick?.();
                 }}
-                style={{
-                  ...eventReactBtnStyle,
-                  ...(myReaction ? eventReactBtnActiveStyle : null),
-                }}
-                aria-label="React to event"
-                title="React"
+                style={commentBubbleBtnStyle}
               >
-                {myReaction ? (
-                  <span style={eventReactEmojiStyle}>{myReaction}</span>
-                ) : (
-                  <SmilePlus size={14} strokeWidth={2.2} />
-                )}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+                {(commentCount ?? 0) > 0 && <span style={commentCountStyle}>{commentCount}</span>}
               </button>
-
-              {!topComment && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onCommentClick?.();
-                  }}
-                  style={commentBubbleBtnStyle}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                  </svg>
-                  {(commentCount ?? 0) > 0 && <span style={commentCountStyle}>{commentCount}</span>}
-                </button>
-              )}
-            </div>
+            )}
           </div>
         </div>
 
-        {/* Reaction picker */}
-        {reactionPickerOpen && (
-          <div style={eventReactionPickerRowStyle} onClick={(e) => e.stopPropagation()}>
-            {EVENT_REACTION_EMOJIS.map((emoji) => (
+        <div style={eventReactionBarStyle} onClick={(e) => e.stopPropagation()}>
+          {PRIMARY_EVENT_REACTIONS.map((emoji) => {
+            const count = reactionCountForEmoji(reactions, emoji);
+            const active = myReaction === emoji;
+            return (
               <button
                 key={emoji}
                 type="button"
@@ -1299,16 +1335,43 @@ function LiveFeedPlayer({
                   onReactionSelect?.(emoji);
                 }}
                 style={{
-                  ...eventReactionOptionStyle,
-                  ...(myReaction === emoji ? eventReactionOptionActiveStyle : null),
+                  ...eventReactionChipStyle,
+                  ...(active ? eventReactionChipActiveStyle : null),
                 }}
                 aria-label={`React with ${emoji}`}
               >
-                {emoji}
+                <span style={eventReactEmojiStyle}>{emoji}</span>
+                {count > 0 && <span style={eventReactionCountStyle}>{count}</span>}
               </button>
-            ))}
-          </div>
-        )}
+            );
+          })}
+          {myReaction && !(PRIMARY_EVENT_REACTIONS as readonly string[]).includes(myReaction) && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onReactionSelect?.(myReaction);
+              }}
+              style={{ ...eventReactionChipStyle, ...eventReactionChipActiveStyle }}
+              aria-label={`Remove ${myReaction} reaction`}
+            >
+              <span style={eventReactEmojiStyle}>{myReaction}</span>
+              <span style={eventReactionCountStyle}>{reactionCountForEmoji(reactions, myReaction) || 1}</span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenReactionPopup?.();
+            }}
+            style={eventReactionPlusStyle}
+            aria-label="More reactions"
+            title="More reactions"
+          >
+            <Plus size={14} strokeWidth={2.4} />
+          </button>
+        </div>
 
         {/* Top comment preview */}
         {topComment && (
@@ -1353,6 +1416,86 @@ function LiveFeedPlayer({
             </button>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function EventReactionPopup({
+  label,
+  myReaction,
+  reactions,
+  onClose,
+  onSelect,
+}: {
+  label: string;
+  myReaction?: string | null;
+  reactions?: EventReactionSummary[];
+  onClose: () => void;
+  onSelect: (emoji: string) => void;
+}) {
+  return (
+    <div style={eventReactionPopupBackdropStyle} onClick={onClose}>
+      <div style={eventReactionPopupPanelStyle} onClick={(e) => e.stopPropagation()}>
+        <div style={eventReactionPopupHandleStyle} />
+        <div style={eventReactionPopupHeaderStyle}>
+          <div style={{ minWidth: 0 }}>
+            <div style={eventReactionPopupTitleStyle}>React</div>
+            <div style={eventReactionPopupSubStyle}>{label}</div>
+          </div>
+          <button type="button" onClick={onClose} style={eventReactionPopupCloseStyle} aria-label="Close reactions">
+            <X size={18} strokeWidth={2.4} />
+          </button>
+        </div>
+
+        <div style={eventReactionPopupFeaturedStyle}>
+          {PRIMARY_EVENT_REACTIONS.map((emoji) => {
+            const count = reactionCountForEmoji(reactions, emoji);
+            const active = myReaction === emoji;
+            return (
+              <button
+                key={emoji}
+                type="button"
+                onClick={() => onSelect(emoji)}
+                style={{
+                  ...eventReactionPopupFeaturedChipStyle,
+                  ...(active ? eventReactionPopupFeaturedActiveStyle : null),
+                }}
+                aria-label={`React with ${emoji}`}
+              >
+                <span style={eventReactionPopupFeaturedEmojiStyle}>{emoji}</span>
+                <span>{count}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div style={eventReactionPopupScrollStyle}>
+          {EVENT_REACTION_PICKER_SECTIONS.map((section) => (
+            <div key={section.label} style={eventReactionPopupSectionStyle}>
+              <div style={eventReactionPopupSectionTitleStyle}>{section.label}</div>
+              <div style={eventReactionPopupGridStyle}>
+                {section.emojis.map((emoji) => {
+                  const active = myReaction === emoji;
+                  return (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => onSelect(emoji)}
+                      style={{
+                        ...eventReactionPopupEmojiStyle,
+                        ...(active ? eventReactionPopupEmojiActiveStyle : null),
+                      }}
+                      aria-label={`React with ${emoji}`}
+                    >
+                      {emoji}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -2939,7 +3082,7 @@ function MatchPageInner() {
   const [eventTopComments, setEventTopComments] = useState<Record<string, { body: string; username: string; avatar: string | null }>>({});
   const [eventReactions, setEventReactions] = useState<EventReactionMap>({});
   const [myEventReactions, setMyEventReactions] = useState<MyEventReactionMap>({});
-  const [openReactionKey, setOpenReactionKey] = useState<string | null>(null);
+  const [reactionPopup, setReactionPopup] = useState<EventReactionPopupState>(null);
   const seenEventKeys = useRef(new Set<string>());
   // Snapshot of each player's FP at the moment their event first appeared.
   // Keyed by the event's scoreEventKey so the displayed FP never changes as
@@ -3236,8 +3379,16 @@ function MatchPageInner() {
     const visitorId = getEventReactionVisitorId();
     if (!visitorId) return;
 
-    const nextEmoji = myEventReactions[eventKey] === emoji ? null : emoji;
-    setOpenReactionKey(null);
+    const previousEmoji = myEventReactions[eventKey] ?? null;
+    const nextEmoji = previousEmoji === emoji ? null : emoji;
+    setReactionPopup(null);
+    setEventReactions((current) => optimisticEventReactionMap(current, eventKey, previousEmoji, nextEmoji));
+    setMyEventReactions((current) => {
+      const next = { ...current };
+      if (nextEmoji) next[eventKey] = nextEmoji;
+      else delete next[eventKey];
+      return next;
+    });
 
     try {
       const res = await fetch("/api/event-reactions", {
@@ -3247,6 +3398,7 @@ function MatchPageInner() {
       });
       if (!res.ok) {
         console.error("[event-reactions] save failed:", await res.text());
+        loadEventReactions();
         return;
       }
       const json = await res.json();
@@ -3254,14 +3406,27 @@ function MatchPageInner() {
       setMyEventReactions(json.mine ?? {});
     } catch (err) {
       console.error("[event-reactions] save failed:", err);
+      loadEventReactions();
     }
-  }, [id, myEventReactions]);
+  }, [id, loadEventReactions, myEventReactions]);
 
   useEffect(() => {
     if (!id) return;
     loadEventReactions();
-    const interval = setInterval(loadEventReactions, 15_000);
-    return () => clearInterval(interval);
+    const interval = setInterval(loadEventReactions, 30_000);
+    const channel = supabase
+      .channel(`event-reactions-${id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "feed_event_reactions", filter: `game_id=eq.${Number(id)}` },
+        () => loadEventReactions()
+      )
+      .subscribe();
+
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
   }, [id, loadEventReactions]);
 
   // Count unanswered open polls — always runs so tab badge is visible before entering the tab
@@ -4359,6 +4524,7 @@ function MatchPageInner() {
                   const isFresh = freshEventKeys.has(ek);
                   // Use the FP snapshot captured when this event first appeared.
                   const eventPlayerFP: number | null = eventFPSnapshots.current[ek] ?? null;
+                  const eventMeta = liveFeedEventMeta(event, index, game.hteam, game.ateam);
 
                   return (
                     <div
@@ -4387,8 +4553,7 @@ function MatchPageInner() {
                           playerFP={eventPlayerFP}
                           reactions={eventReactions[commentKey] ?? []}
                           myReaction={myEventReactions[commentKey] ?? null}
-                          reactionPickerOpen={openReactionKey === commentKey}
-                          onToggleReactions={() => setOpenReactionKey((current) => current === commentKey ? null : commentKey)}
+                          onOpenReactionPopup={() => setReactionPopup({ eventKey: commentKey, label: eventMeta.label })}
                           onReactionSelect={(emoji) => handleEventReaction(commentKey, emoji)}
                           onCommentClick={() => {
                             const inferredTeam = safeText((event as any).teamName, "");
@@ -4614,6 +4779,15 @@ function MatchPageInner() {
           </section>
         )}
       </section>
+      {reactionPopup && (
+        <EventReactionPopup
+          label={reactionPopup.label}
+          reactions={eventReactions[reactionPopup.eventKey] ?? []}
+          myReaction={myEventReactions[reactionPopup.eventKey] ?? null}
+          onClose={() => setReactionPopup(null)}
+          onSelect={(emoji) => handleEventReaction(reactionPopup.eventKey, emoji)}
+        />
+      )}
     </main>
   );
 }
@@ -6722,15 +6896,29 @@ const liveFeedTimeDotStyle: CSSProperties = { fontSize: 10, color: "var(--text-4
 const liveFeedMinuteStyle: CSSProperties = { fontSize: 10, fontWeight: 800, color: "var(--text-3)" };
 const commentBubbleBtnStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", color: "var(--text-3)", padding: "2px 0", fontSize: 12, fontWeight: 700 };
 const commentCountStyle: CSSProperties = { fontSize: 11, fontWeight: 700, color: "var(--text-3)" };
-const eventActionRowStyle: CSSProperties = { display: "inline-flex", alignItems: "center", justifyContent: "flex-end", gap: 10, minHeight: 24 };
-const eventReactBtnStyle: CSSProperties = { width: 28, height: 24, display: "inline-flex", alignItems: "center", justifyContent: "center", borderRadius: 999, border: "1px solid var(--border-2)", background: "var(--surface-2)", color: "var(--text-3)", padding: 0, cursor: "pointer" };
-const eventReactBtnActiveStyle: CSSProperties = { background: "rgba(250,204,21,0.14)", borderColor: "rgba(250,204,21,0.35)", color: "var(--text-1)" };
 const eventReactEmojiStyle: CSSProperties = { fontSize: 14, lineHeight: 1 };
-const eventReactionSummaryStyle: CSSProperties = { display: "flex", flexWrap: "wrap", alignItems: "center", gap: 5, marginTop: 7 };
-const eventReactionPillStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 4, minHeight: 22, borderRadius: 999, border: "1px solid var(--border-2)", background: "rgba(255,255,255,0.06)", color: "var(--text-2)", padding: "2px 7px", fontSize: 11, fontWeight: 800 };
-const eventReactionPickerRowStyle: CSSProperties = { display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8, padding: "0 14px 10px 74px", borderTop: "1px solid rgba(255,255,255,0.06)" };
-const eventReactionOptionStyle: CSSProperties = { width: 34, height: 30, display: "inline-flex", alignItems: "center", justifyContent: "center", borderRadius: 999, border: "1px solid var(--border-2)", background: "var(--surface-2)", color: "var(--text-1)", fontSize: 16, lineHeight: 1, padding: 0, cursor: "pointer" };
-const eventReactionOptionActiveStyle: CSSProperties = { background: "rgba(250,204,21,0.16)", borderColor: "rgba(250,204,21,0.45)" };
+const eventReactionBarStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 7, padding: "0 14px 10px 74px", overflowX: "auto", scrollbarWidth: "none", borderTop: "1px solid rgba(255,255,255,0.04)" };
+const eventReactionChipStyle: CSSProperties = { minWidth: 36, height: 28, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5, borderRadius: 999, border: "1px solid var(--border-2)", background: "rgba(255,255,255,0.055)", color: "var(--text-2)", padding: "0 9px", fontSize: 12, fontWeight: 900, cursor: "pointer", flexShrink: 0 };
+const eventReactionChipActiveStyle: CSSProperties = { background: "rgba(250,204,21,0.18)", borderColor: "rgba(250,204,21,0.56)", color: "var(--text-1)", boxShadow: "0 0 0 1px rgba(250,204,21,0.14) inset" };
+const eventReactionCountStyle: CSSProperties = { fontSize: 11, fontWeight: 900, color: "inherit", fontVariantNumeric: "tabular-nums" };
+const eventReactionPlusStyle: CSSProperties = { width: 30, height: 28, display: "inline-flex", alignItems: "center", justifyContent: "center", borderRadius: 999, border: "1px solid var(--border-2)", background: "var(--surface-2)", color: "var(--text-2)", padding: 0, cursor: "pointer", flexShrink: 0 };
+const eventReactionPopupBackdropStyle: CSSProperties = { position: "fixed", inset: 0, zIndex: 90, background: "rgba(0,0,0,0.62)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: "16px 10px calc(16px + env(safe-area-inset-bottom))" };
+const eventReactionPopupPanelStyle: CSSProperties = { width: "min(640px, 100%)", maxHeight: "min(76vh, 640px)", display: "flex", flexDirection: "column", background: "#050506", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 14, boxShadow: "0 24px 80px rgba(0,0,0,0.55)", overflow: "hidden" };
+const eventReactionPopupHandleStyle: CSSProperties = { width: 38, height: 4, borderRadius: 999, background: "rgba(255,255,255,0.22)", margin: "8px auto 2px", flexShrink: 0 };
+const eventReactionPopupHeaderStyle: CSSProperties = { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 14px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" };
+const eventReactionPopupTitleStyle: CSSProperties = { color: "var(--text-1)", fontSize: 15, fontWeight: 900, lineHeight: 1.2 };
+const eventReactionPopupSubStyle: CSSProperties = { marginTop: 2, color: "var(--text-3)", fontSize: 12, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
+const eventReactionPopupCloseStyle: CSSProperties = { width: 34, height: 34, borderRadius: 999, border: "1px solid var(--border-2)", background: "var(--surface-2)", color: "var(--text-2)", display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0, cursor: "pointer", flexShrink: 0 };
+const eventReactionPopupFeaturedStyle: CSSProperties = { display: "flex", gap: 8, padding: "10px 14px", overflowX: "auto", borderBottom: "1px solid rgba(255,255,255,0.08)" };
+const eventReactionPopupFeaturedChipStyle: CSSProperties = { minWidth: 58, height: 34, borderRadius: 8, border: "1px solid var(--border-2)", background: "rgba(255,255,255,0.055)", color: "var(--text-2)", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "0 10px", fontSize: 12, fontWeight: 900, cursor: "pointer", flexShrink: 0 };
+const eventReactionPopupFeaturedActiveStyle: CSSProperties = { background: "rgba(250,204,21,0.18)", borderColor: "rgba(250,204,21,0.56)", color: "var(--text-1)" };
+const eventReactionPopupFeaturedEmojiStyle: CSSProperties = { fontSize: 18, lineHeight: 1 };
+const eventReactionPopupScrollStyle: CSSProperties = { overflowY: "auto", padding: "12px 14px 18px" };
+const eventReactionPopupSectionStyle: CSSProperties = { marginBottom: 16 };
+const eventReactionPopupSectionTitleStyle: CSSProperties = { marginBottom: 8, color: "var(--text-3)", fontSize: 13, fontWeight: 900 };
+const eventReactionPopupGridStyle: CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(38px, 1fr))", gap: 7 };
+const eventReactionPopupEmojiStyle: CSSProperties = { height: 38, borderRadius: 8, border: "1px solid transparent", background: "rgba(255,255,255,0.035)", color: "var(--text-1)", fontSize: 22, lineHeight: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0, cursor: "pointer" };
+const eventReactionPopupEmojiActiveStyle: CSSProperties = { background: "rgba(250,204,21,0.16)", borderColor: "rgba(250,204,21,0.5)" };
 const playerBubbleStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 4, color: "var(--text-3)", fontSize: 11, fontWeight: 700 };
 const playerAvatarWrapStyle: CSSProperties = {
   width: 48,
