@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import { awardAura } from "@/app/lib/aura";
+import { foopyRating } from "@/app/lib/foopyRating";
 
 export const dynamic = "force-dynamic";
 
@@ -21,34 +22,6 @@ function num(v: any) {
 
 function normalise(s: string) {
   return s.toLowerCase().replace(/[^a-z]/g, "");
-}
-
-function foopyRating(p: StatRow) {
-  const goals = p.goals, ga = p.goalAssists, behinds = p.behinds;
-  const kicks = p.kicks, hb = p.handballs, marks = p.marks;
-  const tackles = p.tackles, ho = p.hitouts, cl = p.clearances;
-  const disp = p.disposals, ff = p.freesFor, fa = p.freesAgainst;
-
-  let score =
-    goals * 5.5 + ga * 1.5 + behinds * 1.2 + kicks * 0.75 +
-    hb * 0.55 + marks * 1.0 + tackles * 1.8 + ho * 0.35 +
-    cl * 0.5 + ff * 0.3 - fa * 0.4;
-
-  if (goals >= 3) score += 3;
-  if (goals >= 5) score += 5;
-  if (goals >= 7) score += 10;
-  if (goals >= 10) score += 18;
-  if (ga >= 3) score += 1;
-  if (disp >= 25) score += 3;
-  if (disp >= 30) score += 4;
-  if (tackles >= 8) score += 4;
-  if (cl >= 7) score += 1;
-  if (marks >= 10) score += 3;
-  if (ho >= 25) score += 3;
-  if (fa >= 4) score -= 1;
-
-  if (score <= 0) return 0;
-  return Number(Math.max(1, Math.min(10, 10 * (1 - Math.exp(-score / 36)))).toFixed(1));
 }
 
 type StatRow = {

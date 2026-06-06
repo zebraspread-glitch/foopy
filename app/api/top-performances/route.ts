@@ -3,48 +3,11 @@ import path from "path";
 import fs from "fs";
 import { createClient } from "@supabase/supabase-js";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
+import { foopyRating } from "@/app/lib/foopyRating";
 
 export const dynamic = "force-dynamic";
 
 const SEASON = new Date().getFullYear().toString();
-
-// Inline foopyRating — avoids importing from match utils (server-only)
-function foopyRating(p: {
-  goals?: any; goalAssists?: any; behinds?: any; kicks?: any; handballs?: any;
-  marks?: any; tackles?: any; hitouts?: any; disposals?: any; clearances?: any;
-  freesFor?: any; freesAgainst?: any;
-}): number {
-  const n = (v: any) => { const x = Number(v ?? 0); return Number.isFinite(x) ? x : 0; };
-  const goals        = n(p.goals);
-  const goalAssists  = n(p.goalAssists);
-  const behinds      = n(p.behinds);
-  const kicks        = n(p.kicks);
-  const handballs    = n(p.handballs);
-  const marks        = n(p.marks);
-  const tackles      = n(p.tackles);
-  const hitouts      = n(p.hitouts);
-  const disposals    = n(p.disposals) || kicks + handballs;
-  const clearances   = n(p.clearances);
-  const freesFor     = n(p.freesFor);
-  const freesAgainst = n(p.freesAgainst);
-
-  let score =
-    goals * 5.5 + goalAssists * 1.5 + behinds * 1.2 +
-    kicks * 0.75 + handballs * 0.55 + marks * 1.0 +
-    tackles * 1.8 + hitouts * 0.35 + clearances * 0.5 +
-    freesFor * 0.3 - freesAgainst * 0.4;
-
-  if (goals >= 3)  score += 3;  if (goals >= 5)  score += 5;
-  if (goals >= 7)  score += 10; if (goals >= 10) score += 18;
-  if (goalAssists >= 3) score += 1;
-  if (disposals >= 25) score += 3; if (disposals >= 30) score += 4;
-  if (tackles >= 8) score += 4; if (clearances >= 7) score += 1;
-  if (marks >= 10) score += 3;  if (hitouts >= 25) score += 3;
-  if (freesAgainst >= 4) score -= 1;
-
-  if (score <= 0) return 0;
-  return Number(Math.max(1, Math.min(10, 10 * (1 - Math.exp(-score / 36)))).toFixed(1));
-}
 
 // Reverse map: apiSportsId (string) → squiggleId (string)
 const apiSportsToSquiggle = new Map<string, string>();

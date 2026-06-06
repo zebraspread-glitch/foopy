@@ -9,6 +9,7 @@ import { API_SPORTS_MATCH_IDS } from "./data/apiSportsMatchIds";
 import { venueDisplayName } from "./data/venues";
 import { getGames, getGamesCached, invalidateGames } from "./lib/gameCache";
 import { foopyRating } from "./match/[id]/utils";
+import { foopyColor } from "./lib/foopyRating";
 import { haptic } from "./lib/haptic";
 import { surname } from "./lib/format";
 import { supabase } from "./lib/supabase";
@@ -155,47 +156,6 @@ const TEAM_STYLES: Record<number, { colors: string[]; logo: string }> = {
   17: { colors: ["#003087", "#f2a900"], logo: "/team-logos/eagles.png" },
   18: { colors: ["#2b6edc", "#ffffff", "#ed1b2f"], logo: "/team-logos/bulldogs.png" },
 };
-
-function mixColor(a: string, b: string, amount: number) {
-  const ah = a.replace("#", "");
-  const bh = b.replace("#", "");
-  const ar = parseInt(ah.substring(0, 2), 16);
-  const ag = parseInt(ah.substring(2, 4), 16);
-  const ab = parseInt(ah.substring(4, 6), 16);
-  const br = parseInt(bh.substring(0, 2), 16);
-  const bg = parseInt(bh.substring(2, 4), 16);
-  const bb = parseInt(bh.substring(4, 6), 16);
-  const rr = Math.round(ar + amount * (br - ar));
-  const rg = Math.round(ag + amount * (bg - ag));
-  const rb = Math.round(ab + amount * (bb - ab));
-  return `rgb(${rr}, ${rg}, ${rb})`;
-}
-
-function foopyColor(value: number) {
-  const v = Math.max(1, Math.min(10, value));
-  if (v >= 10) return "linear-gradient(135deg, #ffd700, #ff8c00)";
-
-  const anchors: [number, string][] = [
-    [1,   "#ef4444"],
-    [2,   "#ef4444"],
-    [3,   "#f97316"],
-    [4,   "#facc15"],
-    [5,   "#84cc16"],
-    [6,   "#22c55e"],
-    [7,   "#16a34a"],
-    [8,   "#166534"],
-    [9,   "#3b82f6"],
-    [9.9, "#1e3a8a"],
-  ];
-
-  for (let i = 0; i < anchors.length - 1; i++) {
-    const [lo, colorLo] = anchors[i];
-    const [hi, colorHi] = anchors[i + 1];
-    if (v <= hi) return mixColor(colorLo, colorHi, (v - lo) / (hi - lo));
-  }
-
-  return mixColor("#3b82f6", "#1e3a8a", (v - 9) / 0.9);
-}
 
 function getStatus(game: Game) {
   if ((game.complete ?? 0) >= 100 || game.is_final === 1) return "COMPLETED";

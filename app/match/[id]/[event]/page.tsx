@@ -9,6 +9,7 @@ import MentionTextarea from "@/app/components/MentionTextarea";
 import playerStatsJson from "@/app/data/players.json";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import { foopyRating } from "@/app/match/[id]/utils";
+import { foopyColor } from "@/app/lib/foopyRating";
 import { haptic } from "@/app/lib/haptic";
 import { VerifiedBadge } from "@/app/components/VerifiedBadge";
 
@@ -103,37 +104,6 @@ function stableEventKey(keys: string[], fallback: string) {
     keys.find((key) => !key.startsWith("feed_")) ??
     fallback
   );
-}
-
-function mixColor(a: string, b: string, t: number) {
-  const ah = a.replace("#", ""), bh = b.replace("#", "");
-  const r = Math.round(parseInt(ah.slice(0,2),16) + t*(parseInt(bh.slice(0,2),16)-parseInt(ah.slice(0,2),16)));
-  const g = Math.round(parseInt(ah.slice(2,4),16) + t*(parseInt(bh.slice(2,4),16)-parseInt(ah.slice(2,4),16)));
-  const bl = Math.round(parseInt(ah.slice(4,6),16) + t*(parseInt(bh.slice(4,6),16)-parseInt(ah.slice(4,6),16)));
-  return `rgb(${r},${g},${bl})`;
-}
-
-function foopyColor(value: number) {
-  const v = Math.max(1, Math.min(10, value));
-  if (v >= 10) return "linear-gradient(135deg, #ffd700, #ff8c00)";
-  const anchors: [number, string][] = [
-    [1,   "#ef4444"],
-    [2,   "#ef4444"],
-    [3,   "#f97316"],
-    [4,   "#facc15"],
-    [5,   "#84cc16"],
-    [6,   "#22c55e"],
-    [7,   "#16a34a"],
-    [8,   "#166534"],
-    [9,   "#3b82f6"],
-    [9.9, "#1e3a8a"],
-  ];
-  for (let i = 0; i < anchors.length - 1; i++) {
-    const [lo, colorLo] = anchors[i];
-    const [hi, colorHi] = anchors[i + 1];
-    if (v <= hi) return mixColor(colorLo, colorHi, (v - lo) / (hi - lo));
-  }
-  return mixColor("#3b82f6", "#1e3a8a", (v - 9) / 0.9);
 }
 
 const CLUB_FOLDER: Record<string, string> = {
@@ -354,8 +324,9 @@ function EventCommentsPageInner() {
         const freesFor = raw.free_kicks?.for ?? raw.freesFor ?? 0;
         const freesAgainst = raw.free_kicks?.against ?? raw.freesAgainst ?? 0;
         const rating = foopyRating({ goals, goalAssists, behinds, kicks, handballs, marks, tackles, hitouts, disposals, clearances, freesFor, freesAgainst } as any);
+        const played = goals + behinds + disposals + kicks + handballs + marks + tackles + hitouts + clearances > 0;
         setFetchedStats({
-          rating: rating > 0 ? String(rating) : "",
+          rating: played ? String(rating) : "",
           gb: `${goals}.${behinds}`,
           d: String(disposals),
           k: String(kicks),

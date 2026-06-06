@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
+import { foopyRating } from "@/app/lib/foopyRating";
 
 export const dynamic = "force-dynamic";
 
@@ -16,35 +17,6 @@ export type PlayerRank = {
 function num(v: unknown): number {
   const n = Number(v ?? 0);
   return Number.isFinite(n) ? n : 0;
-}
-
-function foopyRating(p: {
-  goals: number; goalAssists: number; behinds: number;
-  kicks: number; handballs: number; marks: number; tackles: number;
-  hitouts: number; disposals: number; clearances: number;
-  freesFor: number; freesAgainst: number;
-}): number {
-  let score =
-    p.goals * 5.5 + p.goalAssists * 1.5 + p.behinds * 1.2 +
-    p.kicks * 0.75 + p.handballs * 0.55 + p.marks * 1.0 +
-    p.tackles * 1.8 + p.hitouts * 0.35 + p.clearances * 0.5 +
-    p.freesFor * 0.3 - p.freesAgainst * 0.4;
-
-  if (p.goals >= 3)        score += 3;
-  if (p.goals >= 5)        score += 5;
-  if (p.goals >= 7)        score += 10;
-  if (p.goals >= 10)       score += 18;
-  if (p.goalAssists >= 3)  score += 1;
-  if (p.disposals >= 25)   score += 3;
-  if (p.disposals >= 30)   score += 4;
-  if (p.tackles >= 8)      score += 4;
-  if (p.clearances >= 7)   score += 1;
-  if (p.marks >= 10)       score += 3;
-  if (p.hitouts >= 25)     score += 3;
-  if (p.freesAgainst >= 4) score -= 1;
-
-  if (score <= 0) return 0;
-  return Number(Math.max(1, Math.min(10, 10 * (1 - Math.exp(-score / 36)))).toFixed(2));
 }
 
 /* ── Season rankings: from player-season-stats.json ── */

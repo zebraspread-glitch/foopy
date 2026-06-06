@@ -4,6 +4,7 @@ import Link from "next/link";
 import { BackButton, TeamLogoImage } from "./TeamClient";
 import { TeamPassSection } from "./TeamPassSection";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
+import { foopyRating, foopyColor } from "@/app/lib/foopyRating";
 
 const API_SPORTS_TO_SQUIGGLE: Record<number, string> = Object.fromEntries(
   Object.entries(API_SPORTS_MATCH_IDS).map(([squiggleId, apiId]) => [Number(apiId), squiggleId])
@@ -193,77 +194,6 @@ function num(value: unknown) {
   return Number.isFinite(n) ? n : 0;
 }
 
-function mixColor(a: string, b: string, amount: number) {
-  const ah = a.replace("#", "");
-  const bh = b.replace("#", "");
-  const ar = parseInt(ah.substring(0, 2), 16);
-  const ag = parseInt(ah.substring(2, 4), 16);
-  const ab = parseInt(ah.substring(4, 6), 16);
-  const br = parseInt(bh.substring(0, 2), 16);
-  const bg = parseInt(bh.substring(2, 4), 16);
-  const bb = parseInt(bh.substring(4, 6), 16);
-  return `rgb(${Math.round(ar + amount * (br - ar))}, ${Math.round(ag + amount * (bg - ag))}, ${Math.round(ab + amount * (bb - ab))})`;
-}
-
-function foopyColor(value: number) {
-  const v = Math.max(1, Math.min(10, value));
-  const anchors: [number, string][] = [
-    [1, "#ef4444"],
-    [3, "#f97316"],
-    [4, "#facc15"],
-    [5, "#84cc16"],
-    [6, "#22c55e"],
-    [7, "#16a34a"],
-    [8.5, "#3b82f6"],
-    [10, "#ffd700"],
-  ];
-  for (let i = 0; i < anchors.length - 1; i++) {
-    const [lo, lowColor] = anchors[i];
-    const [hi, highColor] = anchors[i + 1];
-    if (v <= hi) return mixColor(lowColor, highColor, (v - lo) / (hi - lo));
-  }
-  return "#ffd700";
-}
-
-function foopyRating(p: {
-  goals: number;
-  goalAssists: number;
-  behinds: number;
-  kicks: number;
-  handballs: number;
-  marks: number;
-  tackles: number;
-  hitouts: number;
-  disposals: number;
-  clearances: number;
-  freesFor: number;
-  freesAgainst: number;
-}) {
-  let score =
-    p.goals * 5.5 +
-    p.goalAssists * 1.5 +
-    p.behinds * 1.2 +
-    p.kicks * 0.75 +
-    p.handballs * 0.55 +
-    p.marks * 1 +
-    p.tackles * 1.8 +
-    p.hitouts * 0.35 +
-    p.clearances * 0.5 +
-    p.freesFor * 0.3 -
-    p.freesAgainst * 0.4;
-
-  if (p.goals >= 3) score += 3;
-  if (p.goals >= 5) score += 5;
-  if (p.goals >= 7) score += 10;
-  if (p.goals >= 10) score += 18;
-  if (p.disposals >= 25) score += 3;
-  if (p.disposals >= 30) score += 4;
-  if (p.tackles >= 8) score += 4;
-  if (p.marks >= 10) score += 3;
-  if (p.hitouts >= 25) score += 3;
-  if (score <= 0) return 0;
-  return Number(Math.max(1, Math.min(10, 10 * (1 - Math.exp(-score / 36)))).toFixed(2));
-}
 
 function aflScore(goals: number, behinds: number) {
   return goals * 6 + behinds;

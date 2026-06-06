@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import rawStats from "@/app/data/player-season-stats.json";
 import { CARD_PLAYERS } from "@/app/data/cardPlayers";
+import { foopyRating, foopyColor } from "@/app/lib/foopyRating";
 
 type PlayerStat = {
   id: string; name: string; team: string; apiSportsId: number;
@@ -103,36 +104,6 @@ function localImg(statsId: string, team: string): string | null {
   if (CARD_IMG[cardId]) return CARD_IMG[cardId];
   const folder = TEAM_FOLDER[team];
   return folder ? `/players/${folder}/${cardId}.png` : null;
-}
-
-function foopyRating(p: {
-  goals: number; goalAssists: number; behinds: number; kicks: number;
-  handballs: number; marks: number; tackles: number; hitouts: number;
-  disposals: number; clearances: number; freesFor: number; freesAgainst: number;
-}): number {
-  let score =
-    p.goals * 5.5 + p.goalAssists * 1.5 + p.behinds * 1.2 +
-    p.kicks * 0.75 + p.handballs * 0.55 + p.marks * 1.0 +
-    p.tackles * 1.8 + p.hitouts * 0.35 + p.clearances * 0.5 +
-    p.freesFor * 0.3 - p.freesAgainst * 0.4;
-  if (p.goals >= 3)  score += 3;
-  if (p.goals >= 5)  score += 5;
-  if (p.goals >= 7)  score += 10;
-  if (p.goals >= 10) score += 18;
-  if (p.disposals >= 25) score += 3;
-  if (p.disposals >= 30) score += 4;
-  if (p.tackles >= 8)    score += 4;
-  if (p.marks >= 10)     score += 3;
-  if (p.hitouts >= 25)   score += 3;
-  if (score <= 0) return 0;
-  return Number(Math.max(1, Math.min(10, 10 * (1 - Math.exp(-score / 36)))).toFixed(2));
-}
-
-function foopyColor(f: number): string {
-  if (f >= 8) return "#ffd700";
-  if (f >= 6) return "#22c55e";
-  if (f >= 4) return "#facc15";
-  return "#f97316";
 }
 
 function avgFoopy(p: PlayerStat): number | null {

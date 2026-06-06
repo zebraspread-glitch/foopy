@@ -1,5 +1,6 @@
 ﻿import playerStatsJson from "@/app/data/players.json";
 import type { MatchGame, PlayerStat, SavedMatchStats, LiveEvent } from "./types";
+import { foopyRating as foopyRatingShared } from "@/app/lib/foopyRating";
 
 export function num(value: any) {
   const n = Number(value ?? 0);
@@ -216,49 +217,10 @@ export function findPlayerByEventId(id?: number | string, preferTeam?: string) {
   return candidates[0] ?? null;
 }
 
+// Delegates to the shared, server-safe implementation so the rating stays
+// identical everywhere across Foopy. See app/lib/foopyRating.ts.
 export function foopyRating(p: PlayerStat) {
-  const goals        = num(p.goals);
-  const goalAssists  = num(p.goalAssists);
-  const behinds      = num(p.behinds);
-  const kicks        = num(p.kicks);
-  const handballs    = num(p.handballs);
-  const marks        = num(p.marks);
-  const tackles      = num(p.tackles);
-  const hitouts      = num(p.hitouts);
-  const disposals    = num(p.disposals);
-  const clearances   = num(p.clearances);
-  const freesFor     = num(p.freesFor ?? p.frees ?? p.ff ?? p.freeKicksFor);
-  const freesAgainst = num(p.freesAgainst ?? p.fa ?? p.freeKicksAgainst);
-
-  let score =
-    goals        * 5.5 +
-    goalAssists  * 1.5 +
-    behinds      * 1.2 +
-    kicks        * 0.75 +
-    handballs    * 0.55 +
-    marks        * 1.0 +
-    tackles      * 1.8 +
-    hitouts      * 0.35 +
-    clearances   * 0.5 +
-    freesFor     * 0.3 -
-    freesAgainst * 0.4;
-
-  if (goals >= 3)        score += 3;
-  if (goals >= 5)        score += 5;
-  if (goals >= 7)        score += 10;
-  if (goals >= 10)       score += 18;
-  if (goalAssists >= 3)  score += 1;
-  if (disposals >= 25)   score += 3;
-  if (disposals >= 30)   score += 4;
-  if (tackles >= 8)      score += 4;
-  if (clearances >= 7)   score += 1;
-  if (marks >= 10)       score += 3;
-  if (hitouts >= 25)     score += 3;
-  if (freesAgainst >= 4) score -= 1;
-
-  if (score <= 0) return 0;
-  const rawRating = 10 * (1 - Math.exp(-score / 36));
-  return Number(Math.max(1, Math.min(10, rawRating)).toFixed(1));
+  return foopyRatingShared(p);
 }
 
 export function eventQuarter(event: LiveEvent) {

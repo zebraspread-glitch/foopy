@@ -44,6 +44,7 @@ import {
   eventQuarter,
   teamColor,
 } from "./utils";
+import { foopyColor } from "@/app/lib/foopyRating";
 
 const API_TEAM_ID_BY_NAME: Record<string, number> = {
   Adelaide: 1,
@@ -803,39 +804,15 @@ function formatRecord(raw: string) {
   return parts[2] ? `${parts[0]}-${parts[1]}-${parts[2]}` : `${parts[0]}-${parts[1]}`;
 }
 
-function mixColor(a: string, b: string, amount: number) {
-  const c1 = parseInt(a.slice(1), 16);
-  const c2 = parseInt(b.slice(1), 16);
-  const r = Math.round(((c1 >> 16) & 255) + (((c2 >> 16) & 255) - ((c1 >> 16) & 255)) * amount);
-  const g = Math.round(((c1 >> 8) & 255) + (((c2 >> 8) & 255) - ((c1 >> 8) & 255)) * amount);
-  const bl = Math.round((c1 & 255) + ((c2 & 255) - (c1 & 255)) * amount);
-  return `rgb(${r}, ${g}, ${bl})`;
-}
-
-function foopyColor(value: number) {
-  const v = Math.max(1, Math.min(10, value));
-  if (v >= 10) return "linear-gradient(135deg, #ffd700, #ff8c00)";
-
-  const anchors: [number, string][] = [
-    [1,   "#ef4444"],
-    [2,   "#ef4444"],
-    [3,   "#f97316"],
-    [4,   "#facc15"],
-    [5,   "#84cc16"],
-    [6,   "#22c55e"],
-    [7,   "#16a34a"],
-    [8,   "#166534"],
-    [9,   "#3b82f6"],
-    [9.9, "#1e3a8a"],
-  ];
-
-  for (let i = 0; i < anchors.length - 1; i++) {
-    const [lo, colorLo] = anchors[i];
-    const [hi, colorHi] = anchors[i + 1];
-    if (v <= hi) return mixColor(colorLo, colorHi, (v - lo) / (hi - lo));
-  }
-
-  return mixColor("#3b82f6", "#1e3a8a", (v - 9) / 0.9);
+// True if the player has any recorded stat line for this game — i.e. they
+// actually played. Used to decide whether to show a rating (which can now be
+// as low as -1) versus nothing at all for players with no data yet.
+function hasStatLine(p: PlayerStat): boolean {
+  return (
+    num(p.disposals) + num(p.kicks) + num(p.handballs) + num(p.marks) +
+    num(p.tackles) + num(p.hitouts) + num(p.goals) + num(p.behinds) +
+    num(p.clearances) > 0
+  );
 }
 
 const TEAM_NICKNAMES: Record<string, string> = {
@@ -1445,7 +1422,7 @@ function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating, stic
                   {statMode === "basic" ? (
                     <>
                       <td style={tdStyle}>
-                        {rating > 0 && (() => {
+                        {hasStatLine(p) && (() => {
                           const isBest = isFinal && bestRating > 0 && rating === bestRating;
                           return (
                             <span style={{ ...ratingPillStyle, background: foopyColor(rating), ...(isBest ? { display: "inline-flex", alignItems: "center", gap: 3 } : {}) }}>
@@ -2008,16 +1985,10 @@ function previewPlayerLeaders(homeTeam: string, awayTeam: string, allGames: Matc
   };
 }
 
-function foopyBadgeColor(value: number) {
-  if (value >= 5) return "#22c55e";
-  if (value >= 4) return "#d9e313";
-  return "#ef4444";
-}
-
 function PreviewLeaderRow({ player, metric }: { player: PreviewPlayerLeader; metric: "foopy" | "goals" }) {
   const averageFoopy = player.games ? player.foopyTotal / player.games : 0;
   const avgDisposals = player.games ? (player.disposalsTotal / player.games).toFixed(1) : "0.0";
-  const foopyBadgeBg = foopyBadgeColor(averageFoopy);
+  const foopyBadgeBg = foopyColor(averageFoopy);
   const [failed, setFailed] = useState(false);
   const src = playerImagePath(player.name, player.team);
   const colours = teamColors(player.team);

@@ -5,6 +5,7 @@ import { BackButton, PlayerHeroImage } from "./PlayerClient";
 import { PlayerPassSection } from "./PlayerPassSection";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import { supabaseServer } from "@/app/lib/supabase-server";
+import { foopyRating, foopyColor } from "@/app/lib/foopyRating";
 
 // Reverse map: API Sports game ID → Squiggle game ID
 const API_SPORTS_TO_SQUIGGLE: Record<number, string> = Object.fromEntries(
@@ -40,28 +41,6 @@ function num(v: unknown): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-function foopyRating(p: {
-  goals: number; goalAssists: number; behinds: number; kicks: number;
-  handballs: number; marks: number; tackles: number; hitouts: number;
-  disposals: number; clearances: number; freesFor: number; freesAgainst: number;
-}): number {
-  let score =
-    p.goals * 5.5 + p.goalAssists * 1.5 + p.behinds * 1.2 +
-    p.kicks * 0.75 + p.handballs * 0.55 + p.marks * 1.0 +
-    p.tackles * 1.8 + p.hitouts * 0.35 + p.clearances * 0.5 +
-    p.freesFor * 0.3 - p.freesAgainst * 0.4;
-  if (p.goals >= 3)  score += 3;
-  if (p.goals >= 5)  score += 5;
-  if (p.goals >= 7)  score += 10;
-  if (p.goals >= 10) score += 18;
-  if (p.disposals >= 25) score += 3;
-  if (p.disposals >= 30) score += 4;
-  if (p.tackles >= 8)    score += 4;
-  if (p.marks >= 10)     score += 3;
-  if (p.hitouts >= 25)   score += 3;
-  if (score <= 0) return 0;
-  return Number(Math.max(1, Math.min(10, 10 * (1 - Math.exp(-score / 36)))).toFixed(2));
-}
 
 const TEAM_ID_MAP: Record<number, string> = {
   1: "Adelaide", 2: "Brisbane Lions", 3: "Carlton", 4: "Collingwood",
@@ -149,29 +128,6 @@ function playerImgSrc(name: string, team: string) {
   const slug   = name.toLowerCase().replace(/[^a-z0-9]/g, "");
   const folder = CLUB_FOLDER[slugTeam(team)] ?? slugTeam(team);
   return `/players/${folder}/${slug}.png`;
-}
-
-function mixColor(a: string, b: string, amount: number) {
-  const ah = a.replace("#", ""), bh = b.replace("#", "");
-  const ar = parseInt(ah.substring(0, 2), 16), ag = parseInt(ah.substring(2, 4), 16), ab = parseInt(ah.substring(4, 6), 16);
-  const br = parseInt(bh.substring(0, 2), 16), bg = parseInt(bh.substring(2, 4), 16), bb = parseInt(bh.substring(4, 6), 16);
-  return `rgb(${Math.round(ar + amount * (br - ar))}, ${Math.round(ag + amount * (bg - ag))}, ${Math.round(ab + amount * (bb - ab))})`;
-}
-
-function foopyColor(f: number): string {
-  const v = Math.max(1, Math.min(10, f));
-  if (v >= 10) return "linear-gradient(135deg, #ffd700, #ff8c00)";
-  const anchors: [number, string][] = [
-    [1, "#ef4444"], [2, "#ef4444"], [3, "#f97316"], [4, "#facc15"],
-    [5, "#84cc16"], [6, "#22c55e"], [7, "#16a34a"], [8, "#166534"],
-    [9, "#3b82f6"], [9.9, "#1e3a8a"],
-  ];
-  for (let i = 0; i < anchors.length - 1; i++) {
-    const [lo, colorLo] = anchors[i];
-    const [hi, colorHi] = anchors[i + 1];
-    if (v <= hi) return mixColor(colorLo, colorHi, (v - lo) / (hi - lo));
-  }
-  return mixColor("#3b82f6", "#1e3a8a", (v - 9) / 0.9);
 }
 
 function formatDate(d: string): string {
@@ -430,7 +386,12 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
   // ── Compute season averages from actual game data (always up-to-date) ────────
   // recentGames includes both game-stats.json AND match_cache, so no manual
   // script or redeploy is needed for season stats to stay current.
-  const playedGames = recentGames.filter(g => g.foopy > 0);
+  // A game counts if the player has any stat line for it (they actually
+  // played). Ratings can now be as low as -1, so we can't filter on foopy > 0
+  // — that would drop genuine but minimal games from the profile.
+  const playedGames = recentGames.filter(
+    g => g.disposals + g.marks + g.tackles + g.hitouts + g.goals + g.behinds + g.clearances > 0
+  );
   const n = playedGames.length;
   const avg = (key: keyof GamePerf) =>
     n > 0 ? Math.round((playedGames.reduce((s, g) => s + num(g[key]), 0) / n) * 10) / 10 : 0;

@@ -5,6 +5,7 @@ import { flushSync } from "react-dom";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
 import Link from "next/link";
+import { foopyColor } from "@/app/lib/foopyRating";
 
 type PerformanceEntry = {
   rank: number;
@@ -47,39 +48,6 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: "season",        label: "This Season" },
   { key: "season_worst",  label: "Season Worst" },
 ];
-
-function foopyColor(value: number): string {
-  const v = Math.max(1, Math.min(10, value));
-  if (v >= 10) return "linear-gradient(135deg, #ffd700, #ff8c00)";
-  const anchors: [number, string][] = [
-    [1, "#ef4444"], [2, "#ef4444"], [3, "#f97316"], [4, "#facc15"],
-    [5, "#84cc16"], [6, "#22c55e"], [7, "#16a34a"], [8, "#166534"],
-    [9, "#3b82f6"], [9.9, "#1e3a8a"],
-  ];
-  for (let i = 0; i < anchors.length - 1; i++) {
-    const [lo, loC] = anchors[i];
-    const [hi, hiC] = anchors[i + 1];
-    if (v >= lo && v <= hi) {
-      const t = (v - lo) / (hi - lo);
-      return interpolateColor(loC, hiC, t);
-    }
-  }
-  return anchors[anchors.length - 1][1];
-}
-
-function interpolateColor(c1: string, c2: string, t: number): string {
-  const parse = (hex: string) => [
-    parseInt(hex.slice(1, 3), 16),
-    parseInt(hex.slice(3, 5), 16),
-    parseInt(hex.slice(5, 7), 16),
-  ];
-  const [r1, g1, b1] = parse(c1);
-  const [r2, g2, b2] = parse(c2);
-  const r = Math.round(r1 + (r2 - r1) * t);
-  const g = Math.round(g1 + (g2 - g1) * t);
-  const b = Math.round(b1 + (b2 - b1) * t);
-  return `rgb(${r},${g},${b})`;
-}
 
 function PlayerImage({ src, name, team }: { src: string; name: string; team: string }) {
   const [failed, setFailed] = useState(false);

@@ -502,8 +502,9 @@ export default function PublicProfilePage() {
           const freesFor = raw.free_kicks?.for ?? raw.freesFor ?? 0;
           const freesAgainst = raw.free_kicks?.against ?? raw.freesAgainst ?? 0;
           const rating = foopyRating({ goals, goalAssists, behinds, kicks, handballs, marks, tackles, hitouts, disposals, clearances, freesFor, freesAgainst } as any);
+          const played = goals + behinds + disposals + kicks + handballs + marks + tackles + hitouts + clearances > 0;
           next.set(`${gameId}_${slug}`, {
-            rating: rating > 0 ? String(rating) : "",
+            rating: played ? String(rating) : "",
             gb: `${goals}.${behinds}`,
             d: String(disposals),
             k: String(kicks),

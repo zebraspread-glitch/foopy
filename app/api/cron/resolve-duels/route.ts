@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import playersJson from "@/app/data/players.json";
 import { awardAura } from "@/app/lib/aura";
+import { foopyRating } from "@/app/lib/foopyRating";
 
 // Build apiSportsId → name lookup so match_cache stats (ID-keyed) can be
 // matched against question option_a/option_b (name-keyed).
@@ -65,20 +66,6 @@ type StatRow = {
 
 function num(v: any) { const n = Number(v ?? 0); return Number.isFinite(n) ? n : 0; }
 function norm(s: string) { return s.toLowerCase().replace(/[^a-z]/g, ""); }
-
-function foopyRating(p: StatRow) {
-  const { goals, goalAssists: ga, behinds, kicks, handballs, marks, tackles, hitouts, clearances, freesFor, freesAgainst } = p;
-  const disp = kicks + handballs;
-  let score = goals * 5.5 + ga * 1.5 + behinds * 1.2 + kicks * 0.75 +
-    handballs * 0.55 + marks * 1.0 + tackles * 1.8 + hitouts * 0.35 +
-    clearances * 0.5 + freesFor * 0.3 - freesAgainst * 0.4;
-  if (goals >= 3) score += 3; if (goals >= 5) score += 5;
-  if (goals >= 7) score += 10; if (goals >= 10) score += 18;
-  if (disp >= 25) score += 3; if (disp >= 30) score += 4;
-  if (tackles >= 8) score += 4; if (marks >= 10) score += 3;
-  if (score <= 0) return 0;
-  return Number(Math.max(1, Math.min(10, 10 * (1 - Math.exp(-score / 36)))).toFixed(1));
-}
 
 // Returns 'a' or 'b' (the winning option), or null for a tie
 function resolveQuestion(
