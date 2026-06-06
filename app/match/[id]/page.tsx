@@ -97,8 +97,22 @@ const EVENT_REACTION_EMOJIS: string[] = Array.from(new Set(EVENT_REACTION_PICKER
 
 type EventReactionSummary = { emoji: string; count: number };
 type EventReactionMap = Record<string, EventReactionSummary[]>;
-type MyEventReactionMap = Record<string, string>;
+type MyEventReactionMap = Record<string, string[]>;
 type EventReactionPopupState = { eventKey: string; label: string } | null;
+
+function normaliseMyReactionMap(value: unknown): MyEventReactionMap {
+  if (!value || typeof value !== "object") return {};
+
+  const map: MyEventReactionMap = {};
+  for (const [eventKey, reactions] of Object.entries(value as Record<string, unknown>)) {
+    if (Array.isArray(reactions)) {
+      map[eventKey] = reactions.filter((emoji): emoji is string => typeof emoji === "string");
+    } else if (typeof reactions === "string") {
+      map[eventKey] = [reactions];
+    }
+  }
+  return map;
+}
 
 function getEventReactionVisitorId() {
   if (typeof window === "undefined") return "";
@@ -132,16 +146,15 @@ function reactionCountForEmoji(reactions: EventReactionSummary[] | undefined, em
 function optimisticEventReactionMap(
   current: EventReactionMap,
   eventKey: string,
-  previousEmoji: string | null,
-  nextEmoji: string | null
+  emoji: string,
+  shouldAdd: boolean
 ) {
   const counts: Record<string, number> = {};
   for (const reaction of current[eventKey] ?? []) {
     counts[reaction.emoji] = reaction.count;
   }
 
-  if (previousEmoji) counts[previousEmoji] = Math.max(0, (counts[previousEmoji] ?? 0) - 1);
-  if (nextEmoji) counts[nextEmoji] = (counts[nextEmoji] ?? 0) + 1;
+  counts[emoji] = shouldAdd ? (counts[emoji] ?? 0) + 1 : Math.max(0, (counts[emoji] ?? 0) - 1);
 
   const nextReactions = sortEventReactionSummaries(
     Object.entries(counts)
@@ -1217,7 +1230,7 @@ function LiveFeedPlayer({
   topComment,
   playerFP,
   reactions,
-  myReaction,
+  myReactions,
   onCommentClick,
   onOpenReactionPopup,
   onReactionSelect,
@@ -1230,7 +1243,7 @@ function LiveFeedPlayer({
   topComment?: { body: string; username: string; avatar: string | null };
   playerFP?: number | null;
   reactions?: EventReactionSummary[];
-  myReaction?: string | null;
+  myReactions?: string[];
   onCommentClick?: () => void;
   onOpenReactionPopup?: () => void;
   onReactionSelect?: (emoji: string) => void;
@@ -1245,6 +1258,7 @@ function LiveFeedPlayer({
   const colours = liveFeedTeamColors(team);
 
   const type = safeText(event.type, "event").toUpperCase();
+  const selectedReactionSet = new Set(myReactions ?? []);
 
   return (
     <div
@@ -1325,7 +1339,7 @@ function LiveFeedPlayer({
         <div style={eventReactionBarStyle} onClick={(e) => e.stopPropagation()}>
           {PRIMARY_EVENT_REACTIONS.map((emoji) => {
             const count = reactionCountForEmoji(reactions, emoji);
-            const active = myReaction === emoji;
+            const active = selectedReactionSet.has(emoji);
             return (
               <button
                 key={emoji}
@@ -1345,20 +1359,21 @@ function LiveFeedPlayer({
               </button>
             );
           })}
-          {myReaction && !(PRIMARY_EVENT_REACTIONS as readonly string[]).includes(myReaction) && (
+          {(myReactions ?? []).filter((emoji) => !(PRIMARY_EVENT_REACTIONS as readonly string[]).includes(emoji)).map((emoji) => (
             <button
+              key={emoji}
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                onReactionSelect?.(myReaction);
+                onReactionSelect?.(emoji);
               }}
               style={{ ...eventReactionChipStyle, ...eventReactionChipActiveStyle }}
-              aria-label={`Remove ${myReaction} reaction`}
+              aria-label={`Remove ${emoji} reaction`}
             >
-              <span style={eventReactEmojiStyle}>{myReaction}</span>
-              <span style={eventReactionCountStyle}>{reactionCountForEmoji(reactions, myReaction) || 1}</span>
+              <span style={eventReactEmojiStyle}>{emoji}</span>
+              <span style={eventReactionCountStyle}>{reactionCountForEmoji(reactions, emoji) || 1}</span>
             </button>
-          )}
+          ))}
           <button
             type="button"
             onClick={(e) => {
@@ -1423,17 +1438,19 @@ function LiveFeedPlayer({
 
 function EventReactionPopup({
   label,
-  myReaction,
+  myReactions,
   reactions,
   onClose,
   onSelect,
 }: {
   label: string;
-  myReaction?: string | null;
+  myReactions?: string[];
   reactions?: EventReactionSummary[];
   onClose: () => void;
   onSelect: (emoji: string) => void;
 }) {
+  const selectedReactionSet = new Set(myReactions ?? []);
+
   return (
     <div style={eventReactionPopupBackdropStyle} onClick={onClose}>
       <div style={eventReactionPopupPanelStyle} onClick={(e) => e.stopPropagation()}>
@@ -1451,7 +1468,7 @@ function EventReactionPopup({
         <div style={eventReactionPopupFeaturedStyle}>
           {PRIMARY_EVENT_REACTIONS.map((emoji) => {
             const count = reactionCountForEmoji(reactions, emoji);
-            const active = myReaction === emoji;
+            const active = selectedReactionSet.has(emoji);
             return (
               <button
                 key={emoji}
@@ -1476,7 +1493,7 @@ function EventReactionPopup({
               <div style={eventReactionPopupSectionTitleStyle}>{section.label}</div>
               <div style={eventReactionPopupGridStyle}>
                 {section.emojis.map((emoji) => {
-                  const active = myReaction === emoji;
+                  const active = selectedReactionSet.has(emoji);
                   return (
                     <button
                       key={emoji}
@@ -3368,7 +3385,7 @@ function MatchPageInner() {
       if (!res.ok) return;
       const json = await res.json();
       setEventReactions(json.reactions ?? {});
-      setMyEventReactions(json.mine ?? {});
+      setMyEventReactions(normaliseMyReactionMap(json.mine));
     } catch (err) {
       console.error("[event-reactions] load failed:", err);
     }
@@ -3379,13 +3396,17 @@ function MatchPageInner() {
     const visitorId = getEventReactionVisitorId();
     if (!visitorId) return;
 
-    const previousEmoji = myEventReactions[eventKey] ?? null;
-    const nextEmoji = previousEmoji === emoji ? null : emoji;
+    const selectedEmojis = myEventReactions[eventKey] ?? [];
+    const shouldAdd = !selectedEmojis.includes(emoji);
     setReactionPopup(null);
-    setEventReactions((current) => optimisticEventReactionMap(current, eventKey, previousEmoji, nextEmoji));
+    setEventReactions((current) => optimisticEventReactionMap(current, eventKey, emoji, shouldAdd));
     setMyEventReactions((current) => {
+      const currentSelected = current[eventKey] ?? [];
+      const nextSelected = currentSelected.includes(emoji)
+        ? currentSelected.filter((selectedEmoji) => selectedEmoji !== emoji)
+        : [...currentSelected, emoji];
       const next = { ...current };
-      if (nextEmoji) next[eventKey] = nextEmoji;
+      if (nextSelected.length > 0) next[eventKey] = nextSelected;
       else delete next[eventKey];
       return next;
     });
@@ -3394,7 +3415,7 @@ function MatchPageInner() {
       const res = await fetch("/api/event-reactions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gameId: Number(id), eventKey, emoji: nextEmoji, visitorId }),
+        body: JSON.stringify({ gameId: Number(id), eventKey, emoji, visitorId }),
       });
       if (!res.ok) {
         console.error("[event-reactions] save failed:", await res.text());
@@ -3403,7 +3424,7 @@ function MatchPageInner() {
       }
       const json = await res.json();
       setEventReactions(json.reactions ?? {});
-      setMyEventReactions(json.mine ?? {});
+      setMyEventReactions(normaliseMyReactionMap(json.mine));
     } catch (err) {
       console.error("[event-reactions] save failed:", err);
       loadEventReactions();
@@ -4552,7 +4573,7 @@ function MatchPageInner() {
                           topComment={eventTopComments[commentKey]}
                           playerFP={eventPlayerFP}
                           reactions={eventReactions[commentKey] ?? []}
-                          myReaction={myEventReactions[commentKey] ?? null}
+                          myReactions={myEventReactions[commentKey] ?? []}
                           onOpenReactionPopup={() => setReactionPopup({ eventKey: commentKey, label: eventMeta.label })}
                           onReactionSelect={(emoji) => handleEventReaction(commentKey, emoji)}
                           onCommentClick={() => {
@@ -4783,7 +4804,7 @@ function MatchPageInner() {
         <EventReactionPopup
           label={reactionPopup.label}
           reactions={eventReactions[reactionPopup.eventKey] ?? []}
-          myReaction={myEventReactions[reactionPopup.eventKey] ?? null}
+          myReactions={myEventReactions[reactionPopup.eventKey] ?? []}
           onClose={() => setReactionPopup(null)}
           onSelect={(emoji) => handleEventReaction(reactionPopup.eventKey, emoji)}
         />

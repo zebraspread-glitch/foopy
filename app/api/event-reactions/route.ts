@@ -33,14 +33,17 @@ function cleanEventKey(value: unknown) {
 
 function summarise(rows: ReactionRow[], visitorId = "") {
   const reactions: Record<string, { emoji: string; count: number }[]> = {};
-  const mine: Record<string, string> = {};
+  const mine: Record<string, string[]> = {};
   const counts: Record<string, Record<string, number>> = {};
 
   for (const row of rows) {
     if (!row.event_key || !row.emoji) continue;
     counts[row.event_key] ??= {};
     counts[row.event_key][row.emoji] = (counts[row.event_key][row.emoji] ?? 0) + 1;
-    if (visitorId && row.visitor_id === visitorId) mine[row.event_key] = row.emoji;
+    if (visitorId && row.visitor_id === visitorId) {
+      mine[row.event_key] ??= [];
+      if (!mine[row.event_key].includes(row.emoji)) mine[row.event_key].push(row.emoji);
+    }
   }
 
   for (const [eventKey, emojiCounts] of Object.entries(counts)) {
@@ -110,32 +113,37 @@ export async function POST(req: Request) {
     .select("emoji")
     .eq("game_id", gameId)
     .eq("event_key", eventKey)
-    .eq("visitor_id", visitorId);
+    .eq("visitor_id", visitorId)
+    .eq("emoji", emoji)
+    .limit(1);
 
   if (existingError) return NextResponse.json({ error: existingError.message }, { status: 500 });
 
   const hasSameReaction = (existingRows ?? []).some((row: { emoji: string }) => row.emoji === emoji);
 
-  const { error: deleteError } = await db
-    .from("feed_event_reactions")
-    .delete()
-    .eq("game_id", gameId)
-    .eq("event_key", eventKey)
-    .eq("visitor_id", visitorId);
-
-  if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 });
-
   if (hasSameReaction) {
+    const { error: deleteError } = await db
+      .from("feed_event_reactions")
+      .delete()
+      .eq("game_id", gameId)
+      .eq("event_key", eventKey)
+      .eq("visitor_id", visitorId)
+      .eq("emoji", emoji);
+
+    if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 });
     return NextResponse.json({ ok: true, ...(await loadSummary(gameId, visitorId)) });
   }
 
-  const { error } = await db.from("feed_event_reactions").insert({
-    game_id: gameId,
-    event_key: eventKey,
-    visitor_id: visitorId,
-    emoji,
-    updated_at: new Date().toISOString(),
-  });
+  const { error } = await db.from("feed_event_reactions").upsert(
+    {
+      game_id: gameId,
+      event_key: eventKey,
+      visitor_id: visitorId,
+      emoji,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "game_id,event_key,visitor_id,emoji" }
+  );
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true, ...(await loadSummary(gameId, visitorId)) });
