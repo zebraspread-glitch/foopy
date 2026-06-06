@@ -5,7 +5,7 @@ import type { CSSProperties } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Check, ChevronLeft } from "lucide-react";
+import { Check, ChevronLeft, SmilePlus } from "lucide-react";
 import matchStatsJson from "@/app/data/game-stats.json";
 import teamStatsJson from "@/app/data/team-stats.json";
 import playerStatsJson from "@/app/data/players.json";
@@ -85,6 +85,28 @@ const API_TEAM_ID_BY_NAME: Record<string, number> = {
 const API_TEAM_NAME_BY_ID: Record<number, string> = Object.fromEntries(
   Object.entries(API_TEAM_ID_BY_NAME).map(([name, apiId]) => [apiId, name])
 ) as Record<number, string>;
+
+const EVENT_REACTION_EMOJIS = ["🔥", "👏", "😂", "😮", "😭", "❤️"] as const;
+
+type EventReactionSummary = { emoji: string; count: number };
+type EventReactionMap = Record<string, EventReactionSummary[]>;
+type MyEventReactionMap = Record<string, string>;
+
+function getEventReactionVisitorId() {
+  if (typeof window === "undefined") return "";
+
+  try {
+    const key = "foopy_event_reaction_visitor_id";
+    let id = window.localStorage.getItem(key);
+    if (!id) {
+      id = window.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      window.localStorage.setItem(key, id);
+    }
+    return id;
+  } catch {
+    return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  }
+}
 
 function safeText(value: any, fallback = "") {
   if (value == null) return fallback;
@@ -1125,7 +1147,12 @@ function LiveFeedPlayer({
   commentCount,
   topComment,
   playerFP,
+  reactions,
+  myReaction,
+  reactionPickerOpen,
   onCommentClick,
+  onToggleReactions,
+  onReactionSelect,
 }: {
   event: LiveEvent;
   homeTeam: any;
@@ -1134,7 +1161,12 @@ function LiveFeedPlayer({
   commentCount?: number;
   topComment?: { body: string; username: string; avatar: string | null };
   playerFP?: number | null;
+  reactions?: EventReactionSummary[];
+  myReaction?: string | null;
+  reactionPickerOpen?: boolean;
   onCommentClick?: () => void;
+  onToggleReactions?: () => void;
+  onReactionSelect?: (emoji: string) => void;
 }) {
   const isInferred = Boolean((event as any).optimistic) || Boolean((event as any).inferred);
   const inferredTeam = safeText((event as any).teamName, "");
@@ -1196,6 +1228,16 @@ function LiveFeedPlayer({
                 </span>
               )}
             </div>
+            {(reactions?.length ?? 0) > 0 && (
+              <div style={eventReactionSummaryStyle}>
+                {reactions!.slice(0, 4).map((reaction) => (
+                  <span key={reaction.emoji} style={eventReactionPillStyle}>
+                    <span>{reaction.emoji}</span>
+                    <span>{reaction.count}</span>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           <div style={liveFeedRightStyle}>
@@ -1205,18 +1247,70 @@ function LiveFeedPlayer({
               <span style={liveFeedMinuteStyle}>{event.minute ?? "-"}'</span>
             </div>
 
-            {!topComment && (
-              <button onClick={onCommentClick} style={commentBubbleBtnStyle}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                </svg>
-                {(commentCount ?? 0) > 0 && <span style={commentCountStyle}>{commentCount}</span>}
+            <div style={eventActionRowStyle}>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleReactions?.();
+                }}
+                style={{
+                  ...eventReactBtnStyle,
+                  ...(myReaction ? eventReactBtnActiveStyle : null),
+                }}
+                aria-label="React to event"
+                title="React"
+              >
+                {myReaction ? (
+                  <span style={eventReactEmojiStyle}>{myReaction}</span>
+                ) : (
+                  <SmilePlus size={14} strokeWidth={2.2} />
+                )}
               </button>
-            )}
+
+              {!topComment && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCommentClick?.();
+                  }}
+                  style={commentBubbleBtnStyle}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
+                  {(commentCount ?? 0) > 0 && <span style={commentCountStyle}>{commentCount}</span>}
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Top comment preview — inside the dark box, below the event row */}
+        {/* Reaction picker */}
+        {reactionPickerOpen && (
+          <div style={eventReactionPickerRowStyle} onClick={(e) => e.stopPropagation()}>
+            {EVENT_REACTION_EMOJIS.map((emoji) => (
+              <button
+                key={emoji}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onReactionSelect?.(emoji);
+                }}
+                style={{
+                  ...eventReactionOptionStyle,
+                  ...(myReaction === emoji ? eventReactionOptionActiveStyle : null),
+                }}
+                aria-label={`React with ${emoji}`}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Top comment preview */}
         {topComment && (
           <div style={{
             display: "flex",
@@ -1244,7 +1338,14 @@ function LiveFeedPlayer({
             <span style={{ fontSize: 12, color: "#fff", lineHeight: 1.4, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", flex: 1 }}>
               {topComment.body}
             </span>
-            <button onClick={onCommentClick} style={commentBubbleBtnStyle}>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onCommentClick?.();
+              }}
+              style={commentBubbleBtnStyle}
+            >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
               </svg>
@@ -2836,6 +2937,9 @@ function MatchPageInner() {
   const [feedLoading, setFeedLoading] = useState(true);
   const [eventCommentCounts, setEventCommentCounts] = useState<Record<string, number>>({});
   const [eventTopComments, setEventTopComments] = useState<Record<string, { body: string; username: string; avatar: string | null }>>({});
+  const [eventReactions, setEventReactions] = useState<EventReactionMap>({});
+  const [myEventReactions, setMyEventReactions] = useState<MyEventReactionMap>({});
+  const [openReactionKey, setOpenReactionKey] = useState<string | null>(null);
   const seenEventKeys = useRef(new Set<string>());
   // Snapshot of each player's FP at the moment their event first appeared.
   // Keyed by the event's scoreEventKey so the displayed FP never changes as
@@ -3109,6 +3213,56 @@ function MatchPageInner() {
   useEffect(() => { gameRef.current = game; }, [game]);
 
   const displayLiveEvents = useMemo(() => liveEvents, [liveEvents]);
+
+  const loadEventReactions = useCallback(async () => {
+    if (!id) return;
+    const visitorId = getEventReactionVisitorId();
+    if (!visitorId) return;
+
+    try {
+      const params = new URLSearchParams({ gameId: id, visitorId });
+      const res = await fetch(`/api/event-reactions?${params.toString()}`, { cache: "no-store" });
+      if (!res.ok) return;
+      const json = await res.json();
+      setEventReactions(json.reactions ?? {});
+      setMyEventReactions(json.mine ?? {});
+    } catch (err) {
+      console.error("[event-reactions] load failed:", err);
+    }
+  }, [id]);
+
+  const handleEventReaction = useCallback(async (eventKey: string, emoji: string) => {
+    if (!id || !eventKey) return;
+    const visitorId = getEventReactionVisitorId();
+    if (!visitorId) return;
+
+    const nextEmoji = myEventReactions[eventKey] === emoji ? null : emoji;
+    setOpenReactionKey(null);
+
+    try {
+      const res = await fetch("/api/event-reactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gameId: Number(id), eventKey, emoji: nextEmoji, visitorId }),
+      });
+      if (!res.ok) {
+        console.error("[event-reactions] save failed:", await res.text());
+        return;
+      }
+      const json = await res.json();
+      setEventReactions(json.reactions ?? {});
+      setMyEventReactions(json.mine ?? {});
+    } catch (err) {
+      console.error("[event-reactions] save failed:", err);
+    }
+  }, [id, myEventReactions]);
+
+  useEffect(() => {
+    if (!id) return;
+    loadEventReactions();
+    const interval = setInterval(loadEventReactions, 15_000);
+    return () => clearInterval(interval);
+  }, [id, loadEventReactions]);
 
   // Count unanswered open polls — always runs so tab badge is visible before entering the tab
   useEffect(() => {
@@ -4231,6 +4385,11 @@ function MatchPageInner() {
                           commentCount={commentCountForEvent(eventCommentCounts, event, index)}
                           topComment={eventTopComments[commentKey]}
                           playerFP={eventPlayerFP}
+                          reactions={eventReactions[commentKey] ?? []}
+                          myReaction={myEventReactions[commentKey] ?? null}
+                          reactionPickerOpen={openReactionKey === commentKey}
+                          onToggleReactions={() => setOpenReactionKey((current) => current === commentKey ? null : commentKey)}
+                          onReactionSelect={(emoji) => handleEventReaction(commentKey, emoji)}
                           onCommentClick={() => {
                             const inferredTeam = safeText((event as any).teamName, "");
                             const apiTeam = teamNameFromEvent(event);
@@ -6563,6 +6722,15 @@ const liveFeedTimeDotStyle: CSSProperties = { fontSize: 10, color: "var(--text-4
 const liveFeedMinuteStyle: CSSProperties = { fontSize: 10, fontWeight: 800, color: "var(--text-3)" };
 const commentBubbleBtnStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", color: "var(--text-3)", padding: "2px 0", fontSize: 12, fontWeight: 700 };
 const commentCountStyle: CSSProperties = { fontSize: 11, fontWeight: 700, color: "var(--text-3)" };
+const eventActionRowStyle: CSSProperties = { display: "inline-flex", alignItems: "center", justifyContent: "flex-end", gap: 10, minHeight: 24 };
+const eventReactBtnStyle: CSSProperties = { width: 28, height: 24, display: "inline-flex", alignItems: "center", justifyContent: "center", borderRadius: 999, border: "1px solid var(--border-2)", background: "var(--surface-2)", color: "var(--text-3)", padding: 0, cursor: "pointer" };
+const eventReactBtnActiveStyle: CSSProperties = { background: "rgba(250,204,21,0.14)", borderColor: "rgba(250,204,21,0.35)", color: "var(--text-1)" };
+const eventReactEmojiStyle: CSSProperties = { fontSize: 14, lineHeight: 1 };
+const eventReactionSummaryStyle: CSSProperties = { display: "flex", flexWrap: "wrap", alignItems: "center", gap: 5, marginTop: 7 };
+const eventReactionPillStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 4, minHeight: 22, borderRadius: 999, border: "1px solid var(--border-2)", background: "rgba(255,255,255,0.06)", color: "var(--text-2)", padding: "2px 7px", fontSize: 11, fontWeight: 800 };
+const eventReactionPickerRowStyle: CSSProperties = { display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8, padding: "0 14px 10px 74px", borderTop: "1px solid rgba(255,255,255,0.06)" };
+const eventReactionOptionStyle: CSSProperties = { width: 34, height: 30, display: "inline-flex", alignItems: "center", justifyContent: "center", borderRadius: 999, border: "1px solid var(--border-2)", background: "var(--surface-2)", color: "var(--text-1)", fontSize: 16, lineHeight: 1, padding: 0, cursor: "pointer" };
+const eventReactionOptionActiveStyle: CSSProperties = { background: "rgba(250,204,21,0.16)", borderColor: "rgba(250,204,21,0.45)" };
 const playerBubbleStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 4, color: "var(--text-3)", fontSize: 11, fontWeight: 700 };
 const playerAvatarWrapStyle: CSSProperties = {
   width: 48,
