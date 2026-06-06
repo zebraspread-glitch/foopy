@@ -182,7 +182,14 @@
       "Bash(git -C \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\" add app/settings/page.tsx)",
       "PowerShell(npx tsc --noEmit 2>&1)",
       "PowerShell(npx tsc --noEmit; \"EXIT_CODE=$LASTEXITCODE\")",
-      "Bash(Select-Object -First 1)"
+      "Bash(Select-Object -First 1)",
+      "Bash(git check-ignore *)",
+      "Bash(git status *)",
+      "Bash(awk '{print $6, $7}')",
+      "Bash(find /c/Users/User/Downloads /c/Users/User/Desktop /c/Users/User/Documents /c/Users/User/OneDrive -name 'players.json' -not -path '*/node_modules/*' -newermt '2026-06-06 00:00:00' -printf '%TY-%Tm-%Td %TH:%TM  %p\\\\n' 2>/dev/null | sort -r | head -30; echo \"\\(end of search\\)\")",
+      "Bash(git hash-object *)",
+      "Bash(echo \"work: $\\(git hash-object app/data/players.json\\)\")",
+      "Read(//c/Users/User/Downloads/foopy/**)"
     ]
   }
 }
