@@ -653,10 +653,22 @@ function fantasyPoints(p: PlayerStat): number {
   );
 }
 
+function numericValue(value: unknown): number | null {
+  if (value == null || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function getFoopyValue(player: PlayerStat): number | null {
+  const savedFoopy = numericValue(player.foopy);
+  if (savedFoopy !== null && (hasStatLine(player) || savedFoopy !== 0)) return savedFoopy;
+  if (!hasStatLine(player)) return null;
+  return foopyRating(player);
+}
+
 function getSortValue(player: PlayerStat, key: SortKey) {
   if (key === "foopy") {
-    const savedFoopy = num(player.foopy);
-    return savedFoopy > 0 ? savedFoopy : foopyRating(player);
+    return getFoopyValue(player) ?? 0;
   }
 
   if (key === "goals") return num(player.goals) * 100 + num(player.behinds);
@@ -702,7 +714,7 @@ function normalizeSavedPlayer(player: any, team?: string): PlayerStat {
     player: name,
     name,
     team: safeText(mapped?.club ?? mapped?.team ?? player?.team ?? team, ""),
-    foopy: raw.foopy ?? player?.foopy ?? 0,
+    foopy: raw.foopy ?? player?.foopy,
     goals: raw.goals?.total ?? raw.goals ?? player?.goals?.total ?? player?.goals ?? 0,
 goalAssists: raw.goals?.assists ?? raw.goalAssists ?? player?.goals?.assists ?? player?.goalAssists ?? 0,
 behinds: raw.behinds ?? player?.behinds ?? 0,
@@ -811,7 +823,7 @@ function hasStatLine(p: PlayerStat): boolean {
   return (
     num(p.disposals) + num(p.kicks) + num(p.handballs) + num(p.marks) +
     num(p.tackles) + num(p.hitouts) + num(p.goals) + num(p.behinds) +
-    num(p.clearances) > 0
+    num(p.clearances) + playerFreesFor(p) + num(p.freesAgainst ?? p.fa ?? p.freeKicksAgainst) > 0
   );
 }
 
@@ -1270,7 +1282,8 @@ function SeasonAvgTable({ stats }: { stats: any[] }) {
   const router = useRouter();
 
   const withRating = stats.map(p => {
-    const g = p.games || 1;
+    const g = num(p.games);
+    if (g <= 0) return { ...p, _foopy: null };
     // Prefer dividing raw totals ourselves — API-Sports' pre-rounded .average
     // fields can differ from FootyWire due to rounding and different denominators.
     const avg = (total: number | null | undefined) => (total ?? 0) / g;
@@ -1290,9 +1303,13 @@ function SeasonAvgTable({ stats }: { stats: any[] }) {
     } as any);
     return { ...p, _foopy };
   });
-  const sorted = [...withRating].sort((a, b) =>
-    sortDir === "desc" ? b._foopy - a._foopy : a._foopy - b._foopy
-  );
+  const sorted = [...withRating].sort((a, b) => {
+    if (a._foopy === null || b._foopy === null) {
+      if (a._foopy === null && b._foopy === null) return 0;
+      return a._foopy === null ? 1 : -1;
+    }
+    return sortDir === "desc" ? b._foopy - a._foopy : a._foopy - b._foopy;
+  });
 
   if (!sorted.length) return <div style={{ padding: "20px 16px", color: "var(--text-3)", textAlign: "center", fontSize: 14 }}>No season stats available yet.</div>;
 
@@ -1321,7 +1338,7 @@ function SeasonAvgTable({ stats }: { stats: any[] }) {
                   </span>
                 </td>
                 <td style={tdStyle}>
-                  {rating > 0 && <span style={{ ...ratingPillStyle, background: foopyColor(rating) }}>{rating}</span>}
+                  {rating !== null && <span style={{ ...ratingPillStyle, background: foopyColor(rating) }}>{rating}</span>}
                 </td>
               </tr>
             );
@@ -1361,6 +1378,17 @@ function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating, stic
 
   const sortedStats = useMemo(() => {
     return [...stats].sort((a, b) => {
+      if (sortKey === "foopy") {
+        const aFoopy = getFoopyValue(a);
+        const bFoopy = getFoopyValue(b);
+        if (aFoopy === null || bFoopy === null) {
+          if (aFoopy === null && bFoopy === null) return 0;
+          return aFoopy === null ? 1 : -1;
+        }
+        const diff = bFoopy - aFoopy;
+        return sortDir === "desc" ? diff : -diff;
+      }
+
       const diff = getSortValue(b, sortKey) - getSortValue(a, sortKey);
       return sortDir === "desc" ? diff : -diff;
     });
@@ -1395,13 +1423,39 @@ function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating, stic
     <div>
 
       <div style={tableWrapStyle}>
-        <table style={tableStyle}>
+        <table style={{ ...tableStyle, minWidth: statMode === "basic" ? 640 : 520 }}>
+          <thead>
+            <tr>
+              <th style={{ ...thPlayerStyle, top: stickyTop }}>Player</th>
+              {statMode === "basic" ? (
+                <>
+                  {sortHeader("FOOPY", "foopy")}
+                  {sortHeader("G.B", "goals")}
+                  {sortHeader("D", "disposals")}
+                  {sortHeader("K", "kicks")}
+                  {sortHeader("H", "handballs")}
+                  {sortHeader("M", "marks")}
+                  {sortHeader("T", "tackles")}
+                  {sortHeader("HO", "hitouts")}
+                </>
+              ) : (
+                <>
+                  {sortHeader("FP", "fantasy")}
+                  {sortHeader("CLR", "clearances")}
+                  {sortHeader("GA", "goalAssists")}
+                  {sortHeader("FF", "freesFor")}
+                  {sortHeader("FA", "freesAgainst")}
+                </>
+              )}
+              <th style={{ ...thStyle, top: stickyTop, width: 36 }} aria-label="Comments" />
+            </tr>
+          </thead>
           <tbody>
             {sortedStats.map((p, index) => {
               const name = safePlayerName(p.name ?? p.player, index + 1);
               const knownPlayer = findPlayerInfo(name);
               const rowTeam = safeText(knownPlayer?.club ?? knownPlayer?.team ?? p.team ?? team, "");
-              const rating = foopyRating(p);
+              const rating = getFoopyValue(p);
               const playerSlugUrl = slugName(name);
               const playerDbKey = `player_${playerSlugUrl}`; // DB event_key still uses player_ prefix
               const count = playerCommentCounts[playerDbKey] ?? 0;
@@ -1422,7 +1476,7 @@ function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating, stic
                   {statMode === "basic" ? (
                     <>
                       <td style={tdStyle}>
-                        {hasStatLine(p) && (() => {
+                        {rating !== null && (() => {
                           const isBest = isFinal && bestRating > 0 && rating === bestRating;
                           return (
                             <span style={{ ...ratingPillStyle, background: foopyColor(rating), ...(isBest ? { display: "inline-flex", alignItems: "center", gap: 3 } : {}) }}>
@@ -4038,10 +4092,9 @@ function MatchPageInner() {
               )}
               {activeTab === "players" && status !== "UPCOMING" && (
                 <div style={{ display: "flex", alignItems: "center", padding: "6px 10px", borderTop: "1px solid var(--border-2)", background: "var(--bg)", gap: 4 }}>
-                  <div style={{ display: "flex", gap: 3, marginRight: "auto" }}>
                     <button onClick={() => setPlayerStatMode("basic")} style={playerStatMode === "basic" ? activeStatSwitchStyle : statSwitchStyle}>Basic</button>
                     <button onClick={() => setPlayerStatMode("advanced")} style={playerStatMode === "advanced" ? activeStatSwitchStyle : statSwitchStyle}>Advanced</button>
-                  </div>
+                  <div style={{ display: "none" }}>
                   {(playerStatMode === "basic"
                     ? (["foopy","goals","disposals","kicks","handballs","marks","tackles","hitouts"] as SortKey[])
                     : (["fantasy","clearances","goalAssists","freesFor","freesAgainst"] as SortKey[])
@@ -4067,6 +4120,7 @@ function MatchPageInner() {
                     );
                   })}
                   <div style={{ width: 28, flexShrink: 0 }} />
+                  </div>
                 </div>
               )}
             </div>
@@ -6536,10 +6590,10 @@ const countdownLabelStyle: CSSProperties = { color: "#facc15", fontSize: 11, fon
 const countdownTimeStyle: CSSProperties = { marginTop: 8, color: "var(--text-1)", fontSize: 36, lineHeight: 1, fontWeight: 1000, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" };
 const tableWrapStyle: CSSProperties = { overflowX: "auto" };
 const tableStyle: CSSProperties = { width: "100%", borderCollapse: "collapse" };
-const thStyle: CSSProperties = { position: "sticky", top: 0, zIndex: 2, background: "var(--bg-1, #0a0a0f)", textAlign: "left", padding: "9px 10px", borderBottom: "1px solid var(--border-2)", whiteSpace: "nowrap", fontSize: 10, fontWeight: 900, textTransform: "uppercase" as const, letterSpacing: "0.08em", color: "var(--text-3)" };
-const thPlayerStyle: CSSProperties = { ...thStyle, minWidth: 180 };
-const tdStyle: CSSProperties = { padding: "13px 10px", borderBottom: "1px solid var(--border-1)", whiteSpace: "nowrap", fontSize: 14, fontWeight: 700, fontVariantNumeric: "tabular-nums" };
-const tdPlayerStyle: CSSProperties = { ...tdStyle, fontWeight: 800, fontSize: 14, color: "var(--text-1)", minWidth: 180 };
+const thStyle: CSSProperties = { position: "sticky", top: 0, zIndex: 2, background: "var(--bg-1, #0a0a0f)", textAlign: "center", padding: "9px 10px", borderBottom: "1px solid var(--border-2)", whiteSpace: "nowrap", fontSize: 10, fontWeight: 900, textTransform: "uppercase" as const, letterSpacing: "0.08em", color: "var(--text-3)" };
+const thPlayerStyle: CSSProperties = { ...thStyle, minWidth: 180, textAlign: "left" };
+const tdStyle: CSSProperties = { padding: "13px 10px", borderBottom: "1px solid var(--border-1)", whiteSpace: "nowrap", fontSize: 14, fontWeight: 700, fontVariantNumeric: "tabular-nums", textAlign: "center" };
+const tdPlayerStyle: CSSProperties = { ...tdStyle, fontWeight: 800, fontSize: 14, color: "var(--text-1)", minWidth: 180, textAlign: "left" };
 const playerNameCellStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 14 };
 const ratingPillStyle: CSSProperties = { display: "inline-block", minWidth: 48, padding: "5px 9px", borderRadius: 8, color: "var(--text-1)", fontWeight: 900, fontSize: 13, border: "1.5px solid rgba(0,0,0,0.3)", textAlign: "center" };
 const statSwitchWrapStyle: CSSProperties = { display: "flex", justifyContent: "center", gap: 6, marginBottom: 14 };

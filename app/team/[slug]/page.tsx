@@ -194,6 +194,13 @@ function num(value: unknown) {
   return Number.isFinite(n) ? n : 0;
 }
 
+function hasPlayerStatLine(playerStats: NonNullable<NonNullable<PlayerStatGame["teams"]>[number]["players"]>[number]) {
+  return (
+    num(playerStats.disposals) + num(playerStats.kicks) + num(playerStats.handballs) + num(playerStats.marks) +
+    num(playerStats.tackles) + num(playerStats.hitouts) + num(playerStats.goals?.total) + num(playerStats.behinds) +
+    num(playerStats.clearances) + num(playerStats.free_kicks?.for) + num(playerStats.free_kicks?.against) > 0
+  );
+}
 
 function aflScore(goals: number, behinds: number) {
   return goals * 6 + behinds;
@@ -275,7 +282,7 @@ export default async function TeamProfilePage({ params }: { params: Promise<{ sl
           freesFor: num(playerStats.free_kicks?.for),
           freesAgainst: num(playerStats.free_kicks?.against),
         });
-        if (rating > 0) {
+        if (hasPlayerStatLine(playerStats)) {
           if (!foopyMap.has(playerId)) foopyMap.set(playerId, []);
           foopyMap.get(playerId)!.push(rating);
         }
@@ -303,7 +310,13 @@ export default async function TeamProfilePage({ params }: { params: Promise<{ sl
       const avgFoopy = playerAverageFoopy(player);
       return { player, season, avgFoopy };
     })
-    .sort((a, b) => (b.avgFoopy ?? -1) - (a.avgFoopy ?? -1));
+    .sort((a, b) => {
+      if (a.avgFoopy === null || b.avgFoopy === null) {
+        if (a.avgFoopy === null && b.avgFoopy === null) return a.player.name.localeCompare(b.player.name);
+        return a.avgFoopy === null ? 1 : -1;
+      }
+      return b.avgFoopy - a.avgFoopy;
+    });
 
   const ratedPlayers = roster.filter((row) => row.avgFoopy !== null);
   const teamAvgFoopy = ratedPlayers.length

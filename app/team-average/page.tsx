@@ -55,6 +55,13 @@ function num(value: unknown) {
   return Number.isFinite(n) ? n : 0;
 }
 
+function hasPlayerStatLine(stats: NonNullable<NonNullable<PlayerStatGame["teams"]>[number]["players"]>[number]) {
+  return (
+    num(stats.disposals) + num(stats.kicks) + num(stats.handballs) + num(stats.marks) +
+    num(stats.tackles) + num(stats.hitouts) + num(stats.goals?.total) + num(stats.behinds) +
+    num(stats.clearances) + num(stats.free_kicks?.for) + num(stats.free_kicks?.against) > 0
+  );
+}
 
 export default function TeamAveragePage() {
   const dataDir = path.join(process.cwd(), "app", "data");
@@ -83,7 +90,7 @@ export default function TeamAveragePage() {
           freesAgainst: num(stats.free_kicks?.against),
         });
 
-        if (rating > 0) {
+        if (hasPlayerStatLine(stats)) {
           if (!foopyMap.has(playerId)) foopyMap.set(playerId, []);
           foopyMap.get(playerId)!.push(rating);
         }
