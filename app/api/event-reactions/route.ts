@@ -24,6 +24,19 @@ function cleanEventKey(value: unknown) {
   return typeof value === "string" ? value.trim().slice(0, 180) : "";
 }
 
+function isMissingEventReactionTable(error: { code?: string; message?: string } | null | undefined) {
+  const message = error?.message ?? "";
+  return (
+    error?.code === "42P01" ||
+    error?.code === "PGRST205" ||
+    (message.includes("feed_event_reactions") && (message.includes("schema cache") || message.includes("does not exist")))
+  );
+}
+
+function unavailableSummary() {
+  return { reactions: {}, mine: {}, unavailable: true };
+}
+
 function summarise(rows: ReactionRow[], visitorId = "") {
   const reactions: Record<string, { emoji: string; count: number }[]> = {};
   const mine: Record<string, string[]> = {};
@@ -61,8 +74,8 @@ async function loadSummary(gameId: number, visitorId = "") {
     .order("created_at", { ascending: true });
 
   if (error) {
-    console.error("[event-reactions]", error.message);
-    return { reactions: {}, mine: {}, unavailable: true };
+    if (!isMissingEventReactionTable(error)) console.warn("[event-reactions]", error.message);
+    return unavailableSummary();
   }
 
   return summarise((data ?? []) as ReactionRow[], visitorId);
@@ -99,7 +112,10 @@ export async function POST(req: Request) {
       .eq("event_key", eventKey)
       .eq("visitor_id", visitorId);
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      if (isMissingEventReactionTable(error)) return NextResponse.json({ ok: true, ...unavailableSummary() });
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
     return NextResponse.json({ ok: true, ...(await loadSummary(gameId, visitorId)) });
   }
 
@@ -116,7 +132,10 @@ export async function POST(req: Request) {
     .order("updated_at", { ascending: true })
     .order("created_at", { ascending: true });
 
-  if (existingError) return NextResponse.json({ error: existingError.message }, { status: 500 });
+  if (existingError) {
+    if (isMissingEventReactionTable(existingError)) return NextResponse.json({ ok: true, ...unavailableSummary() });
+    return NextResponse.json({ error: existingError.message }, { status: 500 });
+  }
 
   const currentEmoji = [...(existingRows ?? [])].reverse().find((row: { emoji: string }) => isSupportedEventReaction(row.emoji))?.emoji;
 
@@ -127,7 +146,10 @@ export async function POST(req: Request) {
     .eq("event_key", eventKey)
     .eq("visitor_id", visitorId);
 
-  if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 });
+  if (deleteError) {
+    if (isMissingEventReactionTable(deleteError)) return NextResponse.json({ ok: true, ...unavailableSummary() });
+    return NextResponse.json({ error: deleteError.message }, { status: 500 });
+  }
 
   if (currentEmoji === emoji) {
     return NextResponse.json({ ok: true, ...(await loadSummary(gameId, visitorId)) });
@@ -141,6 +163,9 @@ export async function POST(req: Request) {
     updated_at: new Date().toISOString(),
   });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    if (isMissingEventReactionTable(error)) return NextResponse.json({ ok: true, ...unavailableSummary() });
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
   return NextResponse.json({ ok: true, ...(await loadSummary(gameId, visitorId)) });
 }

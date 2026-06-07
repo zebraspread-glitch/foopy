@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { createPortal } from "react-dom";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Check, ChevronLeft, MessageCircle, X } from "lucide-react";
+import { Check, ChevronLeft, MessageCircle, Smile, X } from "lucide-react";
 import matchStatsJson from "@/app/data/game-stats.json";
 import teamStatsJson from "@/app/data/team-stats.json";
 import playerStatsJson from "@/app/data/players.json";
@@ -29,8 +29,6 @@ import {
   type EventReactionDefinition,
   eventReactionRank,
   getEventReactionDefinition,
-  getEventReactionGlyph,
-  getEventReactionLabel,
   isSupportedEventReaction,
 } from "@/app/lib/eventReactions";
 
@@ -1279,10 +1277,8 @@ function LiveFeedPlayer({
   const type = safeText(event.type, "event").toUpperCase();
   const selectedReactionSet = new Set(myReactions ?? []);
   const sortedReactions = sortEventReactionSummaries(reactions ?? []);
-  const topReactions = sortedReactions.slice(0, 3);
   const reactionTotal = totalReactionCount(sortedReactions);
   const hasReacted = selectedReactionSet.size > 0;
-  const reactionPreviewIds = topReactions.length > 0 ? topReactions.map((reaction) => reaction.emoji) : EVENT_REACTION_FAVORITE_IDS.slice(0, 3);
 
   return (
     <div
@@ -1346,6 +1342,8 @@ function LiveFeedPlayer({
         </div>
 
         <div style={eventReactionBarStyle} onClick={(e) => e.stopPropagation()}>
+          <span style={eventReactionBarSpacerStyle} />
+
           <button
             type="button"
             onClick={(e) => {
@@ -1359,34 +1357,9 @@ function LiveFeedPlayer({
             aria-label={hasReacted ? "Change reaction" : "Add reaction"}
             title={hasReacted ? "Change reaction" : "React"}
           >
-            <span style={eventReactionStackStyle} aria-hidden="true">
-              {reactionPreviewIds.map((reactionId, index) => {
-                const definition = getEventReactionDefinition(reactionId);
-                const active = selectedReactionSet.has(reactionId);
-                const isGhost = topReactions.length === 0;
-                return (
-                  <span
-                    key={`${reactionId}-${index}`}
-                    style={{
-                      ...eventReactionStackGlyphStyle,
-                      ...(definition?.kind !== "emoji" ? eventReactionStackGlyphCustomStyle : null),
-                      ...(isGhost ? eventReactionStackGlyphMutedStyle : null),
-                      ...(active ? eventReactionStackGlyphActiveStyle : null),
-                      marginLeft: index === 0 ? 0 : -7,
-                      borderColor: active ? definition?.accent ?? "rgba(250,204,21,0.78)" : undefined,
-                      color: definition?.kind === "emoji" ? undefined : definition?.accent ?? undefined,
-                    }}
-                    title={getEventReactionLabel(reactionId)}
-                  >
-                    {getEventReactionGlyph(reactionId)}
-                  </span>
-                );
-              })}
-            </span>
+            <Smile size={17} strokeWidth={2.7} />
             <span style={eventReactionSummaryCountStyle}>{compactCount(reactionTotal)}</span>
           </button>
-
-          <span style={eventReactionBarSpacerStyle} />
 
           <button
             type="button"
@@ -3475,6 +3448,7 @@ function MatchPageInner() {
       const res = await fetch(`/api/event-reactions?${params.toString()}`, { cache: "no-store" });
       if (!res.ok) return;
       const json = await res.json();
+      if (json.unavailable) return;
       setEventReactions(json.reactions ?? {});
       setMyEventReactions(normaliseMyReactionMap(json.mine));
     } catch (err) {
@@ -3506,15 +3480,16 @@ function MatchPageInner() {
         body: JSON.stringify({ gameId: Number(id), eventKey, emoji, visitorId }),
       });
       if (!res.ok) {
-        console.error("[event-reactions] save failed:", await res.text());
+        console.warn("[event-reactions] save failed:", await res.text());
         loadEventReactions();
         return;
       }
       const json = await res.json();
+      if (json.unavailable) return;
       setEventReactions(json.reactions ?? {});
       setMyEventReactions(normaliseMyReactionMap(json.mine));
     } catch (err) {
-      console.error("[event-reactions] save failed:", err);
+      console.warn("[event-reactions] save failed:", err);
       loadEventReactions();
     }
   }, [id, loadEventReactions, myEventReactions]);
@@ -7004,14 +6979,9 @@ const liveFeedTimeDotStyle: CSSProperties = { fontSize: 10, color: "var(--text-4
 const liveFeedMinuteStyle: CSSProperties = { fontSize: 10, fontWeight: 800, color: "var(--text-3)" };
 const commentCountStyle: CSSProperties = { fontSize: 12, fontWeight: 850, color: "inherit", fontVariantNumeric: "tabular-nums" };
 const eventReactionBarStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 10, padding: "0 14px 11px 74px", borderTop: "1px solid rgba(255,255,255,0.035)", minHeight: 36, overflow: "hidden" };
-const eventReactionSummaryButtonStyle: CSSProperties = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, height: 31, minWidth: 0, border: "none", background: "transparent", color: "rgba(226,232,240,0.76)", padding: "0 4px 0 0", fontSize: 12, fontWeight: 950, cursor: "pointer", flexShrink: 0 };
-const eventReactionSummaryButtonActiveStyle: CSSProperties = { color: "var(--text-1)" };
-const eventReactionStackStyle: CSSProperties = { display: "inline-flex", alignItems: "center", minWidth: 58, paddingLeft: 1 };
-const eventReactionStackGlyphStyle: CSSProperties = { width: 24, height: 24, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.16)", background: "linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.055))", boxShadow: "0 7px 16px rgba(0,0,0,0.32), 0 1px 0 rgba(255,255,255,0.16) inset", display: "inline-flex", alignItems: "center", justifyContent: "center", color: "var(--text-1)", fontSize: 15, fontWeight: 1000, lineHeight: 1, flexShrink: 0, position: "relative" };
-const eventReactionStackGlyphCustomStyle: CSSProperties = { fontSize: 9, letterSpacing: 0, background: "linear-gradient(180deg, rgba(250,204,21,0.16), rgba(255,255,255,0.055))" };
-const eventReactionStackGlyphMutedStyle: CSSProperties = { opacity: 0.42, filter: "grayscale(0.25)", transform: "scale(0.96)" };
-const eventReactionStackGlyphActiveStyle: CSSProperties = { boxShadow: "0 9px 20px rgba(250,204,21,0.18), 0 0 0 1px rgba(250,204,21,0.36) inset", opacity: 1, transform: "scale(1)" };
-const eventReactionSummaryCountStyle: CSSProperties = { color: "inherit", fontSize: 12, fontWeight: 950, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", lineHeight: 1 };
+const eventReactionSummaryButtonStyle: CSSProperties = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5, height: 24, minWidth: 0, border: "none", background: "transparent", color: "rgba(148,163,184,0.92)", padding: 0, fontSize: 13, fontWeight: 850, cursor: "pointer", flexShrink: 0, lineHeight: 1 };
+const eventReactionSummaryButtonActiveStyle: CSSProperties = { color: "rgba(148,163,184,0.96)" };
+const eventReactionSummaryCountStyle: CSSProperties = { color: "inherit", fontSize: 13, fontWeight: 850, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", lineHeight: 1 };
 const eventReactionBarSpacerStyle: CSSProperties = { flex: "1 1 auto", minWidth: 10 };
 const eventReactionCommentStyle: CSSProperties = { height: 31, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, background: "transparent", border: "none", color: "rgba(148,163,184,0.9)", padding: "0 0 0 8px", fontSize: 12, fontWeight: 850, cursor: "pointer", flexShrink: 0 };
 const eventReactionPopupBackdropStyle: CSSProperties = { position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.34)", display: "flex", alignItems: "center", justifyContent: "center", padding: "12px", overflow: "hidden" };
