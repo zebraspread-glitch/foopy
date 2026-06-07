@@ -8,23 +8,31 @@ const footywireRaw = "Acres Blake, Adams Jed, Adams Oscar, Adams Taylor, Addinsa
 
 const norm = s => s.toLowerCase().replace(/[^a-z ]/g, "").trim();
 
-// Parse "Surname Firstname" -> "Firstname Surname"
+const foopySet = new Set(
+  players.flatMap(p => [p.name || p.player || "", ...(p.aliases || [])].map(norm))
+);
+
+// Parse "Surname Firstname" -> possible "Firstname Surname" candidates.
+// Trying every split handles multi-word surnames such as Ah Chee and De Koning.
 const fwEntries = footywireRaw.split(", ").map(entry => {
   const clean = entry.replace(/\s*\([^)]+\)/, "").trim();
   const parts = clean.split(" ");
-  if (parts.length < 2) return { raw: entry, normalized: norm(clean) };
-  const surname = parts[0];
-  const firstname = parts.slice(1).join(" ");
-  return { raw: entry, normalized: norm(firstname + " " + surname) };
+  if (parts.length < 2) return { raw: entry, candidates: [norm(clean)] };
+
+  const candidates = [];
+  for (let split = 1; split < parts.length; split++) {
+    const surname = parts.slice(0, split).join(" ");
+    const firstname = parts.slice(split).join(" ");
+    candidates.push(norm(`${firstname} ${surname}`));
+  }
+
+  return { raw: entry, candidates };
 });
 
-// Build foopy set
-const foopySet = new Set(players.map(p => norm(p.name || p.player || "")));
-
 // Find missing
-const missing = fwEntries.filter(e => !foopySet.has(e.normalized));
+const missing = fwEntries.filter(e => !e.candidates.some(candidate => foopySet.has(candidate)));
 
 console.log(`Total on footywire: ${fwEntries.length}`);
 console.log(`Total in Foopy: ${players.length}`);
 console.log(`\nMissing from Foopy (${missing.length}):`);
-missing.forEach(e => console.log(` - ${e.raw}  →  "${e.normalized}"`));
+missing.forEach(e => console.log(` - ${e.raw}  ->  ${e.candidates.map(candidate => `"${candidate}"`).join(" / ")}`));

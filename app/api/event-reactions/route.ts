@@ -4,13 +4,8 @@ import { supabaseServer } from "@/app/lib/supabase-server";
 export const dynamic = "force-dynamic";
 
 const db = supabaseServer;
-const EVENT_REACTION_EMOJI_SECTIONS = [
-  ["🔥", "🐐", "😭", "🤣", "😮", "🧊", "🎯", "🚨", "🤡", "📈", "💀", "👏", "❤️", "😤", "👀", "🤯"],
-  ["😀", "😆", "😂", "🥲", "😬", "😡", "😎", "😍", "😈", "😴", "🙃", "😇", "😱", "🥶", "😵"],
-  ["👍", "👎", "🙌", "🙏", "🤝", "💪", "🫡", "🤌", "👌", "🫶", "🤲", "🫵"],
-  ["🏉", "🏆", "🥇", "⚡", "💥", "⭐", "🚀", "🫠", "🍿", "🛎️", "🚩", "🏁"],
-] as const;
-const EVENT_REACTION_EMOJIS: string[] = Array.from(new Set(EVENT_REACTION_EMOJI_SECTIONS.flat()));
+const EVENT_REACTION_EMOJIS: string[] = ["\u{1F525}", "\u{1F923}", "\u{1F62E}", "\u{1F410}"];
+const SUPPORTED_EVENT_REACTIONS = new Set<string>(EVENT_REACTION_EMOJIS);
 
 type ReactionRow = {
   event_key: string;
@@ -35,14 +30,18 @@ function summarise(rows: ReactionRow[], visitorId = "") {
   const reactions: Record<string, { emoji: string; count: number }[]> = {};
   const mine: Record<string, string[]> = {};
   const counts: Record<string, Record<string, number>> = {};
+  const latestRowsByVisitor = new Map<string, ReactionRow>();
 
   for (const row of rows) {
-    if (!row.event_key || !row.emoji) continue;
+    if (!row.event_key || !row.visitor_id || !SUPPORTED_EVENT_REACTIONS.has(row.emoji)) continue;
+    latestRowsByVisitor.set(`${row.event_key}\u0000${row.visitor_id}`, row);
+  }
+
+  for (const row of latestRowsByVisitor.values()) {
     counts[row.event_key] ??= {};
     counts[row.event_key][row.emoji] = (counts[row.event_key][row.emoji] ?? 0) + 1;
     if (visitorId && row.visitor_id === visitorId) {
-      mine[row.event_key] ??= [];
-      if (!mine[row.event_key].includes(row.emoji)) mine[row.event_key].push(row.emoji);
+      mine[row.event_key] = [row.emoji];
     }
   }
 
@@ -59,7 +58,9 @@ async function loadSummary(gameId: number, visitorId = "") {
   const { data, error } = await db
     .from("feed_event_reactions")
     .select("event_key, emoji, visitor_id")
-    .eq("game_id", gameId);
+    .eq("game_id", gameId)
+    .order("updated_at", { ascending: true })
+    .order("created_at", { ascending: true });
 
   if (error) {
     console.error("[event-reactions]", error.message);
@@ -104,7 +105,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, ...(await loadSummary(gameId, visitorId)) });
   }
 
-  if (!EVENT_REACTION_EMOJIS.includes(emoji)) {
+  if (!SUPPORTED_EVENT_REACTIONS.has(emoji)) {
     return NextResponse.json({ error: "Unsupported reaction" }, { status: 400 });
   }
 
@@ -114,36 +115,33 @@ export async function POST(req: Request) {
     .eq("game_id", gameId)
     .eq("event_key", eventKey)
     .eq("visitor_id", visitorId)
-    .eq("emoji", emoji)
-    .limit(1);
+    .order("updated_at", { ascending: true })
+    .order("created_at", { ascending: true });
 
   if (existingError) return NextResponse.json({ error: existingError.message }, { status: 500 });
 
-  const hasSameReaction = (existingRows ?? []).some((row: { emoji: string }) => row.emoji === emoji);
+  const currentEmoji = [...(existingRows ?? [])].reverse().find((row: { emoji: string }) => SUPPORTED_EVENT_REACTIONS.has(row.emoji))?.emoji;
 
-  if (hasSameReaction) {
-    const { error: deleteError } = await db
-      .from("feed_event_reactions")
-      .delete()
-      .eq("game_id", gameId)
-      .eq("event_key", eventKey)
-      .eq("visitor_id", visitorId)
-      .eq("emoji", emoji);
+  const { error: deleteError } = await db
+    .from("feed_event_reactions")
+    .delete()
+    .eq("game_id", gameId)
+    .eq("event_key", eventKey)
+    .eq("visitor_id", visitorId);
 
-    if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 });
+  if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 });
+
+  if (currentEmoji === emoji) {
     return NextResponse.json({ ok: true, ...(await loadSummary(gameId, visitorId)) });
   }
 
-  const { error } = await db.from("feed_event_reactions").upsert(
-    {
-      game_id: gameId,
-      event_key: eventKey,
-      visitor_id: visitorId,
-      emoji,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "game_id,event_key,visitor_id,emoji" }
-  );
+  const { error } = await db.from("feed_event_reactions").insert({
+    game_id: gameId,
+    event_key: eventKey,
+    visitor_id: visitorId,
+    emoji,
+    updated_at: new Date().toISOString(),
+  });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true, ...(await loadSummary(gameId, visitorId)) });

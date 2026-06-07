@@ -40,7 +40,7 @@ const newPlayerEntries = newPlayers.map(p => ({
   apiSportsId: null,
   eventIds: [],
   statsIds: [],
-  footyWireUrl: `https://www.footywire.compp-${p.footySlug}--${nameToSlug(p.name)}`,
+  footyWireUrl: `https://www.footywire.com/afl/footy/pp-${p.footySlug}--${nameToSlug(p.name)}`,
 })).filter(p => !existingIds.has(p.id));
 
 const updatedPlayers = [...players, ...newPlayerEntries]
