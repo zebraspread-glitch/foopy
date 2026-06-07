@@ -1606,8 +1606,6 @@ function ResultScreen({
           const oppCorrect = op?.is_correct ?? null;
           const cat = DUEL_STAT_CATS[q.category_key ?? ""] ?? null;
           const catLabel = cat ? cat.label.toUpperCase() : (q.category_key?.replace("player_","").replace("team_","").toUpperCase() ?? "—");
-          const myWins:  boolean | null = myCorrect;
-          const oppWins: boolean | null = oppCorrect;
           const getVal = (optName: string | null): string | null => {
             if (!liveGameStats || !cat || !optName) return null;
             if (cat.type === "player") {
@@ -1636,6 +1634,24 @@ function ResultScreen({
           const oppOptName = op ? (op.pick === "a" ? q.option_a : q.option_b) : null;
           const myVal  = getVal(myOptName);
           const oppVal = getVal(oppOptName);
+          let myWins:  boolean | null = myCorrect;
+          let oppWins: boolean | null = oppCorrect;
+          if (mp && op && mp.pick !== op.pick && myVal !== null && oppVal !== null) {
+            const myLiveValue = numericValue(myVal);
+            const oppLiveValue = numericValue(oppVal);
+            if (myLiveValue !== null && oppLiveValue !== null) {
+              if (myLiveValue > oppLiveValue) {
+                myWins = true;
+                oppWins = false;
+              } else if (oppLiveValue > myLiveValue) {
+                myWins = false;
+                oppWins = true;
+              } else {
+                myWins = null;
+                oppWins = null;
+              }
+            }
+          }
           return {
             catLabel, myWins, oppWins, myVal, oppVal,
             myImg:  mp ? (mp.pick === "a" ? q.option_a_image : q.option_b_image) : null,

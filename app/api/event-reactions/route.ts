@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
+import { eventReactionRank, isSupportedEventReaction } from "@/app/lib/eventReactions";
 import { supabaseServer } from "@/app/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
 
 const db = supabaseServer;
-const EVENT_REACTION_EMOJIS: string[] = ["\u{1F525}", "\u{1F923}", "\u{1F62E}", "\u{1F410}"];
-const SUPPORTED_EVENT_REACTIONS = new Set<string>(EVENT_REACTION_EMOJIS);
 
 type ReactionRow = {
   event_key: string;
@@ -14,8 +13,7 @@ type ReactionRow = {
 };
 
 function emojiRank(emoji: string) {
-  const index = EVENT_REACTION_EMOJIS.indexOf(emoji);
-  return index === -1 ? 999 : index;
+  return eventReactionRank(emoji);
 }
 
 function cleanVisitorId(value: unknown) {
@@ -33,7 +31,7 @@ function summarise(rows: ReactionRow[], visitorId = "") {
   const latestRowsByVisitor = new Map<string, ReactionRow>();
 
   for (const row of rows) {
-    if (!row.event_key || !row.visitor_id || !SUPPORTED_EVENT_REACTIONS.has(row.emoji)) continue;
+    if (!row.event_key || !row.visitor_id || !isSupportedEventReaction(row.emoji)) continue;
     latestRowsByVisitor.set(`${row.event_key}\u0000${row.visitor_id}`, row);
   }
 
@@ -87,7 +85,7 @@ export async function POST(req: Request) {
   const gameId = Number(body?.gameId);
   const eventKey = cleanEventKey(body?.eventKey);
   const visitorId = cleanVisitorId(body?.visitorId);
-  const emoji = typeof body?.emoji === "string" ? body.emoji : null;
+  const emoji = typeof body?.emoji === "string" ? body.emoji.trim().slice(0, 80) : null;
 
   if (!Number.isFinite(gameId) || gameId <= 0 || !eventKey || !visitorId) {
     return NextResponse.json({ error: "Missing reaction fields" }, { status: 400 });
@@ -105,7 +103,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, ...(await loadSummary(gameId, visitorId)) });
   }
 
-  if (!SUPPORTED_EVENT_REACTIONS.has(emoji)) {
+  if (!isSupportedEventReaction(emoji)) {
     return NextResponse.json({ error: "Unsupported reaction" }, { status: 400 });
   }
 
@@ -120,7 +118,7 @@ export async function POST(req: Request) {
 
   if (existingError) return NextResponse.json({ error: existingError.message }, { status: 500 });
 
-  const currentEmoji = [...(existingRows ?? [])].reverse().find((row: { emoji: string }) => SUPPORTED_EVENT_REACTIONS.has(row.emoji))?.emoji;
+  const currentEmoji = [...(existingRows ?? [])].reverse().find((row: { emoji: string }) => isSupportedEventReaction(row.emoji))?.emoji;
 
   const { error: deleteError } = await db
     .from("feed_event_reactions")

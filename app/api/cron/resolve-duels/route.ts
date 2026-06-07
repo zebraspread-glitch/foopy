@@ -62,10 +62,12 @@ type StatRow = {
   kicks: number; handballs: number; disposals: number; marks: number;
   tackles: number; hitouts: number; goals: number; behinds: number;
   clearances: number; goalAssists: number; freesFor: number; freesAgainst: number;
+  inside50s: number;
 };
 
 function num(v: any) { const n = Number(v ?? 0); return Number.isFinite(n) ? n : 0; }
 function norm(s: string) { return s.toLowerCase().replace(/[^a-z]/g, ""); }
+function lastName(s: string) { return s.trim().split(/\s+/).pop()?.toLowerCase() ?? ""; }
 
 // Returns 'a' or 'b' (the winning option), or null for a tie
 function resolveQuestion(
@@ -103,13 +105,15 @@ function resolveQuestion(
   if (cat.type === "player") {
     const allStats = [...homeStats, ...awayStats];
     const stat = cat.stat;
-    const findStat = (name: string) => {
-      const p = allStats.find(s => norm(s.name) === norm(name));
-      if (!p) return -1;
+    const findStat = (name: string): number | null => {
+      let p = allStats.find(s => norm(s.name) === norm(name));
+      if (!p) p = allStats.find(s => lastName(s.name) === lastName(name) && s.name.length > 0);
+      if (!p) return null;
       return stat === "foopy" ? foopyRating(p) : num(p[stat as keyof StatRow]);
     };
     const valA = findStat(optionA);
     const valB = findStat(optionB);
+    if (valA === null || valB === null) return null;
     if (valA === valB) return null;
     return valA > valB ? "a" : "b";
   }
@@ -181,6 +185,7 @@ function parseTeams(teams: any[]): StatRow[] {
         goalAssists:  n(s.goalAssists ?? s.goal_assists ?? 0),
         freesFor:     n(s.freesFor   ?? s.frees_for    ?? s.FreesFor    ?? 0),
         freesAgainst: n(s.freesAgainst ?? s.frees_against ?? s.FreesAgainst ?? 0),
+        inside50s:    n(s.inside50s  ?? s.insides50    ?? s.Inside50s   ?? 0),
       });
     }
   }
@@ -311,10 +316,8 @@ async function runResolution() {
 
     if (!questions?.length) { console.log(`[resolve-duels] duel ${duel.id}: no questions — SKIP`); continue; }
 
-    // Set correct_answer on each question from stats
+    // Set correct_answer on each question from the freshest available stats.
     for (const q of questions) {
-      if (q.correct_answer) continue; // already resolved
-
       if (q.is_tiebreaker) {
         // Tiebreaker: team pick is team_winner, margin from score
         const winTeam = hScore > aScore ? duelGame.home_team : hScore < aScore ? duelGame.away_team : null;
@@ -324,11 +327,9 @@ async function runResolution() {
         const correctMargin = Math.abs(hScore - aScore) > 0
           ? String(Math.abs(hScore - aScore))
           : null;
-        if (correctAnswer) {
-          await db.from("duel_questions").update({ correct_answer: correctAnswer, correct_margin: correctMargin }).eq("id", q.id);
-          q.correct_answer = correctAnswer;
-          q.correct_margin = correctMargin;
-        }
+        await db.from("duel_questions").update({ correct_answer: correctAnswer, correct_margin: correctMargin }).eq("id", q.id);
+        q.correct_answer = correctAnswer;
+        q.correct_margin = correctMargin;
         continue;
       }
 
@@ -338,16 +339,22 @@ async function runResolution() {
         q.category_key, q.option_a, q.option_b,
         homeStats, awayStats, duelGame.home_team, duelGame.away_team, hScore, aScore
       );
-      if (correctAnswer) {
-        await db.from("duel_questions").update({ correct_answer: correctAnswer }).eq("id", q.id);
-        q.correct_answer = correctAnswer;
-      }
+      await db.from("duel_questions").update({ correct_answer: correctAnswer }).eq("id", q.id);
+      q.correct_answer = correctAnswer;
     }
 
     // Score picks
     const { data: allPicks } = await db.from("duel_picks").select("*").eq("duel_id", duel.id);
     const challengerPicks = (allPicks ?? []).filter(p => p.user_id === duel.challenger_id);
     const opponentPicks   = (allPicks ?? []).filter(p => p.user_id === duel.opponent_id);
+    const unresolvedQuestionIds = questions.filter(q => !q.is_tiebreaker && !q.correct_answer).map(q => q.id);
+    if (unresolvedQuestionIds.length > 0) {
+      await db
+        .from("duel_picks")
+        .update({ is_correct: null })
+        .eq("duel_id", duel.id)
+        .in("question_id", unresolvedQuestionIds);
+    }
 
     // Handle forfeits
     if (challengerPicks.length === 0 && opponentPicks.length > 0) {

@@ -8,7 +8,6 @@ create table if not exists public.feed_event_reactions (
   emoji text not null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  constraint feed_event_reactions_emoji_check check (emoji in (U&'\+01F525', U&'\+01F923', U&'\+01F62E', U&'\+01F410')),
   constraint feed_event_reactions_unique unique (game_id, event_key, visitor_id)
 );
 
@@ -17,9 +16,6 @@ alter table public.feed_event_reactions
 
 alter table public.feed_event_reactions
   drop constraint if exists feed_event_reactions_unique;
-
-delete from public.feed_event_reactions
-where emoji not in (U&'\+01F525', U&'\+01F923', U&'\+01F62E', U&'\+01F410');
 
 with ranked as (
   select
@@ -34,10 +30,6 @@ delete from public.feed_event_reactions reactions
 using ranked
 where reactions.id = ranked.id
   and ranked.rn > 1;
-
-alter table public.feed_event_reactions
-  add constraint feed_event_reactions_emoji_check
-  check (emoji in (U&'\+01F525', U&'\+01F923', U&'\+01F62E', U&'\+01F410'));
 
 alter table public.feed_event_reactions
   add constraint feed_event_reactions_unique unique (game_id, event_key, visitor_id);
