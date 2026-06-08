@@ -29,6 +29,18 @@ interface PackConfig {
   teamFolder?: string;
 }
 
+type CardInsert = {
+  user_id: string;
+  player_id: string;
+  player_name: string;
+  team: string;
+  team_logo: string;
+  rarity: Rarity;
+  rating: number;
+  duplicate_count: number;
+  pack_type: PackType;
+};
+
 // ── Shared odds ───────────────────────────────────────────────────────────────
 
 const GENERAL_ODDS: Record<Rarity, number> = {
@@ -123,6 +135,58 @@ async function getUserFromRequest(req: NextRequest) {
   return user;
 }
 
+function isDuplicateError(error: { code?: string; message?: string } | null | undefined) {
+  const message = error?.message?.toLowerCase() ?? "";
+  return error?.code === "23505" || message.includes("duplicate") || message.includes("unique");
+}
+
+async function incrementCardDuplicateCount(cardId: string, by: number) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { data: current, error: readError } = await supabaseAdmin
+      .from("user_cards")
+      .select("duplicate_count")
+      .eq("id", cardId)
+      .single();
+
+    if (readError || !current) {
+      throw new Error(readError?.message ?? "Card row disappeared while opening pack");
+    }
+
+    const previousCount = Number(current.duplicate_count ?? 0);
+    const { error: updateError, count } = await supabaseAdmin
+      .from("user_cards")
+      .update({ duplicate_count: previousCount + by }, { count: "exact" })
+      .eq("id", cardId)
+      .eq("duplicate_count", previousCount);
+
+    if (updateError) throw new Error(updateError.message);
+    if (count === 1) return;
+  }
+
+  throw new Error("Could not update card duplicate count");
+}
+
+async function grantCard(row: CardInsert) {
+  const { error } = await supabaseAdmin.from("user_cards").insert(row);
+  if (!error) return;
+
+  if (!isDuplicateError(error)) throw new Error(error.message);
+
+  const { data: existing, error: existingError } = await supabaseAdmin
+    .from("user_cards")
+    .select("id")
+    .eq("user_id", row.user_id)
+    .eq("player_id", row.player_id)
+    .eq("rarity", row.rarity)
+    .single();
+
+  if (existingError || !existing) {
+    throw new Error(existingError?.message ?? "Duplicate card exists but could not be loaded");
+  }
+
+  await incrementCardDuplicateCount(existing.id, row.duplicate_count);
+}
+
 // ── Route handler ─────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -171,20 +235,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: profileResult.error.message }, { status: 500 });
   }
 
+  if (existingCardsResult.error) {
+    return NextResponse.json({ error: existingCardsResult.error.message }, { status: 500 });
+  }
+
   const currentCoins = profileResult.data?.coins ?? 0;
   if (currentCoins < config.cost) {
     return NextResponse.json({ error: "Not enough coins" }, { status: 402 });
   }
 
   // ── 3. Deduct coins (optimistic concurrency) ──────────────────────────────
-  const { error: deductError } = await supabaseAdmin
+  const { error: deductError, count: deductCount } = await supabaseAdmin
     .from("profiles")
-    .update({ coins: currentCoins - config.cost })
+    .update({ coins: currentCoins - config.cost }, { count: "exact" })
     .eq("id", user.id)
     .eq("coins", currentCoins);
 
-  if (deductError) {
-    return NextResponse.json({ error: "Failed to deduct coins — try again" }, { status: 500 });
+  if (deductError || deductCount !== 1) {
+    if (deductError) console.error("[cards/open-pack] deduct failed:", deductError.message);
+    return NextResponse.json(
+      { error: "Failed to deduct coins - try again" },
+      { status: deductError ? 500 : 409 }
+    );
   }
 
   type ExistingCard = { id: string; player_id: string; rarity: Rarity; duplicate_count: number };
@@ -202,13 +274,13 @@ export async function POST(req: NextRequest) {
   }
 
   // Which unique keys need a fresh insert vs an update to existing row
-  const toInsert: object[] = [];
-  const toUpdate: { id: string; newCount: number }[] = [];
+  const toInsert: CardInsert[] = [];
+  const toUpdate: { id: string; addCount: number }[] = [];
 
   for (const [key, packCount] of packCountMap) {
     const existing = existingMap.get(key);
     if (existing) {
-      toUpdate.push({ id: existing.id, newCount: existing.duplicate_count + packCount });
+      toUpdate.push({ id: existing.id, addCount: packCount });
     } else {
       // Find one assignment for this key to get player/rarity/rating details
       const [playerId, rarity] = key.split(":") as [string, Rarity];
@@ -227,15 +299,14 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // ── 6. Batch insert + parallel updates (replaces N serial queries) ─────────
-  await Promise.all([
-    toInsert.length > 0
-      ? supabaseAdmin.from("user_cards").insert(toInsert)
-      : Promise.resolve(),
-    ...toUpdate.map(({ id, newCount }) =>
-      supabaseAdmin.from("user_cards").update({ duplicate_count: newCount }).eq("id", id)
-    ),
-  ]);
+  // ── 6. Grant cards with checked writes ─────────────────────────────────────
+  try {
+    for (const row of toInsert) await grantCard(row);
+    for (const { id, addCount } of toUpdate) await incrementCardDuplicateCount(id, addCount);
+  } catch (err) {
+    console.error("[cards/open-pack] card grant failed:", err instanceof Error ? err.message : err);
+    return NextResponse.json({ error: "Failed to grant cards" }, { status: 500 });
+  }
 
   // ── 7. Build result payload ───────────────────────────────────────────────
   const seenNewKeys = new Set<string>();
