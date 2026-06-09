@@ -241,7 +241,7 @@ async function runResolution() {
   // Prefetch all relevant duel_game rows in one query
   const duelGameIds = [...new Set((activeDuels ?? []).map((d: any) => d.duel_game_id).filter(Boolean))];
   const { data: duelGameRows } = duelGameIds.length
-    ? await db.from("duel_games").select("id, game_id, home_team, away_team, status").in("id", duelGameIds)
+    ? await db.from("duel_games").select("id, game_id, home_team, away_team, status, completed_at").in("id", duelGameIds)
     : { data: [] };
   const duelGameMap = new Map((duelGameRows ?? []).map((g: any) => [g.id, g]));
 
@@ -255,7 +255,6 @@ async function runResolution() {
     // Was the game ALREADY marked complete on a previous cron run?
     const wasAlreadyComplete = duelGame.status === "complete";
     let gameIsComplete = wasAlreadyComplete;
-    let justMarkedComplete = false;
     try {
       const sq = await fetch(`https://api.squiggle.com.au/?q=games;game=${duelGame.game_id}`, {
         headers: { "User-Agent": "Foopy AFL App" }, cache: "no-store",
@@ -273,8 +272,9 @@ async function runResolution() {
           // UTC server gives a time ~10h in the future and the duel never resolves.
           if (!gameIsComplete && num(g.complete) >= 100) {
             gameIsComplete = true;
-            justMarkedComplete = true;
-            await db.from("duel_games").update({ status: "complete" }).eq("id", duelGame.id);
+            const nowIso = new Date().toISOString();
+            await db.from("duel_games").update({ status: "complete", completed_at: nowIso }).eq("id", duelGame.id);
+            duelGame.completed_at = nowIso;
           }
         }
       }
@@ -282,12 +282,23 @@ async function runResolution() {
 
     if (!gameIsComplete) { console.log(`[resolve-duels] duel ${duel.id}: game NOT complete — SKIP`); continue; }
 
-    // Settle delay: only resolve once the game has been complete since a PRIOR
-    // cron run. If it just finished this run, wait one cycle (~10 min) so the
-    // final player stats have time to fully publish in API-Sports — otherwise a
-    // late goal/disposal can be missing and a question scores incorrectly.
-    if (justMarkedComplete) {
-      console.log(`[resolve-duels] duel ${duel.id}: just marked complete this run — waiting one cycle for stats to settle`);
+    // Settle delay: AFL player stats keep updating for a while after the final
+    // siren (late-published goals, stat corrections). Squiggle reports the game
+    // complete at the siren, but if we finalise immediately a late goal can be
+    // missing and a question scores against stale data — and a finalised duel is
+    // never re-graded. So wait until the game has been complete for SETTLE_MS
+    // before locking in the result.
+    const SETTLE_MS = 30 * 60 * 1000; // 30 minutes
+    // Backfill completed_at for games marked complete before this column existed.
+    if (gameIsComplete && !duelGame.completed_at) {
+      const nowIso = new Date().toISOString();
+      await db.from("duel_games").update({ completed_at: nowIso }).eq("id", duelGame.id);
+      duelGame.completed_at = nowIso;
+    }
+    const completedAtMs = duelGame.completed_at ? new Date(duelGame.completed_at).getTime() : null;
+    if (completedAtMs !== null && Date.now() - completedAtMs < SETTLE_MS) {
+      const mins = Math.round((Date.now() - completedAtMs) / 60000);
+      console.log(`[resolve-duels] duel ${duel.id}: game complete ${mins}m ago — waiting for stats to finalise (settle ${SETTLE_MS / 60000}m)`);
       continue;
     }
 
