@@ -27,7 +27,7 @@ import {
   getEventReactionDefinition,
   isValidReactionEmoji,
 } from "@/app/lib/eventReactions";
-import { loadEmojiCategories, type EmojiCategory } from "@/app/lib/emojiCategories";
+import { loadEmojiCategories, isEmojiRenderable, type EmojiCategory } from "@/app/lib/emojiCategories";
 
 import type {
   TabKey,
@@ -1465,7 +1465,7 @@ function EventReactionPopup({
       const stored = window.localStorage.getItem(EVENT_REACTION_RECENTS_STORAGE_KEY);
       const parsed = stored ? JSON.parse(stored) : [];
       if (Array.isArray(parsed)) {
-        setRecentReactionIds(parsed.filter(isValidReactionEmoji).slice(0, 24));
+        setRecentReactionIds(parsed.filter((e) => isValidReactionEmoji(e) && isEmojiRenderable(e)).slice(0, 24));
       }
     } catch {
       setRecentReactionIds([]);
