@@ -480,10 +480,10 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
                   <span style={{ fontSize: 13, fontWeight: 800, color: "var(--text-2)" }}>{player.team}</span>
                   {computedSeason?.position && (
-                    <span style={{ fontSize: 11, fontWeight: 800, color: color, background: `${color}22`, border: `1px solid ${color}44`, borderRadius: 999, padding: "2px 8px" }}>{season.position}</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: color, background: `${color}22`, border: `1px solid ${color}44`, borderRadius: 999, padding: "2px 8px" }}>{computedSeason.position}</span>
                   )}
                   {computedSeason?.jerseyNumber && (
-                    <span style={{ fontSize: 11, fontWeight: 900, color: "var(--text-3)" }}>#{season.jerseyNumber}</span>
+                    <span style={{ fontSize: 11, fontWeight: 900, color: "var(--text-3)" }}>#{computedSeason.jerseyNumber}</span>
                   )}
                 </div>
               </div>
