@@ -21,6 +21,7 @@ import { CARD_PLAYERS } from "@/app/data/cardPlayers";
 import { PlayerCard } from "@/app/components/PlayerCard";
 import { PlayerPassCard, TeamPassCard } from "@/app/components/PassCard";
 import { type PlayerPass, type TeamPass, PLAYER_PASS_LEVELS, TEAM_PASS_LEVELS, getPassLevel, dedupePlayerPasses } from "@/app/lib/passes";
+import { finalizePendingProfile } from "@/app/lib/finalizePendingProfile";
 
 /* ─────────────────── Team picker data ─────────────────── */
 const TEAM_PICKER_LIST = [
@@ -977,7 +978,7 @@ export default function ProfilePage() {
         setUser(u);
         if (u) {
           const { data } = await supabase.from("profiles").select("*").eq("id", u.id).single();
-          await applyPending(u.id, data as Profile | null);
+          await applyPending(u, data as Profile | null);
           loadFriends(u.id);
           // Award daily login Aura (deduped per calendar day)
           if (session?.access_token) {
@@ -998,7 +999,7 @@ export default function ProfilePage() {
         setUser(u);
         if (u) {
           const { data } = await supabase.from("profiles").select("*").eq("id", u.id).single();
-          await applyPending(u.id, data as Profile | null);
+          await applyPending(u, data as Profile | null);
           loadFriends(u.id);
         }
         return;
@@ -1118,29 +1119,12 @@ export default function ProfilePage() {
       });
   }, [user, profile?.featured_cards]);
 
-  async function applyPending(userId: string, p: Profile | null) {
-    const pending     = localStorage.getItem("foopy_pending_username");
-    const pendingTeam = localStorage.getItem("foopy_pending_team");
-
-    if (pending || pendingTeam) {
-      localStorage.removeItem("foopy_pending_username");
-      localStorage.removeItem("foopy_pending_team");
-
-      const patch: Record<string, unknown> = { id: userId };
-      if (pending) {
-        patch.username           = pending;
-        patch.display_name       = pending;
-        patch.username_updated_at = new Date().toISOString();
-      }
-      if (pendingTeam) patch.favourite_team = pendingTeam;
-
-      const { data } = await supabase
-        .from("profiles")
-        .upsert(patch, { onConflict: "id" })
-        .select()
-        .single();
-
-      setProfile((data ?? p) as Profile | null);
+  async function applyPending(u: User, p: Profile | null) {
+    // Fills username + favourite team chosen at signup, reading from
+    // localStorage or (cross-device) the user's auth metadata.
+    const finalized = await finalizePendingProfile(u);
+    if (finalized) {
+      setProfile(finalized as Profile);
     } else {
       // Never overwrite a valid loaded profile with null — a null result
       // means the fetch failed (network blip, brief race after a settings

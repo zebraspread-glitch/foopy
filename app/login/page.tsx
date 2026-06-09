@@ -116,7 +116,12 @@ function LoginPageInner() {
     const { data, error: err } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: `${window.location.origin}/profile` },
+      options: {
+        emailRedirectTo: `${window.location.origin}/welcome`,
+        // Stored on the auth user so the username + team survive even when the
+        // confirmation email is opened on a different device than signup.
+        data: { pending_username: cleanUsername, pending_team: favouriteTeam },
+      },
     });
     if (err) { setError(err.message); setLoading(false); return; }
 
