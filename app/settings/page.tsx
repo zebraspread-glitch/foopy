@@ -207,6 +207,7 @@ export default function SettingsPage() {
 
   // Display
   const [hapticsOn, setHapticsOn] = useState(true);
+  const [reactionAnim, setReactionAnim] = useState<"off" | "hover" | "ghostly">("hover");
 
   // UI
   const [showTeamPicker, setShowTeamPicker] = useState(false);
@@ -244,6 +245,8 @@ export default function SettingsPage() {
     setTeamFeaturedMatch(localStorage.getItem("foopy_team_featured") !== "false");
     setTeamBorderColor(localStorage.getItem("foopy_team_border_color") ?? "#c9962a");
     setHapticsOn(localStorage.getItem("foopy_haptics") !== "false");
+    const ra = localStorage.getItem("foopy_reaction_anim");
+    setReactionAnim(ra === "off" || ra === "ghostly" ? ra : "hover");
 
     const storedThemeMode = normalizeThemeMode(localStorage.getItem(FOOPY_THEME_KEY));
     setThemeMode(storedThemeMode);
@@ -259,6 +262,11 @@ export default function SettingsPage() {
     const next = !current;
     setter(next);
     savePref(key, String(next));
+  }
+
+  function chooseReactionAnim(mode: "off" | "hover" | "ghostly") {
+    setReactionAnim(mode);
+    savePref("foopy_reaction_anim", mode);
   }
 
   function chooseThemeMode(mode: FoopyThemeMode) {
@@ -560,6 +568,53 @@ export default function SettingsPage() {
                       role="radio"
                       aria-checked={active}
                       onClick={() => chooseThemeMode(option.value)}
+                      style={{
+                        border: "none",
+                        borderRadius: 9,
+                        background: active ? "var(--bg)" : "transparent",
+                        color: active ? "var(--text-1)" : "var(--text-2)",
+                        boxShadow: active ? "0 1px 8px rgba(0,0,0,0.18)" : "none",
+                        fontSize: 11,
+                        fontWeight: 800,
+                        lineHeight: 1,
+                        padding: "8px 4px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </Row>
+            <Row
+              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.9 5.8-5.8 1.9 5.8 1.9L12 18.4l1.9-5.8 5.8-1.9-5.8-1.9z"/></svg>}
+              label="Reaction Animation"
+              sub="Top reactions on each event"
+            >
+              <div
+                role="radiogroup"
+                aria-label="Reaction animation"
+                style={{
+                  width: "min(208px, 48vw)",
+                  display: "grid",
+                  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                  gap: 3,
+                  padding: 3,
+                  borderRadius: 12,
+                  background: "var(--surface-3)",
+                  border: "1px solid var(--border-2)",
+                }}
+              >
+                {([{ value: "off", label: "Off" }, { value: "hover", label: "Hover" }, { value: "ghostly", label: "Ghostly" }] as const).map(option => {
+                  const active = reactionAnim === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      onClick={() => chooseReactionAnim(option.value)}
                       style={{
                         border: "none",
                         borderRadius: 9,

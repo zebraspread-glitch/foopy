@@ -1293,6 +1293,25 @@ function LiveFeedPlayer({
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [myReactionId]);
 
+  // Top-reaction animation mode (Settings → Reaction Animation).
+  const [reactionAnim, setReactionAnim] = useState<"off" | "hover" | "ghostly">("hover");
+  useEffect(() => {
+    const read = () => {
+      try {
+        const v = localStorage.getItem("foopy_reaction_anim");
+        setReactionAnim(v === "off" || v === "ghostly" ? v : "hover");
+      } catch { /* ignore */ }
+    };
+    read();
+    window.addEventListener("foopy-settings-changed", read);
+    window.addEventListener("storage", read);
+    return () => {
+      window.removeEventListener("foopy-settings-changed", read);
+      window.removeEventListener("storage", read);
+    };
+  }, []);
+  const topFloatClass = reactionAnim === "ghostly" ? "reaction-ghostly" : reactionAnim === "hover" ? "reaction-top-float" : "";
+
   return (
     <div
       onClick={onCommentClick}
@@ -1396,7 +1415,7 @@ function LiveFeedPlayer({
                     return (
                       <span
                         key={r.emoji}
-                        className="reaction-top-float"
+                        className={topFloatClass}
                         style={{
                           fontSize: isCustom ? 9 : 14,
                           fontWeight: isCustom ? 1000 : undefined,

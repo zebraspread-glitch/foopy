@@ -1822,6 +1822,20 @@ textarea:focus-visible {
   70%      { transform: translateY(-1px) rotate(4deg); }
 }
 
+/* Ghostly: faint holograms that rise, drift up and fade out, looping */
+.reaction-ghostly {
+  display: inline-block;
+  animation: reaction-ghostly 2.8s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes reaction-ghostly {
+  0%   { opacity: 0; transform: translateY(7px) scale(0.85); }
+  25%  { opacity: 0.55; }
+  55%  { opacity: 0.4; transform: translateY(-6px) scale(1); }
+  100% { opacity: 0; transform: translateY(-17px) scale(1.08); }
+}
+
 .reaction-grid-in {
   animation: reaction-grid-in 0.22s ease both;
 }
