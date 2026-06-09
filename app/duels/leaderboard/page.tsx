@@ -20,12 +20,22 @@ type LeaderboardEntry = {
   draws: number;
   total_duels: number;
   win_rate: number;
+  win_streak?: number;
 };
 
 function ordinal(n: number) {
   const s = ["th", "st", "nd", "rd"];
   const v = n % 100;
   return n + (s[(v - 20) % 10] ?? s[v] ?? s[0]);
+}
+
+function Stat({ value, label, color, minWidth = 22 }: { value: number | string; label: string; color: string; minWidth?: number }) {
+  return (
+    <div style={{ textAlign: "center", minWidth }}>
+      <div style={{ fontSize: 16, fontWeight: 900, color, lineHeight: 1 }}>{value}</div>
+      <div style={{ fontSize: 10, color: "var(--text-3)", fontWeight: 700, marginTop: 3 }}>{label}</div>
+    </div>
+  );
 }
 
 export default function DuelsLeaderboardPage() {
@@ -125,15 +135,12 @@ export default function DuelsLeaderboardPage() {
                     <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.username ? `@${e.username}` : label}</span>
                     {e.verified && <VerifiedBadge size={13} />}
                   </div>
-                  <div style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 600, marginTop: 2 }}>
-                    {e.wins}W · {e.losses}L · {e.win_rate}% win
-                  </div>
                 </div>
-                <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  <div style={{ fontSize: 17, fontWeight: 900, background: DUEL_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-                    {e.wins}
-                  </div>
-                  <div style={{ fontSize: 10, color: "var(--text-3)", fontWeight: 700, letterSpacing: "0.04em" }}>WINS</div>
+                <div style={{ display: "flex", gap: 12, alignItems: "center", flexShrink: 0 }}>
+                  <Stat value={e.wins} label="W" color="#4ade80" />
+                  <Stat value={e.losses} label="L" color="#ef4444" />
+                  <Stat value={`${e.win_rate}%`} label="Win" color="#3b82f6" minWidth={34} />
+                  <Stat value={e.win_streak ?? 0} label="Streak" color="#f59e0b" minWidth={30} />
                 </div>
               </Link>
             );
