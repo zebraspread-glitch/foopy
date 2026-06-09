@@ -1,11 +1,12 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Activity, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/app/lib/supabase";
 
 type Mode = "login" | "signup";
+type UsernameStatus = "idle" | "checking" | "available" | "taken" | "short";
 
 const AFL_TEAMS = [
   { name: "Adelaide Crows",   slug: "crows"     },
@@ -66,6 +67,25 @@ function LoginPageInner() {
   const [error, setError]               = useState("");
   const [checkEmail, setCheckEmail]     = useState(false);
   const [favouriteTeam, setFavouriteTeam] = useState("");
+  const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>("idle");
+
+  // Live username availability check (debounced) while typing in signup mode.
+  useEffect(() => {
+    if (mode !== "signup") { setUsernameStatus("idle"); return; }
+    const clean = username.toLowerCase().replace(/[^a-z0-9_]/g, "");
+    if (!clean)           { setUsernameStatus("idle");  return; }
+    if (clean.length < 3) { setUsernameStatus("short"); return; }
+
+    setUsernameStatus("checking");
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      const { data } = await supabase
+        .from("profiles").select("id").eq("username", clean).maybeSingle();
+      if (!cancelled) setUsernameStatus(data ? "taken" : "available");
+    }, 450);
+
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [username, mode]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -120,7 +140,15 @@ function LoginPageInner() {
         username_updated_at: new Date().toISOString(),
         favourite_team: favouriteTeam,
       }, { onConflict: "id" });
-      if (upsertErr) localStorage.setItem("foopy_pending_username", cleanUsername);
+      if (upsertErr) {
+        if (upsertErr.code === "23505") {
+          setError("That username was just taken — please pick another.");
+          setLoading(false);
+          return;
+        }
+        localStorage.setItem("foopy_pending_username", cleanUsername);
+        if (favouriteTeam) localStorage.setItem("foopy_pending_team", favouriteTeam);
+      }
       router.push("/profile");
     } else {
       localStorage.setItem("foopy_pending_username", cleanUsername);
@@ -131,6 +159,9 @@ function LoginPageInner() {
   }
 
   function switchMode(m: Mode) { setMode(m); setError(""); setUsername(""); setFavouriteTeam(""); }
+
+  const signupBlocked = mode === "signup" &&
+    (usernameStatus === "taken" || usernameStatus === "checking" || usernameStatus === "short");
 
   if (checkEmail) {
     return (
@@ -201,8 +232,29 @@ function LoginPageInner() {
               <label style={label}>Username</label>
               <input
                 type="text" value={username} onChange={e => setUsername(e.target.value)}
-                placeholder="yourname" maxLength={20} autoComplete="off" required style={input}
+                placeholder="yourname" maxLength={20} autoComplete="off" required
+                style={{
+                  ...input,
+                  border:
+                    usernameStatus === "available" ? "1px solid rgba(34,197,94,0.6)" :
+                    usernameStatus === "taken"     ? "1px solid rgba(239,68,68,0.6)" :
+                    input.border,
+                }}
               />
+              {usernameStatus !== "idle" && (
+                <div style={{
+                  fontSize: 12, fontWeight: 600, marginTop: 2,
+                  color:
+                    usernameStatus === "available" ? "#22c55e" :
+                    usernameStatus === "taken"     ? "#f87171" :
+                    "rgba(255,255,255,0.4)",
+                }}>
+                  {usernameStatus === "checking"  && "Checking availability…"}
+                  {usernameStatus === "short"     && "At least 3 characters (a–z, 0–9, _)"}
+                  {usernameStatus === "available" && "✓ Username available"}
+                  {usernameStatus === "taken"     && "✗ Username taken"}
+                </div>
+              )}
             </div>
           )}
 
@@ -253,7 +305,7 @@ function LoginPageInner() {
             </div>
           )}
 
-          <button type="submit" disabled={loading} style={{ ...primaryBtn, marginTop: 4, opacity: loading ? 0.6 : 1 }}>
+          <button type="submit" disabled={loading || signupBlocked} style={{ ...primaryBtn, marginTop: 4, opacity: (loading || signupBlocked) ? 0.6 : 1, cursor: (loading || signupBlocked) ? "not-allowed" : "pointer" }}>
             {loading
               ? <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                   <span style={{ width: 15, height: 15, border: "2px solid rgba(255,255,255,.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite", display: "inline-block" }} />
