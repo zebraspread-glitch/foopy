@@ -8,6 +8,16 @@
 
 export type EmojiCategory = { id: string; label: string; icon: string; emojis: string[] };
 
+// A curated, match-relevant category surfaced first in the picker — the
+// reactions people actually reach for during a live game.
+const MATCH_EMOJIS = [
+  "\u{1F525}", "\u{1F602}", "\u{1F923}", "\u{1F62D}", "\u{1F633}", "\u{1F631}", "\u{1F624}", "\u{1F60E}",
+  "\u{1F976}", "\u{1F92F}", "\u{1F480}", "\u{1F921}", "\u{1F410}", "\u{1F451}", "\u{1F3C6}", "\u{1F947}",
+  "\u{1F64C}", "\u{1F44F}", "\u{1F4AA}", "\u{1F3AF}", "\u{1F680}", "\u{1F4AF}", "⚡", "\u{1FAE1}",
+  "\u{1F64F}", "\u{1F440}", "\u{1F9F1}", "\u{1F5D1}️", "\u{1F94A}", "\u{1F3C0}", "\u{1F3C8}", "⚾",
+  "\u{1F3C9}", "⚽", "\u{1F3D2}", "\u{1F945}", "\u{1F3BE}",
+];
+
 const META: Record<string, { label: string; icon: string; order: number }> = {
   people:   { label: "Smileys & People", icon: "\u{1F600}", order: 0 },
   nature:   { label: "Animals & Nature", icon: "\u{1F43B}", order: 1 },
@@ -90,6 +100,12 @@ export async function loadEmojiCategories(): Promise<EmojiCategory[]> {
     if (emojis.length) cats.push({ id: cat.id, label: meta.label, icon: meta.icon, emojis });
   }
   cats.sort((a, b) => (META[a.id]?.order ?? 99) - (META[b.id]?.order ?? 99));
+
+  // Match-relevant category first.
+  const matchEmojis = MATCH_EMOJIS.filter(renderable);
+  if (matchEmojis.length) {
+    cats.unshift({ id: "match", label: "Match", icon: "\u{1F3C6}", emojis: matchEmojis });
+  }
 
   cache = cats;
   return cats;

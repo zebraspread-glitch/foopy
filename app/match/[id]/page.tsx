@@ -1381,21 +1381,29 @@ function LiveFeedPlayer({
           >
             {reactionTotal > 0 ? (
               <>
+                <span style={eventReactionLeadStyle}>
+                  {hasReacted && myReactionId ? (
+                    <span style={{ fontSize: 16, lineHeight: 1, filter: `drop-shadow(0 0 5px ${myReactionAccent}cc)` }}>
+                      {getEventReactionDefinition(myReactionId)?.glyph ?? myReactionId}
+                    </span>
+                  ) : (
+                    <Smile size={16} strokeWidth={2.6} />
+                  )}
+                </span>
+                <span style={eventReactionSummaryCountStyle}>{compactCount(reactionTotal)}</span>
                 <span style={eventReactionSummaryGlyphsStyle}>
                   {topReactionEmojis.map((r, i) => {
                     const def = getEventReactionDefinition(r.emoji);
-                    const isMine = selectedReactionSet.has(r.emoji);
                     const isCustom = Boolean(def && def.kind !== "emoji");
                     return (
                       <span
                         key={r.emoji}
                         style={{
-                          fontSize: isCustom ? 10 : 16,
+                          fontSize: isCustom ? 9 : 14,
                           fontWeight: isCustom ? 1000 : undefined,
                           color: isCustom ? def?.accent : undefined,
-                          marginLeft: i === 0 ? 0 : -3,
+                          marginLeft: i === 0 ? 0 : -2,
                           lineHeight: 1,
-                          ...(isMine ? { filter: `drop-shadow(0 0 5px ${myReactionAccent}cc)` } : null),
                         }}
                       >
                         {def?.glyph ?? r.emoji}
@@ -1403,7 +1411,6 @@ function LiveFeedPlayer({
                     );
                   })}
                 </span>
-                <span style={eventReactionSummaryCountStyle}>{compactCount(reactionTotal)}</span>
               </>
             ) : (
               <span style={eventReactionSummaryEmptyStyle}>
@@ -7016,6 +7023,7 @@ const liveFeedMinuteStyle: CSSProperties = { fontSize: 10, fontWeight: 800, colo
 const commentCountStyle: CSSProperties = { fontSize: 12, fontWeight: 850, color: "inherit", fontVariantNumeric: "tabular-nums" };
 const eventReactionBarStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 10, padding: "4px 12px 11px 12px", borderTop: "1px solid rgba(255,255,255,0.035)", minHeight: 40, overflow: "hidden" };
 const eventReactionSummaryButtonStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 7, height: 30, border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.045)", color: "rgba(226,232,240,0.95)", padding: "0 12px", borderRadius: 999, fontSize: 13, fontWeight: 850, cursor: "pointer", flexShrink: 0, lineHeight: 1, transition: "transform 0.12s ease, background 0.15s ease, border-color 0.15s ease" };
+const eventReactionLeadStyle: CSSProperties = { display: "inline-flex", alignItems: "center", color: "rgba(226,232,240,0.95)" };
 const eventReactionSummaryGlyphsStyle: CSSProperties = { display: "inline-flex", alignItems: "center" };
 const eventReactionSummaryEmptyStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 5, color: "rgba(148,163,184,0.95)" };
 const eventReactionSummaryCountStyle: CSSProperties = { color: "inherit", fontSize: 13, fontWeight: 850, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", lineHeight: 1 };
