@@ -1665,7 +1665,7 @@ function SeasonAvgTable({ stats }: { stats: any[] }) {
                   </span>
                 </td>
                 <td style={tdStyle}>
-                  {rating !== null && <span style={{ ...ratingPillStyle, background: foopyColor(rating) }}>{rating}</span>}
+                  {rating !== null && rating > -1 && <span style={{ ...ratingPillStyle, background: foopyColor(rating) }}>{rating}</span>}
                 </td>
               </tr>
             );
@@ -1803,7 +1803,7 @@ function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating, stic
                   {statMode === "basic" ? (
                     <>
                       <td style={tdStyle}>
-                        {rating !== null && (() => {
+                        {rating !== null && rating > -1 && (() => {
                           const isBest = isFinal && bestRating > 0 && rating === bestRating;
                           return (
                             <span style={{ ...ratingPillStyle, background: foopyColor(rating), ...(isBest ? { display: "inline-flex", alignItems: "center", gap: 3 } : {}) }}>
