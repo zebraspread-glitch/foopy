@@ -290,16 +290,33 @@ export default async function TeamProfilePage({ params }: { params: Promise<{ sl
 
         {played > 0 && (
           <section style={cardStyle}>
-            <div style={sectionHeaderStyle}>
-              <span style={sectionLabel}>Season record</span>
-              <span style={countPillStyle}>{played} games</span>
+            {/* Header — matches player profile "2026 Season" style */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, paddingBottom: 10, borderBottom: "1px solid var(--border-1)" }}>
+              <div style={{ fontSize: 13, fontWeight: 900, color: "var(--text-1)", letterSpacing: "0.01em" }}>2026 Season</div>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)" }}>{played} games</span>
             </div>
-            <div style={recordGridStyle}>
-              <MetricCard label="Wins"       value={String(wins)}                                                          accent={color} />
-              <MetricCard label="Win %"      value={winPct !== null ? `${winPct}%` : "-"}                                              />
-              <MetricCard label="Losses"     value={String(losses)}                                                        compact />
-              <MetricCard label="Draws"      value={String(draws)}                                                         compact />
-              <MetricCard label="Avg Margin" value={avgMargin !== null ? `${avgMargin > 0 ? "+" : ""}${avgMargin.toFixed(1)}` : "-"} compact />
+            {/* Horizontal scrollable stat row — matches player profile layout */}
+            <div style={{ display: "flex", overflowX: "auto", gap: 0, paddingBottom: 2 }}>
+              {([
+                { label: "W",      value: String(wins) },
+                { label: "L",      value: String(losses) },
+                ...(draws > 0 ? [{ label: "D", value: String(draws) }] : []),
+                { label: "WIN%",   value: winPct !== null ? `${winPct}%` : "—" },
+                { label: "MARGIN", value: avgMargin !== null ? `${avgMargin >= 0 ? "+" : ""}${avgMargin.toFixed(1)}` : "—" },
+              ] as { label: string; value: string }[]).map(({ label, value }, i) => (
+                <div key={label} style={{
+                  display: "flex", flexDirection: "column", alignItems: "center",
+                  flex: "0 0 auto", minWidth: 58,
+                  paddingLeft: i === 0 ? 0 : 12,
+                  borderLeft: i > 0 ? "1px solid var(--border-1)" : undefined,
+                  marginLeft: i > 0 ? 12 : 0,
+                }}>
+                  <div style={{ fontSize: 10, fontWeight: 800, color: "var(--text-3)", letterSpacing: "0.06em", textTransform: "uppercase" as const, marginBottom: 4, whiteSpace: "nowrap" as const }}>
+                    {label}
+                  </div>
+                  <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.03em", color: "var(--text-1)", lineHeight: 1 }}>{value}</div>
+                </div>
+              ))}
             </div>
           </section>
         )}
@@ -342,27 +359,41 @@ export default async function TeamProfilePage({ params }: { params: Promise<{ sl
 
         {recentGames.length > 0 && (
           <section style={cardStyle}>
-            <div style={sectionLabel}>Season results</div>
-            <div style={listStyle}>
-              {recentGames.map((game) => {
+            <div style={{ ...sectionLabel, marginBottom: 14 }}>Season results</div>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              {recentGames.map((game, i) => {
                 const resultColor = game.margin > 0 ? "#22c55e" : game.margin === 0 ? "#facc15" : "#ef4444";
                 const resultLabel = game.margin > 0 ? "W" : game.margin === 0 ? "D" : "L";
                 const oppLogo = LOGO_MAP[game.opponent] ?? "";
                 return (
-                  <Link key={game.id} href={`/match/${game.id}`} style={resultRowStyle}>
-                    <div style={resultLogoWrapStyle}>
-                      {oppLogo && <img src={oppLogo} alt={game.opponent} style={logoImgStyle} />}
+                  <Link key={game.id} href={`/match/${game.id}`} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 4px", borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : undefined, textDecoration: "none", color: "inherit" }}>
+                    {/* Round + opponent logo */}
+                    <div style={{ minWidth: 52, display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, gap: 4 }}>
+                      <div style={{ fontSize: 11, fontWeight: 900, color: "var(--text-3)", whiteSpace: "nowrap" }}>
+                        {game.round ? `Rd ${game.round}` : formatDate(game.date)}
+                      </div>
+                      <div style={{ width: 28, height: 28, borderRadius: "50%", overflow: "hidden", background: "var(--surface-3)", flexShrink: 0 }}>
+                        {oppLogo && <img src={oppLogo} alt={game.opponent} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+                      </div>
                     </div>
-                    <div style={resultBodyStyle}>
-                      <div style={resultTitleStyle}>vs {game.opponent}</div>
-                      <div style={resultSubStyle}>
-                        {game.round ? `Round ${game.round}` : formatDate(game.date)} · {game.ourScore}–{game.theirScore}
-                        <span style={{ color: resultColor, marginLeft: 6 }}>
+                    {/* Vertical divider */}
+                    <div style={{ width: 1, height: 40, background: "var(--surface-3)", flexShrink: 0 }} />
+                    {/* Opponent + score */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 850, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        vs {game.opponent}
+                      </div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-3)", marginTop: 3 }}>
+                        {game.ourScore}–{game.theirScore}
+                        <span style={{ color: resultColor, marginLeft: 5 }}>
                           ({game.margin > 0 ? "+" : ""}{game.margin})
                         </span>
                       </div>
                     </div>
-                    <div style={{ ...resultBadgeStyle, color: resultColor }}>{resultLabel}</div>
+                    {/* W/L/D badge */}
+                    <div style={{ flexShrink: 0, minWidth: 32, textAlign: "center" }}>
+                      <div style={{ fontSize: 20, fontWeight: 950, letterSpacing: "-0.04em", color: resultColor }}>{resultLabel}</div>
+                    </div>
                   </Link>
                 );
               })}
@@ -410,20 +441,6 @@ export default async function TeamProfilePage({ params }: { params: Promise<{ sl
   );
 }
 
-function MetricCard({ label, value, accent, compact }: { label: string; value: string; accent?: string; compact?: boolean }) {
-  return (
-    <div style={{
-      ...metricCardStyle,
-      gridColumn: compact ? "span 2" : "span 3",
-      minHeight: compact ? 56 : 78,
-      background: accent ? `${accent}18` : "var(--border-1)",
-      borderColor: accent ? `${accent}3d` : "var(--border-1)",
-    }}>
-      <div style={{ ...metricLabelStyle, color: accent ? `${accent}dd` : "#64748b" }}>{label}</div>
-      <div style={{ ...metricValueStyle, color: accent ?? "#f8fafc", fontSize: compact ? 20 : 31 }}>{value}</div>
-    </div>
-  );
-}
 
 const pageStyle: React.CSSProperties = { minHeight: "100dvh", background: "var(--bg)", color: "var(--text-1)", paddingBottom: "calc(95px + env(safe-area-inset-bottom))" };
 const topBarStyle: React.CSSProperties = { maxWidth: 680, margin: "0 auto", padding: "calc(env(safe-area-inset-top) + 14px) 18px 10px" };
@@ -433,14 +450,10 @@ const heroContentStyle: React.CSSProperties = { position: "relative", display: "
 const heroTitleStyle: React.CSSProperties = { margin: "0 0 9px", color: "var(--text-1)", fontSize: 25, fontWeight: 950, letterSpacing: "-0.04em", lineHeight: 1.05, overflowWrap: "anywhere" };
 const heroMetaStyle: React.CSSProperties = { display: "flex", gap: 7, flexWrap: "wrap", alignItems: "center" };
 const recordPillStyle: React.CSSProperties = { fontSize: 11, fontWeight: 900, color: "#cbd5e1", background: "rgba(0,0,0,.28)", border: "1px solid var(--border-3)", borderRadius: 999, padding: "4px 8px" };
-const cardStyle: React.CSSProperties = { background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18, padding: "17px 14px 18px" };
+const cardStyle: React.CSSProperties = { background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18, padding: "18px 16px 20px" };
 const sectionHeaderStyle: React.CSSProperties = { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 14 };
-const sectionLabel: React.CSSProperties = { fontSize: 12, fontWeight: 900, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.08em" };
+const sectionLabel: React.CSSProperties = { fontSize: 12, fontWeight: 800, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.08em" };
 const countPillStyle: React.CSSProperties = { flexShrink: 0, fontSize: 11, fontWeight: 850, color: "var(--text-3)", background: "var(--border-1)", border: "1px solid var(--border-2)", borderRadius: 999, padding: "4px 10px" };
-const recordGridStyle: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8 };
-const metricCardStyle: React.CSSProperties = { border: "1px solid var(--border-1)", borderRadius: 14, padding: "12px 12px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 4 };
-const metricLabelStyle: React.CSSProperties = { fontSize: 10, fontWeight: 900, letterSpacing: "0.07em", textTransform: "uppercase" };
-const metricValueStyle: React.CSSProperties = { fontWeight: 950, letterSpacing: "-0.04em", lineHeight: 1 };
 const chartStyle: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(8, minmax(0, 1fr))", gap: 7 };
 const chartItemStyle: React.CSSProperties = { minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 5 };
 const chartValueStyle: React.CSSProperties = { minHeight: 13, color: "var(--text-2)", fontSize: 10, fontWeight: 900, lineHeight: 1 };
@@ -450,13 +463,6 @@ const chartBarStyle: React.CSSProperties = { position: "absolute", left: "18%", 
 const smallLogoStyle: React.CSSProperties = { width: 25, height: 25, borderRadius: "50%", overflow: "hidden", background: "var(--surface-3)", border: "1px solid var(--border-2)" };
 const logoImgStyle: React.CSSProperties = { width: "100%", height: "100%", objectFit: "cover", display: "block" };
 const roundStyle: React.CSSProperties = { color: "var(--text-4)", fontSize: 9, fontWeight: 900, whiteSpace: "nowrap" };
-const listStyle: React.CSSProperties = { display: "flex", flexDirection: "column", gap: 8 };
-const resultRowStyle: React.CSSProperties = { display: "flex", alignItems: "center", gap: 12, padding: "12px 13px", borderRadius: 14, background: "var(--surface-2)", border: "1px solid var(--border-1)", textDecoration: "none", color: "inherit" };
-const resultLogoWrapStyle: React.CSSProperties = { width: 38, height: 38, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "var(--surface-3)" };
-const resultBodyStyle: React.CSSProperties = { flex: 1, minWidth: 0 };
-const resultTitleStyle: React.CSSProperties = { color: "var(--text-1)", fontSize: 14, fontWeight: 850, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
-const resultSubStyle: React.CSSProperties = { color: "var(--text-3)", fontSize: 11, fontWeight: 750, marginTop: 3 };
-const resultBadgeStyle: React.CSSProperties = { flexShrink: 0, minWidth: 32, textAlign: "center", fontSize: 19, fontWeight: 950, letterSpacing: "-0.04em" };
 const squadAverageStyle: React.CSSProperties = { width: "fit-content", display: "flex", alignItems: "center", gap: 8, padding: "0 2px", marginBottom: 12, color: "var(--text-3)", fontWeight: 850, textDecoration: "none" };
 const teamAverageLabelStyle: React.CSSProperties = { fontSize: 15, fontWeight: 950 };
 const averageRatingBadgeStyle: React.CSSProperties = { minWidth: 50, borderRadius: 9, padding: "5px 11px 6px", color: "var(--text-1)", fontSize: 16, fontWeight: 950, lineHeight: 1, textAlign: "center" };

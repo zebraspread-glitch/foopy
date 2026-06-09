@@ -731,6 +731,21 @@ function PassesPageInner() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
+  // Auto-open team pass confirmation when navigated from a team profile page
+  // e.g. /passes?team=Adelaide
+  useEffect(() => {
+    const teamParam = searchParams.get("team");
+    if (!teamParam) return;
+    const matched = AFL_TEAMS.find(
+      (t) => t.toLowerCase().replace(/[^a-z0-9]/g, "") === teamParam.toLowerCase().replace(/[^a-z0-9]/g, "")
+    );
+    if (!matched) return;
+    setPendingTeam(matched);
+    setTeamPickerOpen(true);
+    setTab("team");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: s }) => {
       setAuthed(!!s.session);

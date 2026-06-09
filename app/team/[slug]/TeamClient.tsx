@@ -35,6 +35,7 @@ export function TeamLogoImage({ src, name, color }: { src: string; name: string;
 
   return (
     <div
+      suppressHydrationWarning
       style={{
         width: 82,
         height: 82,
