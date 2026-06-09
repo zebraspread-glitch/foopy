@@ -5,6 +5,7 @@ import Link from "next/link";
 import PageHeader from "@/app/components/PageHeader";
 import birthdaysData from "@/app/data/playerBirthdays.json";
 import playersData from "@/app/data/players.json";
+import { playerImgUrl } from "@/app/lib/playerImage";
 
 type BirthdayEntry = { name: string; month: number; day: number };
 type PlayerData = { id: string; name: string; team: string };
@@ -77,9 +78,7 @@ const CLUB_FOLDER: Record<string, string> = {
 };
 
 function playerImagePath(name: string, team: string) {
-  const folderKey = slug(team);
-  const folder = CLUB_FOLDER[folderKey] ?? folderKey;
-  return `/players/${folder}/${slug(name)}.png`;
+  return playerImgUrl(name, team);
 }
 
 const playerLookup = new Map<string, PlayerData>();

@@ -10,6 +10,7 @@ import { venueDisplayName } from "./data/venues";
 import { getGames, getGamesCached, invalidateGames } from "./lib/gameCache";
 import { foopyRating } from "./match/[id]/utils";
 import { foopyColor } from "./lib/foopyRating";
+import { PLAYER_IMG_BASE } from "./lib/playerImage";
 import { haptic } from "./lib/haptic";
 import { surname } from "./lib/format";
 import { supabase } from "./lib/supabase";
@@ -441,11 +442,11 @@ function playerImageCandidates(playerName: string, team?: string) {
   const addImageFile = (image?: string) => {
     if (!image) return;
     if (/^https?:\/\//i.test(image) || image.startsWith("/")) addUrl(image);
-    else addUrl(`/players/${folder}/${image}`);
+    else addUrl(`${PLAYER_IMG_BASE}/players/${folder}/${image}`);
   };
   const addSlug = (value?: string) => {
     const slug = slugName(value ?? "");
-    if (slug) addUrl(`/players/${folder}/${slug}.png`);
+    if (slug) addUrl(`${PLAYER_IMG_BASE}/players/${folder}/${slug}.png`);
   };
 
   addImageFile(found?.image);

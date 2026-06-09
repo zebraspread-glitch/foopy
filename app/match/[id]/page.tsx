@@ -8,6 +8,7 @@ import { createPortal } from "react-dom";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Check, ChevronLeft, MessageCircle, Smile, X } from "lucide-react";
 import matchStatsJson from "@/app/data/game-stats.json";
+import { PLAYER_IMG_BASE } from "@/app/lib/playerImage";
 import teamStatsJson from "@/app/data/team-stats.json";
 import playerStatsJson from "@/app/data/players.json";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
@@ -755,7 +756,8 @@ function playerImagePath(name: any, team?: any) {
 
   if (!folder || !image) return "";
   if (String(image).startsWith("/")) return String(image);
-  return `/players/${folder}/${image}`;
+  if (/^https?:\/\//.test(String(image))) return String(image);
+  return `${PLAYER_IMG_BASE}/players/${folder}/${image}`;
 }
 
 function playerFreesFor(player: PlayerStat) {

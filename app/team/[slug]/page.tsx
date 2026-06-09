@@ -5,6 +5,7 @@ import { BackButton, TeamLogoImage } from "./TeamClient";
 import { TeamPassSection } from "./TeamPassSection";
 import { foopyColor } from "@/app/lib/foopyRating";
 import { computeAvgFoopyMap } from "@/app/lib/computeAvgFoopy.server";
+import { playerImgUrl } from "@/app/lib/playerImage";
 
 type PlayerInfo = {
   id: string;
@@ -104,8 +105,7 @@ function formatDate(date: string) {
 function playerImagePath(player: PlayerInfo) {
   const folder = TEAM_FOLDER[player.team];
   if (!folder) return "";
-  const nameId = player.name.toLowerCase().replace(/[^a-z0-9]/g, "");
-  return `/players/${folder}/${nameId}.png`;
+  return playerImgUrl(player.name, player.team);
 }
 
 function normalizeTeamName(name: string) {

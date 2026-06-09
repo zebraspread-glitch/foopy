@@ -13,6 +13,7 @@ import type { Area } from "react-easy-crop";
 import AuraBadge from "@/app/components/AuraBadge";
 import { VerifiedBadge } from "@/app/components/VerifiedBadge";
 import { auraToastEmitter } from "@/app/lib/auraToastEmitter";
+import { playerImgUrl } from "@/app/lib/playerImage";
 import { supabase } from "@/app/lib/supabase";
 import { createNotification } from "@/app/lib/notifications";
 import playersRaw from "@/app/data/players.json";
@@ -375,7 +376,7 @@ function slugName(name: string) {
 function playerImagePath(name: string, team?: string) {
   const resolvedTeam = team || playerTeamBySlug.get(slugName(name)) || "";
   const folder = CLUB_FOLDER[slugName(resolvedTeam)] ?? slugName(resolvedTeam);
-  return folder ? `/players/${folder}/${slugName(name)}.png` : "";
+  return folder ? playerImgUrl(name, resolvedTeam) : "";
 }
 
 function teamColor(teamName: string) {

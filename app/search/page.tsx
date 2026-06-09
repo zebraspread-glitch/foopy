@@ -8,6 +8,7 @@ import { Search } from "lucide-react";
 import { supabase } from "@/app/lib/supabase";
 import { VerifiedBadge } from "@/app/components/VerifiedBadge";
 import playersData from "@/app/data/players.json";
+import { playerImgUrl } from "@/app/lib/playerImage";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -39,11 +40,7 @@ const TEAM_COLORS: Record<string, string> = {
 
 function slugTeam(t: string) { return t.toLowerCase().replace(/[^a-z0-9]/g, ""); }
 function teamColor(t: string) { return TEAM_COLORS[t] ?? "#1e293b"; }
-function playerImgSrc(name: string, team: string) {
-  const slug   = name.toLowerCase().replace(/[^a-z0-9]/g, "");
-  const folder = CLUB_FOLDER[slugTeam(team)] ?? slugTeam(team);
-  return `/players/${folder}/${slug}.png`;
-}
+function playerImgSrc(name: string, team: string) { return playerImgUrl(name, team); }
 
 // All players indexed once
 const ALL_PLAYERS: Player[] = (playersData as Player[]).filter(p => p.name && p.team);

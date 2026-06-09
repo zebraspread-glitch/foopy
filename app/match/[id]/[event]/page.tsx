@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import type { CSSProperties } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
+import { PLAYER_IMG_BASE } from "@/app/lib/playerImage";
 import { createNotification, notifyMentions } from "@/app/lib/notifications";
 import MentionTextarea from "@/app/components/MentionTextarea";
 import playerStatsJson from "@/app/data/players.json";
@@ -129,7 +130,8 @@ function resolvePlayerImage(name: string, team: string) {
   const img = found?.image ?? found?.imagePath ?? found?.playerImage ?? `${imageId}.png`;
   if (!folder || !img) return "";
   if (String(img).startsWith("/")) return String(img);
-  return `/players/${folder}/${img}`;
+  if (/^https?:\/\//.test(String(img))) return String(img);
+  return `${PLAYER_IMG_BASE}/players/${folder}/${img}`;
 }
 
 function EventCommentsPageInner() {

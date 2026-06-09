@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import playersJson from "@/app/data/players.json";
+import { PLAYER_IMG_BASE } from "@/app/lib/playerImage";
 
 const ADMIN_SECRET = "foopy123";
 const MARGIN_RANGES = ["1-12", "13-24", "25-36", "37-48", "49+"];
@@ -75,7 +76,7 @@ function playerImage(p: any): string {
   const folder = CLUB_FOLDER[p.club ?? p.team ?? ""] ?? (p.club ?? "").toLowerCase().replace(/[^a-z]/g, "");
   const img = p.image ?? p.imagePath ?? `${(p.name ?? "").toLowerCase().replace(/[^a-z0-9]/g, "")}.png`;
   if (!folder) return "";
-  return `/players/${folder}/${img}`;
+  return `${PLAYER_IMG_BASE}/players/${folder}/${img}`;
 }
 
 type SquiggleGame = { id: number; round: number; hteam: string; ateam: string; date: string; complete: number };

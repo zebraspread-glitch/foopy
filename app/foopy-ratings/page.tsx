@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { foopyColor } from "@/app/lib/foopyRating";
+import { playerImgUrl } from "@/app/lib/playerImage";
 
 /* ─── Types ───────────────────────────────────────────────── */
 
@@ -80,7 +81,7 @@ const itemStyle = {
 
 function PlayerAvatar({ name, team, size = 40 }: { name: string; team: string; size?: number }) {
   const [failed, setFailed] = useState(false);
-  const src = `/players/${teamFolder(team)}/${slugify(name)}.png`;
+  const src = playerImgUrl(name, team);
   const initials = name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
   return (
     <span style={{

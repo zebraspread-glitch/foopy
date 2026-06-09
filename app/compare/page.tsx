@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import rawStats from "@/app/data/player-season-stats.json";
 import { CARD_PLAYERS } from "@/app/data/cardPlayers";
+import { PLAYER_IMG_BASE } from "@/app/lib/playerImage";
 import { foopyRating, foopyColor } from "@/app/lib/foopyRating";
 
 type PlayerStat = {
@@ -24,7 +25,7 @@ type StatKey =
 const CARD_IMG: Record<string, string> = {};
 const POSITION_LOOKUP: Record<string, string> = {};
 for (const cp of CARD_PLAYERS) {
-  CARD_IMG[cp.id] = `/players/${cp.folder}/${cp.id}.png`;
+  CARD_IMG[cp.id] = `${PLAYER_IMG_BASE}/players/${cp.folder}/${cp.id}.png`;
   POSITION_LOOKUP[cp.id] = cp.position;
 }
 
@@ -103,7 +104,7 @@ function localImg(statsId: string, team: string): string | null {
   const cardId = CARD_ID_OVERRIDES[raw] ?? raw;
   if (CARD_IMG[cardId]) return CARD_IMG[cardId];
   const folder = TEAM_FOLDER[team];
-  return folder ? `/players/${folder}/${cardId}.png` : null;
+  return folder ? `${PLAYER_IMG_BASE}/players/${folder}/${cardId}.png` : null;
 }
 
 function avgFoopy(p: PlayerStat): number | null {

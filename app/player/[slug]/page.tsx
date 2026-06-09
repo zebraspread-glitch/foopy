@@ -7,6 +7,7 @@ import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import { supabaseServer } from "@/app/lib/supabase-server";
 import { foopyRating, foopyColor } from "@/app/lib/foopyRating";
 import { computeAvgFoopyMap } from "@/app/lib/computeAvgFoopy.server";
+import { playerImgUrl } from "@/app/lib/playerImage";
 
 // Reverse map: API Sports game ID → Squiggle game ID
 const API_SPORTS_TO_SQUIGGLE: Record<number, string> = Object.fromEntries(
@@ -126,9 +127,7 @@ function teamMatches(a: string, b: string) {
   return canonicalTeam(a) === canonicalTeam(b);
 }
 function playerImgSrc(name: string, team: string) {
-  const slug   = name.toLowerCase().replace(/[^a-z0-9]/g, "");
-  const folder = CLUB_FOLDER[slugTeam(team)] ?? slugTeam(team);
-  return `/players/${folder}/${slug}.png`;
+  return playerImgUrl(name, team);
 }
 
 function formatDate(d: string): string {

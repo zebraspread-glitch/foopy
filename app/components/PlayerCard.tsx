@@ -6,6 +6,7 @@
  */
 
 import type { CSSProperties } from "react";
+import { playerImgUrlFromFolder } from "@/app/lib/playerImage";
 
 export type PlayerCardData = {
   playerId: string;
@@ -117,7 +118,7 @@ export function PlayerCard({
               background: teamColor + "33",
             }}>
               <img
-                src={`/players/${card.playerFolder}/${card.playerId.replace(/[^a-z0-9]/gi, "").toLowerCase()}.png`}
+                src={playerImgUrlFromFolder(card.playerFolder, card.playerId.replace(/[^a-z0-9]/gi, "").toLowerCase())}
                 alt={card.playerName}
                 style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }}
               />

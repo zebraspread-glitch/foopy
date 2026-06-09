@@ -9,6 +9,7 @@ import TeamPassLeaderboard from "@/app/components/TeamPassLeaderboard";
 import { supabase } from "@/app/lib/supabase";
 import { surname } from "@/app/lib/format";
 import { PlayerCard as SharedPlayerCard } from "@/app/components/PlayerCard";
+import { playerImgUrl, playerImgUrlFromFolder } from "@/app/lib/playerImage";
 
 type Rarity = "bronze" | "silver" | "gold" | "emerald" | "sapphire" | "ruby" | "amethyst" | "diamond" | "pinkdiamond" | "mythic";
 
@@ -474,10 +475,7 @@ const TEAM_FOLDER: Record<string, string> = {
 };
 
 function playerImgSrc(playerName: string, teamName: string): string {
-  const folder = TEAM_FOLDER[teamName] ?? teamName.toLowerCase().replace(/[^a-z]/g, "");
-  const slug   = playerName.toLowerCase().replace(/[^a-z]/g, "");
-  if (!folder || !slug) return "";
-  return `/players/${folder}/${slug}.png`;
+  return playerImgUrl(playerName, teamName);
 }
 
 type PassSortKey = "recent" | "level";
@@ -685,7 +683,7 @@ function CardPickerModal({ player, cards, onClose, onSelect }: {
                   <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.1) 0%, rgba(0,0,0,0) 38%, rgba(0,0,0,.72) 72%, rgba(0,0,0,.9) 100%)" }} />
                   {/* Player photo */}
                   <div style={{ position: "absolute", top: "16%", left: "50%", transform: "translateX(-50%)", width: "66%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", background: (TEAM_COLORS[player.team] ?? "#1e2438") + "44" }}>
-                    <img src={`/players/${player.folder}/${player.id}.png`} alt={player.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
+                    <img src={playerImgUrlFromFolder(player.folder, player.id)} alt={player.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
                   </div>
                   {/* Rating */}
                   <div style={{ position: "absolute", top: 6, right: 6, fontSize: 10, fontWeight: 1000, color: meta.color, background: "rgba(0,0,0,.85)", borderRadius: 5, padding: "2px 5px", border: `1px solid ${meta.color}44` }}>{card.rating}</div>
@@ -875,7 +873,7 @@ function MiniCard({ card, player, selected, onToggle }: {
             background: (TEAM_COLORS[player.team] ?? "#1e2438") + "33",
           }}>
             <img
-              src={`/players/${player.folder}/${player.id}.png`}
+              src={playerImgUrlFromFolder(player.folder, player.id)}
               alt={player.name}
               style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }}
             />
@@ -922,7 +920,7 @@ function TradeCardSlot({ card, player, onRemove }: { card: UserCard | MyCard; pl
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom,rgba(0,0,0,.1) 0%,rgba(0,0,0,0) 35%,rgba(0,0,0,.75) 72%,rgba(0,0,0,.92) 100%)" }} />
         {player && (
           <div style={{ position: "absolute", top: "15%", left: "50%", transform: "translateX(-50%)", width: "65%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden", background: (TEAM_COLORS[player.team] ?? "#1e2438") + "44" }}>
-            <img src={`/players/${player.folder}/${player.id}.png`} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
+            <img src={playerImgUrlFromFolder(player.folder, player.id)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
           </div>
         )}
         <div style={{ position: "absolute", top: 4, right: 4, fontSize: 8, fontWeight: 1000, color: meta.color, background: "rgba(0,0,0,.85)", borderRadius: 4, padding: "1px 4px" }}>{card.rating}</div>

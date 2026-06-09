@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { getGames, getGamesCached } from "@/app/lib/gameCache";
+import { playerImgUrl } from "@/app/lib/playerImage";
 import type { PlayerRank } from "@/app/api/power-rankings/route";
 
 /* ─── Types ──────────────────────────────────────────────── */
@@ -83,8 +84,7 @@ function teamFolder(team: string): string {
 }
 
 function playerImageUrl(name: string, team: string) {
-  const folder = teamFolder(team);
-  return `/players/${folder}/${slugify(name)}.png`;
+  return playerImgUrl(name, team);
 }
 
 const TEAM_LOGOS: Record<string, string> = {

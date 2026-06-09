@@ -2,6 +2,7 @@
 
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { surname } from "@/app/lib/format";
+import { playerImgUrlFromFolder } from "@/app/lib/playerImage";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -83,7 +84,7 @@ const TradeMiniCard = memo(function TradeMiniCard({ rarity, playerName, team, pl
         <div style={{ position: "absolute", top: "13%", left: "50%", transform: "translateX(-50%)", width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden" }}>
           <img
             ref={imgRef}
-            src={`/players/${folder}/${slug}.png`}
+            src={playerImgUrlFromFolder(folder, slug)}
             alt=""
             onError={() => { if (imgRef.current) imgRef.current.style.display = "none"; }}
             style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", display: "block" }}

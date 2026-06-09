@@ -13,6 +13,7 @@ import { CARD_PLAYERS } from "@/app/data/cardPlayers";
 import { getPassLevel, PLAYER_PASS_LEVELS, TEAM_PASS_LEVELS, dedupePlayerPasses, type PlayerPass, type TeamPass } from "@/app/lib/passes";
 import { PlayerPassCard, TeamPassCard } from "@/app/components/PassCard";
 import playersData from "@/app/data/players.json";
+import { playerImgUrlFromFolder } from "@/app/lib/playerImage";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import { foopyRating } from "@/app/match/[id]/utils";
 
@@ -112,7 +113,7 @@ function playerImagePath(name: string, team?: string) {
     sydney: "swans", westcoast: "eagles", westernbulldogs: "bulldogs",
   };
   const f = clubFolder[folder] ?? folder;
-  return f ? `/players/${f}/${slugName(name)}.png` : "";
+  return f ? playerImgUrlFromFolder(f, slugName(name)) : "";
 }
 
 function teamColor(teamName?: string) {

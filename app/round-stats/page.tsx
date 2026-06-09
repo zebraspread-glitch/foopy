@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import matchStatsRaw from "../data/game-stats.json";
+import { PLAYER_IMG_BASE } from "@/app/lib/playerImage";
 import playerStatsRaw from "../data/players.json";
 import { API_SPORTS_MATCH_IDS } from "../data/apiSportsMatchIds";
 import { getGames } from "../lib/gameCache";
@@ -106,7 +107,8 @@ function getPlayerImage(p: PlayerInfo) {
   const img = p.image ?? p.imagePath ?? p.playerImage ?? `${slugName(p.name ?? p.player ?? "")}.png`;
   if (!folder || !img) return "";
   if (String(img).startsWith("/")) return String(img);
-  return `/players/${folder}/${img}`;
+  if (/^https?:\/\//.test(String(img))) return String(img);
+  return `${PLAYER_IMG_BASE}/players/${folder}/${img}`;
 }
 
 function idListIncludes(ids: unknown, target: number) {

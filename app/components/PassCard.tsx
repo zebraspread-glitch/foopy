@@ -8,6 +8,7 @@ import {
   type PlayerPass,
   type TeamPass,
 } from "@/app/lib/passes";
+import { playerImgUrl } from "@/app/lib/playerImage";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -50,10 +51,7 @@ const TEAM_FOLDER: Record<string, string> = {
 };
 
 export function playerPassImgSrc(playerName: string, teamName: string): string {
-  const folder = TEAM_FOLDER[teamName] ?? teamName.toLowerCase().replace(/[^a-z]/g, "");
-  const slug   = playerName.toLowerCase().replace(/[^a-z]/g, "");
-  if (!folder || !slug) return "";
-  return `/players/${folder}/${slug}.png`;
+  return playerImgUrl(playerName, teamName);
 }
 
 const MYTHIC_TEXT = "#29276b";

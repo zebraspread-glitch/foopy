@@ -5,27 +5,10 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
 import { VerifiedBadge } from "@/app/components/VerifiedBadge";
 import { getPassLevel, xpProgressLabel, PLAYER_PASS_LEVELS, type PlayerPass } from "@/app/lib/passes";
-
-const TEAM_FOLDER: Record<string, string> = {
-  Adelaide: "crows", "Adelaide Crows": "crows",
-  Brisbane: "lions", "Brisbane Lions": "lions",
-  Carlton: "blues", Collingwood: "magpies", Essendon: "bombers",
-  Fremantle: "dockers", GWS: "giants", "GWS Giants": "giants",
-  Geelong: "cats", "Geelong Cats": "cats",
-  "Gold Coast": "suns", "Gold Coast Suns": "suns",
-  Hawthorn: "hawks", Melbourne: "demons",
-  "North Melbourne": "kangaroos", "Port Adelaide": "power",
-  Richmond: "tigers", "St Kilda": "saints",
-  Sydney: "swans", "Sydney Swans": "swans",
-  "West Coast": "eagles", "West Coast Eagles": "eagles",
-  "Western Bulldogs": "bulldogs",
-};
+import { playerImgUrl } from "@/app/lib/playerImage";
 
 function playerImgSrc(playerName: string, teamName: string): string {
-  const folder = TEAM_FOLDER[teamName] ?? teamName.toLowerCase().replace(/[^a-z]/g, "");
-  const slug   = playerName.toLowerCase().replace(/[^a-z]/g, "");
-  if (!folder || !slug) return "";
-  return `/players/${folder}/${slug}.png`;
+  return playerImgUrl(playerName, teamName);
 }
 
 type Entry = {

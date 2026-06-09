@@ -6,6 +6,7 @@ import type { CSSProperties } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/app/lib/supabase";
 import { PlayerCard as SharedPlayerCard } from "@/app/components/PlayerCard";
+import { PLAYER_IMG_BASE } from "@/app/lib/playerImage";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -142,9 +143,9 @@ function CardPlayerImage({ card, imageStyle }: { card: Pick<OpenedCard, "player_
     const urls: string[] = [];
     const add = (u?: string) => { if (u && !urls.includes(u)) urls.push(u); };
     add(card.player_image);
-    add(`/players/${folder}/${pid}.png`);
-    add(`/players/${folder}/${nid}.png`);
-    CARD_IMAGE_ALIASES[pid]?.forEach(a => add(`/players/${folder}/${a}.png`));
+    add(`${PLAYER_IMG_BASE}/players/${folder}/${pid}.png`);
+    add(`${PLAYER_IMG_BASE}/players/${folder}/${nid}.png`);
+    CARD_IMAGE_ALIASES[pid]?.forEach(a => add(`${PLAYER_IMG_BASE}/players/${folder}/${a}.png`));
     return urls;
   }, [card.player_id, card.player_name, card.team, card.player_image]);
 
