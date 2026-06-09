@@ -1373,7 +1373,7 @@ export default function ProfilePage() {
   async function saveUsername(e: React.FormEvent) {
     e.preventDefault();
 
-    const clean = eUname.toLowerCase().replace(/[^a-z0-9_]/g, "");
+    const clean = eUname.toLowerCase().replace(/[^a-z0-9._]/g, "");
 
     if (clean.length < 3) {
       setEUnameErr("Username needs 3+ characters.");

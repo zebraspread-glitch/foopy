@@ -72,7 +72,7 @@ function LoginPageInner() {
   // Live username availability check (debounced) while typing in signup mode.
   useEffect(() => {
     if (mode !== "signup") { setUsernameStatus("idle"); return; }
-    const clean = username.toLowerCase().replace(/[^a-z0-9_]/g, "");
+    const clean = username.toLowerCase().replace(/[^a-z0-9._]/g, "");
     if (!clean)           { setUsernameStatus("idle");  return; }
     if (clean.length < 3) { setUsernameStatus("short"); return; }
 
@@ -101,9 +101,9 @@ function LoginPageInner() {
       return;
     }
 
-    const cleanUsername = username.toLowerCase().replace(/[^a-z0-9_]/g, "");
+    const cleanUsername = username.toLowerCase().replace(/[^a-z0-9._]/g, "");
     if (cleanUsername.length < 3) {
-      setError("Username needs at least 3 characters (a–z, 0–9, _)");
+      setError("Username needs at least 3 characters (a–z, 0–9, . _)");
       setLoading(false); return;
     }
     if (!favouriteTeam) {
@@ -250,7 +250,7 @@ function LoginPageInner() {
                     "rgba(255,255,255,0.4)",
                 }}>
                   {usernameStatus === "checking"  && "Checking availability…"}
-                  {usernameStatus === "short"     && "At least 3 characters (a–z, 0–9, _)"}
+                  {usernameStatus === "short"     && "At least 3 characters (a–z, 0–9, . _)"}
                   {usernameStatus === "available" && "✓ Username available"}
                   {usernameStatus === "taken"     && "✗ Username taken"}
                 </div>
