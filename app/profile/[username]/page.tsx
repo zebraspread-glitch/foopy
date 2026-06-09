@@ -1016,8 +1016,14 @@ export default function PublicProfilePage() {
 
         {/* ── Duel stats ── */}
         {duelStats && duelStats.total > 0 && (
-          <div style={{ background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18, padding: "18px 20px" }}>
-            <div style={{ fontSize: 12, fontWeight: 800, color: "#64748b", letterSpacing: "0.06em", marginBottom: 12 }}>⚔ DUELS</div>
+          <div
+            onClick={() => router.push("/duels/leaderboard")}
+            style={{ background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18, padding: "18px 20px", cursor: "pointer" }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: "#64748b", letterSpacing: "0.06em" }}>⚔ DUELS</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#3b82f6" }}>Leaderboard ›</div>
+            </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
               <div style={{ textAlign: "center" }}>
                 <div style={{ fontSize: 20, fontWeight: 900, color: "#4ade80", lineHeight: 1 }}>{duelStats.wins}</div>
