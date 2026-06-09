@@ -31,11 +31,11 @@ function ordinal(n: number) {
   return n + (s[(v - 20) % 10] ?? s[v] ?? s[0]);
 }
 
-function Stat({ value, label, color, minWidth = 22 }: { value: number | string; label: string; color: string; minWidth?: number }) {
+function Stat({ value, label, color, minWidth = 20 }: { value: number | string; label: string; color: string; minWidth?: number }) {
   return (
     <div style={{ textAlign: "center", minWidth }}>
-      <div style={{ fontSize: 16, fontWeight: 900, color, lineHeight: 1 }}>{value}</div>
-      <div style={{ fontSize: 10, color: "var(--text-3)", fontWeight: 700, marginTop: 3 }}>{label}</div>
+      <div style={{ fontSize: 14, fontWeight: 900, color, lineHeight: 1 }}>{value}</div>
+      <div style={{ fontSize: 9, color: "var(--text-3)", fontWeight: 700, marginTop: 2 }}>{label}</div>
     </div>
   );
 }
@@ -104,7 +104,7 @@ export default function DuelsLeaderboardPage() {
         <div style={{ borderRadius: 16, border: "1px solid var(--border-1)", background: "var(--surface-3)", overflow: "hidden" }}>
           {loading ? (
             Array.from({ length: 10 }).map((_, i) => (
-              <div key={i} className="skeleton" style={{ height: 62, borderTop: i > 0 ? "1px solid var(--border-1)" : "none", borderRadius: 0 }} />
+              <div key={i} className="skeleton" style={{ height: 48, borderTop: i > 0 ? "1px solid var(--border-1)" : "none", borderRadius: 0 }} />
             ))
           ) : entries.length === 0 ? (
             <div style={{ padding: "44px 20px", textAlign: "center", color: "var(--text-3)", fontSize: 14, fontWeight: 700 }}>
@@ -119,7 +119,7 @@ export default function DuelsLeaderboardPage() {
               <Link
                 key={e.user_id}
                 href={e.username ? `/profile/${e.username}` : "#"}
-                style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderTop: i > 0 ? "1px solid var(--border-1)" : "none", background: isMe ? "rgba(249,115,22,0.08)" : "none", textDecoration: "none", color: "inherit" }}
+                style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 12px", borderTop: i > 0 ? "1px solid var(--border-1)" : "none", background: isMe ? "rgba(249,115,22,0.08)" : "none", textDecoration: "none", color: "inherit" }}
               >
                 <div style={{ width: 32, textAlign: "center", flexShrink: 0 }}>
                   {rank === 1 ? <span style={{ fontSize: 20 }}>🥇</span>
@@ -127,7 +127,7 @@ export default function DuelsLeaderboardPage() {
                    : rank === 3 ? <span style={{ fontSize: 20 }}>🥉</span>
                    : <span style={{ fontSize: 13, fontWeight: 800, color: "var(--text-3)" }}>{rank}</span>}
                 </div>
-                <div style={{ width: 38, height: 38, borderRadius: "50%", flexShrink: 0, background: "var(--surface-1)", overflow: "hidden", position: "relative", border: isMe ? "2px solid #fb923c" : "2px solid var(--border-2)" }}>
+                <div style={{ width: 32, height: 32, borderRadius: "50%", flexShrink: 0, background: "var(--surface-1)", overflow: "hidden", position: "relative", border: isMe ? "2px solid #fb923c" : "2px solid var(--border-2)" }}>
                   {e.avatar_url
                     ? <img src={e.avatar_url} alt={label} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                     : <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 900, color: "#fb923c" }}>{label[0]?.toUpperCase()}</div>}
@@ -142,10 +142,10 @@ export default function DuelsLeaderboardPage() {
                   const streak = e.streak ?? 0;
                   const streakColor = streak > 0 ? "#4ade80" : streak < 0 ? "#ef4444" : "var(--text-3)";
                   return (
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, auto)", columnGap: 14, rowGap: 7, flexShrink: 0 }}>
+                    <div style={{ display: "flex", gap: 10, alignItems: "center", flexShrink: 0 }}>
                       <Stat value={e.wins} label="W" color="#4ade80" />
                       <Stat value={e.losses} label="L" color="#ef4444" />
-                      <Stat value={`${e.win_rate}%`} label="Win" color="#3b82f6" />
+                      <Stat value={`${e.win_rate}%`} label="Win" color="#3b82f6" minWidth={30} />
                       <Stat value={streak} label="Streak" color={streakColor} />
                       <Stat value={e.best_streak ?? 0} label="Best" color="#fbbf24" />
                       <Stat value={e.total_points ?? 0} label="Pts" color="#fb923c" />
