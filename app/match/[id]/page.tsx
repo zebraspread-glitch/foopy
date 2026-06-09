@@ -1310,7 +1310,6 @@ function LiveFeedPlayer({
       window.removeEventListener("storage", read);
     };
   }, []);
-  const topFloatClass = reactionAnim === "ghostly" ? "reaction-ghostly" : reactionAnim === "hover" ? "reaction-top-float" : "";
 
   return (
     <div
@@ -1412,19 +1411,35 @@ function LiveFeedPlayer({
                   {topReactionEmojis.map((r, i) => {
                     const def = getEventReactionDefinition(r.emoji);
                     const isCustom = Boolean(def && def.kind !== "emoji");
+                    const glyph = def?.glyph ?? r.emoji;
+                    const glyphStyle: CSSProperties = {
+                      fontSize: isCustom ? 9 : 14,
+                      fontWeight: isCustom ? 1000 : undefined,
+                      color: isCustom ? def?.accent : undefined,
+                      lineHeight: 1,
+                    };
+                    // Ghostly: keep the real emoji static, add a rising/fading ghost copy on top.
+                    if (reactionAnim === "ghostly") {
+                      return (
+                        <span key={r.emoji} style={{ position: "relative", display: "inline-flex", lineHeight: 1 }}>
+                          <span style={glyphStyle}>{glyph}</span>
+                          <span
+                            aria-hidden
+                            className="reaction-ghostly"
+                            style={{ ...glyphStyle, position: "absolute", left: 0, top: 0, pointerEvents: "none", animationDelay: `${i * 0.4}s` }}
+                          >
+                            {glyph}
+                          </span>
+                        </span>
+                      );
+                    }
                     return (
                       <span
                         key={r.emoji}
-                        className={topFloatClass}
-                        style={{
-                          fontSize: isCustom ? 9 : 14,
-                          fontWeight: isCustom ? 1000 : undefined,
-                          color: isCustom ? def?.accent : undefined,
-                          lineHeight: 1,
-                          animationDelay: `${i * 0.4}s`,
-                        }}
+                        className={reactionAnim === "hover" ? "reaction-top-float" : undefined}
+                        style={{ ...glyphStyle, animationDelay: `${i * 0.4}s` }}
                       >
-                        {def?.glyph ?? r.emoji}
+                        {glyph}
                       </span>
                     );
                   })}
