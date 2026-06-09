@@ -3522,16 +3522,12 @@ function MatchPageInner() {
     async function fetchCount() {
       const currentStatus = game ? getStatus(game) : "UPCOMING";
 
-      // Winner pick poll (stored in localStorage)
-      const winnerPickVoted = !!localStorage.getItem(`winner-pick-${id}`);
-      const winnerPickUnanswered = currentStatus === "UPCOMING" && !winnerPickVoted ? 1 : 0;
-
       const { data: pollRows } = await supabase
         .from("match_polls")
         .select("id, quarter")
         .eq("game_id", Number(id));
       if (cancelled) return;
-      if (!pollRows?.length) { setUnansweredPollCount(winnerPickUnanswered); return; }
+      if (!pollRows?.length) { setUnansweredPollCount(0); return; }
 
       const uid = (await supabase.auth.getSession()).data.session?.user?.id;
       let votedPollIds = new Set<string>();
@@ -3549,7 +3545,7 @@ function MatchPageInner() {
         if (p.quarter === null) return currentStatus === "UPCOMING";
         return currentPeriod <= p.quarter;
       });
-      if (!cancelled) setUnansweredPollCount(winnerPickUnanswered + open.filter((p: any) => !votedPollIds.has(p.id)).length);
+      if (!cancelled) setUnansweredPollCount(open.filter((p: any) => !votedPollIds.has(p.id)).length);
     }
     fetchCount();
     return () => { cancelled = true; };
