@@ -1627,7 +1627,7 @@ function PlayerPassPickerPage({
   const canBuy = !pendingPlayerOwned && coins >= PLAYER_PASS_COST;
   const holderPreview = [...holders]
     .sort((a, b) => (a.serial_number ?? 999999) - (b.serial_number ?? 999999))
-    .slice(0, 8);
+    .slice(0, 50);
   const passFeatures: Array<{ title: string; copy: string; icon: ReactNode; color: string }> = [
     {
       title: "Earn Aura and Coins",
@@ -1855,9 +1855,6 @@ function PlayerPassPickerPage({
           )}
         </section>
 
-        <button onClick={() => setPendingPlayer(null)} style={{ alignSelf: "center", border: "1px solid var(--border-2)", background: "rgba(255,255,255,0.05)", color: "var(--text-2)", borderRadius: 999, padding: "10px 18px", fontSize: 13, fontWeight: 900, fontFamily: "inherit", cursor: "pointer" }}>
-          Choose another player
-        </button>
       </div>
     </div>
   );
@@ -1963,7 +1960,7 @@ function TeamPassPickerPage({
 
   const holderPreview = [...holders]
     .sort((a, b) => (a.serial_number ?? 999999) - (b.serial_number ?? 999999))
-    .slice(0, 8);
+    .slice(0, 50);
 
   const passFeatures: Array<{ title: string; copy: string; icon: ReactNode; color: string }> = [
     { title: "Earn Aura and Coins",    copy: `Earn rewards every time ${pendingTeam} wins a game.`,                           icon: <Zap size={18} strokeWidth={2.7} />,       color: "#0ea5e9" },
@@ -2123,9 +2120,6 @@ function TeamPassPickerPage({
           )}
         </section>
 
-        <button onClick={() => setPendingTeam(null)} style={{ alignSelf: "center", border: "1px solid var(--border-2)", background: "rgba(255,255,255,0.05)", color: "var(--text-2)", borderRadius: 999, padding: "10px 18px", fontSize: 13, fontWeight: 900, fontFamily: "inherit", cursor: "pointer" }}>
-          Choose another team
-        </button>
       </div>
     </div>
   );
