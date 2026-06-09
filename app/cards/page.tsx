@@ -398,6 +398,10 @@ function CardPlayerImage({
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
+// How many cards to render at once. The rest stream in as you scroll, so a
+// large collection never blocks the main thread on first paint.
+const CARDS_LAZY_BATCH = 24;
+
 export default function CardsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
@@ -614,6 +618,31 @@ export default function CardsPage() {
     });
     return result;
   }, [cards, rarityFilter, teamFilter, sortBy]);
+
+  // Render the grid in batches so a big collection doesn't freeze the UI on
+  // first paint (the freeze is what made buttons feel like they needed multiple
+  // taps). More cards stream in as the sentinel scrolls into view.
+  const [visibleCount, setVisibleCount] = useState(CARDS_LAZY_BATCH);
+  const gridSentinelRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    setVisibleCount(CARDS_LAZY_BATCH);
+  }, [rarityFilter, teamFilter, sortBy, cards]);
+
+  useEffect(() => {
+    const el = gridSentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisibleCount((v) => Math.min(v + CARDS_LAZY_BATCH, displayCards.length));
+        }
+      },
+      { rootMargin: "600px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [displayCards.length]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -910,7 +939,7 @@ export default function CardsPage() {
               </div>
             ) : (
               <div className="cards-grid" style={cardGridStyle}>
-                {displayCards.map((card) => (
+                {displayCards.slice(0, visibleCount).map((card) => (
                   <div key={card.id} className="card-item" style={{ cursor: "pointer" }} onClick={() => setSellCard(card)}>
                     <SharedPlayerCard card={{
                       playerId: card.player_id,
@@ -923,6 +952,9 @@ export default function CardsPage() {
                     }} />
                   </div>
                 ))}
+                {visibleCount < displayCards.length && (
+                  <div ref={gridSentinelRef} style={{ gridColumn: "1 / -1", height: 1 }} />
+                )}
               </div>
             )}
           </>
