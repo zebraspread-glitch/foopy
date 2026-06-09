@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
@@ -42,12 +42,38 @@ function ordinal(n: number) {
   return n + (s[(v - 20) % 10] ?? s[v] ?? s[0]);
 }
 
-function Stat({ value, label, color, minWidth = 20 }: { value: number | string; label: string; color: string; minWidth?: number }) {
+function Stat({ value, label, color, minWidth = 20 }: { value: ReactNode; label: string; color: string; minWidth?: number }) {
   return (
     <div style={{ textAlign: "center", minWidth }}>
       <div style={{ fontSize: 14, fontWeight: 900, color, lineHeight: 1 }}>{value}</div>
       <div style={{ fontSize: 9, color: "#6B7280", fontWeight: 700, marginTop: 2 }}>{label}</div>
     </div>
+  );
+}
+
+/** Positive streak rendered as flickering flame text; hotter as the streak grows. */
+function StreakFlame({ streak }: { streak: number }) {
+  const t   = Math.min(streak, 8);          // cap intensity at 8
+  const g1  = 2 + t * 1.2;                   // resting glow radius
+  const g2  = 4 + t * 2.2;                   // peak glow radius
+  const dur = Math.max(0.45, 1.35 - t * 0.11); // flicker faster at higher streaks
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        fontWeight: 900,
+        background: "linear-gradient(0deg, #ef4444 0%, #f97316 55%, #fde047 100%)",
+        WebkitBackgroundClip: "text",
+        WebkitTextFillColor: "transparent",
+        backgroundClip: "text",
+        animation: `flameFlicker ${dur}s ease-in-out infinite`,
+        // glow radii consumed by the keyframes
+        ["--g1" as string]: `${g1}px`,
+        ["--g2" as string]: `${g2}px`,
+      } as CSSProperties}
+    >
+      {streak}
+    </span>
   );
 }
 
@@ -94,6 +120,13 @@ export default function DuelsLeaderboardPage() {
 
   return (
     <div style={{ minHeight: "100dvh", background: "var(--bg)", paddingBottom: 60 }}>
+      <style>{`
+        @keyframes flameFlicker {
+          0%, 100% { filter: drop-shadow(0 0 var(--g1) rgba(249,115,22,0.85)); transform: translateY(0) scale(1); }
+          30%      { filter: drop-shadow(0 0 var(--g2) rgba(251,146,60,0.95)); transform: translateY(-0.5px) scale(1.06); }
+          60%      { filter: drop-shadow(0 0 var(--g1) rgba(239,68,68,0.85)); transform: translateY(0) scale(1.02); }
+        }
+      `}</style>
 
       {/* ── Sticky header ── */}
       <div style={{ position: "sticky", top: 0, zIndex: 10, background: "var(--bg)", borderBottom: "1px solid var(--border-1)", paddingTop: "env(safe-area-inset-top)" }}>
@@ -196,13 +229,13 @@ export default function DuelsLeaderboardPage() {
                 </div>
                 {(() => {
                   const streak = e.streak ?? 0;
-                  const streakColor = streak > 0 ? "#F97316" : streak < 0 ? "#EF4444" : "#9CA3AF";
+                  const streakColor = streak < 0 ? "#EF4444" : "#9CA3AF";
                   return (
                     <div style={{ display: "flex", gap: 10, alignItems: "center", flexShrink: 0 }}>
                       <Stat value={e.wins} label="W" color="#22C55E" />
                       <Stat value={e.losses} label="L" color="#EF4444" />
                       <Stat value={`${e.win_rate}%`} label="Win" color="#60A5FA" minWidth={30} />
-                      <Stat value={streak} label="Streak" color={streakColor} />
+                      <Stat value={streak > 0 ? <StreakFlame streak={streak} /> : streak} label="Streak" color={streakColor} />
                       <Stat value={e.best_streak ?? 0} label="Best" color="#FBBF24" />
                       <Stat value={e.total_points ?? 0} label="Pts" color="#F3F4F6" />
                     </div>
