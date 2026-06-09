@@ -1281,6 +1281,9 @@ function LiveFeedPlayer({
   const sortedReactions = sortEventReactionSummaries(reactions ?? []);
   const reactionTotal = totalReactionCount(sortedReactions);
   const hasReacted = selectedReactionSet.size > 0;
+  const topReactionEmojis = sortedReactions.slice(0, 3);
+  const myReactionId = (myReactions ?? []).find(isSupportedEventReaction);
+  const myReactionAccent = (myReactionId && getEventReactionDefinition(myReactionId)?.accent) || "#facc15";
 
   return (
     <div
@@ -1344,24 +1347,55 @@ function LiveFeedPlayer({
         </div>
 
         <div style={eventReactionBarStyle} onClick={(e) => e.stopPropagation()}>
-          <span style={eventReactionBarSpacerStyle} />
-
           <button
             type="button"
+            className="event-reaction-summary"
             onClick={(e) => {
               e.stopPropagation();
               onOpenReactionPopup?.();
             }}
             style={{
               ...eventReactionSummaryButtonStyle,
-              ...(hasReacted ? eventReactionSummaryButtonActiveStyle : null),
+              ...(hasReacted ? { background: `${myReactionAccent}1f`, borderColor: `${myReactionAccent}66` } : null),
             }}
             aria-label={hasReacted ? "Change reaction" : "Add reaction"}
             title={hasReacted ? "Change reaction" : "React"}
           >
-            <Smile size={17} strokeWidth={2.7} />
-            <span style={eventReactionSummaryCountStyle}>{compactCount(reactionTotal)}</span>
+            {reactionTotal > 0 ? (
+              <>
+                <span style={eventReactionSummaryGlyphsStyle}>
+                  {topReactionEmojis.map((r, i) => {
+                    const def = getEventReactionDefinition(r.emoji);
+                    const isMine = selectedReactionSet.has(r.emoji);
+                    const isCustom = Boolean(def && def.kind !== "emoji");
+                    return (
+                      <span
+                        key={r.emoji}
+                        style={{
+                          fontSize: isCustom ? 10 : 16,
+                          fontWeight: isCustom ? 1000 : undefined,
+                          color: isCustom ? def?.accent : undefined,
+                          marginLeft: i === 0 ? 0 : -3,
+                          lineHeight: 1,
+                          ...(isMine ? { filter: `drop-shadow(0 0 5px ${myReactionAccent}cc)` } : null),
+                        }}
+                      >
+                        {def?.glyph ?? r.emoji}
+                      </span>
+                    );
+                  })}
+                </span>
+                <span style={eventReactionSummaryCountStyle}>{compactCount(reactionTotal)}</span>
+              </>
+            ) : (
+              <span style={eventReactionSummaryEmptyStyle}>
+                <Smile size={15} strokeWidth={2.6} />
+                React
+              </span>
+            )}
           </button>
+
+          <span style={eventReactionBarSpacerStyle} />
 
           <button
             type="button"
@@ -6978,14 +7012,15 @@ const liveFeedQuarterStyle: CSSProperties = { fontSize: 10, fontWeight: 800, col
 const liveFeedTimeDotStyle: CSSProperties = { fontSize: 10, color: "var(--text-4)", fontWeight: 700 };
 const liveFeedMinuteStyle: CSSProperties = { fontSize: 10, fontWeight: 800, color: "var(--text-3)" };
 const commentCountStyle: CSSProperties = { fontSize: 12, fontWeight: 850, color: "inherit", fontVariantNumeric: "tabular-nums" };
-const eventReactionBarStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 10, padding: "0 14px 11px 74px", borderTop: "1px solid rgba(255,255,255,0.035)", minHeight: 36, overflow: "hidden" };
-const eventReactionSummaryButtonStyle: CSSProperties = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5, height: 24, minWidth: 0, border: "none", background: "transparent", color: "rgba(148,163,184,0.92)", padding: 0, fontSize: 13, fontWeight: 850, cursor: "pointer", flexShrink: 0, lineHeight: 1 };
-const eventReactionSummaryButtonActiveStyle: CSSProperties = { color: "rgba(148,163,184,0.96)" };
+const eventReactionBarStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 10, padding: "4px 12px 11px 12px", borderTop: "1px solid rgba(255,255,255,0.035)", minHeight: 40, overflow: "hidden" };
+const eventReactionSummaryButtonStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 7, height: 30, border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.045)", color: "rgba(226,232,240,0.95)", padding: "0 12px", borderRadius: 999, fontSize: 13, fontWeight: 850, cursor: "pointer", flexShrink: 0, lineHeight: 1, transition: "transform 0.12s ease, background 0.15s ease, border-color 0.15s ease" };
+const eventReactionSummaryGlyphsStyle: CSSProperties = { display: "inline-flex", alignItems: "center" };
+const eventReactionSummaryEmptyStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 5, color: "rgba(148,163,184,0.95)" };
 const eventReactionSummaryCountStyle: CSSProperties = { color: "inherit", fontSize: 13, fontWeight: 850, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", lineHeight: 1 };
 const eventReactionBarSpacerStyle: CSSProperties = { flex: "1 1 auto", minWidth: 10 };
 const eventReactionCommentStyle: CSSProperties = { height: 31, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, background: "transparent", border: "none", color: "rgba(148,163,184,0.9)", padding: "0 0 0 8px", fontSize: 12, fontWeight: 850, cursor: "pointer", flexShrink: 0 };
-const eventReactionPopupBackdropStyle: CSSProperties = { position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.34)", display: "flex", alignItems: "center", justifyContent: "center", padding: "12px", overflow: "hidden" };
-const eventReactionPopupPanelStyle: CSSProperties = { width: "min(620px, calc(100vw - 16px))", height: "min(640px, calc(100dvh - 24px))", maxHeight: "calc(100dvh - 24px)", display: "flex", flexDirection: "column", background: "rgba(4,5,7,0.96)", border: "1px solid rgba(148,163,184,0.28)", borderRadius: 8, boxShadow: "0 26px 90px rgba(0,0,0,0.78), 0 1px 0 rgba(255,255,255,0.08) inset", overflow: "hidden", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" };
+const eventReactionPopupBackdropStyle: CSSProperties = { position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 0, overflow: "hidden" };
+const eventReactionPopupPanelStyle: CSSProperties = { width: "min(620px, 100vw)", maxHeight: "86dvh", margin: "0 auto", display: "flex", flexDirection: "column", background: "rgba(10,12,16,0.8)", border: "1px solid rgba(148,163,184,0.16)", borderBottom: "none", borderRadius: "26px 26px 0 0", boxShadow: "0 -12px 60px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.06) inset", overflow: "hidden", backdropFilter: "blur(26px)", WebkitBackdropFilter: "blur(26px)", paddingBottom: "env(safe-area-inset-bottom)" };
 const eventReactionPopupHeaderStyle: CSSProperties = { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "11px 14px 10px", borderBottom: "1px solid rgba(148,163,184,0.18)", background: "rgba(255,255,255,0.018)" };
 const eventReactionPopupTitleStyle: CSSProperties = { color: "var(--text-1)", fontSize: 15, fontWeight: 950, lineHeight: 1.15 };
 const eventReactionPopupSubStyle: CSSProperties = { marginTop: 3, color: "rgba(148,163,184,0.9)", fontSize: 12, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
@@ -6994,7 +7029,7 @@ const eventReactionPopupBodyStyle: CSSProperties = { flex: "1 1 auto", minHeight
 const eventReactionQuickSectionStyle: CSSProperties = { marginBottom: 22 };
 const eventReactionSectionLabelStyle: CSSProperties = { color: "rgba(203,213,225,0.72)", fontSize: 10, fontWeight: 1000, textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 2px 7px" };
 const eventReactionQuickRowStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 5, overflowX: "auto", WebkitOverflowScrolling: "touch", paddingBottom: 1 };
-const eventReactionQuickButtonStyle: CSSProperties = { height: 31, minWidth: 48, borderRadius: 6, border: "1px solid rgba(148,163,184,0.28)", background: "rgba(255,255,255,0.035)", color: "var(--text-1)", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5, fontSize: 21, fontWeight: 1000, lineHeight: 1, padding: "0 8px", cursor: "pointer", flexShrink: 0 };
+const eventReactionQuickButtonStyle: CSSProperties = { height: 38, minWidth: 52, borderRadius: 12, border: "1px solid rgba(148,163,184,0.22)", background: "rgba(255,255,255,0.04)", color: "var(--text-1)", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5, fontSize: 23, fontWeight: 1000, lineHeight: 1, padding: "0 9px", cursor: "pointer", flexShrink: 0 };
 const eventReactionQuickCustomButtonStyle: CSSProperties = { fontSize: 10, letterSpacing: 0 };
 const eventReactionQuickButtonActiveStyle: CSSProperties = { background: "rgba(56,189,248,0.14)", borderColor: "rgba(56,189,248,0.6)", boxShadow: "0 0 0 1px rgba(56,189,248,0.14) inset" };
 const eventReactionQuickGlyphStyle: CSSProperties = { display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 18, lineHeight: 1 };
@@ -7003,15 +7038,15 @@ const eventReactionGridHeaderStyle: CSSProperties = { display: "flex", alignItem
 const eventReactionGridHeaderGlyphStyle: CSSProperties = { fontSize: 17, lineHeight: 1 };
 const eventReactionGridHeaderTitleStyle: CSSProperties = { fontSize: 16, fontWeight: 900, color: "rgba(203,213,225,0.74)" };
 const eventReactionGridHeaderCountStyle: CSSProperties = { marginLeft: "auto", fontSize: 11, fontWeight: 850, color: "rgba(148,163,184,0.76)", fontVariantNumeric: "tabular-nums" };
-const eventReactionPopupOptionsStyle: CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(34px, 1fr))", gap: 2, alignItems: "center" };
-const eventReactionPopupOptionStyle: CSSProperties = { aspectRatio: "1 / 1", minHeight: 34, borderRadius: 6, border: "1px solid transparent", background: "transparent", color: "var(--text-1)", display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0, cursor: "pointer", minWidth: 0, position: "relative" };
-const eventReactionPopupOptionCustomStyle: CSSProperties = { background: "rgba(255,255,255,0.035)", borderColor: "rgba(148,163,184,0.16)" };
-const eventReactionPopupOptionActiveStyle: CSSProperties = { background: "rgba(56,189,248,0.16)", color: "var(--text-1)", borderColor: "rgba(56,189,248,0.6)", boxShadow: "0 0 0 1px rgba(56,189,248,0.12) inset" };
-const eventReactionPopupEmojiStyle: CSSProperties = { fontSize: 28, lineHeight: 1, display: "inline-flex", alignItems: "center", justifyContent: "center" };
-const eventReactionPopupEmojiCustomStyle: CSSProperties = { width: 27, height: 27, borderRadius: 7, background: "rgba(250,204,21,0.08)", border: "1px solid rgba(250,204,21,0.22)", fontSize: 10, fontWeight: 1000, letterSpacing: 0 };
+const eventReactionPopupOptionsStyle: CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(46px, 1fr))", gap: 6, alignItems: "center" };
+const eventReactionPopupOptionStyle: CSSProperties = { aspectRatio: "1 / 1", minHeight: 46, borderRadius: 14, border: "1px solid transparent", background: "rgba(255,255,255,0.02)", color: "var(--text-1)", display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0, cursor: "pointer", minWidth: 0, position: "relative" };
+const eventReactionPopupOptionCustomStyle: CSSProperties = { background: "rgba(255,255,255,0.05)", borderColor: "rgba(148,163,184,0.16)" };
+const eventReactionPopupOptionActiveStyle: CSSProperties = { background: "rgba(56,189,248,0.18)", color: "var(--text-1)", borderColor: "rgba(56,189,248,0.6)", boxShadow: "0 0 0 1px rgba(56,189,248,0.12) inset" };
+const eventReactionPopupEmojiStyle: CSSProperties = { fontSize: 30, lineHeight: 1, display: "inline-flex", alignItems: "center", justifyContent: "center" };
+const eventReactionPopupEmojiCustomStyle: CSSProperties = { width: 32, height: 32, borderRadius: 9, background: "rgba(250,204,21,0.08)", border: "1px solid rgba(250,204,21,0.22)", fontSize: 11, fontWeight: 1000, letterSpacing: 0 };
 const eventReactionPopupCountStyle: CSSProperties = { position: "absolute", right: 1, top: 1, color: "#fff", background: "rgba(0,0,0,0.72)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 999, minWidth: 15, height: 15, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0 3px", fontSize: 9, fontWeight: 1000, fontVariantNumeric: "tabular-nums", lineHeight: 1 };
 const eventReactionCategoryBarStyle: CSSProperties = { flex: "0 0 auto", display: "flex", alignItems: "center", gap: 4, padding: "7px 9px 8px", borderTop: "1px solid rgba(148,163,184,0.18)", background: "rgba(2,3,5,0.98)", overflowX: "auto", WebkitOverflowScrolling: "touch" };
-const eventReactionCategoryTabStyle: CSSProperties = { width: 38, height: 34, borderRadius: 6, border: "1px solid transparent", background: "transparent", color: "rgba(203,213,225,0.86)", display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0, cursor: "pointer", flexShrink: 0 };
+const eventReactionCategoryTabStyle: CSSProperties = { minWidth: 44, height: 38, borderRadius: 999, border: "1px solid transparent", background: "rgba(255,255,255,0.03)", color: "rgba(203,213,225,0.86)", display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0 6px", cursor: "pointer", flexShrink: 0, transition: "background 0.15s ease, border-color 0.15s ease" };
 const eventReactionCategoryTabActiveStyle: CSSProperties = { color: "var(--text-1)", borderColor: "rgba(56,189,248,0.46)", background: "rgba(56,189,248,0.18)" };
 const eventReactionCategoryGlyphStyle: CSSProperties = { fontSize: 20, lineHeight: 1 };
 const eventReactionCategoryLabelStyle: CSSProperties = { display: "none" };

@@ -1784,8 +1784,12 @@ textarea:focus-visible {
 }
 
 .event-reaction-panel {
-  animation: event-reaction-panel-in 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
-  transform-origin: 50% 58%;
+  animation: event-reaction-panel-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: 50% 100%;
+}
+
+.event-reaction-summary:active {
+  transform: scale(0.94);
 }
 
 .event-reaction-option,
@@ -1819,11 +1823,11 @@ textarea:focus-visible {
 
 @keyframes event-reaction-panel-in {
   from {
-    opacity: 0;
-    transform: translateY(12px) scale(0.94);
+    opacity: 0.4;
+    transform: translateY(100%);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
