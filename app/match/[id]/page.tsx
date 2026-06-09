@@ -1607,6 +1607,8 @@ function SeasonAvgTable({ stats }: { stats: any[] }) {
   const router = useRouter();
 
   const withRating = stats.map(p => {
+    // Use pre-computed avgFoopy when present — same per-game-averaged method as the player page.
+    if (p.avgFoopy != null) return { ...p, _foopy: Number(p.avgFoopy) };
     const g = num(p.games);
     if (g <= 0) return { ...p, _foopy: null };
     // Prefer dividing raw totals ourselves — API-Sports' pre-rounded .average

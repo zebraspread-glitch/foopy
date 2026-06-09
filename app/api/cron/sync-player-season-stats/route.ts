@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { foopyRating } from "@/app/lib/foopyRating";
+import path from "path";
+import fs from "fs";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -126,6 +129,97 @@ export async function GET(req: Request) {
   if (players.length === 0) {
     return NextResponse.json({ ok: false, error: "No player data fetched", errors }, { status: 502 });
   }
+
+  // Compute avgFoopy per player using the same source as the player profile page:
+  // game-stats.json as the primary source, supplemented by match_cache for games
+  // not yet committed to the static file (e.g. the most recent round).
+  try {
+    const dataDir = path.join(process.cwd(), "app", "data");
+    const staticStats: Record<string, any> = JSON.parse(
+      fs.readFileSync(path.join(dataDir, "game-stats.json"), "utf8")
+    );
+    const staticIds = new Set(Object.keys(staticStats));
+
+    const yesterdayStr = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    const db2 = adminSupabase();
+    const [{ data: finalRows }, { data: recentRows }] = await Promise.all([
+      db2.from("match_cache").select("game_id, payload").eq("data_type", "player_stats").eq("is_final", true),
+      db2.from("match_cache").select("game_id, payload").eq("data_type", "player_stats").eq("is_final", false).gte("fetched_at", yesterdayStr),
+    ]);
+    const allCacheRows = [
+      ...(finalRows ?? []),
+      ...(recentRows ?? []).filter(r => !(finalRows ?? []).some((f: any) => String(f.game_id) === String(r.game_id))),
+    ];
+
+    // Build a unified game list: static JSON games + match_cache games not already in static
+    // This exactly mirrors what the player page does.
+    type GameEntry = { teams: { players: { pid: number; s: any }[] }[] };
+    const allGames: GameEntry[] = [];
+
+    // 1. Games from game-stats.json
+    for (const game of Object.values(staticStats) as any[]) {
+      if (!String(game.date ?? "").startsWith(SEASON)) continue;
+      const teams = (game.teams ?? []).map((td: any) => ({
+        players: (td.players ?? []).map((pe: any) => ({
+          pid: Number(pe.player?.id ?? 0),
+          s: pe.statistics ?? pe,
+        })),
+      }));
+      allGames.push({ teams });
+    }
+
+    // 2. match_cache rows not in game-stats.json
+    for (const row of allCacheRows) {
+      const gameId = String((row as any).game_id);
+      if (staticIds.has(gameId)) continue;
+      const payload = (row as any).payload as any;
+      const responseItems: any[] = payload?.response ?? [];
+      const rawTeams: any[] = responseItems[0]?.teams ?? [];
+      if (!rawTeams.length) continue;
+      const teams = rawTeams.map((td: any) => ({
+        players: (td.players ?? []).map((pe: any) => ({
+          pid: Number(pe.player?.id ?? 0),
+          s: pe.statistics ?? pe,
+        })),
+      }));
+      allGames.push({ teams });
+    }
+
+    // Map: apiSportsPlayerId → { total, games }
+    const foopyMap = new Map<number, { total: number; games: number }>();
+    for (const game of allGames) {
+      for (const teamData of game.teams) {
+        for (const { pid, s } of teamData.players) {
+          if (!pid) continue;
+          const goals      = n(s.goals?.total ?? s.goals);
+          const goalAssists = n(s.goals?.assists ?? s.goalAssists ?? 0);
+          const behinds    = n(s.behinds);
+          const kicks      = n(s.kicks);
+          const handballs  = n(s.handballs);
+          const marks      = n(s.marks);
+          const tackles    = n(s.tackles);
+          const hitouts    = n(s.hitouts);
+          const disposals  = n(s.disposals) || (kicks + handballs);
+          const clearances = n(s.clearances);
+          const ff = n(s.freesFor ?? s.free_kicks?.for ?? 0);
+          const fa = n(s.freesAgainst ?? s.free_kicks?.against ?? 0);
+          if (goals + kicks + handballs + marks + tackles + hitouts + clearances === 0) continue;
+          const gf = foopyRating({ goals, goalAssists, behinds, kicks, handballs, marks, tackles, hitouts, disposals, clearances, freesFor: ff, freesAgainst: fa });
+          const cur = foopyMap.get(pid) ?? { total: 0, games: 0 };
+          cur.total += gf;
+          cur.games += 1;
+          foopyMap.set(pid, cur);
+        }
+      }
+    }
+
+    for (const player of players) {
+      const fd = foopyMap.get(player.apiSportsId);
+      if (fd && fd.games > 0) {
+        (player as any).avgFoopy = Number((fd.total / fd.games).toFixed(1));
+      }
+    }
+  } catch {}
 
   // Store combined results in match_cache using a synthetic game_id = 0
   // so /api/player-season-stats can read without re-calling the API
