@@ -20,7 +20,9 @@ type LeaderboardEntry = {
   draws: number;
   total_duels: number;
   win_rate: number;
-  win_streak?: number;
+  streak?: number;        // signed: + for a win streak, - for a losing streak
+  best_streak?: number;   // longest win streak ever
+  total_points?: number;  // sum of duel scores
 };
 
 function ordinal(n: number) {
@@ -136,12 +138,20 @@ export default function DuelsLeaderboardPage() {
                     {e.verified && <VerifiedBadge size={13} />}
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: 12, alignItems: "center", flexShrink: 0 }}>
-                  <Stat value={e.wins} label="W" color="#4ade80" />
-                  <Stat value={e.losses} label="L" color="#ef4444" />
-                  <Stat value={`${e.win_rate}%`} label="Win" color="#3b82f6" minWidth={34} />
-                  <Stat value={e.win_streak ?? 0} label="Streak" color="#f59e0b" minWidth={30} />
-                </div>
+                {(() => {
+                  const streak = e.streak ?? 0;
+                  const streakColor = streak > 0 ? "#4ade80" : streak < 0 ? "#ef4444" : "var(--text-3)";
+                  return (
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, auto)", columnGap: 14, rowGap: 7, flexShrink: 0 }}>
+                      <Stat value={e.wins} label="W" color="#4ade80" />
+                      <Stat value={e.losses} label="L" color="#ef4444" />
+                      <Stat value={`${e.win_rate}%`} label="Win" color="#3b82f6" />
+                      <Stat value={streak} label="Streak" color={streakColor} />
+                      <Stat value={e.best_streak ?? 0} label="Best" color="#fbbf24" />
+                      <Stat value={e.total_points ?? 0} label="Pts" color="#fb923c" />
+                    </div>
+                  );
+                })()}
               </Link>
             );
           })}
