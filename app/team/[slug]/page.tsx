@@ -7,6 +7,12 @@ import { foopyColor } from "@/app/lib/foopyRating";
 import { computeAvgFoopyMap } from "@/app/lib/computeAvgFoopy.server";
 import { playerImgUrl } from "@/app/lib/playerImage";
 
+// Cache the rendered team page for 5 minutes (ISR). The heavy server work —
+// reading players.json / season stats and computing avg-Foopy — then runs once
+// per team per window instead of on every visit. User-specific pass data is
+// loaded client-side in TeamPassSection, so nothing personal is cached here.
+export const revalidate = 300;
+
 type PlayerInfo = {
   id: string;
   name: string;

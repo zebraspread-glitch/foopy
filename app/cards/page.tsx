@@ -456,25 +456,35 @@ export default function CardsPage() {
 
   useEffect(() => {
     if (!user) return;
-    // Fire all three fetches in parallel — no sequential waiting
-    Promise.all([
-      supabase.from("profiles").select("coins, featured_cards, last_daily_pack_at").eq("id", user.id).single(),
-      fetchAllUserCards(user.id),
-    ]).then(([profileRes, fetchedCards]) => {
-      if (profileRes.data) {
-        setCoins(profileRes.data.coins ?? 0);
-        setLastDailyPackAt(profileRes.data.last_daily_pack_at ?? null);
-        if (Array.isArray(profileRes.data.featured_cards)) {
-          setFeaturedCards(profileRes.data.featured_cards as { player_id: string; rarity: Rarity }[]);
+
+    // Fast query: coins + daily-pack claimed state. Rendered immediately so the
+    // header isn't gated behind the (slow, paginated) card-collection fetch.
+    supabase
+      .from("profiles")
+      .select("coins, featured_cards, last_daily_pack_at")
+      .eq("id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (!data) return;
+        setCoins(data.coins ?? 0);
+        setLastDailyPackAt(data.last_daily_pack_at ?? null);
+        if (Array.isArray(data.featured_cards)) {
+          setFeaturedCards(data.featured_cards as { player_id: string; rarity: Rarity }[]);
         }
-      }
-      setCards(fetchedCards);
-      setCardsLoading(false);
-    }).catch((err) => {
-      console.error("[cards fetch]", err);
-      setCardsLoading(false);
-    });
+      });
+
+    // Slower query: full card collection (paged). Runs independently so the grid
+    // fills in when ready without blocking coins/daily-pack from showing.
     setCardsLoading(true);
+    fetchAllUserCards(user.id)
+      .then((fetchedCards) => {
+        setCards(fetchedCards);
+        setCardsLoading(false);
+      })
+      .catch((err) => {
+        console.error("[cards fetch]", err);
+        setCardsLoading(false);
+      });
   }, [user]);
 
   useEffect(() => {

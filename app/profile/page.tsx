@@ -795,6 +795,13 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const accessTokenRef = useRef<string | null>(null);
 
+  // Warm the bundles for the most-tapped destinations so they open instantly.
+  // (These are reached via router.push from buttons, which — unlike <Link> —
+  // does not prefetch on its own.)
+  useEffect(() => {
+    ["/album", "/passes", "/aura-leaderboard"].forEach((r) => router.prefetch(r));
+  }, [router]);
+
   const [favs, setFavs] = useState<FavSlot[]>(Array(8).fill(null));
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerSlot, setPickerSlot] = useState<number>(0);
@@ -2417,7 +2424,7 @@ export default function ProfilePage() {
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {friends.map((f) => (
-                    <div key={f.friendship_id} style={friendRowStyle} onClick={() => router.push(`/profile/${f.username}`)}>
+                    <div key={f.friendship_id} style={friendRowStyle} onPointerDown={() => router.prefetch(`/profile/${f.username}`)} onClick={() => router.push(`/profile/${f.username}`)}>
                       <Avatar name={f.username || "?"} url={f.avatar_url} size={44} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 5, fontWeight: 800, fontSize: 15 }}>@{f.username}{f.verified && <VerifiedBadge size={14} />}</div>
@@ -2486,6 +2493,7 @@ export default function ProfilePage() {
                         <div
                           key={p.id}
                           style={{ ...friendRowStyle, cursor: "pointer" }}
+                          onPointerDown={() => router.prefetch(`/profile/${p.username}`)}
                           onClick={() => router.push(`/profile/${p.username}`)}
                         >
                           <Avatar name={p.username || "?"} url={p.avatar_url} size={44} />
