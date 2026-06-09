@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
@@ -8,6 +8,17 @@ import { VerifiedBadge } from "@/app/components/VerifiedBadge";
 
 const CURRENT_SEASON = new Date().getFullYear();
 const DUEL_GRADIENT = "linear-gradient(135deg, #fb923c, #ef4444)";
+
+type SortKey = "wins" | "losses" | "win_rate" | "streak" | "best_streak" | "total_points";
+
+const SORT_OPTIONS: { key: SortKey; label: string; unit: string }[] = [
+  { key: "wins",         label: "Wins",    unit: "wins" },
+  { key: "win_rate",     label: "Win %",   unit: "win rate" },
+  { key: "streak",       label: "Streak",  unit: "streak" },
+  { key: "best_streak",  label: "Best",    unit: "best streak" },
+  { key: "total_points", label: "Points",  unit: "points" },
+  { key: "losses",       label: "Losses",  unit: "losses" },
+];
 
 type LeaderboardEntry = {
   user_id: string;
@@ -45,6 +56,7 @@ export default function DuelsLeaderboardPage() {
   const [entries, setEntries]   = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading]   = useState(true);
   const [myUserId, setMyUserId] = useState<string | null>(null);
+  const [sortKey, setSortKey]   = useState<SortKey>("wins"); // defaults to wins on open
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -63,8 +75,22 @@ export default function DuelsLeaderboardPage() {
       .catch(() => setLoading(false));
   }, []);
 
-  const myIndex = myUserId ? entries.findIndex((e) => e.user_id === myUserId) : -1;
-  const me = myIndex !== -1 ? entries[myIndex] : null;
+  const val = (e: LeaderboardEntry, k: SortKey) => Number(e[k] ?? 0);
+
+  const sorted = useMemo(() => {
+    return [...entries].sort((a, b) => {
+      const diff = val(b, sortKey) - val(a, sortKey);
+      if (diff !== 0) return diff;
+      // tiebreakers: wins, then win rate, then points
+      if (b.wins !== a.wins) return b.wins - a.wins;
+      if (b.win_rate !== a.win_rate) return b.win_rate - a.win_rate;
+      return (b.total_points ?? 0) - (a.total_points ?? 0);
+    });
+  }, [entries, sortKey]);
+
+  const myIndex = myUserId ? sorted.findIndex((e) => e.user_id === myUserId) : -1;
+  const me = myIndex !== -1 ? sorted[myIndex] : null;
+  const sortMeta = SORT_OPTIONS.find((o) => o.key === sortKey)!;
 
   return (
     <div style={{ minHeight: "100dvh", background: "var(--bg)", paddingBottom: 60 }}>
@@ -81,6 +107,34 @@ export default function DuelsLeaderboardPage() {
             ⚔ Duels
           </div>
         </div>
+
+        {/* Sort pills */}
+        <div style={{ display: "flex", gap: 6, padding: "0 14px 12px", overflowX: "auto", scrollbarWidth: "none" }}>
+          {SORT_OPTIONS.map((opt) => {
+            const active = sortKey === opt.key;
+            return (
+              <button
+                key={opt.key}
+                onClick={() => setSortKey(opt.key)}
+                style={{
+                  padding: "7px 14px",
+                  borderRadius: 999,
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
+                  border: active ? "1px solid rgba(249,115,22,0.5)" : "1px solid var(--border-2)",
+                  background: active ? "linear-gradient(135deg, rgba(249,115,22,0.25), rgba(239,68,68,0.15))" : "var(--surface-3)",
+                  color: active ? "#fb923c" : "var(--text-3)",
+                  fontSize: 13,
+                  fontWeight: 800,
+                  cursor: "pointer",
+                  transition: "all 0.15s",
+                }}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div style={{ padding: "16px 16px 0" }}>
@@ -95,8 +149,10 @@ export default function DuelsLeaderboardPage() {
                 {ordinal(myIndex + 1)}
               </span>
               {" "}with{" "}
-              <span style={{ fontWeight: 900, color: "#fb923c" }}>{me.wins}</span>
-              {" "}win{me.wins !== 1 ? "s" : ""}
+              <span style={{ fontWeight: 900, color: "#fb923c" }}>
+                {sortKey === "win_rate" ? `${me.win_rate}%` : val(me, sortKey)}
+              </span>
+              {" "}{sortMeta.unit}
             </span>
           </div>
         )}
@@ -111,7 +167,7 @@ export default function DuelsLeaderboardPage() {
               <div style={{ fontSize: 32, marginBottom: 8 }}>⚔</div>
               No duels played yet
             </div>
-          ) : entries.map((e, i) => {
+          ) : sorted.map((e, i) => {
             const rank  = i + 1;
             const isMe  = e.user_id === myUserId;
             const label = e.display_name || e.username || "Unknown";
