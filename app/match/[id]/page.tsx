@@ -1277,6 +1277,23 @@ function LiveFeedPlayer({
   const myReactionId = (myReactions ?? []).find(isValidReactionEmoji);
   const myReactionAccent = (myReactionId && getEventReactionDefinition(myReactionId)?.accent) || "#facc15";
 
+  // Floating-emoji burst + chip pop when the user's reaction changes.
+  const prevReactionRef = useRef<string | undefined>(undefined);
+  const [bursts, setBursts] = useState<{ id: number; glyph: string }[]>([]);
+  const [chipPop, setChipPop] = useState(false);
+  useEffect(() => {
+    const prev = prevReactionRef.current;
+    prevReactionRef.current = myReactionId;
+    if (prev === undefined || !myReactionId || myReactionId === prev) return; // skip mount + clears
+    const glyph = getEventReactionDefinition(myReactionId)?.glyph ?? myReactionId;
+    const id = Date.now() + Math.random();
+    setBursts((b) => [...b, { id, glyph }]);
+    setChipPop(true);
+    const t1 = setTimeout(() => setBursts((b) => b.filter((x) => x.id !== id)), 900);
+    const t2 = setTimeout(() => setChipPop(false), 340);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [myReactionId]);
+
   return (
     <div
       onClick={onCommentClick}
@@ -1339,6 +1356,14 @@ function LiveFeedPlayer({
         </div>
 
         <div style={eventReactionBarStyle} onClick={(e) => e.stopPropagation()}>
+          <span style={{ position: "relative", display: "inline-flex" }}>
+          {bursts.length > 0 && (
+            <span style={eventReactionBurstLayerStyle} aria-hidden>
+              {bursts.map((b) => (
+                <span key={b.id} className="reaction-burst" style={eventReactionBurstEmojiStyle}>{b.glyph}</span>
+              ))}
+            </span>
+          )}
           <button
             type="button"
             className="event-reaction-summary"
@@ -1349,6 +1374,7 @@ function LiveFeedPlayer({
             style={{
               ...eventReactionSummaryButtonStyle,
               ...(hasReacted ? { background: `${myReactionAccent}1f`, borderColor: `${myReactionAccent}66` } : null),
+              ...(chipPop ? { animation: "reaction-chip-pop 0.34s ease" } : null),
             }}
             aria-label={hasReacted ? "Change reaction" : "Add reaction"}
             title={hasReacted ? "Change reaction" : "React"}
@@ -1386,6 +1412,7 @@ function LiveFeedPlayer({
               </span>
             )}
           </button>
+          </span>
 
           <span style={eventReactionBarSpacerStyle} />
 
@@ -1549,7 +1576,7 @@ function EventReactionPopup({
           ) : activeEmojis.length === 0 ? (
             <div style={eventReactionEmojiEmptyStyle}>Nothing here yet</div>
           ) : (
-            <div style={eventReactionEmojiGridStyle}>
+            <div key={activeCat} className="reaction-grid-in" style={eventReactionEmojiGridStyle}>
               {activeEmojis.map((emoji, i) => {
                 const active = selectedReactionSet.has(emoji);
                 return (
@@ -7012,6 +7039,8 @@ const eventReactionCatBarStyle: CSSProperties = { flex: "0 0 auto", display: "fl
 const eventReactionCatTabStyle: CSSProperties = { minWidth: 42, height: 38, borderRadius: 999, border: "1px solid transparent", background: "transparent", color: "var(--text-1)", display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0 6px", cursor: "pointer", flexShrink: 0, opacity: 0.6, transition: "opacity 0.15s ease, background 0.15s ease" };
 const eventReactionCatTabActiveStyle: CSSProperties = { opacity: 1, background: "rgba(255,255,255,0.1)" };
 const eventReactionSheetHandleStyle: CSSProperties = { width: 38, height: 4, borderRadius: 999, background: "rgba(255,255,255,0.22)", margin: "8px auto 2px" };
+const eventReactionBurstLayerStyle: CSSProperties = { position: "absolute", left: "50%", top: 0, width: 0, height: 0, pointerEvents: "none", zIndex: 5 };
+const eventReactionBurstEmojiStyle: CSSProperties = { position: "absolute", left: 0, bottom: 0, fontSize: 22, lineHeight: 1, willChange: "transform, opacity" };
 const playerBubbleStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 4, color: "var(--text-3)", fontSize: 11, fontWeight: 700 };
 const playerAvatarWrapStyle: CSSProperties = {
   width: 48,
