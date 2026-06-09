@@ -46,7 +46,7 @@ function Stat({ value, label, color, minWidth = 20 }: { value: number | string; 
   return (
     <div style={{ textAlign: "center", minWidth }}>
       <div style={{ fontSize: 14, fontWeight: 900, color, lineHeight: 1 }}>{value}</div>
-      <div style={{ fontSize: 9, color: "var(--text-3)", fontWeight: 700, marginTop: 2 }}>{label}</div>
+      <div style={{ fontSize: 9, color: "#6B7280", fontWeight: 700, marginTop: 2 }}>{label}</div>
     </div>
   );
 }
@@ -196,15 +196,15 @@ export default function DuelsLeaderboardPage() {
                 </div>
                 {(() => {
                   const streak = e.streak ?? 0;
-                  const streakColor = streak > 0 ? "#4ade80" : streak < 0 ? "#ef4444" : "var(--text-3)";
+                  const streakColor = streak > 0 ? "#F97316" : streak < 0 ? "#EF4444" : "#9CA3AF";
                   return (
                     <div style={{ display: "flex", gap: 10, alignItems: "center", flexShrink: 0 }}>
-                      <Stat value={e.wins} label="W" color="#4ade80" />
-                      <Stat value={e.losses} label="L" color="#ef4444" />
-                      <Stat value={`${e.win_rate}%`} label="Win" color="#3b82f6" minWidth={30} />
+                      <Stat value={e.wins} label="W" color="#22C55E" />
+                      <Stat value={e.losses} label="L" color="#EF4444" />
+                      <Stat value={`${e.win_rate}%`} label="Win" color="#60A5FA" minWidth={30} />
                       <Stat value={streak} label="Streak" color={streakColor} />
-                      <Stat value={e.best_streak ?? 0} label="Best" color="#fbbf24" />
-                      <Stat value={e.total_points ?? 0} label="Pts" color="#fb923c" />
+                      <Stat value={e.best_streak ?? 0} label="Best" color="#FBBF24" />
+                      <Stat value={e.total_points ?? 0} label="Pts" color="#F3F4F6" />
                     </div>
                   );
                 })()}
