@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { eventReactionRank, isSupportedEventReaction } from "@/app/lib/eventReactions";
+import { eventReactionRank, isValidReactionEmoji } from "@/app/lib/eventReactions";
 import { supabaseServer } from "@/app/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
@@ -44,7 +44,7 @@ function summarise(rows: ReactionRow[], visitorId = "") {
   const latestRowsByVisitor = new Map<string, ReactionRow>();
 
   for (const row of rows) {
-    if (!row.event_key || !row.visitor_id || !isSupportedEventReaction(row.emoji)) continue;
+    if (!row.event_key || !row.visitor_id || !isValidReactionEmoji(row.emoji)) continue;
     latestRowsByVisitor.set(`${row.event_key}\u0000${row.visitor_id}`, row);
   }
 
@@ -119,7 +119,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, ...(await loadSummary(gameId, visitorId)) });
   }
 
-  if (!isSupportedEventReaction(emoji)) {
+  if (!isValidReactionEmoji(emoji)) {
     return NextResponse.json({ error: "Unsupported reaction" }, { status: 400 });
   }
 
@@ -137,7 +137,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: existingError.message }, { status: 500 });
   }
 
-  const currentEmoji = [...(existingRows ?? [])].reverse().find((row: { emoji: string }) => isSupportedEventReaction(row.emoji))?.emoji;
+  const currentEmoji = [...(existingRows ?? [])].reverse().find((row: { emoji: string }) => isValidReactionEmoji(row.emoji))?.emoji;
 
   const { error: deleteError } = await db
     .from("feed_event_reactions")

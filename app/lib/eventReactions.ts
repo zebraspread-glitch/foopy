@@ -146,6 +146,17 @@ export function isSupportedEventReaction(reactionId: string) {
   return EVENT_REACTION_ID_SET.has(reactionId);
 }
 
+/**
+ * Accepts any real emoji (not just the curated set) so the full-keyboard
+ * picker can store arbitrary reactions, while rejecting plain text / abuse.
+ */
+export function isValidReactionEmoji(value: unknown): value is string {
+  if (typeof value !== "string") return false;
+  const v = value.trim();
+  if (v.length === 0 || v.length > 24) return false;
+  return /\p{Extended_Pictographic}/u.test(v);
+}
+
 export function getEventReactionDefinition(reactionId: string) {
   return EVENT_REACTION_BY_ID.get(reactionId);
 }
