@@ -1,7 +1,8 @@
 import path from "path";
 import fs from "fs";
 import Link from "next/link";
-import { foopyRating, foopyColor } from "@/app/lib/foopyRating";
+import { foopyColor } from "@/app/lib/foopyRating";
+import { computeAvgFoopyMap } from "@/app/lib/computeAvgFoopy.server";
 
 type PlayerInfo = {
   id: string;
@@ -11,23 +12,6 @@ type PlayerInfo = {
   statsIds?: number[];
 };
 
-type PlayerStatGame = {
-  teams?: {
-    players?: {
-      player?: { id: number };
-      goals?: { total?: number; assists?: number };
-      behinds?: number;
-      disposals?: number;
-      kicks?: number;
-      handballs?: number;
-      marks?: number;
-      tackles?: number;
-      hitouts?: number;
-      clearances?: number;
-      free_kicks?: { for?: number; against?: number };
-    }[];
-  }[];
-};
 
 const TEAMS = [
   { name: "Adelaide", slug: "adelaide", logo: "/team-logos/crows.png", color: "#002b5c" },
@@ -50,73 +34,31 @@ const TEAMS = [
   { name: "Western Bulldogs", slug: "westernbulldogs", logo: "/team-logos/bulldogs.png", color: "#1a4abf" },
 ];
 
-function num(value: unknown) {
-  const n = Number(value ?? 0);
-  return Number.isFinite(n) ? n : 0;
-}
 
-function hasPlayerStatLine(stats: NonNullable<NonNullable<PlayerStatGame["teams"]>[number]["players"]>[number]) {
-  return (
-    num(stats.disposals) + num(stats.kicks) + num(stats.handballs) + num(stats.marks) +
-    num(stats.tackles) + num(stats.hitouts) + num(stats.goals?.total) + num(stats.behinds) +
-    num(stats.clearances) + num(stats.free_kicks?.for) + num(stats.free_kicks?.against) > 0
-  );
-}
-
-export default function TeamAveragePage() {
+export default async function TeamAveragePage() {
   const dataDir = path.join(process.cwd(), "app", "data");
   const players: PlayerInfo[] = JSON.parse(fs.readFileSync(path.join(dataDir, "players.json"), "utf8"));
-  const gameStats: Record<string, PlayerStatGame> = JSON.parse(fs.readFileSync(path.join(dataDir, "game-stats.json"), "utf8"));
 
-  const foopyMap = new Map<number, number[]>();
-  for (const game of Object.values(gameStats)) {
-    for (const block of game.teams ?? []) {
-      for (const stats of block.players ?? []) {
-        const playerId = stats.player?.id;
-        if (!playerId) continue;
+  // Use the same avgFoopy computation as the player profile page (game-stats.json + match_cache)
+  const avgFoopyMap = await computeAvgFoopyMap();
 
-        const rating = foopyRating({
-          goals: num(stats.goals?.total),
-          goalAssists: num(stats.goals?.assists),
-          behinds: num(stats.behinds),
-          kicks: num(stats.kicks),
-          handballs: num(stats.handballs),
-          marks: num(stats.marks),
-          tackles: num(stats.tackles),
-          hitouts: num(stats.hitouts),
-          disposals: num(stats.disposals),
-          clearances: num(stats.clearances),
-          freesFor: num(stats.free_kicks?.for),
-          freesAgainst: num(stats.free_kicks?.against),
-        });
-
-        if (hasPlayerStatLine(stats)) {
-          if (!foopyMap.has(playerId)) foopyMap.set(playerId, []);
-          foopyMap.get(playerId)!.push(rating);
-        }
-      }
+  function getPlayerAvgFoopy(player: PlayerInfo): number | null {
+    const ids = new Set<number>();
+    if (player.apiSportsId) ids.add(Number(player.apiSportsId));
+    for (const sid of player.statsIds ?? []) ids.add(Number(sid));
+    for (const id of ids) {
+      const avg = avgFoopyMap.get(id);
+      if (avg !== undefined) return avg;
     }
-  }
-
-  function playerAverageFoopy(player: PlayerInfo) {
-    const statIds = new Set<number>();
-    if (player.apiSportsId) statIds.add(player.apiSportsId);
-    for (const statId of player.statsIds ?? []) statIds.add(statId);
-
-    const ratings: number[] = [];
-    for (const statId of statIds) {
-      for (const rating of foopyMap.get(statId) ?? []) ratings.push(rating);
-    }
-
-    return ratings.length ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length : null;
+    return null;
   }
 
   const rankings = TEAMS.map((team) => {
     const rated = players
       .filter((player) => player.team === team.name)
-      .map(playerAverageFoopy)
-      .filter((rating): rating is number => rating !== null);
-    const average = rated.length ? rated.reduce((sum, rating) => sum + rating, 0) / rated.length : null;
+      .map(getPlayerAvgFoopy)
+      .filter((r): r is number => r !== null);
+    const average = rated.length ? rated.reduce((sum, r) => sum + r, 0) / rated.length : null;
     return { ...team, average, ratedCount: rated.length };
   })
     .filter((team): team is typeof TEAMS[number] & { average: number; ratedCount: number } => team.average !== null)
