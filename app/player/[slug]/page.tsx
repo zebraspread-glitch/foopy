@@ -495,8 +495,8 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
         {/* ── Foopy rating ── */}
         {avgFoopy !== null && (
           <section style={{ ...cardStyle, display: "flex", gap: 0, padding: 0, overflow: "hidden" }}>
-            {/* Left — avg rating */}
-            <div style={{ flexShrink: 0, width: 90, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: "20px 0", borderRight: "1px solid var(--border-2)" }}>
+            {/* Left — avg rating (tappable → foopy leaderboard) */}
+            <Link href="/power-rankings?view=player&period=season" style={{ flexShrink: 0, width: 90, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: "20px 0", borderRight: "1px solid var(--border-2)", textDecoration: "none", cursor: "pointer" }}>
               <div style={{ fontSize: 10, fontWeight: 800, color: "var(--text-3)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>Avg Foopy</div>
               <div style={{ fontSize: 40, fontWeight: 950, letterSpacing: "-0.05em", lineHeight: 1, color: foopyColor(avgFoopy) }}>{avgFoopy.toFixed(1)}</div>
               {foopyRank !== null && (
@@ -504,7 +504,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                   #{foopyRank} of {foopyTotal}
                 </div>
               )}
-            </div>
+            </Link>
             {/* Right — bar chart */}
             <div style={{ flex: 1, padding: "16px 14px 12px", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
               <div style={{ fontSize: 10, fontWeight: 800, color: "var(--text-3)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Last 10 games</div>

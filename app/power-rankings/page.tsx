@@ -234,8 +234,20 @@ function RankBadge({ rank }: { rank: number }) {
 /* ─── Main page ──────────────────────────────────────────── */
 
 export default function PowerRankingsPage() {
-  const [view,   setView]   = useState<View>("player");
-  const [period, setPeriod] = useState<Period>("r1");
+  const [view,   setView]   = useState<View>(() => {
+    if (typeof window !== "undefined") {
+      const v = new URLSearchParams(window.location.search).get("view");
+      if (v === "player" || v === "team") return v;
+    }
+    return "player";
+  });
+  const [period, setPeriod] = useState<Period>(() => {
+    if (typeof window !== "undefined") {
+      const p = new URLSearchParams(window.location.search).get("period");
+      if (p === "r1" || p === "r3" || p === "r5" || p === "season") return p;
+    }
+    return "r1";
+  });
   const [games,  setGames]  = useState<Game[]>([]);
   const [gamesLoading, setGamesLoading] = useState(true);
   const [playerData, setPlayerData] = useState<Record<Period, PlayerRank[]>>({ r1: [], r3: [], r5: [], season: [] });
