@@ -1112,19 +1112,24 @@ export default function ProfilePage() {
   }, [user, profile?.featured_cards]);
 
   async function applyPending(userId: string, p: Profile | null) {
-    const pending = localStorage.getItem("foopy_pending_username");
+    const pending     = localStorage.getItem("foopy_pending_username");
+    const pendingTeam = localStorage.getItem("foopy_pending_team");
 
-    if (pending) {
+    if (pending || pendingTeam) {
       localStorage.removeItem("foopy_pending_username");
+      localStorage.removeItem("foopy_pending_team");
+
+      const patch: Record<string, unknown> = { id: userId };
+      if (pending) {
+        patch.username           = pending;
+        patch.display_name       = pending;
+        patch.username_updated_at = new Date().toISOString();
+      }
+      if (pendingTeam) patch.favourite_team = pendingTeam;
 
       const { data } = await supabase
         .from("profiles")
-        .upsert({
-          id: userId,
-          username: pending,
-          display_name: pending,
-          username_updated_at: new Date().toISOString(),
-        }, { onConflict: "id" })
+        .upsert(patch, { onConflict: "id" })
         .select()
         .single();
 

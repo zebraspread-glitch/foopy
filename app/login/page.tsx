@@ -93,7 +93,11 @@ function LoginPageInner() {
     const { data: existing } = await supabase.from("profiles").select("id").eq("username", cleanUsername).maybeSingle();
     if (existing) { setError("That username is already taken — try another."); setLoading(false); return; }
 
-    const { data, error: err } = await supabase.auth.signUp({ email, password });
+    const { data, error: err } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: `${window.location.origin}/profile` },
+    });
     if (err) { setError(err.message); setLoading(false); return; }
 
     // Guard 1: empty identities means email already registered (Supabase standard check)
