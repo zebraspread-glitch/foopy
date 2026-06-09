@@ -1490,10 +1490,12 @@ function PlayerPassPickerPage({
   const [localConfirmStep, setLocalConfirmStep] = useState(false);
   const [localPurchaseAnim, setLocalPurchaseAnim] = useState(false);
   const [localBoughtPlayer, setLocalBoughtPlayer] = useState<typeof pendingPlayer>(null);
+  const [localOwned, setLocalOwned] = useState(false);
 
   function handleBuyPass(pid: string) {
     const snapshot = pendingPlayer;
     setLocalConfirmStep(false);
+    setLocalOwned(true);
     setLocalBoughtPlayer(snapshot);
     setLocalPurchaseAnim(true);
     addPlayerPass(pid);
@@ -1624,7 +1626,8 @@ function PlayerPassPickerPage({
     created_at: "",
   };
   const teamAccent = teamColor(pendingPlayer.team);
-  const canBuy = !pendingPlayerOwned && coins >= PLAYER_PASS_COST;
+  const effectiveOwned = pendingPlayerOwned || localOwned;
+  const canBuy = !effectiveOwned && coins >= PLAYER_PASS_COST;
   const holderPreview = [...holders]
     .sort((a, b) => (a.serial_number ?? 999999) - (b.serial_number ?? 999999))
     .slice(0, 50);
@@ -1758,9 +1761,9 @@ function PlayerPassPickerPage({
                 width: "min(240px, 78vw)",
                 padding: "13px 20px",
                 borderRadius: 999,
-                border: pendingPlayerOwned ? "1px solid rgba(255,255,255,0.12)" : "none",
-                background: pendingPlayerOwned ? "rgba(255,255,255,0.08)" : canBuy ? `linear-gradient(135deg, ${teamAccent}, #f59e0b, #fbbf24)` : "rgba(255,255,255,0.08)",
-                color: pendingPlayerOwned ? "var(--text-2)" : canBuy ? "#fff" : "rgba(255,255,255,0.32)",
+                border: effectiveOwned ? "1px solid rgba(255,255,255,0.12)" : "none",
+                background: effectiveOwned ? "rgba(255,255,255,0.08)" : canBuy ? `linear-gradient(135deg, ${teamAccent}, #f59e0b, #fbbf24)` : "rgba(255,255,255,0.08)",
+                color: effectiveOwned ? "var(--text-2)" : canBuy ? "#fff" : "rgba(255,255,255,0.32)",
                 fontSize: 18,
                 fontWeight: 950,
                 fontFamily: "inherit",
@@ -1772,7 +1775,7 @@ function PlayerPassPickerPage({
                 boxShadow: canBuy ? `0 14px 34px ${teamAccent}30, inset 0 1px 0 rgba(255,255,255,0.24)` : "none",
               }}
             >
-              {pendingPlayerOwned ? <><CheckCircle size={18} strokeWidth={2.8} />Owned</> : "Get Pass"}
+              {effectiveOwned ? <><CheckCircle size={18} strokeWidth={2.8} />Owned</> : "Get Pass"}
             </button>
           )}
 
@@ -1785,7 +1788,7 @@ function PlayerPassPickerPage({
               <div style={{ marginTop: 10, fontSize: 14, color: coins >= PLAYER_PASS_COST ? "var(--text-3)" : "#f87171", fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
                 <CoinImg size={15} />{fmtCoins(coins)} balance
               </div>
-              {!pendingPlayerOwned && coins < PLAYER_PASS_COST && (
+              {!effectiveOwned && coins < PLAYER_PASS_COST && (
                 <div style={{ marginTop: 10, padding: "9px 13px", borderRadius: 999, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", fontSize: 12, fontWeight: 850, color: "#f87171" }}>
                   Need <CoinImg size={12} /> {fmtCoins(PLAYER_PASS_COST - coins)} more coins
                 </div>
@@ -1886,8 +1889,9 @@ function TeamPassPickerPage({
   const [purchaseAnim, setPurchaseAnim]   = useState(false);
   const [boughtTeam, setBoughtTeam]       = useState<string | null>(null);
   const [purchaseErr, setPurchaseErr]     = useState<string | null>(null);
+  const [localOwned, setLocalOwned]       = useState(false);
 
-  useEffect(() => { setConfirmStep(false); setPurchaseErr(null); }, [pendingTeam]);
+  useEffect(() => { setConfirmStep(false); setPurchaseErr(null); setLocalOwned(false); }, [pendingTeam]);
 
   useEffect(() => {
     let active = true;
@@ -1913,6 +1917,7 @@ function TeamPassPickerPage({
         body: JSON.stringify({ team_name: pendingTeam }),
       });
       if (res.ok) {
+        setLocalOwned(true);
         setBoughtTeam(pendingTeam);
         setPurchaseAnim(true);
         onPurchased();
@@ -1949,7 +1954,7 @@ function TeamPassPickerPage({
     );
   }
 
-  const alreadyOwned = (data?.teamPasses ?? []).some(p => p.team_name === pendingTeam);
+  const alreadyOwned = (data?.teamPasses ?? []).some(p => p.team_name === pendingTeam) || localOwned;
   const atMaxPasses  = !alreadyOwned && (data?.teamPasses?.length ?? 0) >= MAX_TEAM_PASSES;
   const canBuy       = !alreadyOwned && !atMaxPasses && coins >= TEAM_PASS_COST;
   const color        = teamColor(pendingTeam);
