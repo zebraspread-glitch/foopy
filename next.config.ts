@@ -10,6 +10,13 @@ allowedDevOrigins: ["192.168.1.18", "100.89.191.74"],
     minimumCacheTTL: 60 * 60 * 24 * 7,
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "ogdtvdvdtxohgyrhlgfk.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+    ],
   },
 
   async headers() {
