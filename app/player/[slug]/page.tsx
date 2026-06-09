@@ -6,6 +6,7 @@ import { PlayerPassSection } from "./PlayerPassSection";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import { supabaseServer } from "@/app/lib/supabase-server";
 import { foopyRating, foopyColor } from "@/app/lib/foopyRating";
+import { computeAvgFoopyMap } from "@/app/lib/computeAvgFoopy.server";
 
 // Reverse map: API Sports game ID → Squiggle game ID
 const API_SPORTS_TO_SQUIGGLE: Record<number, string> = Object.fromEntries(
@@ -421,54 +422,17 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
     ? (playedGames.reduce((s, g) => s + g.foopy, 0) / playedGames.length)
     : null;
 
-  // Compute global rank across all players who have game data
-  const allAvgs: number[] = [];
-  let playerAvg: number | null = null;
-  for (const p of players) {
-    const pids = new Set<number>();
-    if (p.apiSportsId) pids.add(p.apiSportsId);
-    for (const eid of idList((p as PlayerInfo).eventIds)) pids.add(eid);
-    for (const sid of (p as PlayerInfo).statsIds ?? []) pids.add(sid);
-    if (pids.size === 0) continue;
-    const matchP = (pid: number, teamId?: number) => {
-      if (!pids.has(pid)) return false;
-      const statTeam = teamId ? TEAM_ID_MAP[teamId] : "";
-      return !statTeam || teamMatches(statTeam, p.team);
-    };
-    const gsAll = Object.values(gameStats).filter(g => g.teams?.some(t => t.players?.some(pp => matchP(pp.player?.id, t.team?.id))));
-    const gsRated = gsAll.filter(g => {
-      for (const t of g.teams ?? []) {
-        const ps = t.players?.find(pp => matchP(pp.player?.id, t.team?.id));
-        if (ps) return foopyRating({
-          goals: num(ps.goals?.total), goalAssists: num(ps.goals?.assists),
-          behinds: num(ps.behinds), kicks: num(ps.kicks), handballs: num(ps.handballs),
-          marks: num(ps.marks), tackles: num(ps.tackles), hitouts: num(ps.hitouts),
-          disposals: num(ps.disposals), clearances: num(ps.clearances),
-          freesFor: num(ps.free_kicks?.for), freesAgainst: num(ps.free_kicks?.against),
-        }) > 0;
-      }
-      return false;
-    });
-    if (gsRated.length === 0) continue;
-    const avg = gsRated.reduce((s, g) => {
-      for (const t of g.teams ?? []) {
-        const ps = t.players?.find(pp => matchP(pp.player?.id, t.team?.id));
-        if (ps) return s + foopyRating({
-          goals: num(ps.goals?.total), goalAssists: num(ps.goals?.assists),
-          behinds: num(ps.behinds), kicks: num(ps.kicks), handballs: num(ps.handballs),
-          marks: num(ps.marks), tackles: num(ps.tackles), hitouts: num(ps.hitouts),
-          disposals: num(ps.disposals), clearances: num(ps.clearances),
-          freesFor: num(ps.free_kicks?.for), freesAgainst: num(ps.free_kicks?.against),
-        });
-      }
-      return s;
-    }, 0) / gsRated.length;
-    allAvgs.push(avg);
-    if (p.id === slug) playerAvg = avg;
-  }
-  allAvgs.sort((a, b) => b - a);
-  const foopyRank = playerAvg !== null ? allAvgs.indexOf(playerAvg) + 1 : null;
-  const foopyTotal = allAvgs.length;
+  // Global foopy rank — uses the same game-stats.json + match_cache method as
+  // the player profile's own avgFoopy, so rank and displayed value are consistent.
+  // Pass the already-loaded gameStats to avoid re-reading the file.
+  const avgFoopyMap = await computeAvgFoopyMap(gameStats as any);
+  const myApiId = Number(player.apiSportsId ?? 0);
+  const myMappedAvg = myApiId ? avgFoopyMap.get(myApiId) : undefined;
+  // Rank = number of players with a strictly higher avgFoopy + 1 (competition ranking, handles ties).
+  const foopyRank = myMappedAvg !== undefined
+    ? [...avgFoopyMap.values()].filter(v => v > myMappedAvg).length + 1
+    : null;
+  const foopyTotal = avgFoopyMap.size;
 
   // Rank each stat vs all players in seasonData (only players with >= 1 game)
   function leagueRank(key: keyof SeasonStats): number | null {
