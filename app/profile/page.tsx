@@ -1653,6 +1653,7 @@ export default function ProfilePage() {
 
   async function openDuelsPopup() {
     setStatsPopup("duels");
+    window.scrollTo(0, 0); // open at the top, not wherever the profile was scrolled
     if (duelHistory.length > 0) return;
     setDuelHistoryLoading(true);
     try {

@@ -674,6 +674,7 @@ export default function PublicProfilePage() {
 
   async function openDuelHistory() {
     setDuelHistoryOpen(true);
+    window.scrollTo(0, 0); // open at the top, not wherever the profile was scrolled
     if (duelHistory.length > 0) return;
     setDuelHistoryLoading(true);
     try {
