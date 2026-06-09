@@ -76,7 +76,7 @@ function playerImage(p: any): string {
   const folder = CLUB_FOLDER[p.club ?? p.team ?? ""] ?? (p.club ?? "").toLowerCase().replace(/[^a-z]/g, "");
   const img = p.image ?? p.imagePath ?? `${(p.name ?? "").toLowerCase().replace(/[^a-z0-9]/g, "")}.png`;
   if (!folder) return "";
-  return `${PLAYER_IMG_BASE}/players/${folder}/${img}`;
+  return `${PLAYER_IMG_BASE}/${folder}/${img}`;
 }
 
 type SquiggleGame = { id: number; round: number; hteam: string; ateam: string; date: string; complete: number };

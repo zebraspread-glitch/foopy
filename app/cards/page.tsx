@@ -324,9 +324,9 @@ function cardImageCandidates(card: CardImageSource) {
   };
 
   add(card.player_image);
-  add(`${PLAYER_IMG_BASE}/players/${folder}/${playerId}.png`);
-  add(`${PLAYER_IMG_BASE}/players/${folder}/${nameId}.png`);
-  CARD_IMAGE_ALIASES[playerId]?.forEach((alias) => add(`${PLAYER_IMG_BASE}/players/${folder}/${alias}.png`));
+  add(`${PLAYER_IMG_BASE}/${folder}/${playerId}.png`);
+  add(`${PLAYER_IMG_BASE}/${folder}/${nameId}.png`);
+  CARD_IMAGE_ALIASES[playerId]?.forEach((alias) => add(`${PLAYER_IMG_BASE}/${folder}/${alias}.png`));
 
   return urls;
 }
@@ -1598,7 +1598,7 @@ function PackOpenModal({ cards: rawCards, onClose }: { cards: OpenedCard[]; onCl
       new window.Image().src = `/cards/${card.rarity}.png`;
       if (card.player_image) new window.Image().src = card.player_image;
       const folder = TEAM_PLAYER_FOLDER[card.team] ?? card.team.toLowerCase().replace(/[^a-z]/g, "");
-      new window.Image().src = `${PLAYER_IMG_BASE}/players/${folder}/${card.player_id}.png`;
+      new window.Image().src = `${PLAYER_IMG_BASE}/${folder}/${card.player_id}.png`;
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

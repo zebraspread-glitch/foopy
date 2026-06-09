@@ -29,7 +29,7 @@ type StatKey =
 const CARD_IMG: Record<string, string> = {};
 const POSITION_LOOKUP: Record<string, string> = {};
 for (const cp of CARD_PLAYERS) {
-  CARD_IMG[cp.id] = `${PLAYER_IMG_BASE}/players/${cp.folder}/${cp.id}.png`;
+  CARD_IMG[cp.id] = `${PLAYER_IMG_BASE}/${cp.folder}/${cp.id}.png`;
   POSITION_LOOKUP[cp.id] = cp.position;
 }
 
@@ -56,7 +56,7 @@ function localImg(statsId: string, team: string): string | null {
   const cardId = CARD_ID_OVERRIDES[raw] ?? raw;
   if (CARD_IMG[cardId]) return CARD_IMG[cardId];
   const folder = TEAM_FOLDER[team];
-  return folder ? `${PLAYER_IMG_BASE}/players/${folder}/${cardId}.png` : null;
+  return folder ? `${PLAYER_IMG_BASE}/${folder}/${cardId}.png` : null;
 }
 
 const TEAM_LOGO: Record<string, string> = {

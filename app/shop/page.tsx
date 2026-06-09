@@ -143,9 +143,9 @@ function CardPlayerImage({ card, imageStyle }: { card: Pick<OpenedCard, "player_
     const urls: string[] = [];
     const add = (u?: string) => { if (u && !urls.includes(u)) urls.push(u); };
     add(card.player_image);
-    add(`${PLAYER_IMG_BASE}/players/${folder}/${pid}.png`);
-    add(`${PLAYER_IMG_BASE}/players/${folder}/${nid}.png`);
-    CARD_IMAGE_ALIASES[pid]?.forEach(a => add(`${PLAYER_IMG_BASE}/players/${folder}/${a}.png`));
+    add(`${PLAYER_IMG_BASE}/${folder}/${pid}.png`);
+    add(`${PLAYER_IMG_BASE}/${folder}/${nid}.png`);
+    CARD_IMAGE_ALIASES[pid]?.forEach(a => add(`${PLAYER_IMG_BASE}/${folder}/${a}.png`));
     return urls;
   }, [card.player_id, card.player_name, card.team, card.player_image]);
 

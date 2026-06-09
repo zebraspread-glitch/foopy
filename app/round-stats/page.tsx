@@ -108,7 +108,7 @@ function getPlayerImage(p: PlayerInfo) {
   if (!folder || !img) return "";
   if (String(img).startsWith("/")) return String(img);
   if (/^https?:\/\//.test(String(img))) return String(img);
-  return `${PLAYER_IMG_BASE}/players/${folder}/${img}`;
+  return `${PLAYER_IMG_BASE}/${folder}/${img}`;
 }
 
 function idListIncludes(ids: unknown, target: number) {

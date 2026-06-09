@@ -1,12 +1,10 @@
 /**
  * Player image URL helper.
  *
- * Images live in public/players/ in git but at 647 MB the folder exceeds
- * Vercel's static-asset deployment limit, so we serve them via jsDelivr
- * (a free CDN that mirrors public GitHub repos) instead of /public.
+ * Images are stored in Supabase Storage (bucket: "players").
  */
 
-export const PLAYER_IMG_BASE = "https://cdn.jsdelivr.net/gh/zebraspread-glitch/foopy@main/public";
+export const PLAYER_IMG_BASE = "https://ogdtvdvdtxohgyrhlgfk.supabase.co/storage/v1/object/public/players";
 const CDN = PLAYER_IMG_BASE;
 
 const CLUB_FOLDER: Record<string, string> = {
@@ -26,11 +24,11 @@ export function playerImgUrl(name: string, team: string): string {
   const slug   = name.toLowerCase().replace(/[^a-z0-9]/g, "");
   const folder = CLUB_FOLDER[slugTeam(team)] ?? slugTeam(team);
   if (!slug || !folder) return "";
-  return `${CDN}/players/${folder}/${slug}.png`;
+  return `${CDN}/${folder}/${slug}.png`;
 }
 
 /** Same as playerImgUrl but accepts an already-resolved folder string. */
 export function playerImgUrlFromFolder(folder: string, slug: string): string {
   if (!slug || !folder) return "";
-  return `${CDN}/players/${folder}/${slug}.png`;
+  return `${CDN}/${folder}/${slug}.png`;
 }

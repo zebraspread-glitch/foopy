@@ -442,11 +442,11 @@ function playerImageCandidates(playerName: string, team?: string) {
   const addImageFile = (image?: string) => {
     if (!image) return;
     if (/^https?:\/\//i.test(image) || image.startsWith("/")) addUrl(image);
-    else addUrl(`${PLAYER_IMG_BASE}/players/${folder}/${image}`);
+    else addUrl(`${PLAYER_IMG_BASE}/${folder}/${image}`);
   };
   const addSlug = (value?: string) => {
     const slug = slugName(value ?? "");
-    if (slug) addUrl(`${PLAYER_IMG_BASE}/players/${folder}/${slug}.png`);
+    if (slug) addUrl(`${PLAYER_IMG_BASE}/${folder}/${slug}.png`);
   };
 
   addImageFile(found?.image);

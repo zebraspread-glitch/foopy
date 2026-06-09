@@ -757,7 +757,7 @@ function playerImagePath(name: any, team?: any) {
   if (!folder || !image) return "";
   if (String(image).startsWith("/")) return String(image);
   if (/^https?:\/\//.test(String(image))) return String(image);
-  return `${PLAYER_IMG_BASE}/players/${folder}/${image}`;
+  return `${PLAYER_IMG_BASE}/${folder}/${image}`;
 }
 
 function playerFreesFor(player: PlayerStat) {
