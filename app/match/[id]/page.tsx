@@ -1275,7 +1275,6 @@ function LiveFeedPlayer({
   const hasReacted = selectedReactionSet.size > 0;
   const topReactionEmojis = sortedReactions.slice(0, 3);
   const myReactionId = (myReactions ?? []).find(isValidReactionEmoji);
-  const myReactionAccent = (myReactionId && getEventReactionDefinition(myReactionId)?.accent) || "#facc15";
 
   // Floating-emoji burst + chip pop when the user's reaction changes.
   const prevReactionRef = useRef<string | undefined>(undefined);
@@ -1373,7 +1372,6 @@ function LiveFeedPlayer({
             }}
             style={{
               ...eventReactionSummaryButtonStyle,
-              ...(hasReacted ? { background: `${myReactionAccent}1f`, borderColor: `${myReactionAccent}66` } : null),
               ...(chipPop ? { animation: "reaction-chip-pop 0.34s ease" } : null),
             }}
             aria-label={hasReacted ? "Change reaction" : "Add reaction"}
@@ -1383,7 +1381,7 @@ function LiveFeedPlayer({
               <>
                 <span style={eventReactionLeadStyle}>
                   {hasReacted && myReactionId ? (
-                    <span style={{ fontSize: 16, lineHeight: 1, filter: `drop-shadow(0 0 5px ${myReactionAccent}cc)` }}>
+                    <span style={{ fontSize: 16, lineHeight: 1 }}>
                       {getEventReactionDefinition(myReactionId)?.glyph ?? myReactionId}
                     </span>
                   ) : (
@@ -7022,7 +7020,7 @@ const liveFeedTimeDotStyle: CSSProperties = { fontSize: 10, color: "var(--text-4
 const liveFeedMinuteStyle: CSSProperties = { fontSize: 10, fontWeight: 800, color: "var(--text-3)" };
 const commentCountStyle: CSSProperties = { fontSize: 12, fontWeight: 850, color: "inherit", fontVariantNumeric: "tabular-nums" };
 const eventReactionBarStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 10, padding: "4px 12px 11px 12px", borderTop: "1px solid rgba(255,255,255,0.035)", minHeight: 40, overflow: "hidden" };
-const eventReactionSummaryButtonStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 7, height: 30, border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.045)", color: "rgba(226,232,240,0.95)", padding: "0 12px", borderRadius: 999, fontSize: 13, fontWeight: 850, cursor: "pointer", flexShrink: 0, lineHeight: 1, transition: "transform 0.12s ease, background 0.15s ease, border-color 0.15s ease" };
+const eventReactionSummaryButtonStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 7, height: 28, border: "none", background: "transparent", color: "rgba(148,163,184,0.95)", padding: 0, fontSize: 13, fontWeight: 850, cursor: "pointer", flexShrink: 0, lineHeight: 1 };
 const eventReactionLeadStyle: CSSProperties = { display: "inline-flex", alignItems: "center", color: "rgba(226,232,240,0.95)" };
 const eventReactionSummaryGlyphsStyle: CSSProperties = { display: "inline-flex", alignItems: "center" };
 const eventReactionSummaryEmptyStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 5, color: "rgba(148,163,184,0.95)" };
