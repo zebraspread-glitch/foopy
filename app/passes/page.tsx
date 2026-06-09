@@ -843,6 +843,11 @@ function PassesPageInner() {
     setBoughtPlayer(null);
   }
 
+  function closeTeamPicker() {
+    setTeamPickerOpen(false);
+    setPendingTeam(null);
+  }
+
   const ownedPlayerKeys = new Set((data?.playerPasses ?? []).map((p) => playerPassIdentityKey(p)));
   const pendingPlayerOwned = pendingPlayer
     ? ownedPlayerKeys.has(playerPassIdentityKey({ player_id: pendingPlayer.pid, player_name: pendingPlayer.name, team_name: pendingPlayer.team }))
@@ -908,6 +913,44 @@ function PassesPageInner() {
         />
         {leaderboardPass && (
           <PassLeaderboard pass={leaderboardPass} onClose={() => setLeaderboardPass(null)} />
+        )}
+      </div>
+    );
+  }
+
+  if (teamPickerOpen) {
+    return (
+      <div style={pageStyle}>
+        <div style={{ ...headerStyle, gap: 12 }}>
+          <button onClick={closeTeamPicker} style={passPageBackButtonStyle} aria-label="Back to passes">
+            <ArrowLeft size={18} strokeWidth={2.6} />
+          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontWeight: 950, fontSize: 19, color: "var(--text-1)", lineHeight: 1.05 }}>
+                {pendingTeam ? "2026 Team Pass" : "Team Passes"}
+              </div>
+              <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 750, marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {pendingTeam ?? "Choose a team"}
+              </div>
+            </div>
+          </div>
+          {data
+            ? <div style={{ fontSize: 13, fontWeight: 900, color: "#fbbf24", display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}><CoinImg size={16} />{fmtCoins(coins)}</div>
+            : <div style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,.2)", borderTopColor: "#fbbf24", borderRadius: "50%", animation: "spin 0.7s linear infinite", flexShrink: 0 }} />
+          }
+        </div>
+        <TeamPassPickerPage
+          pendingTeam={pendingTeam}
+          setPendingTeam={setPendingTeam}
+          data={data}
+          coins={coins}
+          token={token}
+          onPurchased={() => token && fetchData(token)}
+          onOpenLeaderboard={setLeaderboardTeamPass}
+        />
+        {leaderboardTeamPass && (
+          <TeamPassLeaderboard pass={leaderboardTeamPass} onClose={() => setLeaderboardTeamPass(null)} />
         )}
       </div>
     );
@@ -1147,111 +1190,6 @@ function PassesPageInner() {
         />
       )}
 
-      {/* Team Picker */}
-      {teamPickerOpen && (
-        <Modal
-          title={pendingTeam ? "Team Pass" : `Buy Team Pass · ${fmtCoins(TEAM_PASS_COST)} coins · ${data?.teamPasses?.length ?? 0}/${MAX_TEAM_PASSES}`}
-          onClose={() => { setTeamPickerOpen(false); setPendingTeam(null); }}
-          centered
-        >
-          {pendingTeam ? (
-            /* ── Confirmation screen ── */
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {/* Card preview */}
-              {(() => {
-                const previewPass: TeamPass = {
-                  id: "",
-                  user_id: "",
-                  team_name: pendingTeam,
-                  active: true,
-                  xp: 0,
-                  serial_number: null,
-                  created_at: "",
-                };
-                return (
-                  <div style={{ display: "flex", justifyContent: "center" }}>
-                    <div style={{ width: 200 }}>
-                      <TeamCard pass={previewPass} />
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Pass info */}
-              <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
-                <div style={{ fontWeight: 900, fontSize: 16, color: "var(--text-1)", display: "flex", alignItems: "center", gap: 10 }}>
-                  <img src={teamLogo(pendingTeam)} alt={pendingTeam} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
-                  {pendingTeam}
-                </div>
-                <div style={{ height: 1, background: "var(--border-1)" }} />
-                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.55 }}>
-                  Earn <span style={{ color: "#a78bfa", fontWeight: 800 }}>Aura</span> &amp; <span style={{ color: "#fbbf24", fontWeight: 800 }}>Coins</span> every time {pendingTeam} wins. The pass levels up as you earn XP, increasing your reward multiplier up to <span style={{ color: "#c084fc", fontWeight: 800 }}>7×</span>.
-                </div>
-                <div style={{ height: 1, background: "var(--border-1)" }} />
-                {/* Multipliers preview */}
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                  {TEAM_PASS_LEVELS.map((lvl, i) => (
-                    <div key={lvl.name} style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 999, background: `${lvl.color}18`, border: `1px solid ${lvl.color}40` }}>
-                      <span style={{ fontSize: 10, fontWeight: 900, color: lvl.color }}>{lvl.name}</span>
-                      <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: 700 }}>{[1,1.25,1.5,1.75,2,2.5,3,4,5,7][i]}×</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Price row */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", background: "rgba(255,255,255,0.04)", borderRadius: 14, border: "1px solid rgba(255,255,255,0.08)" }}>
-                <div>
-                  <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 700, marginBottom: 2 }}>COST</div>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: "#fbbf24", display: "flex", alignItems: "center", gap: 5 }}>
-                    <CoinImg size={18} />{fmtCoins(TEAM_PASS_COST)}
-                  </div>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 700, marginBottom: 2 }}>YOUR BALANCE</div>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: coins >= TEAM_PASS_COST ? "#fbbf24" : "#f87171", display: "flex", alignItems: "center", gap: 5, justifyContent: "flex-end" }}>
-                    <CoinImg size={18} />{fmtCoins(coins)}
-                  </div>
-                </div>
-              </div>
-
-              {coins < TEAM_PASS_COST && (
-                <div style={{ padding: "10px 14px", borderRadius: 12, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", fontSize: 13, fontWeight: 700, color: "#f87171", textAlign: "center" }}>
-                  Need <CoinImg size={13} /> {fmtCoins(TEAM_PASS_COST - coins)} more — open packs to earn coins
-                </div>
-              )}
-
-              {/* Buttons */}
-              <div style={{ display: "flex", gap: 10 }}>
-                <button onClick={() => setPendingTeam(null)} style={{ flex: 1, padding: "13px 0", borderRadius: 999, border: "1px solid var(--border-2)", background: "rgba(255,255,255,0.05)", color: "var(--text-2)", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
-                  ← Back
-                </button>
-                <button
-                  onClick={() => coins >= TEAM_PASS_COST && handleSetTeam(pendingTeam)}
-                  disabled={coins < TEAM_PASS_COST}
-                  style={{ flex: 2, padding: "13px 0", borderRadius: 999, border: "none", background: coins >= TEAM_PASS_COST ? "linear-gradient(135deg,#854d0e,#ca8a04)" : "rgba(255,255,255,0.08)", color: coins >= TEAM_PASS_COST ? "#fff" : "rgba(255,255,255,0.3)", fontWeight: 900, fontSize: 15, cursor: coins >= TEAM_PASS_COST ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
-                >
-                  Get Pass · <CoinImg size={14} /> {fmtCoins(TEAM_PASS_COST)}
-                </button>
-              </div>
-            </div>
-          ) : (
-            /* ── Team list screen ── */
-            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-              {AFL_TEAMS.map((team) => {
-                const active = (data?.teamPasses ?? []).some(p => p.team_name === team);
-                return (
-                  <button key={team} onClick={() => !active && setPendingTeam(team)} disabled={active} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 12, border: `1px solid ${active ? teamColor(team) + "70" : "var(--border-2)"}`, background: active ? `${teamColor(team)}18` : "rgba(255,255,255,0.03)", cursor: active ? "default" : "pointer", width: "100%", textAlign: "left", opacity: active ? 0.7 : 1 }}>
-                    <img src={teamLogo(team)} alt={team} style={{ width: 32, height: 32, objectFit: "cover", borderRadius: "50%", flexShrink: 0 }} />
-                    <span style={{ fontWeight: 700, fontSize: 14, color: "var(--text-1)", flex: 1 }}>{team}</span>
-                    {active && <span style={{ fontSize: 11, color: "#a78bfa", fontWeight: 800 }}>Active ✓</span>}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </Modal>
-      )}
 
       {/* Player Picker */}
       {playerPickerOpen && (
@@ -1919,6 +1857,274 @@ function PlayerPassPickerPage({
 
         <button onClick={() => setPendingPlayer(null)} style={{ alignSelf: "center", border: "1px solid var(--border-2)", background: "rgba(255,255,255,0.05)", color: "var(--text-2)", borderRadius: 999, padding: "10px 18px", fontSize: 13, fontWeight: 900, fontFamily: "inherit", cursor: "pointer" }}>
           Choose another player
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Team Pass Picker Page ─────────────────────────────────────────────────────
+
+function TeamPassPickerPage({
+  pendingTeam,
+  setPendingTeam,
+  data,
+  coins,
+  token,
+  onPurchased,
+  onOpenLeaderboard,
+}: {
+  pendingTeam: string | null;
+  setPendingTeam: (value: string | null) => void;
+  data: PassesData | null;
+  coins: number;
+  token: string | null;
+  onPurchased: () => void;
+  onOpenLeaderboard: (pass: TeamPass) => void;
+}) {
+  const [holders, setHolders]             = useState<TeamLeaderboardEntry[]>([]);
+  const [holdersLoading, setHoldersLoading] = useState(false);
+  const [confirmStep, setConfirmStep]     = useState(false);
+  const [buying, setBuying]               = useState(false);
+  const [purchaseAnim, setPurchaseAnim]   = useState(false);
+  const [boughtTeam, setBoughtTeam]       = useState<string | null>(null);
+  const [purchaseErr, setPurchaseErr]     = useState<string | null>(null);
+
+  useEffect(() => { setConfirmStep(false); setPurchaseErr(null); }, [pendingTeam]);
+
+  useEffect(() => {
+    let active = true;
+    if (!pendingTeam) { setHolders([]); setHoldersLoading(false); return () => { active = false; }; }
+    setHoldersLoading(true);
+    fetch(`/api/passes/team-leaderboard?team_name=${encodeURIComponent(pendingTeam)}`)
+      .then((res) => res.ok ? res.json() : [])
+      .then((rows) => { if (active) setHolders(Array.isArray(rows) ? rows : []); })
+      .catch(() => { if (active) setHolders([]); })
+      .finally(() => { if (active) setHoldersLoading(false); });
+    return () => { active = false; };
+  }, [pendingTeam]);
+
+  async function handleBuy() {
+    if (!token || !pendingTeam) return;
+    setBuying(true);
+    setConfirmStep(false);
+    setPurchaseErr(null);
+    try {
+      const res = await fetch("/api/passes/team", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ team_name: pendingTeam }),
+      });
+      if (res.ok) {
+        setBoughtTeam(pendingTeam);
+        setPurchaseAnim(true);
+        onPurchased();
+        setTimeout(() => { setPurchaseAnim(false); setBoughtTeam(null); }, 2500);
+      } else {
+        const body = await res.json().catch(() => ({}));
+        setPurchaseErr(body.error ?? "Purchase failed");
+      }
+    } finally {
+      setBuying(false);
+    }
+  }
+
+  // ── Team list ──
+  if (!pendingTeam) {
+    return (
+      <div style={{ padding: "16px 16px calc(104px + env(safe-area-inset-bottom))" }}>
+        <div style={{ maxWidth: 560, margin: "0 auto", display: "flex", flexDirection: "column", gap: 8 }}>
+          {AFL_TEAMS.map((team) => {
+            const active = (data?.teamPasses ?? []).some(p => p.team_name === team);
+            const color  = teamColor(team);
+            return (
+              <button key={team} onClick={() => !active && setPendingTeam(team)} disabled={active} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 16, border: `1px solid ${active ? color + "70" : "var(--border-2)"}`, background: active ? `${color}18` : "rgba(255,255,255,0.055)", cursor: active ? "default" : "pointer", width: "100%", textAlign: "left", opacity: active ? 0.7 : 1, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)" }}>
+                <div style={{ width: 44, height: 44, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${color}22`, border: `1px solid ${color}44` }}>
+                  <img src={teamLogo(team)} alt={team} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                </div>
+                <span style={{ fontWeight: 700, fontSize: 15, color: "var(--text-1)", flex: 1 }}>{team}</span>
+                {active && <span style={{ fontSize: 11, color: "#a78bfa", fontWeight: 800, display: "flex", alignItems: "center", gap: 4 }}><CheckCircle size={13} strokeWidth={2.8} />Owned</span>}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  const alreadyOwned = (data?.teamPasses ?? []).some(p => p.team_name === pendingTeam);
+  const atMaxPasses  = !alreadyOwned && (data?.teamPasses?.length ?? 0) >= MAX_TEAM_PASSES;
+  const canBuy       = !alreadyOwned && !atMaxPasses && coins >= TEAM_PASS_COST;
+  const color        = teamColor(pendingTeam);
+
+  const previewPass: TeamPass = (data?.teamPasses ?? []).find(p => p.team_name === pendingTeam) ?? {
+    id: "", user_id: "", team_name: pendingTeam, active: true, xp: 0, serial_number: null, created_at: "",
+  };
+
+  const holderPreview = [...holders]
+    .sort((a, b) => (a.serial_number ?? 999999) - (b.serial_number ?? 999999))
+    .slice(0, 8);
+
+  const passFeatures: Array<{ title: string; copy: string; icon: ReactNode; color: string }> = [
+    { title: "Earn Aura and Coins",    copy: `Earn rewards every time ${pendingTeam} wins a game.`,                           icon: <Zap size={18} strokeWidth={2.7} />,       color: "#0ea5e9" },
+    { title: "Level up the pass",      copy: "Earn XP to climb tiers and boost the reward multiplier.",                       icon: <TrendingUp size={18} strokeWidth={2.7} />, color: "#22c55e" },
+    { title: "Collect holder serials", copy: "Early holders keep their serial on the pass leaderboard.",                      icon: <Trophy size={18} strokeWidth={2.7} />,     color: "#f59e0b" },
+    { title: "Compete with holders",   copy: `Compare XP against everyone holding the ${pendingTeam} pass.`,                  icon: <Users size={18} strokeWidth={2.7} />,      color: "#a78bfa" },
+  ];
+
+  // ── Success animation ──
+  if (purchaseAnim && boughtTeam) {
+    return (
+      <div style={{ padding: "18px 14px calc(112px + env(safe-area-inset-bottom))", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh", position: "relative" }}>
+        <style>{`
+          @keyframes teamParticleFly  { 0%{opacity:1;transform:translate(-50%,-50%) scale(1)} 100%{opacity:0;transform:translate(calc(-50% + var(--fly-x)),calc(-50% + var(--fly-y))) scale(0.15)} }
+          @keyframes teamCardBounce   { 0%{opacity:0;transform:scale(0.35) translateY(40px)} 55%{transform:scale(1.08) translateY(-8px)} 78%{transform:scale(0.97) translateY(2px)} 100%{opacity:1;transform:scale(1) translateY(0)} }
+          @keyframes teamSuccessText  { 0%{opacity:0;transform:translateY(14px)} 100%{opacity:1;transform:translateY(0)} }
+          @keyframes teamCheckIn      { 0%{opacity:0;transform:scale(0)} 65%{transform:scale(1.22)} 100%{opacity:1;transform:scale(1)} }
+          @keyframes teamGlow         { 0%,100%{box-shadow:0 0 0 6px rgba(74,222,128,.12),0 8px 24px rgba(22,163,74,.3)} 50%{box-shadow:0 0 0 14px rgba(74,222,128,.06),0 8px 32px rgba(22,163,74,.5)} }
+        `}</style>
+        {Array.from({ length: 16 }).map((_, i) => {
+          const angle = (i / 16) * Math.PI * 2;
+          const dist  = 85 + (i % 4) * 22;
+          const cols  = ["#fbbf24","#a78bfa","#60a5fa","#34d399","#f472b6","#fb923c","#e879f9"];
+          return (
+            <div key={i} style={{ position: "fixed", top: "40%", left: "50%", width: i % 2 === 0 ? 9 : 6, height: i % 2 === 0 ? 9 : 6, borderRadius: i % 3 === 0 ? "50%" : 3, background: cols[i % cols.length], pointerEvents: "none", zIndex: 10, "--fly-x": `${Math.round(Math.cos(angle) * dist)}px`, "--fly-y": `${Math.round(Math.sin(angle) * dist - 28)}px`, animation: `teamParticleFly 1.1s ease-out ${i * 0.025}s both` } as React.CSSProperties} />
+          );
+        })}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 20 }}>
+          <div style={{ width: 64, height: 64, borderRadius: "50%", background: "linear-gradient(135deg,#15803d,#4ade80)", display: "flex", alignItems: "center", justifyContent: "center", animation: "teamCheckIn 0.55s cubic-bezier(0.34,1.56,0.64,1) 0.05s both,teamGlow 2s ease-in-out 0.6s infinite" }}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+          </div>
+          <div style={{ textAlign: "center", animation: "teamSuccessText 0.4s ease-out 0.25s both" }}>
+            <div style={{ fontSize: 26, fontWeight: 950, color: "var(--text-1)", letterSpacing: "-0.02em" }}>Pass Purchased!</div>
+            <div style={{ fontSize: 15, color: "var(--text-3)", marginTop: 6, fontWeight: 600 }}>{boughtTeam} · Team Pass</div>
+          </div>
+          <div style={{ width: "min(175px, 54vw)", animation: "teamCardBounce 0.65s cubic-bezier(0.34,1.56,0.64,1) 0.15s both" }}>
+            <TeamPassCard pass={previewPass} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Team pass detail page ──
+  return (
+    <div style={{ padding: "18px 14px calc(112px + env(safe-area-inset-bottom))" }}>
+      <div style={{ maxWidth: 560, margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "stretch", gap: 24 }}>
+
+        {/* Card + buy button */}
+        <section style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+          <div style={{ width: "min(238px, 72vw)", boxShadow: `0 18px 42px ${color}28` }}>
+            <TeamPassCard pass={previewPass} />
+          </div>
+
+          <div style={{ marginTop: 22, fontSize: 42, lineHeight: 1, fontWeight: 950, color: "var(--text-1)", display: "flex", alignItems: "center", justifyContent: "center", gap: 9 }}>
+            <CoinImg size={30} /> {fmtCoins(TEAM_PASS_COST)}
+          </div>
+
+          {confirmStep ? (
+            <div style={{ marginTop: 12, width: "min(300px, 88vw)", display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ padding: "12px 16px", borderRadius: 14, background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontSize: 14, fontWeight: 800, color: "#fbbf24" }}>
+                Are you sure?
+              </div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={() => setConfirmStep(false)} style={{ flex: 1, padding: "12px 0", borderRadius: 999, border: "1px solid var(--border-2)", background: "rgba(255,255,255,0.06)", color: "var(--text-2)", fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+                <button onClick={handleBuy} disabled={buying} style={{ flex: 2, padding: "12px 0", borderRadius: 999, border: "none", background: `linear-gradient(135deg,${color},#f59e0b,#fbbf24)`, color: "#fff", fontWeight: 950, fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: "inherit", boxShadow: `0 12px 28px ${color}28,inset 0 1px 0 rgba(255,255,255,0.2)`, opacity: buying ? 0.6 : 1 }}>
+                  <CheckCircle size={16} strokeWidth={2.8} /> {buying ? "Buying…" : "Confirm Purchase"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => canBuy && setConfirmStep(true)}
+              disabled={!canBuy}
+              style={{ marginTop: 12, width: "min(240px, 78vw)", padding: "13px 20px", borderRadius: 999, border: alreadyOwned ? "1px solid rgba(255,255,255,0.12)" : "none", background: alreadyOwned ? "rgba(255,255,255,0.08)" : canBuy ? `linear-gradient(135deg,${color},#f59e0b,#fbbf24)` : "rgba(255,255,255,0.08)", color: alreadyOwned ? "var(--text-2)" : canBuy ? "#fff" : "rgba(255,255,255,0.32)", fontSize: 18, fontWeight: 950, fontFamily: "inherit", cursor: canBuy ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: canBuy ? `0 14px 34px ${color}30,inset 0 1px 0 rgba(255,255,255,0.24)` : "none" }}
+            >
+              {alreadyOwned ? <><CheckCircle size={18} strokeWidth={2.8} />Owned</> : "Get Pass"}
+            </button>
+          )}
+
+          {purchaseErr && (
+            <div style={{ marginTop: 10, padding: "9px 13px", borderRadius: 999, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", fontSize: 12, fontWeight: 850, color: "#f87171" }}>{purchaseErr}</div>
+          )}
+
+          {data === null ? (
+            <div style={{ marginTop: 10 }}><div style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,.2)", borderTopColor: "#fbbf24", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} /></div>
+          ) : (
+            <>
+              <div style={{ marginTop: 10, fontSize: 14, color: coins >= TEAM_PASS_COST ? "var(--text-3)" : "#f87171", fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+                <CoinImg size={15} />{fmtCoins(coins)} balance
+              </div>
+              {!alreadyOwned && coins < TEAM_PASS_COST && (
+                <div style={{ marginTop: 10, padding: "9px 13px", borderRadius: 999, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", fontSize: 12, fontWeight: 850, color: "#f87171" }}>
+                  Need <CoinImg size={12} /> {fmtCoins(TEAM_PASS_COST - coins)} more coins
+                </div>
+              )}
+              {atMaxPasses && (
+                <div style={{ marginTop: 10, padding: "9px 13px", borderRadius: 999, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", fontSize: 12, fontWeight: 850, color: "#f87171" }}>
+                  Maximum {MAX_TEAM_PASSES} team passes reached
+                </div>
+              )}
+            </>
+          )}
+        </section>
+
+        {/* Features */}
+        <section>
+          <h2 style={{ margin: "0 0 16px", textAlign: "center", fontSize: 26, lineHeight: 1.05, fontWeight: 950, color: "var(--text-1)" }}>2026 Pass Features</h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            {passFeatures.map((f) => (
+              <div key={f.title} style={{ display: "flex", alignItems: "flex-start", gap: 13 }}>
+                <div style={{ width: 40, height: 40, borderRadius: "50%", background: `${f.color}22`, color: f.color, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: `1px solid ${f.color}22` }}>{f.icon}</div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 20, lineHeight: 1.1, fontWeight: 950, color: "var(--text-1)" }}>{f.title}</div>
+                  <div style={{ marginTop: 4, fontSize: 14, lineHeight: 1.35, fontWeight: 650, color: "rgba(255,255,255,0.72)" }}>{f.copy}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Holders */}
+        <section style={{ paddingTop: 2 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
+            <div style={{ fontSize: 16, fontWeight: 950, color: "var(--text-1)", display: "flex", alignItems: "center", gap: 6 }}>
+              Holders <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-3)" }}>{holdersLoading ? "" : holders.length}</span>
+            </div>
+            <button onClick={() => onOpenLeaderboard(previewPass)} style={{ border: "1px solid var(--border-2)", background: "rgba(255,255,255,0.07)", color: "var(--text-1)", fontSize: 12, fontWeight: 800, fontFamily: "inherit", cursor: "pointer", padding: "6px 14px", borderRadius: 999, flexShrink: 0 }}>
+              Leaderboard
+            </button>
+          </div>
+          {holdersLoading ? (
+            <div style={{ padding: "24px 0", color: "var(--text-3)", fontSize: 13, fontWeight: 800, textAlign: "center" }}>Loading...</div>
+          ) : holderPreview.length === 0 ? (
+            <div style={{ padding: "24px 0", color: "var(--text-3)", fontSize: 13, fontWeight: 800, textAlign: "center" }}>No holders yet — be first!</div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {holderPreview.map((entry, idx) => {
+                const rank = entry.serial_number ?? idx + 1;
+                const when = shortRelativeTime(entry.created_at);
+                const name = entry.username ? `@${entry.username}` : "Unknown";
+                const rankColor = rank === 1 ? "#fbbf24" : rank === 2 ? "#94a3b8" : rank === 3 ? "#cd7c32" : "var(--text-4)";
+                return (
+                  <div key={entry.id} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ width: 28, textAlign: "right", fontSize: 12, fontWeight: 900, color: rankColor, flexShrink: 0 }}>#{rank}</div>
+                    <div style={{ width: 40, height: 40, borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.07)", border: "1px solid var(--border-2)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-2)", fontWeight: 950, fontSize: 13, flexShrink: 0 }}>
+                      {entry.avatar_url ? <img src={entry.avatar_url} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} /> : name.slice(1, 2).toUpperCase() || "?"}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ fontSize: 14, fontWeight: 900, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{name}</span>
+                      {when && <span style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 600 }}>{when} ago</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        <button onClick={() => setPendingTeam(null)} style={{ alignSelf: "center", border: "1px solid var(--border-2)", background: "rgba(255,255,255,0.05)", color: "var(--text-2)", borderRadius: 999, padding: "10px 18px", fontSize: 13, fontWeight: 900, fontFamily: "inherit", cursor: "pointer" }}>
+          Choose another team
         </button>
       </div>
     </div>
