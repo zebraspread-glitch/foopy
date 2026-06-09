@@ -1809,6 +1809,19 @@ textarea:focus-visible {
   100% { transform: scale(1); }
 }
 
+/* Gentle ghost-float bob on the top reaction emojis */
+.reaction-top-float {
+  display: inline-block;
+  animation: reaction-top-float 2.8s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes reaction-top-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  30%      { transform: translateY(-2.5px) rotate(-4deg); }
+  70%      { transform: translateY(-1px) rotate(4deg); }
+}
+
 .reaction-grid-in {
   animation: reaction-grid-in 0.22s ease both;
 }

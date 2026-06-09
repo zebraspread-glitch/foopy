@@ -1396,12 +1396,13 @@ function LiveFeedPlayer({
                     return (
                       <span
                         key={r.emoji}
+                        className="reaction-top-float"
                         style={{
                           fontSize: isCustom ? 9 : 14,
                           fontWeight: isCustom ? 1000 : undefined,
                           color: isCustom ? def?.accent : undefined,
-                          marginLeft: i === 0 ? 0 : -2,
                           lineHeight: 1,
+                          animationDelay: `${i * 0.4}s`,
                         }}
                       >
                         {def?.glyph ?? r.emoji}
@@ -7022,7 +7023,7 @@ const commentCountStyle: CSSProperties = { fontSize: 12, fontWeight: 850, color:
 const eventReactionBarStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 10, padding: "4px 12px 11px 12px", borderTop: "1px solid rgba(255,255,255,0.035)", minHeight: 40, overflow: "hidden" };
 const eventReactionSummaryButtonStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 7, height: 28, border: "none", background: "transparent", color: "rgba(148,163,184,0.95)", padding: 0, fontSize: 13, fontWeight: 850, cursor: "pointer", flexShrink: 0, lineHeight: 1 };
 const eventReactionLeadStyle: CSSProperties = { display: "inline-flex", alignItems: "center", color: "rgba(226,232,240,0.95)" };
-const eventReactionSummaryGlyphsStyle: CSSProperties = { display: "inline-flex", alignItems: "center" };
+const eventReactionSummaryGlyphsStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 5 };
 const eventReactionSummaryEmptyStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 5, color: "rgba(148,163,184,0.95)" };
 const eventReactionSummaryCountStyle: CSSProperties = { color: "inherit", fontSize: 13, fontWeight: 850, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", lineHeight: 1 };
 const eventReactionBarSpacerStyle: CSSProperties = { flex: "1 1 auto", minWidth: 10 };
