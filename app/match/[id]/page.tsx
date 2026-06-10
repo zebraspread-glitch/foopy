@@ -2354,6 +2354,7 @@ type PreviewPlayerLeader = {
   disposalsTotal: number;
   games: number;
   playerId?: string;
+  apiSportsId?: number;
 };
 
 function savedStatsForGame(game: MatchGame) {
@@ -2409,6 +2410,7 @@ function playerSeasonTotalsForTeam(team: string, allGames: MatchGame[], currentG
         team,
         name: known?.name ?? name,
         playerId: known?.id,
+        apiSportsId: known?.apiSportsId != null ? Number(known.apiSportsId) : undefined,
         foopyTotal: 0,
         goalsTotal: 0,
         disposalsTotal: 0,
@@ -2426,17 +2428,34 @@ function playerSeasonTotalsForTeam(team: string, allGames: MatchGame[], currentG
   return [...totals.values()];
 }
 
-function previewPlayerLeaders(homeTeam: string, awayTeam: string, allGames: MatchGame[], currentGame: MatchGame) {
-  const leadersFor = (team: string) => {
-    const leaders = playerSeasonTotalsForTeam(team, allGames, currentGame);
+function previewPlayerLeaders(
+  homeTeam: string,
+  awayTeam: string,
+  allGames: MatchGame[],
+  currentGame: MatchGame,
+  squad?: { home: number[]; away: number[] } | null,
+) {
+  const leadersFor = (team: string, squadIds?: number[]) => {
+    let leaders = playerSeasonTotalsForTeam(team, allGames, currentGame);
+
+    // Restrict to players named in this match's squad — the same set shown in
+    // the Players tab. When the squad is known and at least one season leader is
+    // in it, only squad members are eligible, so a non-playing season star is
+    // replaced by the highest-rated player actually in the lineup.
+    if (squadIds && squadIds.length) {
+      const set = new Set(squadIds.map(Number));
+      const inSquad = leaders.filter((l) => l.apiSportsId != null && set.has(Number(l.apiSportsId)));
+      if (inSquad.length) leaders = inSquad;
+    }
+
     return {
       topPlayer: [...leaders].sort((a, b) => b.foopyTotal - a.foopyTotal || b.goalsTotal - a.goalsTotal || b.games - a.games)[0] ?? null,
       topScorer: [...leaders].sort((a, b) => b.goalsTotal - a.goalsTotal || b.foopyTotal - a.foopyTotal || b.games - a.games)[0] ?? null,
     };
   };
 
-  const home = leadersFor(homeTeam);
-  const away = leadersFor(awayTeam);
+  const home = leadersFor(homeTeam, squad?.home);
+  const away = leadersFor(awayTeam, squad?.away);
 
   return {
     topPlayers: [home.topPlayer, away.topPlayer].filter((player): player is PreviewPlayerLeader => Boolean(player)),
@@ -2605,12 +2624,12 @@ function PreviewLeaderboard({ title, players, metric }: { title: string; players
   );
 }
 
-function PlayerLeaderboardsBox({ homeTeam, awayTeam, allGames, currentGame }: {
-  homeTeam: string; awayTeam: string; allGames: MatchGame[]; currentGame: MatchGame;
+function PlayerLeaderboardsBox({ homeTeam, awayTeam, allGames, currentGame, squadPlayers }: {
+  homeTeam: string; awayTeam: string; allGames: MatchGame[]; currentGame: MatchGame; squadPlayers?: { home: number[]; away: number[] } | null;
 }) {
   const { topPlayers, topScorers } = useMemo(
-    () => previewPlayerLeaders(homeTeam, awayTeam, allGames, currentGame),
-    [homeTeam, awayTeam, allGames, currentGame]
+    () => previewPlayerLeaders(homeTeam, awayTeam, allGames, currentGame, squadPlayers),
+    [homeTeam, awayTeam, allGames, currentGame, squadPlayers]
   );
 
   if (!topPlayers.length && !topScorers.length) return null;
@@ -4658,6 +4677,7 @@ function MatchPageInner() {
                   awayTeam={safeText(game.ateam, "")}
                   allGames={allGames}
                   currentGame={game}
+                  squadPlayers={squadPlayers}
                 />
                 <LadderPositionsBox
                   homeTeam={safeText(game.hteam, "")}
