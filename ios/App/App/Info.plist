@@ -30,7 +30,7 @@
 	<string>Main</string>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
-		<string>armv7</string>
+		<string>arm64</string>
 	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
@@ -47,5 +47,9 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Foopy needs access to your photos so you can set your profile picture and banner.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Foopy needs access to your camera so you can take a profile picture.</string>
 </dict>
 </plist>

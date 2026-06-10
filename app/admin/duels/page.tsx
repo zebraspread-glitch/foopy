@@ -4,8 +4,16 @@ import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import playersJson from "@/app/data/players.json";
 import { PLAYER_IMG_BASE } from "@/app/lib/playerImage";
+import { supabase } from "@/app/lib/supabase";
+import AdminGate from "@/app/components/AdminGate";
 
-const ADMIN_SECRET = "foopy123";
+// Admin API calls are authorised by the signed-in admin's session token.
+async function adminAuthHeaders(json = false): Promise<Record<string, string>> {
+  const { data } = await supabase.auth.getSession();
+  const headers: Record<string, string> = { Authorization: `Bearer ${data.session?.access_token ?? ""}` };
+  if (json) headers["content-type"] = "application/json";
+  return headers;
+}
 const MARGIN_RANGES = ["1-12", "13-24", "25-36", "37-48", "49+"];
 
 // Same categories as polls — only team + player (not player_all, as duels are 50/50)
@@ -121,9 +129,7 @@ function tiebreakerQuestion(homeTeam: string, awayTeam: string): QuestionDraft {
   };
 }
 
-export default function AdminDuelsPage() {
-  const [unlocked, setUnlocked] = useState(false);
-  const [password, setPassword] = useState("");
+function DuelsAdminInner() {
   const [games, setGames] = useState<SquiggleGame[]>([]);
   const [duelGames, setDuelGames] = useState<DuelGame[]>([]);
   const [loading, setLoading] = useState(false);
@@ -139,13 +145,8 @@ export default function AdminDuelsPage() {
   const [pickerSlot, setPickerSlot] = useState<"a" | "b">("a");
   const [playerSearch, setPlayerSearch] = useState("");
 
-  function handleLogin() {
-    if (password === ADMIN_SECRET) setUnlocked(true);
-    else alert("Wrong password");
-  }
-
   async function loadDuelGames() {
-    const res = await fetch("/api/duels/admin/games", { headers: { "x-admin-secret": ADMIN_SECRET } });
+    const res = await fetch("/api/duels/admin/games", { headers: await adminAuthHeaders() });
     const json = await res.json();
     setDuelGames(json.games ?? []);
   }
@@ -160,8 +161,9 @@ export default function AdminDuelsPage() {
   }
 
   useEffect(() => {
-    if (unlocked) { loadDuelGames(); loadSquiggleGames(); }
-  }, [unlocked]);
+    loadDuelGames();
+    loadSquiggleGames();
+  }, []);
 
   function pickGame(game: SquiggleGame) {
     setSelectedGame(game);
@@ -249,7 +251,7 @@ export default function AdminDuelsPage() {
     try {
       const gameRes = await fetch("/api/duels/admin/games", {
         method: "POST",
-        headers: { "content-type": "application/json", "x-admin-secret": ADMIN_SECRET },
+        headers: await adminAuthHeaders(true),
         body: JSON.stringify({
           game_id:   selectedGame.id,
           round:     selectedGame.round,
@@ -264,7 +266,7 @@ export default function AdminDuelsPage() {
 
       const qRes = await fetch("/api/duels/admin/questions", {
         method: "POST",
-        headers: { "content-type": "application/json", "x-admin-secret": ADMIN_SECRET },
+        headers: await adminAuthHeaders(true),
         body: JSON.stringify({
           duel_game_id: gameJson.game.id,
           questions: questions.map((q, i) => ({
@@ -296,7 +298,7 @@ export default function AdminDuelsPage() {
   async function updateStatus(id: string, status: string) {
     await fetch("/api/duels/admin/games", {
       method: "PATCH",
-      headers: { "content-type": "application/json", "x-admin-secret": ADMIN_SECRET },
+      headers: await adminAuthHeaders(true),
       body: JSON.stringify({ id, status }),
     });
     loadDuelGames();
@@ -304,24 +306,8 @@ export default function AdminDuelsPage() {
 
   async function deleteGame(id: string) {
     if (!confirm("Delete this duel game?")) return;
-    await fetch(`/api/duels/admin/games?id=${id}`, { method: "DELETE", headers: { "x-admin-secret": ADMIN_SECRET } });
+    await fetch(`/api/duels/admin/games?id=${id}`, { method: "DELETE", headers: await adminAuthHeaders() });
     loadDuelGames();
-  }
-
-  if (!unlocked) {
-    return (
-      <main className="page grid">
-        <section className="card" style={{ maxWidth: 420, margin: "80px auto" }}>
-          <span className="pill">Admin only</span>
-          <h1>Duels Admin</h1>
-          <input type="password" placeholder="Admin password" value={password}
-            onChange={e => setPassword(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && handleLogin()}
-            style={{ marginTop: 16 }} />
-          <button className="button" onClick={handleLogin} style={{ marginTop: 12, width: "100%" }}>Unlock</button>
-        </section>
-      </main>
-    );
   }
 
   return (
@@ -594,3 +580,11 @@ const gameRowBtn: React.CSSProperties = { display: "flex", justifyContent: "spac
 const qBlock: React.CSSProperties = { padding: 14, borderRadius: 12, background: "var(--surface-2)", border: "1px solid var(--border-2)" };
 const selectStyle: React.CSSProperties = { width: "100%", padding: "9px 12px", borderRadius: 8, background: "var(--surface-1)", border: "1px solid var(--border-2)", color: "var(--text-1)", fontSize: 14, boxSizing: "border-box" };
 const teamLogoStyle: React.CSSProperties = { width: 40, height: 40, borderRadius: "50%", objectFit: "cover" };
+
+export default function AdminDuelsPage() {
+  return (
+    <AdminGate title="Duels Admin">
+      <DuelsAdminInner />
+    </AdminGate>
+  );
+}

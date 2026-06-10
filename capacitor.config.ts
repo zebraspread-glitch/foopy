@@ -6,9 +6,12 @@ const config: CapacitorConfig = {
 
   webDir: "public",
 
+  // Production: the native shell loads the live hosted site over HTTPS.
+  // For LOCAL DEV only, temporarily swap this for your dev server, e.g.
+  //   server: { url: "http://192.168.1.18:3000", cleartext: true },
+  // Never ship cleartext/http to the App Store — Apple rejects it.
   server: {
-    url: "http://192.168.1.18:3000",
-    cleartext: true,
+    url: "https://foopy.app",
   },
 
   ios: {

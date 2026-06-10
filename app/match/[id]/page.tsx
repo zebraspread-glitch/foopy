@@ -12,7 +12,7 @@ import { PLAYER_IMG_BASE } from "@/app/lib/playerImage";
 import teamStatsJson from "@/app/data/team-stats.json";
 import playerStatsJson from "@/app/data/players.json";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
-import { lookupVenue, venueDisplayName } from "@/app/data/venues";
+import { lookupVenue } from "@/app/data/venues";
 import WinnerPick from "./components/WinnerPick";
 import DuelsTab from "./components/DuelsTab";
 import { teamColors } from "./utils";
@@ -911,13 +911,6 @@ behinds: player?.behinds ?? 0,
     },
     mapped?.club ?? mapped?.team ?? team
   );
-}
-
-function formatDate(date?: string) {
-  if (!date) return "Date TBA";
-  const d = new Date(date);
-  if (Number.isNaN(d.getTime())) return date;
-  return d.toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
 }
 
 function formatMatchTime(date?: string) {
@@ -4494,12 +4487,8 @@ function MatchPageInner() {
                   </div>
                 </div>
 
-                {/* Bottom line — venue (upcoming) or viewer count (live/final) */}
-                {status === "UPCOMING" ? (
-                  <div className="mh-venue" style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.45)" }}>
-                    Round {game.round ?? "–"} · {game.venue ? venueDisplayName(game.venue) : "Venue TBA"} · {formatDate(game.date)}
-                  </div>
-                ) : (
+                {/* Bottom line — viewer count for live/final */}
+                {status !== "UPCOMING" && (
                   <div className="mh-venue" style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 4 }}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { isAdminRequest } from "@/app/lib/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -25,8 +26,7 @@ type QuestionInput = {
 
 // POST /api/duels/admin/questions — upsert all 11 questions for a duel game
 export async function POST(req: Request) {
-  const adminSecret = process.env.ADMIN_SECRET;
-  if (!adminSecret || req.headers.get("x-admin-secret") !== adminSecret) {
+  if (!(await isAdminRequest(req))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

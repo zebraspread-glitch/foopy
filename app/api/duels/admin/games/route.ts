@@ -1,15 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { isAdminRequest } from "@/app/lib/admin";
 
 export const dynamic = "force-dynamic";
 
 const VALID_STATUSES = ["open", "locked", "live", "complete", "cancelled"] as const;
-
-function checkAdmin(req: Request): boolean {
-  const adminSecret = process.env.ADMIN_SECRET;
-  if (!adminSecret) return false;
-  return req.headers.get("x-admin-secret") === adminSecret;
-}
 
 function adminSupabase() {
   return createClient(
@@ -20,7 +15,7 @@ function adminSupabase() {
 
 // GET /api/duels/admin/games — list all duel games
 export async function GET(req: Request) {
-  if (!checkAdmin(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!(await isAdminRequest(req))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const db = adminSupabase();
   const { data, error } = await db
@@ -34,7 +29,7 @@ export async function GET(req: Request) {
 
 // POST /api/duels/admin/games — create a duel game
 export async function POST(req: Request) {
-  if (!checkAdmin(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!(await isAdminRequest(req))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Invalid body" }, { status: 400 });
@@ -65,7 +60,7 @@ export async function POST(req: Request) {
 
 // PATCH /api/duels/admin/games — update status
 export async function PATCH(req: Request) {
-  if (!checkAdmin(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!(await isAdminRequest(req))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Invalid body" }, { status: 400 });
@@ -90,7 +85,7 @@ export async function PATCH(req: Request) {
 
 // DELETE /api/duels/admin/games — delete a duel game
 export async function DELETE(req: Request) {
-  if (!checkAdmin(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!(await isAdminRequest(req))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");

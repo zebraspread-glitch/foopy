@@ -213,6 +213,7 @@ export default function SettingsPage() {
   const [showTeamPicker, setShowTeamPicker] = useState(false);
   const [signOutConfirm, setSignOutConfirm] = useState(false);
   const [signingOut, setSigningOut]         = useState(false);
+  const [deleting, setDeleting]             = useState(false);
 
   // Load profile
   useEffect(() => {
@@ -281,6 +282,35 @@ export default function SettingsPage() {
     setSigningOut(true);
     await supabase.auth.signOut();
     router.push("/");
+  }
+
+  async function handleDeleteAccount() {
+    if (deleting) return;
+    const ok = window.confirm(
+      "Permanently delete your account?\n\nThis removes your profile, cards, coins, passes and posts. This cannot be undone."
+    );
+    if (!ok) return;
+    setDeleting(true);
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) { setDeleting(false); return; }
+      const res = await fetch("/api/account", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => null);
+        alert(j?.error ?? "Failed to delete account. Please try again.");
+        setDeleting(false);
+        return;
+      }
+      await supabase.auth.signOut();
+      router.push("/");
+    } catch {
+      alert("Something went wrong. Please try again.");
+      setDeleting(false);
+    }
   }
 
   const favTeamColor = favTeam ? (TEAM_COLOR[favTeam] ?? "#3b82f6") : "#3b82f6";
@@ -653,8 +683,18 @@ export default function SettingsPage() {
               sub={email ?? undefined}
               onPress={handleSignOut}
               destructive
-              last
+              last={!userId}
             />
+            {userId && (
+              <Row
+                icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>}
+                label={deleting ? "Deleting…" : "Delete Account"}
+                sub="Permanently remove your account and data"
+                onPress={handleDeleteAccount}
+                destructive
+                last
+              />
+            )}
           </Section>
 
           {/* ── About ── */}
