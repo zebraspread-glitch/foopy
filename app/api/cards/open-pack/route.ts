@@ -135,58 +135,6 @@ async function getUserFromRequest(req: NextRequest) {
   return user;
 }
 
-function isDuplicateError(error: { code?: string; message?: string } | null | undefined) {
-  const message = error?.message?.toLowerCase() ?? "";
-  return error?.code === "23505" || message.includes("duplicate") || message.includes("unique");
-}
-
-async function incrementCardDuplicateCount(cardId: string, by: number) {
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const { data: current, error: readError } = await supabaseAdmin
-      .from("user_cards")
-      .select("duplicate_count")
-      .eq("id", cardId)
-      .single();
-
-    if (readError || !current) {
-      throw new Error(readError?.message ?? "Card row disappeared while opening pack");
-    }
-
-    const previousCount = Number(current.duplicate_count ?? 0);
-    const { error: updateError, count } = await supabaseAdmin
-      .from("user_cards")
-      .update({ duplicate_count: previousCount + by }, { count: "exact" })
-      .eq("id", cardId)
-      .eq("duplicate_count", previousCount);
-
-    if (updateError) throw new Error(updateError.message);
-    if (count === 1) return;
-  }
-
-  throw new Error("Could not update card duplicate count");
-}
-
-async function grantCard(row: CardInsert) {
-  const { error } = await supabaseAdmin.from("user_cards").insert(row);
-  if (!error) return;
-
-  if (!isDuplicateError(error)) throw new Error(error.message);
-
-  const { data: existing, error: existingError } = await supabaseAdmin
-    .from("user_cards")
-    .select("id")
-    .eq("user_id", row.user_id)
-    .eq("player_id", row.player_id)
-    .eq("rarity", row.rarity)
-    .single();
-
-  if (existingError || !existing) {
-    throw new Error(existingError?.message ?? "Duplicate card exists but could not be loaded");
-  }
-
-  await incrementCardDuplicateCount(existing.id, row.duplicate_count);
-}
-
 // ── Route handler ─────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -259,61 +207,42 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  type ExistingCard = { id: string; player_id: string; rarity: Rarity; duplicate_count: number };
-  const existingMap = new Map<string, ExistingCard>();
-  for (const c of (existingCardsResult.data ?? []) as ExistingCard[]) {
-    existingMap.set(`${c.player_id}:${c.rarity}`, c);
-  }
+  // Players the user already owns at ANY rarity — used for the "NEW" badge,
+  // which marks a genuinely new player (not a new rarity of a player you have).
+  type ExistingCard = { player_id: string };
+  const existingPlayerIds = new Set<string>(
+    ((existingCardsResult.data ?? []) as ExistingCard[]).map(c => c.player_id),
+  );
 
-  // ── 5. Categorise into inserts vs updates ─────────────────────────────────
-  // Track how many times each player+rarity appears in THIS pack
-  const packCountMap = new Map<string, number>();
-  for (const { player, rarity } of assignments) {
-    const key = `${player.id}:${rarity}`;
-    packCountMap.set(key, (packCountMap.get(key) ?? 0) + 1);
-  }
+  // ── 5. Insert one row per individual card ─────────────────────────────────
+  // Every card pulled is its own row (its own id, rating and created_at) so
+  // duplicates sort independently — a freshly pulled card is always "newest"
+  // and lands at the top of the collection rather than merging into an old row.
+  const rows: CardInsert[] = assignments.map(({ player, rarity, rating }) => ({
+    user_id: user.id,
+    player_id: player.id,
+    player_name: player.name,
+    team: player.team,
+    team_logo: player.teamLogo,
+    rarity,
+    rating,
+    duplicate_count: 1,
+    pack_type: packType,
+  }));
 
-  // Which unique keys need a fresh insert vs an update to existing row
-  const toInsert: CardInsert[] = [];
-  const toUpdate: { id: string; addCount: number }[] = [];
-
-  for (const [key, packCount] of packCountMap) {
-    const existing = existingMap.get(key);
-    if (existing) {
-      toUpdate.push({ id: existing.id, addCount: packCount });
-    } else {
-      // Find one assignment for this key to get player/rarity/rating details
-      const [playerId, rarity] = key.split(":") as [string, Rarity];
-      const sample = assignments.find(a => a.player.id === playerId && a.rarity === rarity)!;
-      toInsert.push({
-        user_id: user.id,
-        player_id: sample.player.id,
-        player_name: sample.player.name,
-        team: sample.player.team,
-        team_logo: sample.player.teamLogo,
-        rarity: sample.rarity,
-        rating: sample.rating,
-        duplicate_count: packCount,
-        pack_type: packType,
-      });
-    }
-  }
-
-  // ── 6. Grant cards with checked writes ─────────────────────────────────────
-  try {
-    for (const row of toInsert) await grantCard(row);
-    for (const { id, addCount } of toUpdate) await incrementCardDuplicateCount(id, addCount);
-  } catch (err) {
-    console.error("[cards/open-pack] card grant failed:", err instanceof Error ? err.message : err);
+  const { error: insertError } = await supabaseAdmin.from("user_cards").insert(rows);
+  if (insertError) {
+    console.error("[cards/open-pack] card insert failed:", insertError.message);
     return NextResponse.json({ error: "Failed to grant cards" }, { status: 500 });
   }
 
   // ── 7. Build result payload ───────────────────────────────────────────────
-  const seenNewKeys = new Set<string>();
+  // NEW = first time the user has ever pulled this player, regardless of rarity.
+  // (Within one pack, only the first card of a brand-new player is flagged.)
+  const seenNewPlayers = new Set<string>();
   const results = assignments.map(({ player, rarity, rating }) => {
-    const key = `${player.id}:${rarity}`;
-    const isNew = !existingMap.has(key) && !seenNewKeys.has(key);
-    if (isNew) seenNewKeys.add(key);
+    const isNew = !existingPlayerIds.has(player.id) && !seenNewPlayers.has(player.id);
+    if (isNew) seenNewPlayers.add(player.id);
     return {
       player_id: player.id,
       player_name: player.name,

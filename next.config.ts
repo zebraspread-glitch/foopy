@@ -13,7 +13,7 @@ allowedDevOrigins: ["192.168.1.18", "100.89.191.74"],
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "ogdtvdvdtxohgyrhlgfk.supabase.co",
+        hostname: "qbmtaooovvxpqsbslrga.supabase.co",
         pathname: "/storage/v1/object/public/**",
       },
     ],

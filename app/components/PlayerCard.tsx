@@ -5,7 +5,7 @@
  * player card looks across the app (album, pack opening, trades, featured).
  */
 
-import type { CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { playerImgUrlFromFolder } from "@/app/lib/playerImage";
 
 export type PlayerCardData = {
@@ -61,6 +61,18 @@ export function PlayerCard({
   const logoOffset = "clamp(4px, 4.75%, 7px)";
   const logoSize = "clamp(16px, 17.5%, 26px)";
   const teamColor = TEAM_BG_COLORS[card.playerTeam] ?? "#1e2438";
+
+  // Player photo — fall back to initials if the image is missing/fails to load.
+  const photoSrc = playerImgUrlFromFolder(card.playerFolder, card.playerId.replace(/[^a-z0-9]/gi, "").toLowerCase());
+  const initials = (card.playerName ?? "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(w => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+  const [photoFailed, setPhotoFailed] = useState(false);
+  useEffect(() => { setPhotoFailed(false); }, [photoSrc]);
   const cardOverlay = locked
     ? "linear-gradient(to bottom, rgba(0,0,0,.62) 0%, rgba(0,0,0,.78) 48%, rgba(0,0,0,.96) 100%)"
     : "linear-gradient(to bottom, rgba(0,0,0,.15) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,.72) 75%, rgba(0,0,0,.88) 100%)";
@@ -111,17 +123,28 @@ export function PlayerCard({
               </div>
             )}
 
-            {/* Player photo circle */}
+            {/* Player photo circle — initials fallback when the image is missing */}
             <div style={{
               position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)",
               width: "68%", aspectRatio: "1/1", borderRadius: "50%", overflow: "hidden",
-              background: teamColor + "33",
+              background: teamColor + "33", containerType: "inline-size",
             }}>
-              <img
-                src={playerImgUrlFromFolder(card.playerFolder, card.playerId.replace(/[^a-z0-9]/gi, "").toLowerCase())}
-                alt={card.playerName}
-                style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }}
-              />
+              {(photoFailed || !photoSrc) ? (
+                <div style={{
+                  width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center",
+                  background: teamColor, color: "#fff", fontWeight: 900, fontSize: "38cqw",
+                  letterSpacing: "0.02em", textShadow: "0 2px 6px rgba(0,0,0,.45)",
+                }}>
+                  {initials || "?"}
+                </div>
+              ) : (
+                <img
+                  src={photoSrc}
+                  alt={card.playerName}
+                  onError={() => setPhotoFailed(true)}
+                  style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }}
+                />
+              )}
             </div>
 
             {/* Player name */}

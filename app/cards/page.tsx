@@ -616,8 +616,23 @@ export default function CardsPage() {
       if (sortBy === "rarity") return RARITY_ORDER[b.rarity] - RARITY_ORDER[a.rarity];
       return 0;
     });
-    return result;
+
+    // Expand each stored row into one entry per individual card owned, so the
+    // collection lists every card the user holds (duplicates included), not
+    // just unique player+rarity types.
+    const expanded: { key: string; card: UserCard }[] = [];
+    for (const c of result) {
+      const copies = Math.max(1, c.duplicate_count ?? 1);
+      for (let i = 0; i < copies; i++) expanded.push({ key: `${c.id}-${i}`, card: c });
+    }
+    return expanded;
   }, [cards, rarityFilter, teamFilter, sortBy]);
+
+  // True total — sum of every individual card across all rows.
+  const totalCardCount = useMemo(
+    () => cards.reduce((sum, c) => sum + Math.max(1, c.duplicate_count ?? 1), 0),
+    [cards],
+  );
 
   // Render the grid in batches so a big collection doesn't freeze the UI on
   // first paint (the freeze is what made buttons feel like they needed multiple
@@ -834,7 +849,7 @@ export default function CardsPage() {
               <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
                 <span style={{ fontWeight: 900, fontSize: 16, color: "var(--text-1)" }}>My Collection</span>
                 <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-4)" }}>
-                  {cards.length} card{cards.length !== 1 ? "s" : ""}
+                  {totalCardCount} card{totalCardCount !== 1 ? "s" : ""}
                 </span>
               </div>
             </div>
@@ -939,8 +954,8 @@ export default function CardsPage() {
               </div>
             ) : (
               <div className="cards-grid" style={cardGridStyle}>
-                {displayCards.slice(0, visibleCount).map((card) => (
-                  <div key={card.id} className="card-item" style={{ cursor: "pointer" }} onClick={() => setSellCard(card)}>
+                {displayCards.slice(0, visibleCount).map(({ key, card }) => (
+                  <div key={key} className="card-item" style={{ cursor: "pointer" }} onClick={() => setSellCard(card)}>
                     <SharedPlayerCard card={{
                       playerId: card.player_id,
                       playerName: card.player_name,
@@ -1182,6 +1197,12 @@ function PackDetailModal({ pack, coins, opening, onOpenPack, onClose, onClaimDai
             >
               {isOpening ? <Spinner /> : "Open Pack"}
             </button>
+          )}
+
+          {!isDaily && (
+            <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-4)", textAlign: "center", marginTop: 10 }}>
+              All purchases are non-refundable.
+            </div>
           )}
         </div>
       </div>

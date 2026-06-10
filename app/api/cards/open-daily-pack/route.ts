@@ -115,59 +115,41 @@ export async function POST(req: NextRequest) {
     .eq("user_id", user.id)
     .in("player_id", uniquePlayerIds);
 
-  type ExistingCard = { id: string; player_id: string; rarity: Rarity; duplicate_count: number };
-  const existingMap = new Map<string, ExistingCard>();
-  for (const c of (existingCards ?? []) as ExistingCard[]) {
-    existingMap.set(`${c.player_id}:${c.rarity}`, c);
+  // Players the user already owns at ANY rarity — used for the "NEW" badge,
+  // which marks a genuinely new player (not a new rarity of a player you have).
+  type ExistingCard = { player_id: string };
+  const existingPlayerIds = new Set<string>(
+    ((existingCards ?? []) as ExistingCard[]).map(c => c.player_id),
+  );
+
+  // ── 4. Insert one row per individual card ─────────────────────────────────
+  // Every card pulled is its own row (its own id, rating and created_at) so
+  // duplicates sort independently and a freshly pulled card is always "newest".
+  const rows = assignments.map(({ player, rarity, rating }) => ({
+    user_id: user.id,
+    player_id: player.id,
+    player_name: player.name,
+    team: player.team,
+    team_logo: player.teamLogo,
+    rarity,
+    rating,
+    duplicate_count: 1,
+    pack_type: "daily",
+  }));
+
+  const { error: insertError } = await supabaseAdmin.from("user_cards").insert(rows);
+  if (insertError) {
+    console.error("[daily-pack] card insert failed:", insertError.message);
+    return NextResponse.json({ error: "Failed to grant cards" }, { status: 500 });
   }
-
-  // ── 4. Categorise into inserts vs updates ─────────────────────────────────
-  const packCountMap = new Map<string, number>();
-  for (const { player, rarity } of assignments) {
-    const key = `${player.id}:${rarity}`;
-    packCountMap.set(key, (packCountMap.get(key) ?? 0) + 1);
-  }
-
-  const toInsert: object[] = [];
-  const toUpdate: { id: string; newCount: number }[] = [];
-
-  for (const [key, packCount] of packCountMap) {
-    const existing = existingMap.get(key);
-    if (existing) {
-      toUpdate.push({ id: existing.id, newCount: existing.duplicate_count + packCount });
-    } else {
-      const [playerId, rarity] = key.split(":") as [string, Rarity];
-      const sample = assignments.find(a => a.player.id === playerId && a.rarity === rarity)!;
-      toInsert.push({
-        user_id: user.id,
-        player_id: sample.player.id,
-        player_name: sample.player.name,
-        team: sample.player.team,
-        team_logo: sample.player.teamLogo,
-        rarity: sample.rarity,
-        rating: sample.rating,
-        duplicate_count: packCount,
-        pack_type: "daily",
-      });
-    }
-  }
-
-  // ── 5. Batch insert + parallel updates ────────────────────────────────────
-  await Promise.all([
-    toInsert.length > 0
-      ? supabaseAdmin.from("user_cards").insert(toInsert)
-      : Promise.resolve(),
-    ...toUpdate.map(({ id, newCount }) =>
-      supabaseAdmin.from("user_cards").update({ duplicate_count: newCount }).eq("id", id)
-    ),
-  ]);
 
   // ── 6. Build result payload ───────────────────────────────────────────────
-  const seenNewKeys = new Set<string>();
+  // NEW = first time the user has ever pulled this player, regardless of rarity.
+  // (Within one pack, only the first card of a brand-new player is flagged.)
+  const seenNewPlayers = new Set<string>();
   const results = assignments.map(({ player, rarity, rating }) => {
-    const key = `${player.id}:${rarity}`;
-    const isNew = !existingMap.has(key) && !seenNewKeys.has(key);
-    if (isNew) seenNewKeys.add(key);
+    const isNew = !existingPlayerIds.has(player.id) && !seenNewPlayers.has(player.id);
+    if (isNew) seenNewPlayers.add(player.id);
     return {
       player_id: player.id,
       player_name: player.name,

@@ -189,7 +189,25 @@
       "Bash(find /c/Users/User/Downloads /c/Users/User/Desktop /c/Users/User/Documents /c/Users/User/OneDrive -name 'players.json' -not -path '*/node_modules/*' -newermt '2026-06-06 00:00:00' -printf '%TY-%Tm-%Td %TH:%TM  %p\\\\n' 2>/dev/null | sort -r | head -30; echo \"\\(end of search\\)\")",
       "Bash(git hash-object *)",
       "Bash(echo \"work: $\\(git hash-object app/data/players.json\\)\")",
-      "Read(//c/Users/User/Downloads/foopy/**)"
+      "Read(//c/Users/User/Downloads/foopy/**)",
+      "Bash(dir \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\\\\public\\\\players\" /b)",
+      "Bash(find /mnt/c/Users/User/Downloads/foopy/public/players/crows -name \"*hugo*\" -o -name \"*hall*\" 2>/dev/null)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\\\\public\\\\players\\\\crows\" | Where-Object { $_.Name -match \"hugo|hall\" })",
+      "Bash(grep -i \"hall.kahan\\\\|hugo\" /mnt/c/Users/User/Downloads/foopy/app/data/players.json 2>/dev/null || grep -i \"hall.kahan\\\\|hugo\" \"C:/Users/User/Downloads/foopy/app/data/players.json\")",
+      "WebFetch(domain:www.afl.com.au)",
+      "WebFetch(domain:www.zerohanger.com)",
+      "WebFetch(domain:www.richmondfc.com.au)",
+      "WebFetch(domain:stats.afl.com.au)",
+      "Bash(git lfs *)",
+      "Bash(git check-attr *)",
+      "Bash(node scripts/upload-player-images.mjs)",
+      "Bash(grep -rl 'PLAYER_IMG_BASE.*\\\\/players\\\\/' app/ --include=\"*.tsx\")",
+      "Bash(cd \"C:\\\\Users\\\\User\\\\Downloads\\\\foopy\" && sed -i 's|${PLAYER_IMG_BASE}/players/|${PLAYER_IMG_BASE}/|g' app/admin/duels/page.tsx app/cards/page.tsx app/compare/page.tsx \"app/match/[id]/page.tsx\" \"app/match/[id]/[event]/page.tsx\" app/page.tsx app/round-stats/page.tsx app/shop/page.tsx app/stats/page.tsx)",
+      "Bash(git rm *)",
+      "Bash(node -e \"const d = require\\('./app/data/players.json'\\); const p = d.find\\(x => x.name === 'Max Gawn' || x.player === 'Max Gawn'\\); console.log\\(JSON.stringify\\(p, null, 2\\)\\);\")",
+      "Bash(npm install *)",
+      "Bash(node -e \"const d=require\\('@emoji-mart/data'\\); const data=d.default??d; console.log\\('categories:', data.categories.map\\(c=>c.id\\).join\\(','\\)\\); const pid=data.categories.find\\(c=>c.id==='people'\\).emojis[0]; console.log\\('sample id:', pid, '->', JSON.stringify\\(data.emojis[pid].skins[0].native\\)\\); console.log\\('people count:', data.categories.find\\(c=>c.id==='people'\\).emojis.length\\);\")",
+      "Bash(xargs echo \"image files:\")"
     ]
   }
 }

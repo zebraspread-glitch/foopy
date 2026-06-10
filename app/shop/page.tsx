@@ -615,6 +615,11 @@ export default function ShopPage() {
                       Log in to open
                     </a>
                   )}
+
+                  {/* Purchase terms */}
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-4)", textAlign: "center", marginTop: 10 }}>
+                    All purchases are non-refundable.
+                  </div>
                 </div>
               )}
             </div>

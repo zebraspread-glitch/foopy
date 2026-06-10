@@ -4,7 +4,7 @@
  * Images are stored in Supabase Storage (bucket: "players").
  */
 
-export const PLAYER_IMG_BASE = "https://ogdtvdvdtxohgyrhlgfk.supabase.co/storage/v1/object/public/players";
+export const PLAYER_IMG_BASE = "https://qbmtaooovvxpqsbslrga.supabase.co/storage/v1/object/public/players";
 const CDN = PLAYER_IMG_BASE;
 
 const CLUB_FOLDER: Record<string, string> = {
