@@ -1746,10 +1746,9 @@ export default function ProfilePage() {
   const profileHeaderStatsStyle: CSSProperties = compactProfileHeader
     ? {
         display: "grid",
-        gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+        gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
         alignItems: "start",
-        columnGap: 12,
-        rowGap: 12,
+        columnGap: 8,
       }
     : {
         display: "flex",
@@ -1761,9 +1760,11 @@ export default function ProfilePage() {
     textDecoration: "none",
     display: "flex",
     flexDirection: "column",
-    alignItems: "flex-start",
+    alignItems: compactProfileHeader ? "center" : "flex-start",
     gap: 3,
     minWidth: 0,
+    width: compactProfileHeader ? "100%" : undefined,
+    textAlign: compactProfileHeader ? "center" : undefined,
   };
   const profileHeaderValueStyle: CSSProperties = {
     fontSize: compactProfileHeader ? 16 : 20,
@@ -1785,11 +1786,28 @@ export default function ProfilePage() {
   const profileHeaderIconRowStyle: CSSProperties = {
     display: "flex",
     alignItems: "center",
+    justifyContent: compactProfileHeader ? "center" : "flex-start",
     gap: compactProfileHeader ? 4 : 5,
     minWidth: 0,
     maxWidth: "100%",
+    width: compactProfileHeader ? "100%" : undefined,
   };
   const profileHeaderIconSize = compactProfileHeader ? 15 : 18;
+  const mobileFriendsRowStyle: CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    margin: "12px 14px 0",
+    padding: "12px 14px",
+    borderRadius: 16,
+    border: "1px solid var(--border-2)",
+    background: "var(--surface-2)",
+    color: "var(--text-1)",
+    cursor: "pointer",
+    fontFamily: "inherit",
+    textAlign: "left",
+  };
 
   return (
     <main style={pageStyle} className="page-enter">
@@ -1887,14 +1905,18 @@ export default function ProfilePage() {
                   </div>
                   <span style={profileHeaderLabelStyle}>Tokens</span>
                 </a>
-                {/* Friends */}
-                <button onClick={openFriends} style={{ ...profileHeaderStatStyle, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit" }}>
-                  <div style={profileHeaderIconRowStyle}>
-                    <Users size={profileHeaderIconSize} color="var(--text-1)" strokeWidth={2.5} style={{ flexShrink: 0 }} />
-                    <span style={profileHeaderValueStyle}>{friends.length}</span>
-                  </div>
-                  <span style={profileHeaderLabelStyle}>Friends</span>
-                </button>
+                {!compactProfileHeader && (
+                  <>
+                    {/* Friends */}
+                    <button onClick={openFriends} style={{ ...profileHeaderStatStyle, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit" }}>
+                      <div style={profileHeaderIconRowStyle}>
+                        <Users size={profileHeaderIconSize} color="var(--text-1)" strokeWidth={2.5} style={{ flexShrink: 0 }} />
+                        <span style={profileHeaderValueStyle}>{friends.length}</span>
+                      </div>
+                      <span style={profileHeaderLabelStyle}>Friends</span>
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -1908,6 +1930,19 @@ export default function ProfilePage() {
               {profile?.bio || "No bio yet."}
             </p>
           </div>
+
+          {compactProfileHeader && (
+            <button onClick={openFriends} style={mobileFriendsRowStyle}>
+              <span style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                <Users size={18} color="var(--text-1)" strokeWidth={2.5} style={{ flexShrink: 0 }} />
+                <span style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
+                  <span style={{ color: "var(--text-1)", fontSize: 14, fontWeight: 900, lineHeight: 1 }}>Friends</span>
+                  <span style={{ color: "var(--text-3)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>View connections</span>
+                </span>
+              </span>
+              <span style={{ color: "var(--text-1)", fontSize: 18, fontWeight: 950, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{friends.length}</span>
+            </button>
+          )}
 
           {/* Edit button */}
           <div style={{ padding: "12px 14px 16px" }}>
