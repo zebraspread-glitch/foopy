@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { getStatus, getAbbr, getLogo, scoreText } from "../utils";
@@ -34,7 +35,38 @@ function miniScoreText(game: MatchGame) {
   return `${scoreText(game.hscore)}-${scoreText(game.ascore)}`;
 }
 
+// Module-level so the scroll position survives this component re-rendering
+// (or briefly remounting) when navigating between games in the round.
+let savedScrollLeft = 0;
+
 export default function RoundGameStrip({ games, activeId, now, opacity = 1 }: { games: MatchGame[]; activeId: string; now: number; opacity?: number }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (el && el.scrollLeft !== savedScrollLeft) {
+      el.scrollLeft = savedScrollLeft;
+    }
+  });
+
+  // Let vertical mouse-wheel / trackpad scroll move this horizontal strip,
+  // so it's reachable on desktop without a horizontal scrollbar. React adds
+  // its wheel listener as passive, so preventDefault must happen via a
+  // manually-attached non-passive native listener to stop page scroll.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const handler = (e: WheelEvent) => {
+      if (el.scrollWidth <= el.clientWidth) return;
+      const delta = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+      if (delta === 0) return;
+      e.preventDefault();
+      el.scrollLeft += delta;
+    };
+    el.addEventListener("wheel", handler, { passive: false });
+    return () => el.removeEventListener("wheel", handler);
+  }, []);
+
   return (
     <div style={{ ...roundStripShellStyle, opacity, pointerEvents: opacity < 0.1 ? "none" : undefined }}>
       {/* Back to home — always visible, non-scrolling */}
@@ -57,7 +89,12 @@ export default function RoundGameStrip({ games, activeId, now, opacity = 1 }: { 
 
       {/* Scrollable game pills */}
       {games.length > 1 && (
-        <div className="no-scrollbar" style={roundStripScrollStyle}>
+        <div
+          ref={scrollRef}
+          className="no-scrollbar"
+          style={roundStripScrollStyle}
+          onScroll={(e) => { savedScrollLeft = e.currentTarget.scrollLeft; }}
+        >
           {games.map((game) => {
             const active = String(game.id) === activeId;
             const status = getStatus(game);
