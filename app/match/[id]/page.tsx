@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { createPortal } from "react-dom";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Check, ChevronLeft, MessageCircle, Smile } from "lucide-react";
+import { Check, MessageCircle, Smile } from "lucide-react";
 import matchStatsJson from "@/app/data/game-stats.json";
 import { PLAYER_IMG_BASE } from "@/app/lib/playerImage";
 import teamStatsJson from "@/app/data/team-stats.json";
@@ -1095,76 +1095,6 @@ function timeUntilStart(date?: string, now = Date.now()) {
   if (days > 0) return `${days}d ${hours}h`;
   if (totalHours <= 0) return `${minutes}m`;
   return `${totalHours}h ${minutes}m`;
-}
-
-function roundStripStatus(game: MatchGame, now = Date.now()) {
-  const status = getStatus(game);
-  if (status === "FINAL") return "Final";
-  if (status === "LIVE") return "Live";
-  return timeUntilStart(game.date, now);
-}
-
-function miniScoreText(game: MatchGame) {
-  if (getStatus(game) === "UPCOMING") return "vs";
-  return `${scoreText(game.hscore)}-${scoreText(game.ascore)}`;
-}
-
-function RoundGameStrip({ games, activeId, now, opacity = 1, nested = false }: { games: MatchGame[]; activeId: string; now: number; opacity?: number; nested?: boolean }) {
-  return (
-    <div style={{ ...roundStripShellStyle, ...(nested ? { paddingTop: 0 } : null), opacity, pointerEvents: opacity < 0.1 ? "none" : undefined }}>
-      {/* Back to home — always visible, non-scrolling */}
-      <Link
-        href="/"
-        aria-label="Back to Scores"
-        style={{
-          flexShrink: 0,
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: 44,
-          height: 44,
-          color: "var(--text-1)",
-          textDecoration: "none",
-        }}
-      >
-        <ChevronLeft size={28} strokeWidth={2.4} />
-      </Link>
-
-      {/* Scrollable game pills */}
-      {games.length > 1 && (
-        <div className="no-scrollbar" style={roundStripScrollStyle}>
-          {games.map((game) => {
-            const active = String(game.id) === activeId;
-            const status = getStatus(game);
-            const live = status === "LIVE";
-
-            return (
-              <Link
-                key={String(game.id)}
-                href={`/match/${game.id}`}
-                style={{
-                  ...roundMiniBoxStyle,
-                  borderColor: active ? "#3b82f6" : live ? "rgba(34,197,94,.55)" : "var(--border-2)",
-                  background: active ? "var(--surface-3)" : "var(--surface-1)",
-                }}
-              >
-                <div style={{ ...roundMiniStatusStyle, color: live ? "#22c55e" : "#d1d5db" }}>{roundStripStatus(game, now)}</div>
-                <div style={roundMiniScoreStyle}>
-                  <img src={getLogo(game.hteam)} alt="" style={roundMiniLogoStyle} />
-                  <span>{miniScoreText(game)}</span>
-                  <img src={getLogo(game.ateam)} alt="" style={roundMiniLogoStyle} />
-                </div>
-                <div style={roundMiniTeamsStyle}>
-                  {getAbbr(game.hteam)} v {getAbbr(game.ateam)}
-                </div>
-                {active && <div style={roundMiniActiveLineStyle} />}
-              </Link>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
 }
 
 function PlayerAvatar({ name, team, size = 48 }: { name: any; team?: any; size?: number }) {
@@ -3220,6 +3150,10 @@ function ScoreWorm({
   );
 }
 
+// Module-level cache so navigating between games in the same round (via the
+// round strip) can show the new game's header instantly, since the page
+// component remounts on route param change but this module stays loaded.
+let cachedAllGames: MatchGame[] = [];
 
 function MatchPageInner() {
   const params = useParams();
@@ -3228,7 +3162,7 @@ function MatchPageInner() {
   const searchParams = useSearchParams();
   const id = String(params?.id ?? "");
 
-  const [mounted, setMounted] = useState(false);
+  const [mounted, setMounted] = useState(() => typeof window !== "undefined");
   const [activeTab, setActiveTab] = useState<TabKey>(() =>
     (searchParams?.get("tab") as TabKey) ?? "feed"
   );
@@ -3240,7 +3174,9 @@ function MatchPageInner() {
   const [squadPlayers, setSquadPlayers] = useState<{ home: number[]; away: number[] } | null>(null);
   const [unansweredPollCount, setUnansweredPollCount] = useState(0);
   const [hasDuelGame, setHasDuelGame] = useState(false);
-  const [game, setGame] = useState<MatchGame | null>(null);
+  const [game, setGame] = useState<MatchGame | null>(() =>
+    cachedAllGames.find((g) => String(g.id) === id) ?? null
+  );
   const [savedMatch, setSavedMatch] = useState<SavedMatchStats | null>(null);
   const [homeStats, setHomeStats] = useState<PlayerStat[]>([]);
   const [awayStats, setAwayStats] = useState<PlayerStat[]>([]);
@@ -3263,12 +3199,21 @@ function MatchPageInner() {
   const initialFeedLoaded = useRef(false);
   const lastScoreRef = useRef<{ home: number; away: number } | null>(null);
   const [freshEventKeys, setFreshEventKeys] = useState(new Set<string>());
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() =>
+    !cachedAllGames.some((g) => String(g.id) === id)
+  );
   const [error, setError] = useState("");
   const [now, setNow] = useState(Date.now());
   const [teamStats, setTeamStats] = useState<any[]>([]);
-  const [allGames, setAllGames] = useState<MatchGame[]>([]);
-  const [roundGames, setRoundGames] = useState<MatchGame[]>([]);
+  const [allGames, setAllGames] = useState<MatchGame[]>(() => cachedAllGames);
+  const [roundGames, setRoundGames] = useState<MatchGame[]>(() => {
+    const cached = cachedAllGames.find((g) => String(g.id) === id);
+    return cached
+      ? cachedAllGames
+          .filter((g) => String(g.round) === String(cached.round))
+          .sort((a, b) => new Date(a.date ?? "").getTime() - new Date(b.date ?? "").getTime())
+      : [];
+  });
   const scrollRef = useRef(0);
   const rafRef = useRef<number>(0);
   const matchSectionRef = useRef<HTMLElement>(null);
@@ -3395,8 +3340,22 @@ function MatchPageInner() {
     async function loadMatch(isFirst = false) {
       try {
         if (isFirst) {
-          setLoading(true);
           setError("");
+          // If we already have this game's data cached (e.g. switching between
+          // games in the same round via the top strip), show it instantly
+          // instead of blanking the whole page with a skeleton.
+          const cached = cachedAllGames.find((g) => String(g.id) === id) ?? null;
+          if (cached) {
+            setGame(cached);
+            setRoundGames(
+              cachedAllGames
+                .filter((g) => String(g.round) === String(cached.round))
+                .sort((a, b) => new Date(a.date ?? "").getTime() - new Date(b.date ?? "").getTime())
+            );
+            setLoading(false);
+          } else {
+            setLoading(true);
+          }
         }
 
         const gamesUrl = `/api/games?fresh=1&t=${Date.now()}`;
@@ -3411,6 +3370,7 @@ function MatchPageInner() {
 
         if (!cancelled) {
           setAllGames(gameList);
+          cachedAllGames = gameList;
           setGame(found);
           setRoundGames(
             found
@@ -3500,6 +3460,70 @@ function MatchPageInner() {
   const isLiveGame = status === "LIVE";
   const showStatsTabs = status === "LIVE" || status === "FINAL";
   const showPlayersTabs = status === "LIVE" || status === "FINAL" || status === "UPCOMING";
+
+  const tabList = useMemo<TabKey[]>(() => [
+    "feed", "chat", "polls",
+    ...(hasDuelGame ? (["duels"] as TabKey[]) : []),
+    ...(showStatsTabs ? (["game"] as TabKey[]) : []),
+    ...(showPlayersTabs ? (["players"] as TabKey[]) : []),
+  ], [hasDuelGame, showStatsTabs, showPlayersTabs]);
+
+  const [tabAnimDir, setTabAnimDir] = useState<1 | -1>(1);
+  const goToTab = useCallback((next: TabKey) => {
+    setActiveTab(prev => {
+      if (next === prev) return prev;
+      const oldIdx = tabList.indexOf(prev);
+      const newIdx = tabList.indexOf(next);
+      setTabAnimDir(newIdx > oldIdx ? 1 : -1);
+      return next;
+    });
+  }, [tabList]);
+
+  // Swipe-to-switch-tabs (on the content area below the tab bar)
+  const tabTouchRef = useRef<{ x: number; y: number; skip: boolean } | null>(null);
+  const onTabTouchStart = useCallback((e: React.TouchEvent) => {
+    const t = e.touches[0];
+    let el = e.target as HTMLElement | null;
+    let skip = false;
+    while (el && el !== e.currentTarget) {
+      if (el.scrollWidth > el.clientWidth + 2) { skip = true; break; }
+      el = el.parentElement;
+    }
+    tabTouchRef.current = { x: t.clientX, y: t.clientY, skip };
+  }, []);
+  const onTabTouchEnd = useCallback((e: React.TouchEvent) => {
+    const start = tabTouchRef.current;
+    tabTouchRef.current = null;
+    if (!start || start.skip) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    const idx = tabList.indexOf(activeTab);
+    if (idx === -1) return;
+    if (dx < 0 && idx < tabList.length - 1) goToTab(tabList[idx + 1]);
+    else if (dx > 0 && idx > 0) goToTab(tabList[idx - 1]);
+  }, [tabList, activeTab, goToTab]);
+
+  // Swipe-to-change-match (on the top header/score area)
+  const headerTouchRef = useRef<{ x: number; y: number } | null>(null);
+  const onHeaderTouchStart = useCallback((e: React.TouchEvent) => {
+    const t = e.touches[0];
+    headerTouchRef.current = { x: t.clientX, y: t.clientY };
+  }, []);
+  const onHeaderTouchEnd = useCallback((e: React.TouchEvent) => {
+    const start = headerTouchRef.current;
+    headerTouchRef.current = null;
+    if (!start) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    const idx = roundGames.findIndex(g => String(g.id) === id);
+    if (idx === -1) return;
+    if (dx < 0 && idx < roundGames.length - 1) router.push(`/match/${roundGames[idx + 1].id}`);
+    else if (dx > 0 && idx > 0) router.push(`/match/${roundGames[idx - 1].id}`);
+  }, [roundGames, id, router]);
 
   // Current quarter number — max of live events period AND the period parsed from game.timestr
   // (game.timestr like "Q4 2:14" updates faster than events, so avoids stale period after a quarter break)
@@ -4219,7 +4243,6 @@ function MatchPageInner() {
   if (!mounted || loading) {
     return (
       <main style={pageStyle} className="page-enter">
-        <RoundGameStrip games={roundGames} activeId={id} now={now} />
         {/* Scoreboard skeleton — mirrors the real centered match header */}
         <div style={{ padding: "18px 20px 20px", borderBottom: "1px solid var(--border-2)", background: "linear-gradient(180deg, var(--surface-1) 0%, var(--surface-2) 60%, var(--bg) 100%)" }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 14, maxWidth: 520, margin: "0 auto" }}>
@@ -4268,7 +4291,6 @@ function MatchPageInner() {
   if (error || !game) {
     return (
       <main style={pageStyle} className="page-enter">
-        <RoundGameStrip games={roundGames} activeId={id} now={now} />
         <section style={emptyStyle}>
           <h1>Match not found</h1>
           <p style={mutedStyle}>{error || `No game found for ID: ${id}`}</p>
@@ -4315,7 +4337,7 @@ function MatchPageInner() {
     timeUntilStart(game.date, now);
 
   return (
-    <main style={pageStyle} className="page-enter">
+    <main key={id} style={pageStyle} className="page-enter">
       <style>{`
         /* ── Collapsing match header — driven by a single --p (0..1) var ──────
            Only transform / opacity / one height-calc animate. 60fps on mobile. */
@@ -4395,6 +4417,20 @@ function MatchPageInner() {
             max-width: 160px;
           }
         }
+
+        @keyframes tab-slide-in-right {
+          from { opacity: 0; transform: translateX(32px); }
+          to   { opacity: 1; transform: none; }
+        }
+        @keyframes tab-slide-in-left {
+          from { opacity: 0; transform: translateX(-32px); }
+          to   { opacity: 1; transform: none; }
+        }
+        .tab-slide-in-right { animation: tab-slide-in-right 0.22s var(--spring-soft, ease) both; }
+        .tab-slide-in-left { animation: tab-slide-in-left 0.22s var(--spring-soft, ease) both; }
+        @media (prefers-reduced-motion: reduce) {
+          .tab-slide-in-right, .tab-slide-in-left { animation: none; }
+        }
       `}</style>
       <section ref={matchSectionRef} style={matchCentreStyle}>
         {/* ── Sticky header + tabs ── */}
@@ -4412,17 +4448,15 @@ function MatchPageInner() {
           return (
             <div ref={stickyHeaderRef} style={{
               position: "sticky",
-              top: 0,
+              top: "var(--round-strip-h, 0px)",
               width: "100%",
               zIndex: 70,
               background: "rgba(10,10,15,0.94)",
               backdropFilter: "blur(22px) saturate(180%)", WebkitBackdropFilter: "blur(22px) saturate(180%)",
               borderBottom: "1px solid var(--border-2)",
-              paddingTop: "env(safe-area-inset-top)",
             }}>
-              <RoundGameStrip games={roundGames} activeId={id} now={now} nested />
               {/* ─── Collapsing match header — single grid, morphs via --p ─── */}
-              <div ref={headerContainerRef} className="mh">
+              <div ref={headerContainerRef} className="mh" onTouchStart={onHeaderTouchStart} onTouchEnd={onHeaderTouchEnd}>
                 {/* Team-colour glow (fades as header collapses) */}
                 <div className="mh-glow" style={{
                   background: `radial-gradient(ellipse 60% 85% at 16% 50%, ${teamColor(game.hteam ?? "")}33 0%, transparent 66%),
@@ -4511,7 +4545,7 @@ function MatchPageInner() {
                   pointerEvents: "none",
                 }} />
                 {(["feed","chat","polls", ...(hasDuelGame ? ["duels" as const] : [])] as const).map(t => (
-                  <button key={t} type="button" onClick={() => setActiveTab(t)} style={{
+                  <button key={t} type="button" onClick={() => goToTab(t)} style={{
                     flex: 1, padding: "13px 4px 11px",
                     background: "none", border: "none",
                     borderBottom: "2px solid transparent",
@@ -4538,7 +4572,7 @@ function MatchPageInner() {
                 {(showStatsTabs || showPlayersTabs) && (
                   <>
                     {([...(showStatsTabs ? ["game" as TabKey] : []), ...(showPlayersTabs ? ["players" as TabKey] : [])]).map((t) => (
-                      <button key={t} type="button" onClick={() => setActiveTab(t)} style={{
+                      <button key={t} type="button" onClick={() => goToTab(t)} style={{
                         flex: 1, padding: "13px 4px 11px",
                         background: "none", border: "none",
                         borderBottom: "2px solid transparent",
@@ -4611,6 +4645,12 @@ function MatchPageInner() {
           );
         })()}
 
+        <div
+          key={activeTab}
+          className={tabAnimDir > 0 ? "tab-slide-in-right" : "tab-slide-in-left"}
+          onTouchStart={onTabTouchStart}
+          onTouchEnd={onTabTouchEnd}
+        >
         {activeTab === "feed" && (
           <section style={sectionStyle}>
             {status === "UPCOMING" && game.date && (Date.parse(game.date) - Date.now()) < 10 * 24 * 60 * 60 * 1000 && (
@@ -4630,7 +4670,7 @@ function MatchPageInner() {
               <FeedActivePolls
                 gameId={Number(id)}
                 currentPeriod={currentPeriod}
-                onOpenPolls={() => setActiveTab("polls")}
+                onOpenPolls={() => goToTab("polls")}
               />
             )}
 
@@ -4943,6 +4983,7 @@ function MatchPageInner() {
             />
           </section>
         )}
+        </div>
       </section>
       {reactionPopup && (
         <EventReactionPopup
@@ -6953,87 +6994,6 @@ const pollResultRowStyle: CSSProperties = { padding: "0" };
 const pollOptionBtnStyle: CSSProperties = { width: "100%", padding: "12px 14px", borderRadius: 14, background: "var(--surface-2)", border: "1.5px solid var(--border-2)", color: "var(--text-1)", fontSize: 14, fontWeight: 700, cursor: "pointer", textAlign: "left", transition: "background 0.15s, border-color 0.15s" };
 const createFormStyle: CSSProperties = { margin: "0 16px 16px", padding: "16px", borderRadius: 16, background: "var(--surface-1)", border: "1px solid var(--border-2)" };
 const pollTypeToggleStyle: CSSProperties = { flex: 1, padding: "8px 0", borderRadius: 8, border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer" };
-
-const roundStripShellStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 20,
-  display: "flex",
-  alignItems: "center",
-  paddingTop: "env(safe-area-inset-top)",
-  paddingLeft: 4,
-  background: "var(--bg)",
-  borderBottom: "1px solid var(--border-2)",
-};
-
-const roundStripScrollStyle: CSSProperties = {
-  flex: 1,
-  display: "flex",
-  gap: 8,
-  overflowX: "auto",
-  padding: "10px 12px 10px 4px",
-  scrollSnapType: "x mandatory",
-};
-
-const roundMiniBoxStyle: CSSProperties = {
-  position: "relative",
-  flex: "0 0 118px",
-  minHeight: 62,
-  padding: "7px 8px 8px",
-  borderRadius: 8,
-  border: "1px solid var(--border-2)",
-  color: "var(--text-1)",
-  textDecoration: "none",
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: 3,
-  scrollSnapAlign: "start",
-};
-
-const roundMiniStatusStyle: CSSProperties = {
-  fontSize: 10,
-  fontWeight: 900,
-  lineHeight: 1,
-};
-
-const roundMiniScoreStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: 5,
-  fontSize: 13,
-  fontWeight: 950,
-  lineHeight: 1,
-  whiteSpace: "nowrap",
-};
-
-const roundMiniLogoStyle: CSSProperties = {
-  width: 15,
-  height: 15,
-  borderRadius: "50%",
-  objectFit: "cover",
-};
-
-const roundMiniTeamsStyle: CSSProperties = {
-  maxWidth: "100%",
-  color: "var(--text-3)",
-  fontSize: 9,
-  fontWeight: 800,
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-};
-
-const roundMiniActiveLineStyle: CSSProperties = {
-  position: "absolute",
-  left: 8,
-  right: 8,
-  bottom: 0,
-  height: 2,
-  borderRadius: 999,
-  background: "#3b82f6",
-};
 
 const pageStyle: CSSProperties = { minHeight: "100dvh", background: "var(--bg)", color: "var(--text-1)", paddingBottom: "calc(90px + env(safe-area-inset-bottom))" };
 const matchCentreStyle: CSSProperties = { width: "100%", maxWidth: 760, margin: "0 auto", background: "var(--surface-1)", minHeight: "100vh", borderLeft: "1px solid var(--border-2)", borderRight: "1px solid var(--border-2)" };
