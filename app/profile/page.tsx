@@ -1800,11 +1800,10 @@ export default function ProfilePage() {
   const contentTopPad = lerp(avatarBaseSize * 0.55 + 18, 18, headerEase);
   const expandedOnlyOpacity = clamp01(1 - headerProgress * 1.35);
   const compactUsernameLeft = avatarStartLeft + avatarTranslateX + avatarRenderedSize + 12;
+  const compactUsernameHeight = compactProfileHeader ? 28 : 30;
+  const compactUsernameTop = avatarStartTop + avatarTranslateY + (avatarRenderedSize - compactUsernameHeight) / 2;
   const profileHeroShellStyle: CSSProperties = {
-    position: "relative",
-    overflow: "visible",
-    borderRadius: 0,
-    background: "var(--bg)",
+    display: "contents",
   };
   const profileStickyHeaderStyle: CSSProperties = {
     position: "sticky",
@@ -1890,26 +1889,26 @@ export default function ProfilePage() {
     position: "absolute",
     zIndex: 8,
     left: compactUsernameLeft,
-    top: "calc(env(safe-area-inset-top) + 20px)",
+    top: `calc(env(safe-area-inset-top) + ${compactUsernameTop}px)`,
     maxWidth: `calc(100% - ${compactUsernameLeft + 74}px)`,
-    height: 34,
-    padding: "0 12px",
-    borderRadius: 999,
-    background: "rgba(15,23,42,0.62)",
-    border: "1px solid rgba(255,255,255,0.12)",
+    height: compactUsernameHeight,
+    padding: 0,
+    borderRadius: 0,
+    background: "transparent",
+    border: "none",
     display: "flex",
     alignItems: "center",
+    gap: 4,
     color: "var(--text-1)",
-    fontSize: 14,
+    fontSize: compactProfileHeader ? 18 : 20,
     fontWeight: 950,
     opacity: compactUsernameOpacity,
-    transform: `translate3d(0, ${lerp(8, 0, headerEase)}px, 0)`,
+    transform: "translate3d(0, 0, 0)",
     pointerEvents: compactUsernameOpacity > 0.5 ? "auto" : "none",
     overflow: "hidden",
     whiteSpace: "nowrap",
     textOverflow: "ellipsis",
-    backdropFilter: "blur(16px)",
-    WebkitBackdropFilter: "blur(16px)",
+    textShadow: "0 2px 12px rgba(0,0,0,0.72)",
   };
   const profileBodyStyle: CSSProperties = {
     position: "relative",

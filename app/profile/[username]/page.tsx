@@ -1,10 +1,10 @@
 "use client";
 
 import { formatAura } from "@/app/lib/format";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Users, Layers, Star, Ticket, MessageCircle, Heart, Tv, Zap, BarChart2, Trophy, ChevronLeft } from "lucide-react";
+import { Users, Layers, Star, Ticket, MessageCircle, Heart, Tv, Zap, BarChart2, Trophy, ChevronLeft, MoreHorizontal } from "lucide-react";
 import { supabase } from "@/app/lib/supabase";
 import AuraBadge from "@/app/components/AuraBadge";
 import { VerifiedBadge } from "@/app/components/VerifiedBadge";
@@ -18,17 +18,50 @@ import { nameColorStyle } from "@/app/lib/cosmetics";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import { foopyRating } from "@/app/match/[id]/utils";
 
-function useBannerLift(maxLift = 18) {
-  const [lift, setLift] = useState(0);
+function useMediaQuery(query: string) {
+  const [matches, setMatches] = useState(false);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    const media = window.matchMedia(query);
+    const update = () => setMatches(media.matches);
+    update();
+    if (media.addEventListener) media.addEventListener("change", update);
+    else media.addListener(update);
+    return () => {
+      if (media.removeEventListener) media.removeEventListener("change", update);
+      else media.removeListener(update);
+    };
+  }, [query]);
+
+  return matches;
+}
+
+function clamp01(value: number) {
+  return Math.max(0, Math.min(1, value));
+}
+
+function easeProfile(value: number) {
+  const t = clamp01(value);
+  return t * t * (3 - 2 * t);
+}
+
+function lerp(from: number, to: number, progress: number) {
+  return from + (to - from) * progress;
+}
+
+function useProfileHeaderProgress(distance = 188) {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
     let frame = 0;
     const update = () => {
       if (frame) return;
       frame = window.requestAnimationFrame(() => {
         frame = 0;
-        const next = Math.min(maxLift, Math.max(0, window.scrollY * 0.14));
-        setLift((current) => (Math.abs(current - next) < 0.2 ? current : next));
+        const next = clamp01(window.scrollY / distance);
+        setProgress((current) => (Math.abs(current - next) < 0.003 ? current : next));
       });
     };
 
@@ -40,9 +73,9 @@ function useBannerLift(maxLift = 18) {
       window.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
     };
-  }, [maxLift]);
+  }, [distance]);
 
-  return lift;
+  return progress;
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -455,7 +488,9 @@ export default function PublicProfilePage() {
   const params  = useParams();
   const router  = useRouter();
   const username = String(params.username || "").replace("@", "").toLowerCase();
-  const bannerLift = useBannerLift();
+  const compactProfileHeader = useMediaQuery("(max-width: 430px)");
+  const headerProgress = useProfileHeaderProgress(compactProfileHeader ? 172 : 204);
+  const headerEase = easeProfile(headerProgress);
 
   const [profile,       setProfile]       = useState<Profile | null>(null);
   const [friends,       setFriends]       = useState<FriendEntry[]>([]);
@@ -701,6 +736,186 @@ export default function PublicProfilePage() {
   );
   const filledFavs = favourites.filter(Boolean).length;
   const isOwnProfile = currentUserId === profile.id;
+  const bannerSrc = profile.banner_url ?? "";
+  const avatarSrc = profile.avatar_url ?? "";
+  const expandedBannerHeight = compactProfileHeader ? 246 : 286;
+  const collapsedBannerHeight = compactProfileHeader ? 72 : 82;
+  const bannerHeight = lerp(expandedBannerHeight, collapsedBannerHeight, headerEase);
+  const bannerLift = lerp(0, 22, headerEase);
+  const bannerScale = lerp(1.02, 1.08, headerEase);
+  const bannerOverlayOpacity = lerp(0.22, 0.76, headerEase);
+  const bannerBlur = lerp(0, 7, headerEase);
+  const avatarBaseSize = compactProfileHeader ? 106 : 118;
+  const avatarScale = lerp(1, compactProfileHeader ? 0.46 : 0.5, headerEase);
+  const avatarStartLeft = compactProfileHeader ? 18 : 22;
+  const avatarStartTop = expandedBannerHeight - avatarBaseSize * 0.5;
+  const avatarTranslateX = lerp(0, (compactProfileHeader ? 60 : 68) - avatarStartLeft, headerEase);
+  const avatarTranslateY = lerp(0, (compactProfileHeader ? 14 : 17) - avatarStartTop, headerEase);
+  const avatarRenderedSize = avatarBaseSize * avatarScale;
+  const mainUsernameOpacity = clamp01(1 - headerProgress * 1.7);
+  const compactUsernameOpacity = clamp01((headerProgress - 0.3) / 0.7);
+  const contentTopPad = lerp(avatarBaseSize * 0.55 + 18, 18, headerEase);
+  const compactUsernameLeft = avatarStartLeft + avatarTranslateX + avatarRenderedSize + 12;
+  const compactUsernameHeight = compactProfileHeader ? 28 : 30;
+  const compactUsernameTop = avatarStartTop + avatarTranslateY + (avatarRenderedSize - compactUsernameHeight) / 2;
+  const profileHeroShellStyle: CSSProperties = {
+    display: "contents",
+  };
+  const profileStickyHeaderStyle: CSSProperties = {
+    position: "sticky",
+    top: 0,
+    zIndex: 80,
+    height: `calc(${bannerHeight}px + env(safe-area-inset-top))`,
+    borderRadius: compactProfileHeader ? "0 0 22px 22px" : "0 0 24px 24px",
+    overflow: "visible",
+    background: "#020617",
+  };
+  const bannerFrameStyle: CSSProperties = {
+    position: "absolute",
+    inset: 0,
+    overflow: "hidden",
+    borderRadius: compactProfileHeader ? "0 0 22px 22px" : "0 0 24px 24px",
+    background: "#06101e",
+  };
+  const bannerMediaStyle: CSSProperties = {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: -26,
+    bottom: -34,
+    width: "100%",
+    height: "calc(100% + 60px)",
+    objectFit: "cover",
+    objectPosition: "center",
+    transform: `translate3d(0, -${bannerLift}px, 0) scale(${bannerScale})`,
+    filter: `blur(${bannerBlur}px)`,
+    transition: "transform 80ms linear, filter 80ms linear",
+    willChange: "transform, filter",
+  };
+  const headerOverlayStyle: CSSProperties = {
+    position: "absolute",
+    inset: 0,
+    background: `linear-gradient(180deg, rgba(0,0,0,${bannerOverlayOpacity + 0.08}) 0%, rgba(0,0,0,${bannerOverlayOpacity}) 58%, rgba(0,0,0,0.9) 100%)`,
+    pointerEvents: "none",
+  };
+  const topControlBaseStyle: CSSProperties = {
+    position: "absolute",
+    top: "calc(env(safe-area-inset-top) + 10px)",
+    zIndex: 8,
+    width: 38,
+    height: 38,
+    borderRadius: "50%",
+    border: "1px solid rgba(255,255,255,0.14)",
+    background: "rgba(2,6,23,0.52)",
+    color: "var(--text-1)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    backdropFilter: "blur(14px)",
+    WebkitBackdropFilter: "blur(14px)",
+  };
+  const avatarButtonStyle: CSSProperties = {
+    position: "absolute",
+    zIndex: 9,
+    left: avatarStartLeft,
+    top: `calc(env(safe-area-inset-top) + ${avatarStartTop}px)`,
+    width: avatarBaseSize,
+    height: avatarBaseSize,
+    borderRadius: "50%",
+    transform: `translate3d(${avatarTranslateX}px, ${avatarTranslateY}px, 0) scale(${avatarScale})`,
+    transformOrigin: "top left",
+    transition: "transform 80ms linear",
+    willChange: "transform",
+  };
+  const avatarImageStyle: CSSProperties = {
+    width: avatarBaseSize,
+    height: avatarBaseSize,
+    borderRadius: "50%",
+    objectFit: "cover",
+    border: "4px solid var(--bg)",
+    boxShadow: "0 0 0 1px rgba(255,255,255,0.14), 0 16px 44px rgba(0,0,0,0.48)",
+    display: "block",
+  };
+  const compactUsernamePillStyle: CSSProperties = {
+    position: "absolute",
+    zIndex: 8,
+    left: compactUsernameLeft,
+    top: `calc(env(safe-area-inset-top) + ${compactUsernameTop}px)`,
+    maxWidth: `calc(100% - ${compactUsernameLeft + 74}px)`,
+    height: compactUsernameHeight,
+    padding: 0,
+    borderRadius: 0,
+    background: "transparent",
+    border: "none",
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+    color: "var(--text-1)",
+    fontSize: compactProfileHeader ? 18 : 20,
+    fontWeight: 950,
+    opacity: compactUsernameOpacity,
+    transform: "translate3d(0, 0, 0)",
+    pointerEvents: compactUsernameOpacity > 0.5 ? "auto" : "none",
+    overflow: "hidden",
+    whiteSpace: "nowrap",
+    textOverflow: "ellipsis",
+    textShadow: "0 2px 12px rgba(0,0,0,0.72)",
+  };
+  const profileBodyStyle: CSSProperties = {
+    position: "relative",
+    zIndex: 2,
+    padding: `${contentTopPad}px 14px 16px`,
+    background: "var(--bg)",
+    border: "1px solid var(--border-2)",
+    borderTop: "none",
+    borderRadius: compactProfileHeader ? "0 0 22px 22px" : "0 0 24px 24px",
+  };
+  const mainIdentityStyle: CSSProperties = {
+    opacity: mainUsernameOpacity,
+    transform: `translate3d(0, -${lerp(0, 12, headerEase)}px, 0)`,
+    transition: "opacity 80ms linear, transform 80ms linear",
+    willChange: "opacity, transform",
+  };
+  const profileHeaderStatsStyle: CSSProperties = {
+    display: "grid",
+    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+    alignItems: "start",
+    gap: 8,
+    padding: "12px 0 4px",
+  };
+  const profileHeaderStatStyle: CSSProperties = {
+    textDecoration: "none",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 5,
+    minWidth: 0,
+    color: "inherit",
+  };
+  const profileHeaderValueStyle: CSSProperties = {
+    fontSize: compactProfileHeader ? 19 : 21,
+    fontWeight: 950,
+    color: "var(--text-1)",
+    lineHeight: 1,
+    whiteSpace: "nowrap",
+  };
+  const profileHeaderLabelStyle: CSSProperties = {
+    fontSize: 10,
+    fontWeight: 900,
+    color: "#7f91ad",
+    textTransform: "uppercase",
+    letterSpacing: compactProfileHeader ? "0.04em" : "0.05em",
+  };
+  const profileHeaderIconRowStyle: CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    minWidth: 0,
+  };
+  const profileHeaderIconSize = compactProfileHeader ? 15 : 18;
 
   async function openDuelHistory() {
     setDuelHistoryOpen(true);
@@ -743,149 +958,142 @@ export default function PublicProfilePage() {
     setFriendLoading(false);
   }
 
+  function handleShareProfile() {
+    if (typeof window === "undefined") return;
+    const url = window.location.href;
+    const title = `@${profile.username ?? label} on Foopy`;
+    if (navigator.share) {
+      navigator.share({ title, url }).catch(() => {});
+      return;
+    }
+    navigator.clipboard?.writeText(url).catch(() => {});
+  }
+
   return (
     <main style={pageStyle} className="page-enter">
-      {/* Back button — overlays the sticky banner */}
-      <button onClick={() => router.back()} style={floatingBackBtnStyle} aria-label="Back">
-        <ChevronLeft size={22} strokeWidth={2.6} />
-      </button>
+      <div style={{ ...wrapStyle, paddingTop: 0 }}>
+        <div style={profileHeroShellStyle}>
+          <section style={profileStickyHeaderStyle}>
+            <button type="button" onClick={() => router.back()} aria-label="Back" style={{ ...topControlBaseStyle, left: 12 }}>
+              <ChevronLeft size={22} strokeWidth={2.6} />
+            </button>
+            <button type="button" onClick={handleShareProfile} aria-label="Profile options" style={{ ...topControlBaseStyle, right: 12 }}>
+              <MoreHorizontal size={22} strokeWidth={2.6} />
+            </button>
 
-      <div style={wrapStyle}>
-
-        {/* Banner — sticky, stays visible while the rest of the page scrolls under it */}
-        <div style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 40,
-          height: "calc(110px + env(safe-area-inset-top))",
-          paddingTop: "env(safe-area-inset-top)",
-          boxSizing: "border-box",
-          borderRadius: "18px 18px 0 0",
-          backgroundColor: "#06101e",
-          overflow: "hidden",
-        }}>
-          <div style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            top: 0,
-            bottom: -24,
-            backgroundImage: profile.banner_url
-              ? `url(${profile.banner_url})`
-              : "radial-gradient(ellipse at 15% 60%,rgba(59,130,246,.6),transparent 40%),radial-gradient(ellipse at 85% 20%,rgba(99,102,241,.5),transparent 40%),radial-gradient(ellipse at 50% 100%,rgba(34,197,94,.2),transparent 50%),linear-gradient(160deg,#06101e,#000)",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            transform: `translate3d(0, -${bannerLift}px, 0) scale(1.025)`,
-            transition: "transform 160ms ease-out",
-            willChange: "transform",
-          }} />
-        </div>
-
-        {/* ── Profile header ── */}
-        <section style={{ background: "var(--bg)", border: "1px solid var(--border-2)", borderTop: "none", borderRadius: "0 0 18px 18px", overflow: "hidden" }}>
-
-          {/* Avatar + username + pills */}
-          <div style={{ display: "flex", alignItems: "center", padding: "14px 16px 16px", gap: 14 }}>
-            {/* Avatar */}
-            <div style={{ flexShrink: 0 }}>
-              {profile.avatar_url ? (
-                <img src={profile.avatar_url} alt={label} style={{ width: 90, height: 90, borderRadius: "50%", objectFit: "cover", border: "3px solid var(--bg)", boxShadow: "0 0 0 2px var(--border-3)", flexShrink: 0 }} />
+            <div style={bannerFrameStyle}>
+              {bannerSrc ? (
+                <img src={bannerSrc} alt="" style={bannerMediaStyle} />
               ) : (
-                <div style={{ width: 90, height: 90, borderRadius: "50%", background: `linear-gradient(135deg,${avBg},var(--surface-1))`, color: avFg, display: "grid", placeItems: "center", fontSize: 32, fontWeight: 950, border: "3px solid var(--bg)", boxShadow: `0 0 0 2px var(--border-3),0 0 30px ${avFg}44`, flexShrink: 0 }}>
+                <div style={{ ...bannerMediaStyle, background: "radial-gradient(ellipse at 15% 60%,rgba(59,130,246,.6),transparent 40%),radial-gradient(ellipse at 85% 20%,rgba(99,102,241,.5),transparent 40%),radial-gradient(ellipse at 50% 100%,rgba(34,197,94,.2),transparent 50%),linear-gradient(160deg,#06101e,#000)" }} />
+              )}
+              <div style={headerOverlayStyle} />
+            </div>
+
+            <div style={avatarButtonStyle}>
+              {avatarSrc ? (
+                <img src={avatarSrc} alt={label} style={avatarImageStyle} />
+              ) : (
+                <div style={{ ...avatarImageStyle, background: `linear-gradient(135deg,${avBg},var(--surface-1))`, color: avFg, display: "grid", placeItems: "center", fontSize: compactProfileHeader ? 34 : 38, fontWeight: 950 }}>
                   {label[0].toUpperCase()}
                 </div>
               )}
             </div>
 
-            {/* Username + pills */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <h1 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 950, letterSpacing: "-0.04em", lineHeight: 1, color: "var(--text-1)", display: "flex", alignItems: "center", gap: 5, overflow: "hidden" }}>
+            <div style={compactUsernamePillStyle}>
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", ...nameColorStyle(profile.name_color) }}>@{profile.username}</span>
+              {profile.verified && <VerifiedBadge size={14} />}
+            </div>
+          </section>
+
+          <section style={profileBodyStyle}>
+            <div style={mainIdentityStyle}>
+              <h1 style={{ margin: 0, fontSize: compactProfileHeader ? 28 : 34, fontWeight: 950, letterSpacing: 0, lineHeight: 1.05, color: "var(--text-1)", display: "flex", alignItems: "center", gap: 6, overflow: "hidden" }}>
                 <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", ...nameColorStyle(profile.name_color) }}>@{profile.username}</span>
-                {profile.verified && <VerifiedBadge size={16} />}
+                {profile.verified && <VerifiedBadge size={18} />}
               </h1>
-              {/* Favourite team badge */}
+
               {profile.favourite_team && (() => {
                 const team = TEAMS.find(t => t.name === profile.favourite_team);
                 return team ? (
-                  <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 8 }}>
                     <div style={{ width: 18, height: 18, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${team.color}18` }}>
                       <img src={team.logo} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                     </div>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-3)", letterSpacing: "-0.01em" }}>{profile.favourite_team}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-3)", letterSpacing: 0 }}>{profile.favourite_team}</span>
                   </div>
                 ) : null;
               })()}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-                {/* Aura */}
-                <a href={`/aura-leaderboard?user=${profile.username}`} style={{ textDecoration: "none", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3 }}>
-                  <span style={{ fontSize: 20, fontWeight: 900, background: "linear-gradient(135deg, #c084fc 0%, #818cf8 50%, #fbbf24 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", lineHeight: 1 }}>✦ {formatAura(profile.aura ?? 0)}</span>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.05em", textTransform: "uppercase" }}>Aura</span>
-                </a>
-                {/* Cards */}
-                <Link href={`/album/${profile.username}`} style={{ textDecoration: "none", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                    <Layers size={18} color="var(--text-1)" strokeWidth={2.5} />
-                    <span style={{ fontSize: 20, fontWeight: 900, color: "var(--text-1)", lineHeight: 1 }}>{cardCount.toLocaleString()}</span>
-                  </div>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.05em", textTransform: "uppercase" }}>Cards</span>
-                </Link>
-                {/* Friends */}
-                <button onClick={() => setShowFriends(true)} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3, background: "none", border: "none", padding: 0, cursor: "pointer" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                    <Users size={18} color="var(--text-1)" strokeWidth={2.5} />
-                    <span style={{ fontSize: 20, fontWeight: 900, color: "var(--text-1)", lineHeight: 1 }}>{friends.length}</span>
-                  </div>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.05em", textTransform: "uppercase" }}>Friends</span>
-                </button>
+            </div>
+
+            <div style={profileHeaderStatsStyle}>
+              <a href={`/aura-leaderboard?user=${profile.username}`} style={profileHeaderStatStyle}>
+                <span style={{ ...profileHeaderValueStyle, background: "linear-gradient(135deg, #c084fc 0%, #818cf8 50%, #fbbf24 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>✦ {formatAura(profile.aura ?? 0)}</span>
+                <span style={profileHeaderLabelStyle}>Aura</span>
+              </a>
+              <Link href={`/album/${profile.username}`} style={profileHeaderStatStyle}>
+                <div style={profileHeaderIconRowStyle}>
+                  <Layers size={profileHeaderIconSize} color="var(--text-1)" strokeWidth={2.5} />
+                  <span style={profileHeaderValueStyle}>{cardCount.toLocaleString()}</span>
+                </div>
+                <span style={profileHeaderLabelStyle}>Cards</span>
+              </Link>
+              <button onClick={() => setShowFriends(true)} style={{ ...profileHeaderStatStyle, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit" }}>
+                <div style={profileHeaderIconRowStyle}>
+                  <Users size={profileHeaderIconSize} color="var(--text-1)" strokeWidth={2.5} />
+                  <span style={profileHeaderValueStyle}>{friends.length}</span>
+                </div>
+                <span style={profileHeaderLabelStyle}>Friends</span>
+              </button>
+            </div>
+
+            <div style={{ marginTop: 16 }}>
+              <div style={{ marginBottom: 8, color: "#60a5fa", fontSize: 11, fontWeight: 950, textTransform: "uppercase", letterSpacing: "0.08em" }}>About</div>
+              <div style={{ padding: "14px 15px", borderRadius: 16, background: "var(--surface-2)", border: "1px solid var(--border-2)" }}>
+                <p style={{ margin: 0, color: profile.bio ? "#cbd5e1" : "#475569", fontSize: 14, fontWeight: 650, lineHeight: 1.55, fontStyle: profile.bio ? "normal" : "italic" }}>
+                  {profile.bio || "No bio yet."}
+                </p>
               </div>
             </div>
-          </div>
 
-          {/* Bio */}
-          <div style={{ margin: "0 14px", padding: "4px 0 8px" }}>
-            <p style={{ margin: 0, color: profile.bio ? "#cbd5e1" : "#475569", fontSize: 14, fontWeight: 600, lineHeight: 1.6, fontStyle: profile.bio ? "normal" : "italic" }}>
-              {profile.bio || "No bio yet."}
-            </p>
-          </div>
-
-          {/* Add Friend + Message buttons (only when viewing another user's profile) */}
-          {!isOwnProfile && currentUserId && (
-            <div style={{ display: "flex", gap: 10, padding: "12px 14px 14px" }}>
-              <button
-                onClick={handleFriendAction}
-                disabled={friendLoading}
-                style={{
-                  flex: 1, padding: "11px 14px", borderRadius: 14, border: "none", cursor: "pointer",
-                  fontFamily: "inherit", fontWeight: 900, fontSize: 14,
-                  background: friendStatus === "accepted" ? "rgba(239,68,68,.15)"
-                    : friendStatus === "pending_sent" ? "var(--border-2)"
-                    : friendStatus === "pending_received" ? "rgba(59,130,246,.2)"
-                    : "rgba(59,130,246,.2)",
-                  color: friendStatus === "accepted" ? "#f87171"
-                    : friendStatus === "pending_sent" ? "#94a3b8"
-                    : "#60a5fa",
-                  opacity: friendLoading ? 0.6 : 1,
-                }}
-              >
-                {friendStatus === "accepted" ? "Remove Friend"
-                  : friendStatus === "pending_sent" ? "Request Sent"
-                  : friendStatus === "pending_received" ? "Accept Request"
-                  : "Add Friend"}
-              </button>
-              <button
-                onClick={() => router.push(`/dms?open=${profile.id}`)}
-                style={{
-                  flex: 1, padding: "11px 14px", borderRadius: 14,
-                  border: "1px solid var(--border-3)", cursor: "pointer",
-                  fontFamily: "inherit", fontWeight: 900, fontSize: 14,
-                  background: "var(--surface-3)", color: "var(--text-1)",
-                }}
-              >
-                Message
-              </button>
-            </div>
-          )}
-        </section>
+            {!isOwnProfile && currentUserId && (
+              <div style={{ display: "flex", gap: 10, paddingTop: 14 }}>
+                <button
+                  onClick={handleFriendAction}
+                  disabled={friendLoading}
+                  style={{
+                    flex: 1, padding: "12px 14px", borderRadius: 14, border: "none", cursor: "pointer",
+                    fontFamily: "inherit", fontWeight: 950, fontSize: 14,
+                    background: friendStatus === "accepted" ? "rgba(239,68,68,.18)"
+                      : friendStatus === "pending_sent" ? "var(--border-2)"
+                      : friendStatus === "pending_received" ? "rgba(37,99,235,.28)"
+                      : "#2563eb",
+                    color: friendStatus === "accepted" ? "#f87171"
+                      : friendStatus === "pending_sent" ? "#94a3b8"
+                      : "#fff",
+                    opacity: friendLoading ? 0.6 : 1,
+                  }}
+                >
+                  {friendStatus === "accepted" ? "Remove Friend"
+                    : friendStatus === "pending_sent" ? "Request Sent"
+                    : friendStatus === "pending_received" ? "Accept Request"
+                    : "Add Friend"}
+                </button>
+                <button
+                  onClick={() => router.push(`/dms?open=${profile.id}`)}
+                  style={{
+                    flex: 1, padding: "12px 14px", borderRadius: 14,
+                    border: "1px solid var(--border-3)", cursor: "pointer",
+                    fontFamily: "inherit", fontWeight: 950, fontSize: 14,
+                    background: "var(--surface-3)", color: "var(--text-1)",
+                  }}
+                >
+                  Message
+                </button>
+              </div>
+            )}
+          </section>
+        </div>
 
         {/* ── Favourites ── */}
         <section style={{ background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18, padding: "18px 16px 22px" }}>
@@ -1315,14 +1523,4 @@ const cardStyle: React.CSSProperties = {
   border: "1px solid var(--border-2)",
   borderRadius: 18,
   overflow: "hidden",
-};
-
-const avatarStyle: React.CSSProperties = {
-  width: 88,
-  height: 88,
-  borderRadius: "50%",
-  objectFit: "cover",
-  border: "3px solid #000",
-  boxShadow: "0 0 0 2px var(--border-3)",
-  flexShrink: 0,
 };
