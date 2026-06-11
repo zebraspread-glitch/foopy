@@ -4,7 +4,7 @@ import { formatAura } from "@/app/lib/format";
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Users, Layers, Star, Ticket, MessageCircle, Heart, Tv, Zap, BarChart2, Trophy } from "lucide-react";
+import { Users, Layers, Star, Ticket, MessageCircle, Heart, Tv, Zap, BarChart2, Trophy, ChevronLeft } from "lucide-react";
 import { supabase } from "@/app/lib/supabase";
 import AuraBadge from "@/app/components/AuraBadge";
 import { VerifiedBadge } from "@/app/components/VerifiedBadge";
@@ -17,6 +17,33 @@ import { playerImgUrlFromFolder } from "@/app/lib/playerImage";
 import { nameColorStyle } from "@/app/lib/cosmetics";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import { foopyRating } from "@/app/match/[id]/utils";
+
+function useBannerLift(maxLift = 18) {
+  const [lift, setLift] = useState(0);
+
+  useEffect(() => {
+    let frame = 0;
+    const update = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        const next = Math.min(maxLift, Math.max(0, window.scrollY * 0.14));
+        setLift((current) => (Math.abs(current - next) < 0.2 ? current : next));
+      });
+    };
+
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [maxLift]);
+
+  return lift;
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -428,6 +455,7 @@ export default function PublicProfilePage() {
   const params  = useParams();
   const router  = useRouter();
   const username = String(params.username || "").replace("@", "").toLowerCase();
+  const bannerLift = useBannerLift();
 
   const [profile,       setProfile]       = useState<Profile | null>(null);
   const [friends,       setFriends]       = useState<FriendEntry[]>([]);
@@ -629,9 +657,9 @@ export default function PublicProfilePage() {
   if (loading) {
     return (
       <main style={pageStyle} className="page-enter">
-        <div style={topBarStyle}>
-          <button onClick={() => router.back()} style={backBtnStyle}>← Back</button>
-        </div>
+        <button onClick={() => router.back()} style={floatingBackBtnStyle} aria-label="Back">
+          <ChevronLeft size={22} strokeWidth={2.6} />
+        </button>
         <div style={wrapStyle}>
           <div style={{ ...cardStyle, overflow: "hidden" }}>
             <div className="skeleton" style={{ height: 155 }} />
@@ -649,9 +677,9 @@ export default function PublicProfilePage() {
   if (!profile) {
     return (
       <main style={pageStyle} className="page-enter">
-        <div style={topBarStyle}>
-          <button onClick={() => router.back()} style={backBtnStyle}>← Back</button>
-        </div>
+        <button onClick={() => router.back()} style={floatingBackBtnStyle} aria-label="Back">
+          <ChevronLeft size={22} strokeWidth={2.6} />
+        </button>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "55vh", gap: 16, padding: "0 24px", textAlign: "center" }}>
           <div style={{ fontSize: 52 }}>👤</div>
           <h2 style={{ margin: 0, fontSize: 22, fontWeight: 950 }}>User not found</h2>
@@ -717,25 +745,44 @@ export default function PublicProfilePage() {
 
   return (
     <main style={pageStyle} className="page-enter">
-      {/* Back button */}
-      <div style={topBarStyle}>
-        <button onClick={() => router.back()} style={backBtnStyle}>← Back</button>
-      </div>
+      {/* Back button — overlays the sticky banner */}
+      <button onClick={() => router.back()} style={floatingBackBtnStyle} aria-label="Back">
+        <ChevronLeft size={22} strokeWidth={2.6} />
+      </button>
 
       <div style={wrapStyle}>
 
-        {/* ── Profile header ── */}
-        <section style={{ background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18, overflow: "hidden" }}>
-          {/* Banner — clean, nothing on top */}
+        {/* Banner — sticky, stays visible while the rest of the page scrolls under it */}
+        <div style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 40,
+          height: "calc(110px + env(safe-area-inset-top))",
+          paddingTop: "env(safe-area-inset-top)",
+          boxSizing: "border-box",
+          borderRadius: "18px 18px 0 0",
+          backgroundColor: "#06101e",
+          overflow: "hidden",
+        }}>
           <div style={{
-            height: 110,
-            backgroundColor: "#06101e",
+            position: "absolute",
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: -24,
             backgroundImage: profile.banner_url
               ? `url(${profile.banner_url})`
               : "radial-gradient(ellipse at 15% 60%,rgba(59,130,246,.6),transparent 40%),radial-gradient(ellipse at 85% 20%,rgba(99,102,241,.5),transparent 40%),radial-gradient(ellipse at 50% 100%,rgba(34,197,94,.2),transparent 50%),linear-gradient(160deg,#06101e,#000)",
             backgroundSize: "cover",
             backgroundPosition: "center",
+            transform: `translate3d(0, -${bannerLift}px, 0) scale(1.025)`,
+            transition: "transform 160ms ease-out",
+            willChange: "transform",
           }} />
+        </div>
+
+        {/* ── Profile header ── */}
+        <section style={{ background: "var(--bg)", border: "1px solid var(--border-2)", borderTop: "none", borderRadius: "0 0 18px 18px", overflow: "hidden" }}>
 
           {/* Avatar + username + pills */}
           <div style={{ display: "flex", alignItems: "center", padding: "14px 16px 16px", gap: 14 }}>
@@ -1135,7 +1182,7 @@ export default function PublicProfilePage() {
       {showFriends && (
         <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "var(--bg)", color: "var(--text-1)", overflowY: "auto" }}>
           <div style={{ height: "calc(58px + env(safe-area-inset-top))", display: "flex", alignItems: "center", gap: 18, padding: "env(safe-area-inset-top) 20px 0", background: "var(--bg)", borderBottom: "1px solid var(--border-2)", position: "sticky", top: 0 }}>
-            <button onClick={() => setShowFriends(false)} style={backBtnStyle}>← Back</button>
+            <button onClick={() => setShowFriends(false)} style={overlayBackBtnStyle}>← Back</button>
             <strong style={{ fontSize: 18 }}>Friends</strong>
           </div>
           <div style={{ maxWidth: 680, margin: "0 auto", padding: 20, display: "flex", flexDirection: "column", gap: 10 }}>
@@ -1159,7 +1206,7 @@ export default function PublicProfilePage() {
       {duelHistoryOpen && (
         <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "var(--bg)", color: "var(--text-1)", overflowY: "auto" }}>
           <div style={{ height: "calc(58px + env(safe-area-inset-top))", display: "flex", alignItems: "center", gap: 18, padding: "env(safe-area-inset-top) 20px 0", background: "var(--bg)", borderBottom: "1px solid var(--border-2)", position: "sticky", top: 0 }}>
-            <button onClick={() => setDuelHistoryOpen(false)} style={backBtnStyle}>← Back</button>
+            <button onClick={() => setDuelHistoryOpen(false)} style={overlayBackBtnStyle}>← Back</button>
             <strong style={{ fontSize: 18 }}>Duel History</strong>
           </div>
           <div style={{ maxWidth: 680, margin: "0 auto", padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
@@ -1225,13 +1272,7 @@ const pageStyle: React.CSSProperties = {
   paddingBottom: "calc(95px + env(safe-area-inset-bottom))",
 };
 
-const topBarStyle: React.CSSProperties = {
-  maxWidth: 680,
-  margin: "0 auto",
-  padding: "calc(env(safe-area-inset-top) + 12px) 20px 10px",
-};
-
-const backBtnStyle: React.CSSProperties = {
+const overlayBackBtnStyle: React.CSSProperties = {
   border: "none",
   background: "transparent",
   color: "#60a5fa",
@@ -1239,6 +1280,25 @@ const backBtnStyle: React.CSSProperties = {
   fontWeight: 900,
   cursor: "pointer",
   padding: 0,
+};
+
+const floatingBackBtnStyle: React.CSSProperties = {
+  position: "fixed",
+  top: "calc(env(safe-area-inset-top) + 12px)",
+  left: 12,
+  zIndex: 100,
+  width: 36,
+  height: 36,
+  borderRadius: "50%",
+  border: "none",
+  background: "rgba(0,0,0,0.45)",
+  backdropFilter: "blur(8px)",
+  WebkitBackdropFilter: "blur(8px)",
+  color: "#fff",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
 };
 
 const wrapStyle: React.CSSProperties = {

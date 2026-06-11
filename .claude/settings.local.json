@@ -209,7 +209,9 @@
       "Bash(node -e \"const d=require\\('@emoji-mart/data'\\); const data=d.default??d; console.log\\('categories:', data.categories.map\\(c=>c.id\\).join\\(','\\)\\); const pid=data.categories.find\\(c=>c.id==='people'\\).emojis[0]; console.log\\('sample id:', pid, '->', JSON.stringify\\(data.emojis[pid].skins[0].native\\)\\); console.log\\('people count:', data.categories.find\\(c=>c.id==='people'\\).emojis.length\\);\")",
       "Bash(xargs echo \"image files:\")",
       "PowerShell(\"done\")",
-      "Bash(powershell -Command \"\\(Get-Content 'app/match/[id]/page.tsx'\\) -replace 'onClick=\\\\{\\\\\\(\\\\\\) => setActiveTab\\\\\\(t\\\\\\)\\\\}', 'onClick={\\(\\) => goToTab\\(t\\)}' -replace 'onOpenPolls=\\\\{\\\\\\(\\\\\\) => setActiveTab\\\\\\(\\\\\"polls\\\\\"\\\\\\)\\\\}', 'onOpenPolls={\\(\\) => goToTab\\(\\\\\"polls\\\\\"\\)}' | Set-Content 'app/match/[id]/page.tsx'\")"
+      "Bash(powershell -Command \"\\(Get-Content 'app/match/[id]/page.tsx'\\) -replace 'onClick=\\\\{\\\\\\(\\\\\\) => setActiveTab\\\\\\(t\\\\\\)\\\\}', 'onClick={\\(\\) => goToTab\\(t\\)}' -replace 'onOpenPolls=\\\\{\\\\\\(\\\\\\) => setActiveTab\\\\\\(\\\\\"polls\\\\\"\\\\\\)\\\\}', 'onOpenPolls={\\(\\) => goToTab\\(\\\\\"polls\\\\\"\\)}' | Set-Content 'app/match/[id]/page.tsx'\")",
+      "Bash(grep -n -i \"transform\\\\|filter\\\\|will-change\\\\|perspective\" app/layout.tsx)",
+      "Bash(grep -rn \"page-enter\" app/layout.tsx)"
     ]
   }
 }

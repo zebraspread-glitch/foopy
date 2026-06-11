@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 import type { CSSProperties } from "react";
-import { X, Plus, Search, RotateCcw, Camera, ImageIcon, AtSign, Pencil, Users, Star, Layers, Ticket, MessageCircle, Heart, Tv, Zap, BarChart2, Trophy } from "lucide-react";
+import { X, Plus, Search, RotateCcw, Camera, ImageIcon, AtSign, Pencil, Users, Star, Layers, Ticket, MessageCircle, Heart, Tv, Zap, BarChart2, Trophy, ChevronLeft, MoreHorizontal } from "lucide-react";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
 import AuraBadge from "@/app/components/AuraBadge";
@@ -79,6 +79,47 @@ function useMediaQuery(query: string) {
   }, [query]);
 
   return matches;
+}
+
+function clamp01(value: number) {
+  return Math.max(0, Math.min(1, value));
+}
+
+function easeProfile(value: number) {
+  const t = clamp01(value);
+  return t * t * (3 - 2 * t);
+}
+
+function lerp(from: number, to: number, progress: number) {
+  return from + (to - from) * progress;
+}
+
+function useProfileHeaderProgress(distance = 188) {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    let frame = 0;
+    const update = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        const next = clamp01(window.scrollY / distance);
+        setProgress((current) => (Math.abs(current - next) < 0.003 ? current : next));
+      });
+    };
+
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [distance]);
+
+  return progress;
 }
 
 /* ─────────────────── Types ─────────────────── */
@@ -811,6 +852,8 @@ function FavSlotButton({
 export default function ProfilePage() {
   const router = useRouter();
   const compactProfileHeader = useMediaQuery("(max-width: 430px)");
+  const headerProgress = useProfileHeaderProgress(compactProfileHeader ? 172 : 204);
+  const headerEase = easeProfile(headerProgress);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1736,19 +1779,159 @@ export default function ProfilePage() {
   const locked = !!profile?.username && !canChangeUsername(profile.username_updated_at);
   const nextDate = locked ? nextChangeDate(profile!.username_updated_at) : null;
   const filledCount = favs.filter(Boolean).length;
-  const profileAvatarSize = compactProfileHeader ? 78 : 90;
-  const profileHeaderRowStyle: CSSProperties = {
+  const bannerSrc = localBannerUrl ?? profile?.banner_url ?? "";
+  const avatarSrc = localAvatarUrl ?? profile?.avatar_url ?? "";
+  const expandedBannerHeight = compactProfileHeader ? 246 : 286;
+  const collapsedBannerHeight = compactProfileHeader ? 72 : 82;
+  const bannerHeight = lerp(expandedBannerHeight, collapsedBannerHeight, headerEase);
+  const bannerLift = lerp(0, 22, headerEase);
+  const bannerScale = lerp(1.02, 1.08, headerEase);
+  const bannerOverlayOpacity = lerp(0.22, 0.76, headerEase);
+  const bannerBlur = lerp(0, 7, headerEase);
+  const avatarBaseSize = compactProfileHeader ? 106 : 118;
+  const avatarScale = lerp(1, compactProfileHeader ? 0.46 : 0.5, headerEase);
+  const avatarStartLeft = compactProfileHeader ? 18 : 22;
+  const avatarStartTop = expandedBannerHeight - avatarBaseSize * 0.5;
+  const avatarTranslateX = lerp(0, (compactProfileHeader ? 60 : 68) - avatarStartLeft, headerEase);
+  const avatarTranslateY = lerp(0, (compactProfileHeader ? 14 : 17) - avatarStartTop, headerEase);
+  const avatarRenderedSize = avatarBaseSize * avatarScale;
+  const mainUsernameOpacity = clamp01(1 - headerProgress * 1.7);
+  const compactUsernameOpacity = clamp01((headerProgress - 0.3) / 0.7);
+  const contentTopPad = lerp(avatarBaseSize * 0.55 + 18, 18, headerEase);
+  const expandedOnlyOpacity = clamp01(1 - headerProgress * 1.35);
+  const compactUsernameLeft = avatarStartLeft + avatarTranslateX + avatarRenderedSize + 12;
+  const profileHeroShellStyle: CSSProperties = {
+    position: "relative",
+    overflow: "visible",
+    borderRadius: 0,
+    background: "var(--bg)",
+  };
+  const profileStickyHeaderStyle: CSSProperties = {
+    position: "sticky",
+    top: 0,
+    zIndex: 80,
+    height: `calc(${bannerHeight}px + env(safe-area-inset-top))`,
+    borderRadius: compactProfileHeader ? "0 0 22px 22px" : "0 0 24px 24px",
+    overflow: "visible",
+    background: "#020617",
+  };
+  const bannerFrameStyle: CSSProperties = {
+    position: "absolute",
+    inset: 0,
+    overflow: "hidden",
+    borderRadius: compactProfileHeader ? "0 0 22px 22px" : "0 0 24px 24px",
+    background: "#06101e",
+  };
+  const bannerMediaStyle: CSSProperties = {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: -26,
+    bottom: -34,
+    width: "100%",
+    height: "calc(100% + 60px)",
+    objectFit: "cover",
+    objectPosition: "center",
+    transform: `translate3d(0, -${bannerLift}px, 0) scale(${bannerScale})`,
+    filter: `blur(${bannerBlur}px)`,
+    transition: "transform 80ms linear, filter 80ms linear",
+    willChange: "transform, filter",
+  };
+  const headerOverlayStyle: CSSProperties = {
+    position: "absolute",
+    inset: 0,
+    background: `linear-gradient(180deg, rgba(0,0,0,${bannerOverlayOpacity + 0.08}) 0%, rgba(0,0,0,${bannerOverlayOpacity}) 58%, rgba(0,0,0,0.9) 100%)`,
+    pointerEvents: "none",
+  };
+  const topControlBaseStyle: CSSProperties = {
+    position: "absolute",
+    top: "calc(env(safe-area-inset-top) + 10px)",
+    zIndex: 8,
+    width: 38,
+    height: 38,
+    borderRadius: "50%",
+    border: "1px solid rgba(255,255,255,0.14)",
+    background: "rgba(2,6,23,0.52)",
+    color: "var(--text-1)",
     display: "flex",
     alignItems: "center",
-    padding: compactProfileHeader ? "14px 14px 16px" : "14px 16px 16px",
-    gap: compactProfileHeader ? 12 : 14,
+    justifyContent: "center",
+    cursor: "pointer",
+    backdropFilter: "blur(14px)",
+    WebkitBackdropFilter: "blur(14px)",
+  };
+  const avatarButtonStyle: CSSProperties = {
+    position: "absolute",
+    zIndex: 9,
+    left: avatarStartLeft,
+    top: `calc(env(safe-area-inset-top) + ${avatarStartTop}px)`,
+    width: avatarBaseSize,
+    height: avatarBaseSize,
+    borderRadius: "50%",
+    border: "none",
+    background: "transparent",
+    padding: 0,
+    cursor: "pointer",
+    transform: `translate3d(${avatarTranslateX}px, ${avatarTranslateY}px, 0) scale(${avatarScale})`,
+    transformOrigin: "top left",
+    transition: "transform 80ms linear",
+    willChange: "transform",
+  };
+  const avatarImageStyle: CSSProperties = {
+    width: avatarBaseSize,
+    height: avatarBaseSize,
+    borderRadius: "50%",
+    objectFit: "cover",
+    border: "4px solid var(--bg)",
+    boxShadow: "0 0 0 1px rgba(255,255,255,0.14), 0 16px 44px rgba(0,0,0,0.48)",
+    display: "block",
+  };
+  const compactUsernamePillStyle: CSSProperties = {
+    position: "absolute",
+    zIndex: 8,
+    left: compactUsernameLeft,
+    top: "calc(env(safe-area-inset-top) + 20px)",
+    maxWidth: `calc(100% - ${compactUsernameLeft + 74}px)`,
+    height: 34,
+    padding: "0 12px",
+    borderRadius: 999,
+    background: "rgba(15,23,42,0.62)",
+    border: "1px solid rgba(255,255,255,0.12)",
+    display: "flex",
+    alignItems: "center",
+    color: "var(--text-1)",
+    fontSize: 14,
+    fontWeight: 950,
+    opacity: compactUsernameOpacity,
+    transform: `translate3d(0, ${lerp(8, 0, headerEase)}px, 0)`,
+    pointerEvents: compactUsernameOpacity > 0.5 ? "auto" : "none",
+    overflow: "hidden",
+    whiteSpace: "nowrap",
+    textOverflow: "ellipsis",
+    backdropFilter: "blur(16px)",
+    WebkitBackdropFilter: "blur(16px)",
+  };
+  const profileBodyStyle: CSSProperties = {
+    position: "relative",
+    zIndex: 2,
+    padding: `${contentTopPad}px 14px 16px`,
+    background: "var(--bg)",
+    border: "1px solid var(--border-2)",
+    borderTop: "none",
+    borderRadius: compactProfileHeader ? "0 0 22px 22px" : "0 0 24px 24px",
+  };
+  const mainIdentityStyle: CSSProperties = {
+    opacity: mainUsernameOpacity,
+    transform: `translate3d(0, -${lerp(0, 12, headerEase)}px, 0)`,
+    transition: "opacity 80ms linear, transform 80ms linear",
+    willChange: "opacity, transform",
   };
   const profileHeaderStatsStyle: CSSProperties = {
     display: "grid",
     gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
     alignItems: "start",
     gap: 8,
-    padding: "2px 14px 8px",
+    padding: "12px 0 4px",
   };
   const profileHeaderStatStyle: CSSProperties = {
     textDecoration: "none",
@@ -1787,48 +1970,59 @@ export default function ProfilePage() {
     width: "100%",
   };
   const profileHeaderIconSize = compactProfileHeader ? 15 : 18;
-  const mobileFriendsRowStyle: CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-    margin: "12px 14px 0",
-    padding: "12px 14px",
-    borderRadius: 16,
-    border: "1px solid var(--border-2)",
-    background: "var(--surface-2)",
-    color: "var(--text-1)",
-    cursor: "pointer",
-    fontFamily: "inherit",
-    textAlign: "left",
-  };
 
   return (
     <main style={pageStyle} className="page-enter">
-      <div style={wrapStyle}>
+      <div style={{ ...wrapStyle, paddingTop: 0 }}>
         {/* ── Profile header card ── */}
-        <div style={profileCardStyle}>
+        <div style={profileHeroShellStyle}>
           {/* Banner — tappable */}
-          <button
-            onClick={() => setBannerSheetOpen(true)}
-            style={{ display: "block", width: "100%", border: "none", padding: 0, cursor: "pointer", position: "relative", background: "none" }}
-            aria-label="Edit banner"
-          >
-            <div style={
-              (localBannerUrl || profile?.banner_url)
-                ? { height: bannerStyle.height, backgroundImage: `url(${localBannerUrl ?? profile?.banner_url})`, backgroundSize: "cover", backgroundPosition: "center" }
-                : bannerStyle
-            } />
-            {/* Camera badge on banner */}
-            <div style={{ position: "absolute", bottom: 8, right: 8, width: 28, height: 28, borderRadius: "50%", background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Camera size={14} color="#fff" />
-            </div>
-            {bannerUploading && (
-              <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <div className="spinner" />
+          <section style={profileStickyHeaderStyle}>
+            <button type="button" onClick={() => router.back()} aria-label="Back" style={{ ...topControlBaseStyle, left: 12 }}>
+              <ChevronLeft size={22} strokeWidth={2.6} />
+            </button>
+            <button type="button" onClick={() => setEditSection("menu")} aria-label="Profile options" style={{ ...topControlBaseStyle, right: 12 }}>
+              <MoreHorizontal size={22} strokeWidth={2.6} />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setBannerSheetOpen(true)}
+              aria-label="Edit banner"
+              style={{ position: "absolute", inset: 0, border: "none", background: "none", padding: 0, cursor: "pointer", overflow: "hidden", borderRadius: profileStickyHeaderStyle.borderRadius }}
+            >
+              <div style={bannerFrameStyle}>
+                {bannerSrc ? (
+                  <img src={bannerSrc} alt="" style={bannerMediaStyle} />
+                ) : (
+                  <div style={{ ...bannerMediaStyle, background: bannerStyle.background }} />
+                )}
+                <div style={headerOverlayStyle} />
+                <div style={{ position: "absolute", right: 14, bottom: 14, width: 32, height: 32, borderRadius: "50%", background: "rgba(2,6,23,0.58)", border: "1px solid rgba(255,255,255,0.18)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", opacity: expandedOnlyOpacity, backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)" }}>
+                  {bannerUploading ? <div className="spinner" style={{ width: 14, height: 14 }} /> : <Camera size={15} />}
+                </div>
               </div>
-            )}
-          </button>
+            </button>
+
+            <button type="button" onClick={() => setAvatarSheetOpen(true)} style={avatarButtonStyle} aria-label="Edit profile photo">
+              <div style={avatarFrameStyle(profile?.avatar_frame) ?? undefined}>
+                {avatarSrc ? (
+                  <img src={avatarSrc} alt="Profile" style={avatarImageStyle} />
+                ) : (
+                  <div style={{ ...avatarImageStyle, background: `linear-gradient(135deg,${avBg},var(--surface-1))`, color: avFg, display: "grid", placeItems: "center", fontSize: compactProfileHeader ? 34 : 38, fontWeight: 950 }}>
+                    {label[0].toUpperCase()}
+                  </div>
+                )}
+              </div>
+              <div style={{ position: "absolute", bottom: 3, right: 3, width: 28, height: 28, borderRadius: "50%", background: "var(--text-1)", border: "2px solid var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", opacity: expandedOnlyOpacity }}>
+                {avatarUploading ? <div className="spinner" style={{ width: 12, height: 12 }} /> : <Camera size={12} color="var(--bg)" />}
+              </div>
+            </button>
+
+            <div style={compactUsernamePillStyle}>
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", ...nameColorStyle(profile?.name_color) }}>@{username || "profile"}</span>
+            </div>
+          </section>
 
           <input ref={fileInputRef} type="file" accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif" style={{ display: "none" }}
             onChange={(e) => { const file = e.target.files?.[0]; if (!file) return; setAvatarErr(""); openImagePreview(file, "avatar"); e.target.value = ""; }}
@@ -1837,46 +2031,26 @@ export default function ProfilePage() {
             onChange={(e) => { const file = e.target.files?.[0]; if (!file) return; setBannerErr(""); openImagePreview(file, "banner"); e.target.value = ""; }}
           />
 
-          {/* Avatar + username + pills — all below the banner */}
-          <div style={profileHeaderRowStyle}>
-            {/* Avatar — tappable */}
-            <button onClick={() => setAvatarSheetOpen(true)} style={{ flexShrink: 0, background: "none", border: "none", padding: 0, cursor: "pointer", position: "relative" }} aria-label="Edit profile photo">
-              <div style={avatarFrameStyle(profile?.avatar_frame) ?? undefined}>
-                {(localAvatarUrl || profile?.avatar_url) ? (
-                  <img src={localAvatarUrl ?? profile?.avatar_url ?? ""} alt="Profile" style={{ width: profileAvatarSize, height: profileAvatarSize, borderRadius: "50%", objectFit: "cover", border: "3px solid var(--bg)", boxShadow: "0 0 0 2px var(--border-3)", display: "block" }} />
-                ) : (
-                  <div style={{ width: profileAvatarSize, height: profileAvatarSize, borderRadius: "50%", background: `linear-gradient(135deg,${avBg},var(--surface-1))`, color: avFg, display: "grid", placeItems: "center", fontSize: compactProfileHeader ? 28 : 32, fontWeight: 950, border: "3px solid var(--bg)", boxShadow: `0 0 0 2px var(--border-3),0 0 30px ${avFg}44` }}>
-                    {label[0].toUpperCase()}
-                  </div>
-                )}
-              </div>
-              {/* Camera badge */}
-              <div style={{ position: "absolute", bottom: 0, right: 0, width: 26, height: 26, borderRadius: "50%", background: "var(--text-1)", border: "2px solid var(--bg)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                {avatarUploading ? <div className="spinner" style={{ width: 12, height: 12 }} /> : <Camera size={12} color="var(--bg)" />}
-              </div>
-            </button>
-
-            {/* Username + pills */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <h1 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 950, letterSpacing: "-0.04em", lineHeight: 1, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const, ...nameColorStyle(profile?.name_color) }}>
-                @{username || "—"}
+          {/* Main profile content below the animated banner */}
+          <section style={profileBodyStyle}>
+            <div style={mainIdentityStyle}>
+              <h1 style={{ margin: 0, fontSize: compactProfileHeader ? 28 : 34, fontWeight: 950, letterSpacing: 0, lineHeight: 1.05, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const, ...nameColorStyle(profile?.name_color) }}>
+                @{username || "profile"}
               </h1>
 
               {/* Favourite team badge */}
               {profile?.favourite_team ? (
-                <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 8 }}>
                   <div style={{ width: 18, height: 18, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: `${resolveTeam(profile.favourite_team)?.color ?? "#3b82f6"}18` }}>
                     <img src={`/team-logos/${TEAM_LOGO_SLUG[profile.favourite_team] ?? "unknown"}.png`} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                   </div>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-3)", letterSpacing: "-0.01em" }}>{profile.favourite_team}</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-3)", letterSpacing: 0 }}>{profile.favourite_team}</span>
                 </div>
               ) : (
-                <button onClick={() => setEditSection("team")} style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 8, background: "none", border: "1px dashed #ef4444", borderRadius: 8, padding: "3px 8px", cursor: "pointer" }}>
+                <button onClick={() => setEditSection("team")} style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 8, background: "none", border: "1px dashed #ef4444", borderRadius: 8, padding: "3px 8px", cursor: "pointer" }}>
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#ef4444" }}>Choose your team</span>
                 </button>
               )}
-
-            </div>
           </div>
 
           {/* Stats — full width, evenly spread */}
@@ -1916,18 +2090,22 @@ export default function ProfilePage() {
           {bannerErr && <div style={{ ...errBoxSty, margin: "0 16px 12px" }}>{bannerErr}</div>}
 
           {/* Bio section */}
-          <div style={{ margin: "0 14px", padding: "14px 16px", borderRadius: 16, background: "var(--surface-2)", border: "1px solid var(--border-2)" }}>
-            <p style={{ margin: 0, color: profile?.bio ? "#cbd5e1" : "#475569", fontSize: 14, fontWeight: 600, lineHeight: 1.6, fontStyle: profile?.bio ? "normal" : "italic" }}>
-              {profile?.bio || "No bio yet."}
-            </p>
+          <div style={{ marginTop: 16 }}>
+            <div style={{ marginBottom: 8, color: "#60a5fa", fontSize: 11, fontWeight: 950, textTransform: "uppercase", letterSpacing: "0.08em" }}>About</div>
+            <div style={{ padding: "14px 15px", borderRadius: 16, background: "var(--surface-2)", border: "1px solid var(--border-2)" }}>
+              <p style={{ margin: 0, color: profile?.bio ? "#cbd5e1" : "#475569", fontSize: 14, fontWeight: 650, lineHeight: 1.55, fontStyle: profile?.bio ? "normal" : "italic" }}>
+                {profile?.bio || "No bio yet."}
+              </p>
+            </div>
           </div>
 
 
           {/* Edit button */}
-          <div style={{ padding: "12px 14px 16px" }}>
-            <button onClick={() => setEditSection("menu")} style={editBtnStyle}>Edit</button>
+          <div style={{ paddingTop: 14 }}>
+            <button onClick={() => setEditSection("menu")} style={{ ...editBtnStyle, width: "100%", justifyContent: "center", background: "#2563eb", borderColor: "rgba(96,165,250,0.55)" }}>Edit Profile</button>
           </div>
 
+          </section>
         </div>
 
         {/* ── Favourites ── */}
@@ -3069,51 +3247,10 @@ const wrapStyle: CSSProperties = {
   gap: 12,
 };
 
-const profileCardStyle: CSSProperties = {
-  overflow: "hidden",
-  background: "var(--bg)",
-  border: "1px solid var(--border-2)",
-  borderRadius: 18,
-};
-
 const bannerStyle: CSSProperties = {
   height: 110,
   background:
     "radial-gradient(ellipse at 15% 60%,rgba(59,130,246,.6),transparent 40%),radial-gradient(ellipse at 85% 20%,rgba(99,102,241,.5),transparent 40%),radial-gradient(ellipse at 50% 100%,rgba(34,197,94,.2),transparent 50%),linear-gradient(160deg,#06101e,#000)",
-};
-
-const profileTopStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "88px 1fr auto",
-  alignItems: "end",
-  gap: 14,
-  padding: "0 20px 20px",
-  marginTop: -40,
-};
-
-const bioBoxStyle: CSSProperties = {
-  margin: "0 20px 20px",
-  padding: "14px 16px",
-  borderRadius: 14,
-  background: "var(--surface-2)",
-  border: "1px solid var(--border-1)",
-};
-
-const bioLabelStyle: CSSProperties = {
-  marginBottom: 5,
-  color: "#38bdf8",
-  fontSize: 10,
-  fontWeight: 950,
-  letterSpacing: ".1em",
-  textTransform: "uppercase",
-};
-
-const bioTextStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--text-2)",
-  fontSize: 13,
-  fontWeight: 600,
-  lineHeight: 1.55,
 };
 
 const editBtnStyle: CSSProperties = {
