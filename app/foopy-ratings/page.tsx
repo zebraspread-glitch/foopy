@@ -41,9 +41,9 @@ function teamFolder(team: string): string {
 /* ─── Styles ──────────────────────────────────────────────── */
 
 const pageStyle = {
-  minHeight: "100vh",
+  minHeight: "100dvh",
   background: "var(--bg)",
-  paddingBottom: 40,
+  paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
 } as const;
 
 const headerStyle = {
@@ -52,7 +52,7 @@ const headerStyle = {
   zIndex: 50,
   background: "var(--surface-1)",
   borderBottom: "1px solid var(--border-1)",
-  padding: "0 16px",
+  padding: "env(safe-area-inset-top) 16px 0",
   height: 52,
   display: "flex",
   alignItems: "center",

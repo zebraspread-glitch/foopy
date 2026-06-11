@@ -1109,9 +1109,9 @@ function miniScoreText(game: MatchGame) {
   return `${scoreText(game.hscore)}-${scoreText(game.ascore)}`;
 }
 
-function RoundGameStrip({ games, activeId, now, opacity = 1 }: { games: MatchGame[]; activeId: string; now: number; opacity?: number }) {
+function RoundGameStrip({ games, activeId, now, opacity = 1, nested = false }: { games: MatchGame[]; activeId: string; now: number; opacity?: number; nested?: boolean }) {
   return (
-    <div style={{ ...roundStripShellStyle, opacity, pointerEvents: opacity < 0.1 ? "none" : undefined }}>
+    <div style={{ ...roundStripShellStyle, ...(nested ? { paddingTop: 0 } : null), opacity, pointerEvents: opacity < 0.1 ? "none" : undefined }}>
       {/* Back to home — always visible, non-scrolling */}
       <Link
         href="/"
@@ -2250,7 +2250,7 @@ function recentCompletedTeamGames(team: string, allGames: MatchGame[], currentGa
 
 function FormColumn({ team, games, compact }: { team: string; games: MatchGame[]; compact: boolean }) {
   const logoSize = compact ? 24 : 34;
-  const scoreWidth = compact ? 64 : 76;
+  const scoreWidth = compact ? 78 : 92;
   const scoreHeight = compact ? 24 : 26;
   const scorePadding = compact ? "0 6px" : "0 8px";
   const scoreFontSize = compact ? 11 : 12;
@@ -4220,25 +4220,23 @@ function MatchPageInner() {
     return (
       <main style={pageStyle} className="page-enter">
         <RoundGameStrip games={roundGames} activeId={id} now={now} />
-        {/* Scoreboard skeleton */}
-        <div style={{ padding: "20px 24px 24px", minHeight: 220, borderBottom: "1px solid var(--border-1)", background: "linear-gradient(180deg, var(--surface-1) 0%, var(--surface-2) 58%, var(--bg) 100%)" }}>
-          {/* Scores row skeleton */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 180px 1fr", alignItems: "center", gap: 16 }}>
-            {/* Home team */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 10 }}>
-              <div className="skeleton" style={{ width: 52, height: 52, borderRadius: "50%" }} />
-              <div className="skeleton skeleton-line" style={{ width: "60%" }} />
-              <div className="skeleton" style={{ width: 56, height: 44, borderRadius: 8 }} />
+        {/* Scoreboard skeleton — mirrors the real centered match header */}
+        <div style={{ padding: "18px 20px 20px", borderBottom: "1px solid var(--border-2)", background: "linear-gradient(180deg, var(--surface-1) 0%, var(--surface-2) 60%, var(--bg) 100%)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 14, maxWidth: 520, margin: "0 auto" }}>
+            {/* Home — logo + name */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 9 }}>
+              <div className="skeleton" style={{ width: 50, height: 50, borderRadius: "50%" }} />
+              <div className="skeleton skeleton-line" style={{ width: 70, height: 11 }} />
             </div>
-            {/* Centre badge */}
+            {/* Centre — score + status */}
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-              <div className="skeleton" style={{ width: 90, height: 36, borderRadius: 999 }} />
+              <div className="skeleton" style={{ width: 104, height: 30, borderRadius: 8 }} />
+              <div className="skeleton" style={{ width: 82, height: 24, borderRadius: 999 }} />
             </div>
-            {/* Away team */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10 }}>
-              <div className="skeleton" style={{ width: 52, height: 52, borderRadius: "50%" }} />
-              <div className="skeleton skeleton-line" style={{ width: "60%" }} />
-              <div className="skeleton" style={{ width: 56, height: 44, borderRadius: 8 }} />
+            {/* Away — logo + name */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 9 }}>
+              <div className="skeleton" style={{ width: 50, height: 50, borderRadius: "50%" }} />
+              <div className="skeleton skeleton-line" style={{ width: 70, height: 11 }} />
             </div>
           </div>
         </div>
@@ -4398,7 +4396,6 @@ function MatchPageInner() {
           }
         }
       `}</style>
-      <RoundGameStrip games={roundGames} activeId={id} now={now} />
       <section ref={matchSectionRef} style={matchCentreStyle}>
         {/* ── Sticky header + tabs ── */}
         {(() => {
@@ -4423,6 +4420,7 @@ function MatchPageInner() {
               borderBottom: "1px solid var(--border-2)",
               paddingTop: "env(safe-area-inset-top)",
             }}>
+              <RoundGameStrip games={roundGames} activeId={id} now={now} nested />
               {/* ─── Collapsing match header — single grid, morphs via --p ─── */}
               <div ref={headerContainerRef} className="mh">
                 {/* Team-colour glow (fades as header collapses) */}
@@ -6399,7 +6397,7 @@ function PollCard({
         {/* % pill (shown after voting) */}
         {showBar && (
           <div style={{ minWidth: 46, height: 32, borderRadius: 99, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <span style={{ fontSize: 14, fontWeight: 900, color: isWinner ? "#22c55e" : wrong ? "#f87171" : "#fff", fontVariantNumeric: "tabular-nums" }}>{pct}%</span>
+            <span style={{ fontSize: 14, fontWeight: 900, color: isMyVote ? "#22c55e" : "#fff", fontVariantNumeric: "tabular-nums" }}>{pct}%</span>
           </div>
         )}
         {/* Image */}
@@ -6415,7 +6413,7 @@ function PollCard({
           </div>
         )}
         {/* Label */}
-        <span style={{ fontSize: 15, fontWeight: 800, color: wrong ? "#f87171" : "#fff", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <span style={{ fontSize: 15, fontWeight: 800, color: isMyVote ? "#22c55e" : "#fff", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {isTeam ? getAbbr(opt.label) : opt.label}
           {isWinner && <span style={{ marginLeft: 8, fontSize: 13 }}>✓</span>}
         </span>
