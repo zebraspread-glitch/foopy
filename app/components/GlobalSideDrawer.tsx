@@ -2,11 +2,23 @@
 
 import { supabase } from "@/app/lib/supabase";
 import { formatAura, formatCoins } from "@/app/lib/format";
+import { nameColorStyle, avatarFrameStyle } from "@/app/lib/cosmetics";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
+  {
+    label: "Store",
+    href: "/store",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 9l1.5-5h15L21 9" />
+        <path d="M4 9h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9z" />
+        <path d="M9 13h6" />
+      </svg>
+    ),
+  },
   {
     label: "Aura",
     href: "/aura",
@@ -140,6 +152,8 @@ export default function GlobalSideDrawer() {
   const [initials, setInitials] = useState("?");
   const [aura, setAura] = useState<number>(0);
   const [coins, setCoins] = useState<number>(0);
+  const [nameColor, setNameColor] = useState<string | null>(null);
+  const [frameAsset, setFrameAsset] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -147,7 +161,7 @@ export default function GlobalSideDrawer() {
       const user = session.user;
       supabase
         .from("profiles")
-        .select("avatar_url, username, aura, coins")
+        .select("avatar_url, username, aura, coins, name_color, avatar_frame")
         .eq("id", user.id)
         .single()
         .then(({ data }) => {
@@ -156,6 +170,8 @@ export default function GlobalSideDrawer() {
           setUsername(data.username ?? null);
           setAura(data.aura ?? 0);
           setCoins(data.coins ?? 0);
+          setNameColor(data.name_color ?? null);
+          setFrameAsset(data.avatar_frame ?? null);
           const label = data.username || user.email?.split("@")[0] || "?";
           setInitials(label[0].toUpperCase());
         });
@@ -261,6 +277,7 @@ export default function GlobalSideDrawer() {
             gap: 13,
           }}
         >
+          <div style={avatarFrameStyle(frameAsset) ?? undefined}>
           <div
             style={{
               width: 52,
@@ -295,9 +312,10 @@ export default function GlobalSideDrawer() {
               </div>
             )}
           </div>
+          </div>
           <div style={{ minWidth: 0 }}>
             {username ? (
-              <div style={{ fontSize: 16, fontWeight: 800, color: "var(--text-1)", letterSpacing: "-0.02em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "var(--text-1)", letterSpacing: "-0.02em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", ...nameColorStyle(nameColor) }}>
                 @{username}
               </div>
             ) : (

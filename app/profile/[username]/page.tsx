@@ -14,6 +14,7 @@ import { getPassLevel, PLAYER_PASS_LEVELS, TEAM_PASS_LEVELS, dedupePlayerPasses,
 import { PlayerPassCard, TeamPassCard } from "@/app/components/PassCard";
 import playersData from "@/app/data/players.json";
 import { playerImgUrlFromFolder } from "@/app/lib/playerImage";
+import { nameColorStyle } from "@/app/lib/cosmetics";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import { foopyRating } from "@/app/match/[id]/utils";
 
@@ -43,6 +44,7 @@ type Profile = {
   favourite_team: string | null;
   matches_viewed: number | null;
   total_likes: number | null;
+  name_color: string | null;
 };
 
 type FriendEntry = { id: string; username: string | null; avatar_url: string | null; verified?: boolean };
@@ -557,7 +559,7 @@ export default function PublicProfilePage() {
 
       const { data: p } = await supabase
         .from("profiles")
-        .select("id, username, display_name, avatar_url, banner_url, bio, created_at, favourites, featured_cards, featured_passes, aura, coins, favourite_team, verified, matches_viewed, total_likes")
+        .select("id, username, display_name, avatar_url, banner_url, bio, created_at, favourites, featured_cards, featured_passes, aura, coins, favourite_team, verified, matches_viewed, total_likes, name_color")
         .eq("username", username)
         .maybeSingle();
 
@@ -751,7 +753,7 @@ export default function PublicProfilePage() {
             {/* Username + pills */}
             <div style={{ flex: 1, minWidth: 0 }}>
               <h1 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 950, letterSpacing: "-0.04em", lineHeight: 1, color: "var(--text-1)", display: "flex", alignItems: "center", gap: 5, overflow: "hidden" }}>
-                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>@{profile.username}</span>
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", ...nameColorStyle(profile.name_color) }}>@{profile.username}</span>
                 {profile.verified && <VerifiedBadge size={16} />}
               </h1>
               {/* Favourite team badge */}

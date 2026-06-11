@@ -14,6 +14,7 @@ import AuraBadge from "@/app/components/AuraBadge";
 import { VerifiedBadge } from "@/app/components/VerifiedBadge";
 import { auraToastEmitter } from "@/app/lib/auraToastEmitter";
 import { playerImgUrl } from "@/app/lib/playerImage";
+import { nameColorStyle, avatarFrameStyle } from "@/app/lib/cosmetics";
 import { supabase } from "@/app/lib/supabase";
 import { createNotification } from "@/app/lib/notifications";
 import playersRaw from "@/app/data/players.json";
@@ -86,6 +87,9 @@ type Profile = {
   aura: number | null;
   favourite_team: string | null;
   created_at: string | null;
+  name_color: string | null;
+  tokens: number | null;
+  avatar_frame: string | null;
 };
 
 type FriendEntry = {
@@ -1755,13 +1759,15 @@ export default function ProfilePage() {
           <div style={{ display: "flex", alignItems: "center", padding: "14px 16px 16px", gap: 14 }}>
             {/* Avatar — tappable */}
             <button onClick={() => setAvatarSheetOpen(true)} style={{ flexShrink: 0, background: "none", border: "none", padding: 0, cursor: "pointer", position: "relative" }} aria-label="Edit profile photo">
-              {(localAvatarUrl || profile?.avatar_url) ? (
-                <img src={localAvatarUrl ?? profile?.avatar_url ?? ""} alt="Profile" style={{ width: 90, height: 90, borderRadius: "50%", objectFit: "cover", border: "3px solid var(--bg)", boxShadow: "0 0 0 2px var(--border-3)", display: "block" }} />
-              ) : (
-                <div style={{ width: 90, height: 90, borderRadius: "50%", background: `linear-gradient(135deg,${avBg},var(--surface-1))`, color: avFg, display: "grid", placeItems: "center", fontSize: 32, fontWeight: 950, border: "3px solid var(--bg)", boxShadow: `0 0 0 2px var(--border-3),0 0 30px ${avFg}44` }}>
-                  {label[0].toUpperCase()}
-                </div>
-              )}
+              <div style={avatarFrameStyle(profile?.avatar_frame) ?? undefined}>
+                {(localAvatarUrl || profile?.avatar_url) ? (
+                  <img src={localAvatarUrl ?? profile?.avatar_url ?? ""} alt="Profile" style={{ width: 90, height: 90, borderRadius: "50%", objectFit: "cover", border: "3px solid var(--bg)", boxShadow: "0 0 0 2px var(--border-3)", display: "block" }} />
+                ) : (
+                  <div style={{ width: 90, height: 90, borderRadius: "50%", background: `linear-gradient(135deg,${avBg},var(--surface-1))`, color: avFg, display: "grid", placeItems: "center", fontSize: 32, fontWeight: 950, border: "3px solid var(--bg)", boxShadow: `0 0 0 2px var(--border-3),0 0 30px ${avFg}44` }}>
+                    {label[0].toUpperCase()}
+                  </div>
+                )}
+              </div>
               {/* Camera badge */}
               <div style={{ position: "absolute", bottom: 0, right: 0, width: 26, height: 26, borderRadius: "50%", background: "var(--text-1)", border: "2px solid var(--bg)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 {avatarUploading ? <div className="spinner" style={{ width: 12, height: 12 }} /> : <Camera size={12} color="var(--bg)" />}
@@ -1770,7 +1776,7 @@ export default function ProfilePage() {
 
             {/* Username + pills */}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <h1 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 950, letterSpacing: "-0.04em", lineHeight: 1, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
+              <h1 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 950, letterSpacing: "-0.04em", lineHeight: 1, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const, ...nameColorStyle(profile?.name_color) }}>
                 @{username || "—"}
               </h1>
 
@@ -1803,6 +1809,14 @@ export default function ProfilePage() {
                   </div>
                   <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.05em", textTransform: "uppercase" }}>Coins</span>
                 </div>
+                {/* Foopy Tokens — only shown on your own profile */}
+                <a href="/store" style={{ textDecoration: "none", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                    <img src="/token/token.png" alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />
+                    <span style={{ fontSize: 20, fontWeight: 900, color: "var(--text-1)", lineHeight: 1 }}>{(profile?.tokens ?? 0).toLocaleString()}</span>
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.05em", textTransform: "uppercase" }}>Tokens</span>
+                </a>
                 {/* Friends */}
                 <button onClick={openFriends} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3, background: "none", border: "none", padding: 0, cursor: "pointer" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 5 }}>

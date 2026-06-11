@@ -6,6 +6,7 @@ import { supabase } from "@/app/lib/supabase";
 import { useRouter } from "next/navigation";
 import { auraToastEmitter } from "@/app/lib/auraToastEmitter";
 import { VerifiedBadge } from "@/app/components/VerifiedBadge";
+import { nameColorStyle } from "@/app/lib/cosmetics";
 
 type Profile = {
   id: string;
@@ -13,6 +14,7 @@ type Profile = {
   display_name?: string;
   avatar_url?: string;
   verified?: boolean;
+  name_color?: string | null;
 };
 
 type Comment = {
@@ -64,7 +66,7 @@ export default function CommentSheet({ gameId, gameLabel, eventKey, onClose }: P
       .from("feed_comments")
       .select(`
         id, game_id, user_id, parent_id, body, likes, created_at,
-        profile:profiles(id, username, display_name, avatar_url, verified)
+        profile:profiles(id, username, display_name, avatar_url, verified, name_color)
       `)
       .eq("game_id", gameId);
 
@@ -357,7 +359,7 @@ function CommentRow({
         <div style={{ minWidth: 0 }}>
           {/* Username + badge */}
           <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 2 }}>
-            <span style={commentNameStyle}>{name}</span>
+            <span style={{ ...commentNameStyle, ...nameColorStyle(comment.profile?.name_color) }}>{name}</span>
             {comment.profile?.verified && <VerifiedBadge size={13} />}
           </div>
           {/* Body */}

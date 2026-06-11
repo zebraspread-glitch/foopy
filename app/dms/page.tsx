@@ -5,9 +5,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/app/lib/supabase";
 import { VerifiedBadge } from "@/app/components/VerifiedBadge";
+import { nameColorStyle } from "@/app/lib/cosmetics";
 
 /* ── Types ── */
-type Profile = { id: string; username: string; display_name: string; avatar_url?: string | null; verified?: boolean };
+type Profile = { id: string; username: string; display_name: string; avatar_url?: string | null; verified?: boolean; name_color?: string | null };
 type InboxEntry = {
   id: string; other: Profile; convId: string | null;
   preview: string; last_at: string | null; unread: number;
@@ -23,7 +24,7 @@ type GroupChat = {
 };
 type GroupMsg = {
   id: string; sender_id: string; content: string; created_at: string;
-  sender: { username: string; display_name: string; avatar_url: string | null; verified?: boolean } | null;
+  sender: { username: string; display_name: string; avatar_url: string | null; verified?: boolean; name_color?: string | null } | null;
 };
 type GroupInvite = {
   id: string; group_chat_id: string; group_name: string;
@@ -201,7 +202,7 @@ function DMsPageInner() {
 
   /* ── Members modal state ── */
   const [membersModalOpen,    setMembersModalOpen]    = useState(false);
-  const [membersModalList,    setMembersModalList]    = useState<{ id: string; username: string; display_name: string; avatar_url: string | null; verified?: boolean }[]>([]);
+  const [membersModalList,    setMembersModalList]    = useState<{ id: string; username: string; display_name: string; avatar_url: string | null; verified?: boolean; name_color?: string | null }[]>([]);
   const [membersModalLoading, setMembersModalLoading] = useState(false);
   const [membersSearch,       setMembersSearch]       = useState("");
 
@@ -260,7 +261,7 @@ function DMsPageInner() {
         // Guaranteed to be the real session — safe to mark as ready
         if (u) {
           try {
-            const { data } = await supabase.from("profiles").select("id,username,display_name,avatar_url,verified").eq("id", u.id).single();
+            const { data } = await supabase.from("profiles").select("id,username,display_name,avatar_url,verified,name_color").eq("id", u.id).single();
             setMyProfile(data ?? null);
             if (data) profileCache.current[(data as any).id] = data as Profile;
           } catch {}
@@ -270,7 +271,7 @@ function DMsPageInner() {
       } else if (u) {
         // Subsequent sign-in / token refresh — sync profile
         try {
-          const { data } = await supabase.from("profiles").select("id,username,display_name,avatar_url,verified").eq("id", u.id).single();
+          const { data } = await supabase.from("profiles").select("id,username,display_name,avatar_url,verified,name_color").eq("id", u.id).single();
           setMyProfile(data ?? null);
           if (data) profileCache.current[(data as any).id] = data as Profile;
         } catch {}
@@ -295,7 +296,7 @@ function DMsPageInner() {
     const allIds = [...new Set([...friendIds, ...convoOtherIds])];
     if (!allIds.length) { setInbox([]); setInboxLoaded(true); return; }
     const [profilesRes, unreadRes] = await Promise.all([
-      supabase.from("profiles").select("id,username,display_name,avatar_url,verified").in("id", allIds),
+      supabase.from("profiles").select("id,username,display_name,avatar_url,verified,name_color").in("id", allIds),
       convos.length
         ? supabase.from("dm_messages").select("conversation_id").in("conversation_id", convos.map(r => r.id)).neq("sender_id", myProfile.id).is("read_at", null)
         : Promise.resolve({ data: [] }),
@@ -420,7 +421,7 @@ function DMsPageInner() {
     const inviterIds = [...new Set(invites.map((i: any) => i.inviter_id))];
     const [chatsRes, profilesRes] = await Promise.all([
       supabase.from("group_chats").select("id, team_name").in("id", chatIds),
-      supabase.from("profiles").select("id, username, avatar_url, verified").in("id", inviterIds),
+      supabase.from("profiles").select("id, username, avatar_url, verified, name_color").in("id", inviterIds),
     ]);
     const chatMap: Record<string, string> = Object.fromEntries((chatsRes.data ?? []).map((c: any) => [c.id, c.team_name]));
     const profileMap: Record<string, any> = Object.fromEntries((profilesRes.data ?? []).map((p: any) => [p.id, p]));
@@ -460,7 +461,7 @@ function DMsPageInner() {
     if (!openId || autoOpened || !myProfile || inbox.length === 0) return;
     const existing = inbox.find(e => e.other.id === openId);
     if (existing) { setAutoOpened(true); openEntry(existing); return; }
-    supabase.from("profiles").select("id,username,display_name,avatar_url,verified").eq("id", openId).maybeSingle()
+    supabase.from("profiles").select("id,username,display_name,avatar_url,verified,name_color").eq("id", openId).maybeSingle()
       .then(({ data }) => {
         if (!data) return;
         setAutoOpened(true);
@@ -496,7 +497,7 @@ function DMsPageInner() {
       const senderIds = [...new Set((msgs as any[]).map(m => m.sender_id as string))];
       const uncached = senderIds.filter(id => !profileCache.current[id]);
       if (uncached.length) {
-        const { data: profiles } = await supabase.from("profiles").select("id, username, display_name, avatar_url, verified").in("id", uncached);
+        const { data: profiles } = await supabase.from("profiles").select("id, username, display_name, avatar_url, verified, name_color").in("id", uncached);
         for (const p of profiles ?? []) profileCache.current[(p as any).id] = p as Profile;
       }
       if (loadingGroupRef.current !== groupId) return;
@@ -524,7 +525,7 @@ function DMsPageInner() {
     setSentInviteIds(alreadyInvited);
     const friendIds = (friendsRes.data ?? []).map(r => r.requester_id === myProfile.id ? r.addressee_id : r.requester_id).filter(id => !memberIds.has(id));
     if (!friendIds.length) { setInviteFriends([]); return; }
-    const { data: profiles } = await supabase.from("profiles").select("id, username, display_name, avatar_url, verified").in("id", friendIds);
+    const { data: profiles } = await supabase.from("profiles").select("id, username, display_name, avatar_url, verified, name_color").in("id", friendIds);
     setInviteFriends((profiles ?? []) as Profile[]);
   }
 
@@ -566,7 +567,7 @@ function DMsPageInner() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "group_chat_messages", filter: `group_chat_id=eq.${activeGroupId}` }, async payload => {
         const msg = payload.new as any;
         if (!profileCache.current[msg.sender_id]) {
-          const { data } = await supabase.from("profiles").select("id,username,display_name,avatar_url,verified").eq("id", msg.sender_id).maybeSingle();
+          const { data } = await supabase.from("profiles").select("id,username,display_name,avatar_url,verified,name_color").eq("id", msg.sender_id).maybeSingle();
           if (data) profileCache.current[(data as any).id] = data as Profile;
         }
         setGroupMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, { ...msg, sender: profileCache.current[msg.sender_id] ?? null }]);
@@ -741,7 +742,7 @@ function DMsPageInner() {
     const userIds = members.map((m: any) => m.user_id);
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("id, username, display_name, avatar_url, verified")
+      .select("id, username, display_name, avatar_url, verified, name_color")
       .in("id", userIds);
     setMembersModalList((profiles ?? []).map((p: any) => ({
       id: p.id, username: p.username ?? "", display_name: p.display_name ?? "", avatar_url: p.avatar_url ?? null, verified: p.verified ?? false,
@@ -911,7 +912,7 @@ function DMsPageInner() {
                   <Avatar name={member.username} url={member.avatar_url} size={40} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 4, overflow: "hidden" }}>
-                      <span style={{ fontWeight: 700, fontSize: 15, color: "var(--text-1)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{member.display_name || member.username}</span>
+                      <span style={{ fontWeight: 700, fontSize: 15, color: "var(--text-1)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", ...nameColorStyle(member.name_color) }}>{member.display_name || member.username}</span>
                       {member.verified && <VerifiedBadge size={13} />}
                     </div>
                     <div style={{ fontSize: 12, color: "var(--text-3)" }}>@{member.username}</div>
@@ -953,7 +954,7 @@ function DMsPageInner() {
                   <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 20px" }}>
                     <Avatar name={f.username} url={f.avatar_url} size={40} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 5, fontWeight: 800, fontSize: 14, color: "var(--text-1)" }}>@{f.username}{f.verified && <VerifiedBadge size={13} />}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 5, fontWeight: 800, fontSize: 14, color: "var(--text-1)" }}><span style={nameColorStyle(f.name_color)}>@{f.username}</span>{f.verified && <VerifiedBadge size={13} />}</div>
                     </div>
                     <button onClick={() => sendInvite(f.id)} disabled={alreadySent || sendingInviteId === f.id} style={{ padding: "7px 16px", borderRadius: 10, border: "none", fontWeight: 900, fontSize: 13, cursor: alreadySent || sendingInviteId === f.id ? "default" : "pointer", background: alreadySent ? "var(--surface-3)" : "#22c55e", color: alreadySent ? "var(--text-3)" : "#000", opacity: sendingInviteId === f.id ? 0.6 : 1 }}>
                       {sendingInviteId === f.id ? "…" : alreadySent ? "Invited" : "Invite"}
@@ -1024,7 +1025,7 @@ function DMsPageInner() {
                   <div style={{ flex: 1, minWidth: 0, opacity: m.id.startsWith("t") || groupDeletingIds.has(m.id) ? 0.55 : 1 }}>
                     {!samePrev && (
                       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
-                        <span onClick={() => !mine && router.push(`/profile/${sn}`)} style={{ fontSize: 13, fontWeight: 800, color: mine ? "#60a5fa" : "var(--text-1)", cursor: mine ? "default" : "pointer" }}>
+                        <span onClick={() => !mine && router.push(`/profile/${sn}`)} style={{ fontSize: 13, fontWeight: 800, color: mine ? "#60a5fa" : "var(--text-1)", cursor: mine ? "default" : "pointer", ...(mine ? {} : nameColorStyle(m.sender?.name_color)) }}>
                           {mine ? "You" : senderName}
                         </span>
                         {!mine && m.sender?.verified && <VerifiedBadge size={12} />}
@@ -1074,7 +1075,7 @@ function DMsPageInner() {
           <Avatar name={activeConv.other?.username ?? "?"} url={activeConv.other?.avatar_url} size={38} />
           <div style={{ minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 4, overflow: "hidden" }}>
-              <span style={{ fontWeight: 700, fontSize: 15, color: "var(--text-1)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{activeConv.other?.display_name || activeConv.other?.username}</span>
+              <span style={{ fontWeight: 700, fontSize: 15, color: "var(--text-1)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", ...nameColorStyle(activeConv.other?.name_color) }}>{activeConv.other?.display_name || activeConv.other?.username}</span>
               {activeConv.other?.verified && <VerifiedBadge size={13} />}
             </div>
             <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 400 }}>@{activeConv.other?.username}</div>
@@ -1094,7 +1095,7 @@ function DMsPageInner() {
           <div style={{ padding: "80px 24px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
             <Avatar name={activeConv.other?.username ?? "?"} url={activeConv.other?.avatar_url} size={80} />
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ fontWeight: 700, fontSize: 18, color: "var(--text-1)" }}>{activeConv.other?.display_name || activeConv.other?.username}</span>
+              <span style={{ fontWeight: 700, fontSize: 18, color: "var(--text-1)", ...nameColorStyle(activeConv.other?.name_color) }}>{activeConv.other?.display_name || activeConv.other?.username}</span>
               {activeConv.other?.verified && <VerifiedBadge size={16} />}
             </div>
             <div style={{ fontSize: 13, color: "var(--text-3)", fontWeight: 400 }}>@{activeConv.other?.username}</div>
@@ -1565,7 +1566,7 @@ function InboxRow({ entry, myId, isLast, onClick, bubbleColor = "#22c55e" }: { e
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 2 }}>
           <span style={{ display: "flex", alignItems: "center", gap: 4, overflow: "hidden" }}>
-              <span style={{ fontWeight: hasUnread ? 700 : 600, fontSize: 15, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName}</span>
+              <span style={{ fontWeight: hasUnread ? 700 : 600, fontSize: 15, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", ...nameColorStyle(entry.other?.name_color) }}>{displayName}</span>
               {entry.other?.verified && <VerifiedBadge size={13} />}
             </span>
           {entry.last_at && <span style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 400, flexShrink: 0, marginLeft: 8 }}>{ago(entry.last_at)}</span>}

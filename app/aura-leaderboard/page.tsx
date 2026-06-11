@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { formatAura } from "@/app/lib/format";
 import { supabase } from "@/app/lib/supabase";
+import { nameColorStyle } from "@/app/lib/cosmetics";
 import { VerifiedBadge } from "@/app/components/VerifiedBadge";
 
 type Period  = "day" | "week" | "month" | "overall";
@@ -17,6 +18,7 @@ type Entry = {
   avatar_url:   string | null;
   aura_total:   number;
   verified?:    boolean;
+  name_color?:  string | null;
 };
 
 type AuraEvent = {
@@ -322,7 +324,7 @@ function AuraLeaderboardInner() {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: isMe ? 900 : 800, color: isMe ? "#c084fc" : "var(--text-1)", display: "flex", alignItems: "center", gap: 4, overflow: "hidden" }}>
-                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.username ? `@${e.username}` : label}</span>
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", ...nameColorStyle(e.name_color) }}>{e.username ? `@${e.username}` : label}</span>
                       {e.verified && <VerifiedBadge size={13} />}
                     </div>
                   </div>
