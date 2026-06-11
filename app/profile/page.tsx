@@ -66,6 +66,21 @@ function resolveTeam(name: string | null | undefined) {
   );
 }
 
+function useMediaQuery(query: string) {
+  const [matches, setMatches] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const media = window.matchMedia(query);
+    const update = () => setMatches(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, [query]);
+
+  return matches;
+}
+
 /* ─────────────────── Types ─────────────────── */
 type FeaturedCardSlot = { player_id: string; rarity: string };
 type FeaturedPassSlot = { type: "player" | "team"; id: string };
@@ -795,6 +810,7 @@ function FavSlotButton({
 /* ═══════════════════ Main Page ═══════════════════ */
 export default function ProfilePage() {
   const router = useRouter();
+  const compactProfileHeader = useMediaQuery("(max-width: 430px)");
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1720,6 +1736,60 @@ export default function ProfilePage() {
   const locked = !!profile?.username && !canChangeUsername(profile.username_updated_at);
   const nextDate = locked ? nextChangeDate(profile!.username_updated_at) : null;
   const filledCount = favs.filter(Boolean).length;
+  const profileAvatarSize = compactProfileHeader ? 78 : 90;
+  const profileHeaderRowStyle: CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    padding: compactProfileHeader ? "14px 14px 16px" : "14px 16px 16px",
+    gap: compactProfileHeader ? 12 : 14,
+  };
+  const profileHeaderStatsStyle: CSSProperties = compactProfileHeader
+    ? {
+        display: "grid",
+        gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+        alignItems: "start",
+        columnGap: 12,
+        rowGap: 12,
+      }
+    : {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        gap: 8,
+      };
+  const profileHeaderStatStyle: CSSProperties = {
+    textDecoration: "none",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: 3,
+    minWidth: 0,
+  };
+  const profileHeaderValueStyle: CSSProperties = {
+    fontSize: compactProfileHeader ? 16 : 20,
+    fontWeight: 900,
+    color: "var(--text-1)",
+    lineHeight: 1,
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    maxWidth: "100%",
+  };
+  const profileHeaderLabelStyle: CSSProperties = {
+    fontSize: compactProfileHeader ? 10 : 11,
+    fontWeight: 700,
+    color: "var(--text-3)",
+    letterSpacing: compactProfileHeader ? "0.04em" : "0.05em",
+    textTransform: "uppercase",
+  };
+  const profileHeaderIconRowStyle: CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: compactProfileHeader ? 4 : 5,
+    minWidth: 0,
+    maxWidth: "100%",
+  };
+  const profileHeaderIconSize = compactProfileHeader ? 15 : 18;
 
   return (
     <main style={pageStyle} className="page-enter">
@@ -1756,14 +1826,14 @@ export default function ProfilePage() {
           />
 
           {/* Avatar + username + pills — all below the banner */}
-          <div style={{ display: "flex", alignItems: "center", padding: "14px 16px 16px", gap: 14 }}>
+          <div style={profileHeaderRowStyle}>
             {/* Avatar — tappable */}
             <button onClick={() => setAvatarSheetOpen(true)} style={{ flexShrink: 0, background: "none", border: "none", padding: 0, cursor: "pointer", position: "relative" }} aria-label="Edit profile photo">
               <div style={avatarFrameStyle(profile?.avatar_frame) ?? undefined}>
                 {(localAvatarUrl || profile?.avatar_url) ? (
-                  <img src={localAvatarUrl ?? profile?.avatar_url ?? ""} alt="Profile" style={{ width: 90, height: 90, borderRadius: "50%", objectFit: "cover", border: "3px solid var(--bg)", boxShadow: "0 0 0 2px var(--border-3)", display: "block" }} />
+                  <img src={localAvatarUrl ?? profile?.avatar_url ?? ""} alt="Profile" style={{ width: profileAvatarSize, height: profileAvatarSize, borderRadius: "50%", objectFit: "cover", border: "3px solid var(--bg)", boxShadow: "0 0 0 2px var(--border-3)", display: "block" }} />
                 ) : (
-                  <div style={{ width: 90, height: 90, borderRadius: "50%", background: `linear-gradient(135deg,${avBg},var(--surface-1))`, color: avFg, display: "grid", placeItems: "center", fontSize: 32, fontWeight: 950, border: "3px solid var(--bg)", boxShadow: `0 0 0 2px var(--border-3),0 0 30px ${avFg}44` }}>
+                  <div style={{ width: profileAvatarSize, height: profileAvatarSize, borderRadius: "50%", background: `linear-gradient(135deg,${avBg},var(--surface-1))`, color: avFg, display: "grid", placeItems: "center", fontSize: compactProfileHeader ? 28 : 32, fontWeight: 950, border: "3px solid var(--bg)", boxShadow: `0 0 0 2px var(--border-3),0 0 30px ${avFg}44` }}>
                     {label[0].toUpperCase()}
                   </div>
                 )}
@@ -1795,35 +1865,35 @@ export default function ProfilePage() {
               )}
 
               {/* Stats row */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+              <div style={profileHeaderStatsStyle}>
                 {/* Aura */}
-                <a href="/aura-leaderboard?tab=history" style={{ textDecoration: "none", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3 }}>
-                  <span style={{ fontSize: 20, fontWeight: 900, background: "linear-gradient(135deg, #c084fc 0%, #818cf8 50%, #fbbf24 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", lineHeight: 1 }}>✦ {formatAura(profile?.aura ?? 0)}</span>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.05em", textTransform: "uppercase" }}>Aura</span>
+                <a href="/aura-leaderboard?tab=history" style={profileHeaderStatStyle}>
+                  <span style={{ ...profileHeaderValueStyle, background: "linear-gradient(135deg, #c084fc 0%, #818cf8 50%, #fbbf24 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>✦ {formatAura(profile?.aura ?? 0)}</span>
+                  <span style={profileHeaderLabelStyle}>Aura</span>
                 </a>
                 {/* Coins */}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                    <img src="/coin/coin.png" alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />
-                    <span style={{ fontSize: 20, fontWeight: 900, color: "var(--text-1)", lineHeight: 1 }}>{formatCoins(profile?.coins ?? 0)}</span>
+                <div style={profileHeaderStatStyle}>
+                  <div style={profileHeaderIconRowStyle}>
+                    <img src="/coin/coin.png" alt="" style={{ width: profileHeaderIconSize, height: profileHeaderIconSize, objectFit: "contain", flexShrink: 0 }} />
+                    <span style={profileHeaderValueStyle}>{formatCoins(profile?.coins ?? 0)}</span>
                   </div>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.05em", textTransform: "uppercase" }}>Coins</span>
+                  <span style={profileHeaderLabelStyle}>Coins</span>
                 </div>
                 {/* Foopy Tokens — only shown on your own profile */}
-                <a href="/store" style={{ textDecoration: "none", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                    <img src="/token/token.png" alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />
-                    <span style={{ fontSize: 20, fontWeight: 900, color: "var(--text-1)", lineHeight: 1 }}>{(profile?.tokens ?? 0).toLocaleString()}</span>
+                <a href="/store" style={profileHeaderStatStyle}>
+                  <div style={profileHeaderIconRowStyle}>
+                    <img src="/token/token.png" alt="" style={{ width: profileHeaderIconSize, height: profileHeaderIconSize, objectFit: "contain", flexShrink: 0 }} />
+                    <span style={profileHeaderValueStyle}>{(profile?.tokens ?? 0).toLocaleString()}</span>
                   </div>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.05em", textTransform: "uppercase" }}>Tokens</span>
+                  <span style={profileHeaderLabelStyle}>Tokens</span>
                 </a>
                 {/* Friends */}
-                <button onClick={openFriends} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3, background: "none", border: "none", padding: 0, cursor: "pointer" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                    <Users size={18} color="var(--text-1)" strokeWidth={2.5} />
-                    <span style={{ fontSize: 20, fontWeight: 900, color: "var(--text-1)", lineHeight: 1 }}>{friends.length}</span>
+                <button onClick={openFriends} style={{ ...profileHeaderStatStyle, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit" }}>
+                  <div style={profileHeaderIconRowStyle}>
+                    <Users size={profileHeaderIconSize} color="var(--text-1)" strokeWidth={2.5} style={{ flexShrink: 0 }} />
+                    <span style={profileHeaderValueStyle}>{friends.length}</span>
                   </div>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.05em", textTransform: "uppercase" }}>Friends</span>
+                  <span style={profileHeaderLabelStyle}>Friends</span>
                 </button>
               </div>
             </div>

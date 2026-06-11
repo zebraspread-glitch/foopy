@@ -1342,7 +1342,14 @@ function LiveFeedPlayer({
           {isInferred ? <TeamEventAvatar team={team} /> : <PlayerAvatar name={playerName} team={team} />}
 
           <div style={liveFeedInfoStyle}>
-            <div style={liveFeedNameStyle}>{playerName}</div>
+            <div style={liveFeedNameRowStyle}>
+              <div style={liveFeedNameStyle}>{playerName}</div>
+              <div style={liveFeedTimeBadgeStyle}>
+                <span style={liveFeedQuarterStyle}>{eventQuarter(event)}</span>
+                <span style={liveFeedTimeDotStyle}>·</span>
+                <span style={liveFeedMinuteStyle}>{event.minute ?? "-"}'</span>
+              </div>
+            </div>
             <div style={{ display: "flex", alignItems: "center" }}>
               <div style={{ ...liveFeedActionStyle, color: type === "GOAL" ? "#22c55e" : type === "BEHIND" ? "#f8fafc" : "#facc15", fontSize: type === "BEHIND" ? 15 : liveFeedActionStyle.fontSize }}>
                 {type}
@@ -1355,14 +1362,6 @@ function LiveFeedPlayer({
             </div>
           </div>
 
-          <div style={liveFeedRightStyle}>
-            <div style={liveFeedTimeBadgeStyle}>
-              <span style={liveFeedQuarterStyle}>{eventQuarter(event)}</span>
-              <span style={liveFeedTimeDotStyle}>·</span>
-              <span style={liveFeedMinuteStyle}>{event.minute ?? "-"}'</span>
-            </div>
-
-          </div>
         </div>
 
         <div style={eventReactionBarStyle} onClick={(e) => e.stopPropagation()}>
@@ -7051,17 +7050,17 @@ const miniLogoStyle: CSSProperties = { width: 14, height: 14, objectFit: "contai
 const statsLoadingStyle: CSSProperties = { margin: "12px 0 0", color: "#facc15", fontSize: 13, fontWeight: 800 };
 const liveStatsBadgeStyle: CSSProperties = { width: "fit-content", margin: "0 auto 14px", padding: "7px 12px", borderRadius: 999, background: "rgba(34,197,94,.12)", border: "1px solid rgba(34,197,94,.35)", color: "#4ade80", fontSize: 12, fontWeight: 1000, letterSpacing: ".08em" };
 const liveFeedListStyle: CSSProperties = { marginTop: 12, display: "flex", flexDirection: "column", gap: 10 };
-const liveFeedBoxStyle: CSSProperties = { minHeight: 72, display: "grid", gridTemplateColumns: "60px 1fr auto", alignItems: "center", gap: 12, background: "var(--bg)", borderRadius: 18, padding: "10px 14px 10px 12px", overflow: "hidden" };
+const liveFeedBoxStyle: CSSProperties = { minHeight: 72, display: "grid", gridTemplateColumns: "60px minmax(0, 1fr)", alignItems: "center", gap: 12, background: "var(--bg)", borderRadius: 18, padding: "10px 14px 10px 12px", overflow: "hidden" };
 const liveFeedInfoStyle: CSSProperties = { minWidth: 0 };
-const liveFeedNameStyle: CSSProperties = { color: "var(--text-1)", fontSize: 14, fontWeight: 700, lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
+const liveFeedNameRowStyle: CSSProperties = { display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, minWidth: 0 };
+const liveFeedNameStyle: CSSProperties = { color: "var(--text-1)", fontSize: 14, fontWeight: 700, lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0, flex: "1 1 auto" };
 const liveFeedActionStyle: CSSProperties = { marginTop: 4, fontSize: 20, lineHeight: 1, fontWeight: 900, letterSpacing: ".04em" };
-const liveFeedRightStyle: CSSProperties = { display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "center", gap: 8 };
 const liveFeedScoreRowStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 5 };
 const liveFeedScoreTextStyle: CSSProperties = { fontSize: 13, fontWeight: 900, color: "var(--text-1)", fontVariantNumeric: "tabular-nums" };
-const liveFeedTimeBadgeStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 3, background: "var(--surface-3)", border: "1px solid var(--border-2)", borderRadius: 999, padding: "3px 7px" };
-const liveFeedQuarterStyle: CSSProperties = { fontSize: 10, fontWeight: 800, color: "var(--text-3)", letterSpacing: "0.04em" };
-const liveFeedTimeDotStyle: CSSProperties = { fontSize: 10, color: "var(--text-4)", fontWeight: 700 };
-const liveFeedMinuteStyle: CSSProperties = { fontSize: 10, fontWeight: 800, color: "var(--text-3)" };
+const liveFeedTimeBadgeStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 5, color: "rgba(148,163,184,0.95)", lineHeight: 1, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", flexShrink: 0 };
+const liveFeedQuarterStyle: CSSProperties = { fontSize: 12, fontWeight: 900, color: "rgba(148,163,184,0.95)", letterSpacing: "0.02em" };
+const liveFeedTimeDotStyle: CSSProperties = { fontSize: 12, color: "rgba(148,163,184,0.95)", fontWeight: 900 };
+const liveFeedMinuteStyle: CSSProperties = { fontSize: 12, fontWeight: 900, color: "rgba(148,163,184,0.95)" };
 const commentCountStyle: CSSProperties = { fontSize: 12, fontWeight: 850, color: "inherit", fontVariantNumeric: "tabular-nums" };
 const eventReactionBarStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 10, padding: "4px 12px 11px 12px", borderTop: "1px solid rgba(255,255,255,0.035)", minHeight: 40, overflow: "hidden" };
 const eventReactionSummaryButtonStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 7, height: 28, border: "none", background: "transparent", color: "rgba(148,163,184,0.95)", padding: 0, fontSize: 13, fontWeight: 850, cursor: "pointer", flexShrink: 0, lineHeight: 1 };
