@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     let q = supabaseServer
       .from("user_player_passes")
       .select("player_id, player_name, team_name")
-      .limit(2000);
+      .limit(500);
     if (since) q = q.gte("created_at", since);
 
     const { data, error } = await q;
@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
     let q = supabaseServer
       .from("user_team_passes")
       .select("team_name")
-      .limit(2000);
+      .limit(500);
     if (since) q = q.gte("created_at", since);
 
     const { data, error } = await q;

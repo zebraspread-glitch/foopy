@@ -26,6 +26,7 @@ import {
 import { auraToastEmitter } from "@/app/lib/auraToastEmitter";
 import playersRaw from "@/app/data/players.json";
 import { PlayerPassCard, TeamPassCard, PASS_TEAM_LOGOS, PASS_TEAM_COLORS, playerPassImgSrc } from "@/app/components/PassCard";
+import type { EquippedCosmetics } from "@/app/lib/cosmetics";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -76,10 +77,10 @@ type PassesData = {
 
 // Local aliases so all the existing call sites keep working unchanged
 const PlayerCard = PlayerPassCard;
-const TeamCard   = ({ pass }: { pass: TeamPass }) => (
+const TeamCard   = ({ pass, pattern }: { pass: TeamPass; pattern?: string | null }) => (
   <div style={{ display: "flex", justifyContent: "center" }}>
     <div style={{ width: "100%", maxWidth: 280 }}>
-      <TeamPassCard pass={pass} />
+      <TeamPassCard pass={pass} pattern={pattern} />
     </div>
   </div>
 );
@@ -712,8 +713,21 @@ function PassesPageInner() {
   const [boughtPlayer, setBoughtPlayer]         = useState<{ pid: string; name: string; team: string; imgSrc: string; xp: number } | null>(null);
   const [selectedTeamPass, setSelectedTeamPass]       = useState<TeamPass | null>(null);
   const [leaderboardTeamPass, setLeaderboardTeamPass] = useState<TeamPass | null>(null);
+  const [cardPattern, setCardPattern]                 = useState<string | null>(null);
   const autoClaimFired = useRef(false);
   const searchParams = useSearchParams();
+
+  // Equipped "Pass Background" cosmetic — applied to the user's own pass cards.
+  useEffect(() => {
+    if (!userId) return;
+    (async () => {
+      const { data: profile } = await supabase.from("profiles").select("equipped_cosmetics").eq("id", userId).single();
+      const equippedId = (profile?.equipped_cosmetics as EquippedCosmetics | null)?.card_back;
+      if (!equippedId) { setCardPattern(null); return; }
+      const { data: cosmetic } = await supabase.from("cosmetics").select("asset").eq("id", equippedId).maybeSingle();
+      setCardPattern(cosmetic?.asset ?? null);
+    })();
+  }, [userId]);
 
   // Auto-open player pass modal when navigated from a player profile page
   // e.g. /passes?player=bailey_smith
@@ -1041,7 +1055,7 @@ function PassesPageInner() {
             <div style={{ display: "grid", gridTemplateColumns: (data?.teamPasses?.length ?? 0) === 1 ? "1fr" : "1fr 1fr", gap: 10, maxWidth: (data?.teamPasses?.length ?? 0) === 1 ? 280 : undefined, margin: "0 auto" }}>
               {data!.teamPasses.map((pass) => (
                 <div key={pass.id} onClick={() => setSelectedTeamPass(pass)} style={{ cursor: "pointer" }}>
-                  <TeamCard pass={pass} />
+                  <TeamCard pass={pass} pattern={cardPattern} />
                 </div>
               ))}
             </div>
@@ -1081,7 +1095,7 @@ function PassesPageInner() {
                   )
                   .map((pass) => (
                     <div key={pass.id} onClick={() => setSelectedPass(pass)} style={{ cursor: "pointer" }}>
-                      <PlayerCard pass={pass} />
+                      <PlayerCard pass={pass} pattern={cardPattern} />
                     </div>
                   ))}
               </div>
@@ -1098,7 +1112,7 @@ function PassesPageInner() {
             {/* Card preview */}
             <div style={{ display: "flex", justifyContent: "center" }}>
               <div style={{ width: 180 }}>
-                <PlayerCard pass={selectedPass} />
+                <PlayerCard pass={selectedPass} pattern={cardPattern} />
               </div>
             </div>
             {/* Stats row */}
@@ -1143,7 +1157,7 @@ function PassesPageInner() {
       {selectedTeamPass && (
         <Modal title={selectedTeamPass.team_name} onClose={() => setSelectedTeamPass(null)} centered>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <TeamCard pass={selectedTeamPass} />
+            <TeamCard pass={selectedTeamPass} pattern={cardPattern} />
             {(() => {
               const level = getPassLevel(selectedTeamPass.xp ?? 0, TEAM_PASS_LEVELS);
               return (

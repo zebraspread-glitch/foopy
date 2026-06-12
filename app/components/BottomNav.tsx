@@ -114,11 +114,16 @@ export default function BottomNav() {
         .eq("user_id", userId);
       let groupUnread = 0;
       if (memberships?.length) {
-        const { data: recentMsgs } = await supabase
+        const lastReads = (memberships as any[]).map(m => m.last_read_at).filter(Boolean);
+        const hasNeverRead = lastReads.length < (memberships as any[]).length;
+        const earliestLastRead = !hasNeverRead && lastReads.length ? lastReads.reduce((a, b) => a < b ? a : b) : null;
+        let recentMsgsQuery = supabase
           .from("group_chat_messages")
           .select("group_chat_id, created_at, sender_id")
           .in("group_chat_id", memberships.map((m: any) => m.group_chat_id))
           .neq("sender_id", userId);
+        if (earliestLastRead) recentMsgsQuery = recentMsgsQuery.gt("created_at", earliestLastRead);
+        const { data: recentMsgs } = await recentMsgsQuery;
         const lastReadMap: Record<string, string | null> = {};
         for (const m of memberships as any[]) lastReadMap[m.group_chat_id] = m.last_read_at;
         for (const msg of recentMsgs ?? []) {

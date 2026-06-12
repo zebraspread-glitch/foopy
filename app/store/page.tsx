@@ -3,20 +3,26 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { supabase } from "@/app/lib/supabase";
 import { type Cosmetic, type EquippedCosmetics, nameColorStyle, avatarFrameStyle } from "@/app/lib/cosmetics";
+import { patternBackground } from "@/app/components/PassCard";
+import { getPassLevel, PLAYER_PASS_LEVELS } from "@/app/lib/passes";
+
+// Representative level used to preview pass background patterns in the store.
+const PATTERN_PREVIEW_LEVEL = getPassLevel(225, PLAYER_PASS_LEVELS); // Emerald
 
 // Rarity visual identity: label, accent colour, and the gradient used for
-// borders / buttons. Legendary gets a wide multi-stop gradient that animates.
-const RARITY: Record<string, { label: string; color: string; grad: string }> = {
-  common:    { label: "Common",    color: "#60a5fa", grad: "linear-gradient(135deg,#2563eb,#60a5fa)" },
-  rare:      { label: "Rare",      color: "#c084fc", grad: "linear-gradient(135deg,#7c3aed,#c084fc)" },
-  epic:      { label: "Epic",      color: "#fb7185", grad: "linear-gradient(135deg,#ec4899,#f59e0b)" },
-  legendary: { label: "Legendary", color: "#fbbf24", grad: "linear-gradient(90deg,#fbbf24,#f97316,#ec4899,#a855f7,#38bdf8,#fbbf24)" },
+// CTA buttons. Kept subtle — accents, not glowing borders.
+const RARITY: Record<string, { label: string; color: string; grad: string; tint: string }> = {
+  common:    { label: "Common",    color: "#60a5fa", grad: "linear-gradient(135deg,#2563eb,#38bdf8)", tint: "rgba(96,165,250,.08)" },
+  rare:      { label: "Rare",      color: "#a78bfa", grad: "linear-gradient(135deg,#7c3aed,#a78bfa)", tint: "rgba(167,139,250,.10)" },
+  epic:      { label: "Epic",      color: "#fb923c", grad: "linear-gradient(135deg,#ec4899,#f59e0b)", tint: "rgba(251,146,60,.10)" },
+  legendary: { label: "Legendary", color: "#fbbf24", grad: "linear-gradient(135deg,#f59e0b,#fbbf24)", tint: "rgba(251,191,36,.10)" },
 };
 const rarOf = (c: Cosmetic) => RARITY[c.rarity ?? "common"] ?? RARITY.common;
 
 const SECTION_TITLE: Record<string, string> = {
   name_color: "Name Colours",
   profile_frame: "Profile Rings",
+  card_back: "Pass Backgrounds",
 };
 
 export default function StorePage() {
@@ -120,98 +126,126 @@ export default function StorePage() {
 
   // ── Reusable bits ──────────────────────────────────────────────────────────
 
-  const Sample = ({ c, size }: { c: Cosmetic; size: number }) => (
-    c.slot === "profile_frame" ? (
-      <div className="s-sample-inner" style={avatarFrameStyle(c.asset, Math.max(2.5, size / 18)) ?? undefined}>
-        <div style={{ width: size, height: size, borderRadius: "50%", background: "var(--surface-2)", border: "2px solid var(--bg)" }} />
-      </div>
-    ) : (
-      <span className="s-sample-inner" style={{ fontSize: size * 0.95, fontWeight: 1000, lineHeight: 1, ...nameColorStyle(c.slot === "name_color" ? c.asset : null) }}>Aa</span>
-    )
+  const Sample = ({ c, size, boxWidth }: { c: Cosmetic; size: number; boxWidth?: number }) => {
+    if (c.slot === "profile_frame") {
+      return (
+        <div className="s-sample-inner" style={avatarFrameStyle(c.asset, Math.max(2.5, size / 18)) ?? undefined}>
+          <div style={{ width: size, height: size, borderRadius: "50%", background: "var(--surface-2)", border: "2px solid var(--bg)" }} />
+        </div>
+      );
+    }
+    if (c.slot === "card_back") {
+      const w = boxWidth ?? size * 2;
+      return (
+        <div className="s-sample-inner" style={{ width: w, height: size * 1.6, borderRadius: 10, background: patternBackground(c.asset, PATTERN_PREVIEW_LEVEL), border: "1px solid rgba(255,255,255,.08)" }} />
+      );
+    }
+    const label = `@${username}`;
+    const maxFont = size * 0.6;
+    // Shrink the font so the username always fits the available width.
+    const fitFont = boxWidth ? (boxWidth * 0.9) / (label.length * 0.75) : maxFont;
+    const fontSize = Math.max(9, Math.min(maxFont, fitFont));
+    return (
+      <span
+        className="s-sample-inner"
+        style={{
+          fontSize,
+          fontWeight: 800,
+          lineHeight: 1,
+          maxWidth: "100%",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+          ...nameColorStyle(c.slot === "name_color" ? c.asset : null),
+        }}
+      >
+        {label}
+      </span>
+    );
+  };
+
+  const Price = ({ c, size = 14 }: { c: Cosmetic; size?: number }) => (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+      <img src="/token/token.png" alt="" style={{ width: size, height: size, objectFit: "contain" }} />
+      {c.token_price.toLocaleString()}
+    </span>
   );
 
-  const Card = ({ c, i }: { c: Cosmetic; i: number }) => {
+  const ActionButton = ({ c, large }: { c: Cosmetic; large?: boolean }) => {
     const isOwned = owned.has(c.id);
     const isEquipped = c.slot ? equipped[c.slot] === c.id : false;
     const canAfford = tokens >= c.token_price;
     const busy = busyKey === c.key;
     const r = rarOf(c);
-    const premium = c.rarity === "epic" || c.rarity === "legendary";
+
+    if (isOwned) {
+      return (
+        <button
+          className={`s-btn ${isEquipped ? "s-btn-equipped" : "s-btn-owned"}${large ? " s-btn-lg" : ""}`}
+          onClick={() => toggleEquip(c)}
+          disabled={busy || !c.slot}
+        >
+          {busy ? "…" : isEquipped ? "Equipped" : "Owned · Equip"}
+        </button>
+      );
+    }
+    return (
+      <button
+        className={`s-btn s-btn-buy${large ? " s-btn-lg" : ""}`}
+        style={{ "--rg": r.grad } as CSSProperties}
+        onClick={() => buy(c)}
+        disabled={busy || !canAfford}
+      >
+        {busy ? "…" : <>Buy&nbsp;·&nbsp;<Price c={c} size={large ? 16 : 13} /></>}
+      </button>
+    );
+  };
+
+  const Card = ({ c, i }: { c: Cosmetic; i: number }) => {
+    const isEquipped = c.slot ? equipped[c.slot] === c.id : false;
+    const r = rarOf(c);
     return (
       <div
-        className={`s-card${c.rarity === "legendary" ? " legendary" : ""}${isEquipped ? " equipped" : ""}`}
-        style={{ "--rg": r.grad, "--rc": r.color, animationDelay: `${Math.min(i, 12) * 0.04}s` } as CSSProperties}
+        className={`s-card${isEquipped ? " equipped" : ""}`}
+        style={{ "--rc": r.color, "--rtint": r.tint, animationDelay: `${Math.min(i, 12) * 0.035}s` } as CSSProperties}
       >
-        <div className="s-inner">
-          <div className={`s-preview${premium ? " premium" : ""}`}>
-            <div className="s-preview-glow" />
-            <Sample c={c} size={c.slot === "profile_frame" ? 30 : 30} />
-            {c.is_limited && <span className="s-limited-tag">Limited</span>}
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13.5, fontWeight: 800, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</div>
-            <span style={{ fontSize: 9.5, fontWeight: 900, letterSpacing: ".08em", textTransform: "uppercase", color: r.color }}>{r.label}</span>
-          </div>
-          {isOwned ? (
-            <button className="s-btn s-btn-equip" data-on={isEquipped} onClick={() => toggleEquip(c)} disabled={busy || !c.slot}>
-              {busy ? "…" : isEquipped ? "Equipped ✓" : "Equip"}
-            </button>
-          ) : (
-            <button className="s-btn s-btn-buy" onClick={() => buy(c)} disabled={busy || !canAfford}>
-              {busy ? "…" : (
-                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
-                  <img src="/token/token.png" alt="" style={{ width: 15, height: 15, objectFit: "contain" }} />
-                  {c.token_price.toLocaleString()}
-                </span>
-              )}
-            </button>
-          )}
+        <div className="s-preview">
+          <Sample c={c} size={30} boxWidth={120} />
+          {c.is_limited && <span className="s-limited-tag">Limited</span>}
+        </div>
+        <div className="s-card-body">
+          <div className="s-card-name">{c.name}</div>
+          <span className="s-rarity-badge" style={{ color: r.color }}>{r.label}</span>
+          <ActionButton c={c} />
         </div>
       </div>
     );
   };
 
   const SectionHeader = ({ title }: { title: string }) => (
-    <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "0 2px" }}>
-      <span style={{ width: 4, height: 17, borderRadius: 99, background: "linear-gradient(180deg,#38bdf8,#6366f1)" }} />
-      <span style={{ fontSize: 15, fontWeight: 900, letterSpacing: "-0.02em", color: "var(--text-1)" }}>{title}</span>
+    <div className="s-section-head">
+      <span>{title}</span>
     </div>
   );
 
   const Featured = ({ c }: { c: Cosmetic }) => {
-    const isOwned = owned.has(c.id);
-    const isEquipped = c.slot ? equipped[c.slot] === c.id : false;
-    const canAfford = tokens >= c.token_price;
-    const busy = busyKey === c.key;
     const r = rarOf(c);
     return (
-      <div className="s-featured" style={{ "--rg": r.grad, "--rc": r.color } as CSSProperties}>
-        <div className="s-featured-card">
-          <div className="s-featured-glow" />
+      <div className="s-featured" style={{ "--rg": r.grad } as CSSProperties}>
+        <div className="s-featured-inner">
           <div className="s-featured-shine" />
           <span className="s-featured-tag">★ Featured Today</span>
-          <div className="s-featured-row">
+          <div className="s-featured-row" style={{ "--rtint": r.tint } as CSSProperties}>
             <div className="s-featured-art">
-              <div className="s-preview-glow" />
-              <Sample c={c} size={c.slot === "profile_frame" ? 56 : 50} />
+              <Sample c={c} size={c.slot === "profile_frame" ? 52 : 46} boxWidth={66} />
             </div>
             <div className="s-featured-meta">
               <div className="s-featured-name">{c.name}</div>
-              <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: ".12em", textTransform: "uppercase", color: r.color }}>{r.label}</div>
-              {isOwned ? (
-                <button className="s-btn s-featured-btn s-btn-equip" data-on={isEquipped} onClick={() => toggleEquip(c)} disabled={busy || !c.slot}>
-                  {busy ? "…" : isEquipped ? "Equipped ✓" : "Equip"}
-                </button>
-              ) : (
-                <button className="s-btn s-featured-btn" onClick={() => buy(c)} disabled={busy || !canAfford}>
-                  {busy ? "…" : (
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
-                      <img src="/token/token.png" alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />
-                      {c.token_price.toLocaleString()}
-                    </span>
-                  )}
-                </button>
-              )}
+              <span className="s-rarity-badge" style={{ color: r.color }}>{r.label}</span>
+              <p className="s-featured-desc">Stand out with an exclusive look for your profile.</p>
+            </div>
+            <div className="s-featured-action">
+              <ActionButton c={c} large />
             </div>
           </div>
         </div>
@@ -222,79 +256,96 @@ export default function StorePage() {
   return (
     <main className="s-main">
       <style>{`
-        @keyframes sFadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes sFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes sShine { 0% { transform: translateX(-130%); } 60%, 100% { transform: translateX(130%); } }
-        @keyframes sFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
-        @keyframes sBorderFlow { 0% { background-position: 0% 50%; } 100% { background-position: 300% 50%; } }
 
         .s-main { min-height: 100dvh; background: var(--bg); color: var(--text-1); padding-bottom: calc(90px + env(safe-area-inset-bottom)); position: relative; overflow-x: hidden; }
-        .s-ambient { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 140%; height: 380px; pointer-events: none; z-index: 0;
-          background: radial-gradient(58% 100% at 50% 0%, rgba(99,102,241,.30), rgba(56,189,248,.10) 45%, transparent 72%); }
+        .s-ambient { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 150%; height: 420px; pointer-events: none; z-index: 0;
+          background: radial-gradient(56% 100% at 50% 0%, rgba(56,189,248,.20), rgba(99,102,241,.08) 46%, transparent 74%); }
 
         .s-header { position: sticky; top: 0; z-index: 50; height: calc(52px + env(safe-area-inset-top)); padding: env(safe-area-inset-top) 16px 0 58px;
           display: flex; align-items: center; justify-content: space-between;
           background: linear-gradient(180deg, rgba(10,10,15,.82), rgba(10,10,15,.30)); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
-        .s-title { font-size: 19px; font-weight: 900; letter-spacing: -.03em; }
-        .s-token-pill { position: relative; display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px; border-radius: 999px; overflow: hidden;
-          background: linear-gradient(135deg,#38bdf8,#6366f1); box-shadow: 0 4px 16px rgba(99,102,241,.5), inset 0 1px 0 rgba(255,255,255,.35); }
-        .s-token-pill img { width: 17px; height: 17px; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
-        .s-token-pill span { font-size: 14px; font-weight: 900; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.3); }
-        .s-token-pill::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.5) 50%, transparent 70%); transform: translateX(-130%); animation: sShine 3.6s ease-in-out infinite; }
+        .s-title { font-size: 19px; font-weight: 900; letter-spacing: -.02em; color: var(--text-1); }
+        .s-token-pill { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 6px 13px; border-radius: 999px; overflow: hidden;
+          background: linear-gradient(135deg,#38bdf8,#6366f1); box-shadow: 0 4px 16px rgba(99,102,241,.45), inset 0 1px 0 rgba(255,255,255,.35); }
+        .s-token-pill img { width: 16px; height: 16px; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
+        .s-token-pill span { font-size: 13.5px; font-weight: 900; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.3); }
 
-        .s-content { position: relative; z-index: 1; max-width: 680px; margin: 0 auto; padding: 18px 14px; display: flex; flex-direction: column; gap: 26px; }
+        .s-content { position: relative; z-index: 1; max-width: 680px; margin: 0 auto; padding: 16px 14px; display: flex; flex-direction: column; gap: 18px; }
 
-        .s-myprofile { display: flex; flex-direction: column; align-items: center; gap: 11px; padding: 24px 16px; border-radius: 22px;
-          background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.012)); border: 1px solid rgba(255,255,255,.09);
-          box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 14px 40px -20px rgba(99,102,241,.5); backdrop-filter: blur(10px); }
-        .s-myprofile-label { font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--text-3); }
-        .s-preview-av { animation: sFloat 3.8s ease-in-out infinite; }
-        .s-preview-av-inner { width: 78px; height: 78px; border-radius: 50%; overflow: hidden; background: var(--surface-3); border: 2px solid var(--border-2); display: flex; align-items: center; justify-content: center; color: var(--text-2); font-weight: 800; font-size: 26px; }
+        /* Your Look */
+        .s-myprofile { position: relative; overflow: hidden; display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: 18px;
+          background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.013)); border: 1px solid rgba(255,255,255,.07);
+          animation: sFadeUp .4s cubic-bezier(.2,.7,.3,1) both; }
+        .s-preview-av-inner { width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background: var(--surface-3); border: 2px solid var(--border-2); display: flex; align-items: center; justify-content: center; color: var(--text-2); font-weight: 800; font-size: 18px; flex-shrink: 0; }
         .s-preview-av-inner img { width: 100%; height: 100%; object-fit: cover; }
-        .s-preview-name { font-size: 25px; font-weight: 1000; letter-spacing: -.02em; }
+        .s-myprofile-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        .s-myprofile-name { font-size: 16px; font-weight: 800; letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .s-myprofile-sub { font-size: 12px; font-weight: 600; color: var(--text-3); }
+
+        /* Section headers */
+        .s-section-head { font-size: 11px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; color: var(--text-3); padding: 0 2px; margin: 4px 0 -4px; }
 
         /* Featured hero */
-        .s-featured { position: relative; border-radius: 24px; padding: 1.5px; background: var(--rg); background-size: 200% 100%; animation: sBorderFlow 9s linear infinite;
-          box-shadow: 0 24px 54px -18px rgba(0,0,0,.7), 0 0 44px -14px var(--rc); }
-        .s-featured-card { position: relative; overflow: hidden; border-radius: 22.5px; background: linear-gradient(135deg, #15151f, #0c0c13); padding: 18px; }
-        .s-featured-glow { position: absolute; right: -18%; top: -45%; width: 70%; height: 170%; pointer-events: none; opacity: .32; background: radial-gradient(circle, var(--rc), transparent 64%); }
-        .s-featured-shine { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(110deg, transparent 36%, rgba(255,255,255,.10) 50%, transparent 64%); transform: translateX(-130%); animation: sShine 5s ease-in-out infinite; }
-        .s-featured-tag { position: relative; display: inline-block; font-size: 10px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; color: #fff; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.18); padding: 4px 10px; border-radius: 999px; margin-bottom: 16px; }
-        .s-featured-row { position: relative; display: flex; align-items: center; gap: 18px; }
-        .s-featured-art { width: 112px; height: 112px; flex-shrink: 0; border-radius: 18px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.09); }
-        .s-featured-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
-        .s-featured-name { font-size: 22px; font-weight: 1000; color: #fff; letter-spacing: -.02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .s-featured-btn { margin-top: 10px; align-self: flex-start; padding: 11px 24px; border-radius: 14px; font-size: 15px; color: #fff; background: var(--rg); box-shadow: 0 8px 22px -8px var(--rc), inset 0 1px 0 rgba(255,255,255,.3); }
+        .s-featured { position: relative; padding: 1.5px; border-radius: 22px; background: linear-gradient(160deg, rgba(99,102,241,.55), rgba(56,189,248,.15) 60%, rgba(99,102,241,.22));
+          box-shadow: 0 22px 48px -22px rgba(0,0,0,.7), 0 0 44px -18px rgba(56,189,248,.35);
+          animation: sFadeUp .4s cubic-bezier(.2,.7,.3,1) both; }
+        .s-featured-inner { position: relative; overflow: hidden; border-radius: 20.5px; background: var(--surface-1); padding: 18px; }
+        .s-featured-shine { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(110deg, transparent 38%, rgba(255,255,255,.07) 50%, transparent 62%); transform: translateX(-130%); animation: sShine 6s ease-in-out infinite; }
+        .s-featured-tag { position: relative; display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; color: #fff;
+          background: var(--rg); padding: 4px 11px; border-radius: 999px; margin-bottom: 14px; box-shadow: 0 5px 14px -5px rgba(99,102,241,.6); }
+        .s-featured-row { position: relative; display: flex; align-items: center; gap: 16px; }
+        .s-featured-art { width: 78px; height: 78px; flex-shrink: 0; border-radius: 16px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;
+          background: var(--rtint); border: 1px solid rgba(255,255,255,.06); }
+        .s-featured-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+        .s-featured-name { font-size: 18px; font-weight: 800; color: var(--text-1); letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .s-featured-desc { font-size: 12.5px; color: var(--text-3); font-weight: 600; margin: 1px 0 0; }
+        .s-featured-action { flex-shrink: 0; }
 
         /* Product grid + cards */
-        .s-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
-        .s-card { position: relative; padding: 1.5px; border-radius: 18px; background: var(--rg); animation: sFadeUp .5s cubic-bezier(.2,.7,.3,1) both;
-          transition: transform .18s ease, box-shadow .25s ease; will-change: transform; }
-        .s-card.legendary { background-size: 300% 100%; animation: sFadeUp .5s cubic-bezier(.2,.7,.3,1) both, sBorderFlow 6s linear infinite; }
-        .s-card:hover { transform: translateY(-4px) scale(1.015); box-shadow: 0 18px 36px -12px rgba(0,0,0,.6), 0 0 24px -8px var(--rc); }
+        .s-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 10px; }
+        .s-card { position: relative; border-radius: 16px; background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.012)); border: 1px solid rgba(255,255,255,.06);
+          padding: 10px; display: flex; flex-direction: column; gap: 10px;
+          animation: sFadeUp .35s cubic-bezier(.2,.7,.3,1) both;
+          transition: transform .18s cubic-bezier(.2,.8,.3,1), box-shadow .2s ease, border-color .2s ease; }
+        .s-card:hover { transform: translateY(-3px); box-shadow: 0 14px 30px -16px rgba(0,0,0,.6); border-color: rgba(255,255,255,.12); }
         .s-card:active { transform: translateY(-1px) scale(.99); }
-        .s-card.equipped { box-shadow: 0 0 20px -4px var(--rc); }
-        .s-inner { position: relative; border-radius: 16.5px; background: linear-gradient(180deg, var(--surface-1), var(--surface-2)); padding: 12px; display: flex; flex-direction: column; gap: 10px; height: 100%; }
-        .s-preview { position: relative; overflow: hidden; height: 96px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); }
-        .s-preview-glow { position: absolute; inset: 0; pointer-events: none; opacity: .2; background: radial-gradient(circle at 50% 42%, var(--rc), transparent 62%); }
-        .s-preview.premium::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(110deg, transparent 38%, rgba(255,255,255,.14) 50%, transparent 62%); transform: translateX(-130%); animation: sShine 3s ease-in-out infinite; }
-        .s-sample-inner { position: relative; transition: transform .2s ease; }
-        .s-card:hover .s-sample-inner { transform: scale(1.12); }
-        .s-limited-tag { position: absolute; top: 6px; right: 6px; font-size: 8px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; color: #fff; background: rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.18); padding: 2px 6px; border-radius: 6px; }
+        .s-card.equipped { border-color: var(--rc); }
+        .s-preview { position: relative; overflow: hidden; height: 80px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+          background: var(--rtint); }
+        .s-sample-inner { position: relative; transition: transform .2s cubic-bezier(.2,.8,.3,1); }
+        .s-card:hover .s-sample-inner { transform: scale(1.08); }
+        .s-limited-tag { position: absolute; top: 6px; right: 6px; font-size: 8px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #fff; background: rgba(0,0,0,.5); padding: 3px 7px; border-radius: 6px; }
+        .s-card-body { display: flex; flex-direction: column; gap: 3px; }
+        .s-card-name { font-size: 13px; font-weight: 700; color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .s-rarity-badge { font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px; }
 
-        .s-btn { padding: 9px 0; border-radius: 11px; border: none; cursor: pointer; font-weight: 900; font-size: 13px; transition: filter .15s ease, transform .12s ease; }
-        .s-btn:hover:not(:disabled) { filter: brightness(1.12); }
-        .s-btn:active:not(:disabled) { transform: scale(.96); }
+        /* Buttons */
+        .s-btn { position: relative; overflow: hidden; padding: 9px 0; border-radius: 11px; border: none; cursor: pointer; font-weight: 800; font-size: 12.5px; transition: filter .15s ease, transform .12s ease, background .15s ease; width: 100%; }
+        .s-btn:hover:not(:disabled) { filter: brightness(1.1); }
+        .s-btn:active:not(:disabled) { transform: scale(.97); }
         .s-btn-buy { color: #fff; background: var(--rg); box-shadow: inset 0 1px 0 rgba(255,255,255,.22); }
-        .s-btn-buy:disabled { background: var(--surface-3); color: var(--text-4); box-shadow: none; cursor: not-allowed; }
-        .s-btn-equip { color: #0b1020; background: var(--rc); }
-        .s-btn-equip[data-on="true"] { background: var(--surface-3); color: var(--text-2); }
+        .s-btn-buy::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.35) 50%, transparent 70%); transform: translateX(-130%); }
+        .s-btn-buy:hover:not(:disabled)::after { animation: sShine 1.2s ease-in-out; }
+        .s-btn-buy:disabled { background: var(--surface-3); color: var(--text-4); box-shadow: none; cursor: not-allowed; filter: none; }
+        .s-btn-buy:disabled::after { display: none; }
+        .s-btn-owned { color: var(--text-2); background: var(--surface-3); }
+        .s-btn-equipped { color: #60a5fa; background: var(--blue-dim); border: 1px solid rgba(96,165,250,.25); }
+        .s-btn-lg { padding: 13px 22px; border-radius: 13px; font-size: 14px; width: auto; min-width: 124px; }
 
         .s-msg { padding: 10px 14px; border-radius: 12px; background: rgba(239,68,68,.12); border: 1px solid rgba(239,68,68,.3); color: #ef4444; font-size: 13px; font-weight: 700; text-align: center; }
         .s-state { text-align: center; color: var(--text-3); padding: 48px 0; font-weight: 700; }
-        .s-foot { font-size: 11px; color: var(--text-3); text-align: center; margin: 6px 0 0; line-height: 1.5; }
+        .s-foot { font-size: 11px; color: var(--text-3); text-align: center; margin: 0; padding: 6px 0 18px; line-height: 1.5; }
+
+        @media (max-width: 420px) {
+          .s-featured-row { flex-wrap: wrap; }
+          .s-featured-action { width: 100%; }
+          .s-btn-lg { width: 100%; }
+        }
 
         @media (prefers-reduced-motion: reduce) {
-          .s-card, .s-card.legendary, .s-featured, .s-token-pill::after, .s-featured-shine, .s-preview.premium::after, .s-preview-av { animation: none !important; }
+          .s-card, .s-myprofile, .s-featured, .s-featured-shine, .s-btn-buy::after { animation: none !important; }
           .s-card { opacity: 1; }
         }
       `}</style>
@@ -303,7 +354,7 @@ export default function StorePage() {
 
       <header className="s-header">
         <span className="s-title">Store</span>
-        <div className="s-token-pill">
+        <div className="s-token-pill" suppressHydrationWarning>
           <img src="/token/token.png" alt="" />
           <span>{tokens.toLocaleString()}</span>
         </div>
@@ -312,13 +363,13 @@ export default function StorePage() {
       <div className="s-content">
         {/* Your look preview */}
         <section className="s-myprofile">
-          <div className="s-myprofile-label">Your Look</div>
-          <div className="s-preview-av" style={avatarFrameStyle(equippedFrameAsset) ?? undefined}>
-            <div className="s-preview-av-inner">
-              {avatarUrl ? <img src={avatarUrl} alt="" /> : (username[0] ?? "?").toUpperCase()}
-            </div>
+          <div className="s-preview-av-inner" style={avatarFrameStyle(equippedFrameAsset) ?? undefined}>
+            {avatarUrl ? <img src={avatarUrl} alt="" /> : (username[0] ?? "?").toUpperCase()}
           </div>
-          <div className="s-preview-name" style={nameColorStyle(equippedNameAsset)}>@{username}</div>
+          <div className="s-myprofile-text">
+            <div className="s-myprofile-name" style={nameColorStyle(equippedNameAsset)}>@{username}</div>
+            <span className="s-myprofile-sub">Customize your identity</span>
+          </div>
         </section>
 
         {msg && <div className="s-msg">{msg}</div>}

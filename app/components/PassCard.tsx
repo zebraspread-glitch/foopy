@@ -7,6 +7,7 @@ import {
   TEAM_PASS_LEVELS,
   type PlayerPass,
   type TeamPass,
+  type PassLevelInfo,
 } from "@/app/lib/passes";
 import { playerImgUrl } from "@/app/lib/playerImage";
 
@@ -66,6 +67,32 @@ function MythicShine({ zIndex = 2 }: { zIndex?: number }) {
   return <div className="mythic-pass-shine" style={{ zIndex }} />;
 }
 
+// ── Pass background patterns ─────────────────────────────────────────────────
+// Patterns are bought once and re-colour themselves to match whatever level a
+// pass is currently at — e.g. "Stripes" renders in bronze on a Bronze pass and
+// in gold once it ranks up to Gold.
+
+const PASS_PATTERNS: Record<string, (level: PassLevelInfo) => string> = {
+  stripes: (level) =>
+    `repeating-linear-gradient(135deg, transparent 0px, transparent 10px, ${level.color}26 10px, ${level.color}26 20px), ${level.gradient}`,
+  dots: (level) =>
+    `radial-gradient(circle, ${level.color}55 2px, transparent 2.5px) 0 0/16px 16px, ${level.gradient}`,
+  camo: (level) =>
+    `radial-gradient(circle at 15% 20%, ${level.color}40 0%, ${level.color}40 18%, transparent 19%), radial-gradient(circle at 60% 15%, ${level.darkColor}80 0%, ${level.darkColor}80 22%, transparent 23%), radial-gradient(circle at 85% 60%, ${level.color}33 0%, ${level.color}33 16%, transparent 17%), radial-gradient(circle at 35% 75%, ${level.darkColor}66 0%, ${level.darkColor}66 20%, transparent 21%), radial-gradient(circle at 75% 90%, ${level.color}3a 0%, ${level.color}3a 17%, transparent 18%), ${level.gradient}`,
+  carbon: (level) =>
+    `repeating-linear-gradient(45deg, rgba(255,255,255,.05) 0px, rgba(255,255,255,.05) 6px, transparent 6px, transparent 12px), ${level.gradient}`,
+  grid: (level) =>
+    `repeating-linear-gradient(0deg, ${level.color}26 0px, ${level.color}26 1px, transparent 1px, transparent 18px), repeating-linear-gradient(90deg, ${level.color}26 0px, ${level.color}26 1px, transparent 1px, transparent 18px), ${level.gradient}`,
+  waves: (level) =>
+    `radial-gradient(ellipse 60% 40% at 20% 25%, ${level.color}3a, transparent 60%), radial-gradient(ellipse 70% 50% at 80% 75%, ${level.darkColor}80, transparent 60%), ${level.gradient}`,
+};
+
+/** Resolves an equipped pattern key (e.g. "dots") into a CSS background for the given pass level. Falls back to the level's own gradient when no pattern is equipped. */
+export function patternBackground(pattern: string | null | undefined, level: PassLevelInfo): string {
+  const fn = pattern ? PASS_PATTERNS[pattern] : undefined;
+  return fn ? fn(level) : level.gradient;
+}
+
 // ── XP Bar ────────────────────────────────────────────────────────────────────
 
 export function PassXpBar({ xp, levels }: { xp: number; levels: typeof PLAYER_PASS_LEVELS }) {
@@ -94,14 +121,14 @@ export function PassXpBar({ xp, levels }: { xp: number; levels: typeof PLAYER_PA
 
 // ── Player Pass Card ──────────────────────────────────────────────────────────
 
-export function PlayerPassCard({ pass }: { pass: PlayerPass }) {
+export function PlayerPassCard({ pass, pattern }: { pass: PlayerPass; pattern?: string | null }) {
   const level = getPassLevel(pass.xp ?? 0, PLAYER_PASS_LEVELS);
   const img   = playerPassImgSrc(pass.player_name, pass.team_name);
   const isMythic = isMythicLevel(level);
   return (
     <div style={{
       borderRadius: 16, overflow: "hidden", position: "relative",
-      background: level.gradient,
+      background: patternBackground(pattern, level),
       border: `1.5px solid ${isMythic ? "rgba(125,211,252,0.75)" : level.color + "55"}`,
       boxShadow: isMythic
         ? "0 4px 26px rgba(125,211,252,0.30), 0 0 18px rgba(167,139,250,0.22), 0 0 0 0.5px rgba(255,255,255,0.70)"
@@ -146,7 +173,7 @@ export function PlayerPassCard({ pass }: { pass: PlayerPass }) {
 
 // ── Team Pass Card ────────────────────────────────────────────────────────────
 
-export function TeamPassCard({ pass }: { pass: TeamPass }) {
+export function TeamPassCard({ pass, pattern }: { pass: TeamPass; pattern?: string | null }) {
   const level = getPassLevel(pass.xp ?? 0, TEAM_PASS_LEVELS);
   const color = PASS_TEAM_COLORS[pass.team_name] ?? "#6d28d9";
   const logo  = PASS_TEAM_LOGOS[pass.team_name]  ?? "/team-logos/default.png";
@@ -154,7 +181,7 @@ export function TeamPassCard({ pass }: { pass: TeamPass }) {
   return (
     <div style={{
       borderRadius: 20, overflow: "hidden", position: "relative",
-      background: level.gradient,
+      background: patternBackground(pattern, level),
       border: `1.5px solid ${isMythic ? "rgba(125,211,252,0.75)" : level.color + "55"}`,
       boxShadow: isMythic
         ? "0 6px 34px rgba(125,211,252,0.32), 0 0 20px rgba(167,139,250,0.24), 0 0 0 0.5px rgba(255,255,255,0.70)"

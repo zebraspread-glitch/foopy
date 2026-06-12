@@ -2068,7 +2068,7 @@ export default function ProfilePage() {
               <span style={profileHeaderLabelStyle}>Coins</span>
             </div>
             {/* Foopy Tokens */}
-            <a href="/store" style={profileHeaderStatStyle}>
+            <a href="/tokens" style={profileHeaderStatStyle}>
               <div style={profileHeaderIconRowStyle}>
                 <img src="/token/token.png" alt="" style={{ width: profileHeaderIconSize, height: profileHeaderIconSize, objectFit: "contain", flexShrink: 0 }} />
                 <span style={profileHeaderValueStyle}>{(profile?.tokens ?? 0).toLocaleString()}</span>

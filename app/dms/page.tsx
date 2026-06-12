@@ -546,7 +546,7 @@ function DMsPageInner() {
         setSelectedMsgId(prev => prev === id ? null : prev);
       }).subscribe();
     const poll = setInterval(async () => {
-      const { data } = await supabase.from("dm_messages").select("*").eq("conversation_id", activeConvId).order("created_at", { ascending: true });
+      const { data } = await supabase.from("dm_messages").select("id, sender_id, content, created_at, conversation_id").eq("conversation_id", activeConvId).order("created_at", { ascending: true });
       if (!data) return;
       setMessages(prev => {
         const stillSending = prev.filter(m => m.id.startsWith("t"));
@@ -555,7 +555,7 @@ function DMsPageInner() {
         setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 60);
         return [...data, ...stillSending];
       });
-    }, 3000);
+    }, 15000);
     return () => { supabase.removeChannel(ch); clearInterval(poll); };
   }, [activeConvId, myProfileId]);
 
@@ -590,7 +590,7 @@ function DMsPageInner() {
         setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 60);
         return [...(data as any[]).map(m => ({ ...m, sender: cache[m.sender_id] ?? null })), ...stillSending];
       });
-    }, 3000);
+    }, 15000);
     return () => { supabase.removeChannel(ch); clearInterval(poll); };
   }, [activeGroupId, myProfileId]);
 
@@ -1104,43 +1104,57 @@ function DMsPageInner() {
         )}
         {grouped.map(g => (
           <div key={g.day}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 20px" }}>
-              <div style={{ flex: 1, height: 1, background: "var(--surface-3)" }} />
-              <span style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 800, textTransform: "uppercase", letterSpacing: ".06em" }}>{g.day}</span>
-              <div style={{ flex: 1, height: 1, background: "var(--surface-3)" }} />
+            <div style={{ display: "flex", justifyContent: "center", padding: "14px 20px 10px" }}>
+              <span style={{ fontSize: 11.5, color: "var(--text-3)", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".04em" }}>{g.day}</span>
             </div>
             {g.msgs.map((m, i) => {
               const mine = m.sender_id === myProfile.id;
               const samePrev = g.msgs[i - 1]?.sender_id === m.sender_id;
               const sameNext = g.msgs[i + 1]?.sender_id === m.sender_id;
-              const otherName = activeConv.other?.display_name || activeConv.other?.username || "User";
               const otherUser = activeConv.other?.username ?? "?";
+              const selected = selectedMsgId === m.id;
+              const radius = mine
+                ? `18px ${samePrev ? 4 : 18}px ${sameNext ? 4 : 18}px 18px`
+                : `${samePrev ? 4 : 18}px 18px 18px ${sameNext ? 4 : 18}px`;
               return (
-                <div key={m.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: `${samePrev ? 2 : 12}px 14px ${sameNext ? 1 : 10}px`, background: mine ? "rgba(96,165,250,0.06)" : "transparent", borderLeft: mine ? "2px solid rgba(96,165,250,0.25)" : "2px solid transparent" }}>
-                  <div style={{ width: 36, height: 36, borderRadius: "50%", flexShrink: 0, overflow: "hidden", visibility: samePrev ? "hidden" : "visible" }}>
-                    {mine
-                      ? <Avatar name={myProfile.username} url={myProfile.avatar_url ?? null} size={36} />
-                      : <button onClick={() => router.push(`/profile/${otherUser}`)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", width: "100%", height: "100%", display: "block" }}>
-                          <Avatar name={otherUser} url={activeConv.other?.avatar_url} size={36} />
+                <div key={m.id} style={{ display: "flex", flexDirection: "column", alignItems: mine ? "flex-end" : "flex-start" }}>
+                  {selected && (
+                    <div style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 600, padding: mine ? "6px 14px 2px" : "6px 14px 2px 52px" }}>
+                      {fmtTime(m.created_at)}
+                    </div>
+                  )}
+                  <div
+                    style={{ display: "flex", alignItems: "flex-end", gap: 8, padding: `${samePrev ? 1 : 3}px 14px`, maxWidth: "78%", flexDirection: mine ? "row-reverse" : "row" }}
+                  >
+                    {!mine && (
+                      <div style={{ width: 28, height: 28, borderRadius: "50%", flexShrink: 0, overflow: "hidden", visibility: sameNext ? "hidden" : "visible" }}>
+                        <button onClick={() => router.push(`/profile/${otherUser}`)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", width: "100%", height: "100%", display: "block" }}>
+                          <Avatar name={otherUser} url={activeConv.other?.avatar_url} size={28} />
                         </button>
-                    }
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0, opacity: m.id.startsWith("t") || deletingIds.has(m.id) ? 0.55 : 1 }}>
-                    {!samePrev && (
-                      <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 3 }}>
-                        <span onClick={() => !mine && router.push(`/profile/${otherUser}`)} style={{ fontSize: 13, fontWeight: 800, color: mine ? "#60a5fa" : "var(--text-1)", cursor: mine ? "default" : "pointer" }}>
-                          {mine ? "You" : otherName}
-                        </span>
-                        <span style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 500 }}>{fmtTime(m.created_at)}</span>
                       </div>
                     )}
-                    <p style={{ margin: 0, fontSize: 14, color: "var(--text-1)", lineHeight: 1.55, wordBreak: "break-word" }}>{m.content}</p>
-                    {!sameNext && mine && !m.id.startsWith("t") && (
-                      <button onClick={() => deleteMessage(m)} disabled={deletingIds.has(m.id)} style={{ background: "none", border: "none", padding: "4px 0 0", fontSize: 11, fontWeight: 700, cursor: "pointer", color: "#ef4444" }}>
-                        Delete
-                      </button>
-                    )}
+                    <div
+                      onClick={() => setSelectedMsgId(selected ? null : m.id)}
+                      style={{
+                        background: mine ? bubbleColor : "var(--surface-2)",
+                        color: mine ? bubbleTextColor : "var(--text-1)",
+                        borderRadius: radius,
+                        padding: "8px 14px",
+                        fontSize: 15,
+                        lineHeight: 1.4,
+                        wordBreak: "break-word",
+                        cursor: "pointer",
+                        opacity: m.id.startsWith("t") || deletingIds.has(m.id) ? 0.55 : 1,
+                      }}
+                    >
+                      {m.content}
+                    </div>
                   </div>
+                  {selected && mine && !m.id.startsWith("t") && (
+                    <button onClick={() => deleteMessage(m)} disabled={deletingIds.has(m.id)} style={{ background: "none", border: "none", padding: "2px 14px 6px", fontSize: 11, fontWeight: 700, cursor: "pointer", color: "#ef4444" }}>
+                      Delete
+                    </button>
+                  )}
                 </div>
               );
             })}
