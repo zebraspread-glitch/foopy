@@ -7,7 +7,7 @@ import { patternBackground } from "@/app/components/PassCard";
 import { getPassLevel, PLAYER_PASS_LEVELS } from "@/app/lib/passes";
 
 // Representative level used to preview pass background patterns in the store.
-const PATTERN_PREVIEW_LEVEL = getPassLevel(225, PLAYER_PASS_LEVELS); // Emerald
+const PATTERN_PREVIEW_LEVEL = getPassLevel(375, PLAYER_PASS_LEVELS); // Sapphire
 
 // Rarity visual identity: label, accent colour, and the gradient used for
 // CTA buttons. Kept subtle — accents, not glowing borders.
@@ -179,6 +179,13 @@ export default function StorePage() {
     const r = rarOf(c);
 
     if (isOwned) {
+      if (c.slot === "card_back") {
+        return (
+          <button className={`s-btn s-btn-owned${large ? " s-btn-lg" : ""}`} disabled>
+            Owned
+          </button>
+        );
+      }
       return (
         <button
           className={`s-btn ${isEquipped ? "s-btn-equipped" : "s-btn-owned"}${large ? " s-btn-lg" : ""}`}
@@ -354,10 +361,13 @@ export default function StorePage() {
 
       <header className="s-header">
         <span className="s-title">Store</span>
-        <div className="s-token-pill" suppressHydrationWarning>
-          <img src="/token/token.png" alt="" />
-          <span>{tokens.toLocaleString()}</span>
-        </div>
+        <div
+          className="s-token-pill"
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{
+            __html: `<img src="/token/token.png" alt="" /><span>${tokens.toLocaleString()}</span>`,
+          }}
+        />
       </header>
 
       <div className="s-content">

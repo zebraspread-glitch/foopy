@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   if (type === "player") {
     const { data: passes, error } = await supabaseServer
       .from("user_player_passes")
-      .select("id, user_id, player_name, team_name, xp, serial_number")
+      .select("id, user_id, player_name, team_name, xp, serial_number, pattern")
       .eq("active", true)
       .order("xp", { ascending: false })
       .limit(limit);
@@ -33,6 +33,7 @@ export async function GET(req: NextRequest) {
       team_name:     p.team_name,
       xp:            p.xp ?? 0,
       serial_number: p.serial_number,
+      pattern:       p.pattern ?? null,
       username:      pm.get(p.user_id)?.username   ?? null,
       avatar_url:    pm.get(p.user_id)?.avatar_url ?? null,
       verified:      pm.get(p.user_id)?.verified   ?? false,
@@ -40,7 +41,7 @@ export async function GET(req: NextRequest) {
   } else {
     const { data: passes, error } = await supabaseServer
       .from("user_team_passes")
-      .select("id, user_id, team_name, xp, serial_number")
+      .select("id, user_id, team_name, xp, serial_number, pattern")
       .eq("active", true)
       .order("xp", { ascending: false })
       .limit(limit);
@@ -60,6 +61,7 @@ export async function GET(req: NextRequest) {
       team_name:     p.team_name,
       xp:            p.xp ?? 0,
       serial_number: p.serial_number,
+      pattern:       p.pattern ?? null,
       username:      pm.get(p.user_id)?.username   ?? null,
       avatar_url:    pm.get(p.user_id)?.avatar_url ?? null,
       verified:      pm.get(p.user_id)?.verified   ?? false,

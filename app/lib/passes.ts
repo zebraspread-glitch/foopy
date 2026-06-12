@@ -99,6 +99,7 @@ export interface TeamPass {
   active: boolean;
   xp: number;
   serial_number: number | null;
+  pattern: string | null;
   created_at: string;
 }
 
@@ -111,6 +112,7 @@ export interface PlayerPass {
   active: boolean;
   xp: number;
   serial_number: number | null;
+  pattern: string | null;
   created_at: string;
 }
 

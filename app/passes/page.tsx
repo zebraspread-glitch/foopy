@@ -25,13 +25,57 @@ import {
 } from "@/app/lib/passes";
 import { auraToastEmitter } from "@/app/lib/auraToastEmitter";
 import playersRaw from "@/app/data/players.json";
-import { PlayerPassCard, TeamPassCard, PASS_TEAM_LOGOS, PASS_TEAM_COLORS, playerPassImgSrc } from "@/app/components/PassCard";
-import type { EquippedCosmetics } from "@/app/lib/cosmetics";
+import { PlayerPassCard, TeamPassCard, PASS_TEAM_LOGOS, PASS_TEAM_COLORS, playerPassImgSrc, patternBackground } from "@/app/components/PassCard";
+import type { Cosmetic } from "@/app/lib/cosmetics";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const teamLogo  = (n: string) => PASS_TEAM_LOGOS[n]  ?? "/team-logos/default.png";
 const teamColor = (n: string) => PASS_TEAM_COLORS[n] ?? "#6d28d9";
+
+// ── Pattern Picker ────────────────────────────────────────────────────────────
+// Lets the user equip one of their owned "Pass Background" patterns onto a
+// single Player/Team Pass card. The swatches preview in the card's current level
+// colours so the user sees exactly how the pattern will look.
+
+function PatternPicker({ owned, current, level, onSelect }: {
+  owned: Cosmetic[];
+  current: string | null;
+  level: PassLevelInfo;
+  onSelect: (pattern: string | null) => void;
+}) {
+  if (owned.length === 0) return null;
+  return (
+    <div>
+      <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.4)", letterSpacing: "0.08em", marginBottom: 8 }}>PATTERN</div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <button
+          onClick={() => onSelect(null)}
+          style={{
+            width: 44, height: 44, borderRadius: 10, cursor: "pointer", fontFamily: "inherit",
+            background: "var(--surface-2)", border: current === null ? "2px solid #fff" : "1px solid rgba(255,255,255,0.12)",
+            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, color: "rgba(255,255,255,0.5)",
+          }}
+          title="None"
+        >
+          ✕
+        </button>
+        {owned.map((c) => (
+          <button
+            key={c.id}
+            onClick={() => onSelect(c.asset)}
+            style={{
+              width: 44, height: 44, borderRadius: 10, cursor: "pointer", fontFamily: "inherit", padding: 0,
+              background: patternBackground(c.asset, level),
+              border: current === c.asset ? "2px solid #fff" : "1px solid rgba(255,255,255,0.12)",
+            }}
+            title={c.name}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 
 function fmtCoins(n: number) {
@@ -116,6 +160,7 @@ type LeaderboardEntry = {
   user_id: string;
   serial_number: number | null;
   xp: number;
+  pattern: string | null;
   created_at: string;
   username: string | null;
   avatar_url: string | null;
@@ -209,7 +254,7 @@ function PassLeaderboard({ pass, onClose }: { pass: PlayerPass; onClose: () => v
               return (
                 <div key={entry.id} style={{
                   borderRadius: 16, overflow: "hidden", position: "relative",
-                  background: level.gradient,
+                  background: patternBackground(entry.pattern, level),
                   border: `1.5px solid ${isMe ? level.color + "99" : level.color + "55"}`,
                   boxShadow: isMe
                     ? `0 4px 24px ${level.color}44, 0 0 0 0.5px rgba(255,255,255,0.08)`
@@ -279,6 +324,7 @@ type TeamLeaderboardEntry = {
   team_name: string;
   serial_number: number | null;
   xp: number;
+  pattern: string | null;
   created_at: string;
   username: string | null;
   avatar_url: string | null;
@@ -369,7 +415,7 @@ function TeamPassLeaderboard({ pass, onClose }: { pass: TeamPass; onClose: () =>
               return (
                 <div key={entry.id} style={{
                   borderRadius: 20, overflow: "hidden", position: "relative",
-                  background: level.gradient,
+                  background: patternBackground(entry.pattern, level),
                   border: `1.5px solid ${isMe ? level.color + "99" : level.color + "55"}`,
                   boxShadow: isMe ? `0 6px 28px ${level.color}44` : `0 4px 24px ${level.color}22`,
                   aspectRatio: "3/4",
@@ -429,8 +475,8 @@ type GlobalSubTab  = "leaderboard" | "purchases";
 type GlobalPassType = "player" | "team";
 type PurchasePeriod = "1d" | "7d" | "all";
 
-type GlobalPlayerEntry = { id: string; player_name: string; team_name: string; xp: number; serial_number: number | null; username: string | null; avatar_url: string | null; verified?: boolean };
-type GlobalTeamEntry   = { id: string; team_name: string; xp: number; serial_number: number | null; username: string | null; avatar_url: string | null; verified?: boolean };
+type GlobalPlayerEntry = { id: string; player_name: string; team_name: string; xp: number; serial_number: number | null; pattern: string | null; username: string | null; avatar_url: string | null; verified?: boolean };
+type GlobalTeamEntry   = { id: string; team_name: string; xp: number; serial_number: number | null; pattern: string | null; username: string | null; avatar_url: string | null; verified?: boolean };
 type MostBoughtPlayer  = { player_id: string; player_name: string; team_name: string; count: number };
 type MostBoughtTeam    = { team_name: string; count: number };
 
@@ -552,7 +598,7 @@ function GlobalPassView() {
                       {/* Left accent bar */}
                       <div style={{ width: 3, alignSelf: "stretch", background: level.color, flexShrink: 0 }} />
                       {/* Mini player pass card */}
-                      <div style={{ width: 38, height: 50, borderRadius: 7, overflow: "hidden", flexShrink: 0, position: "relative", background: level.gradient, border: `1px solid ${level.color}55`, boxShadow: `0 2px 10px ${level.color}30` }}>
+                      <div style={{ width: 38, height: 50, borderRadius: 7, overflow: "hidden", flexShrink: 0, position: "relative", background: patternBackground(e.pattern, level), border: `1px solid ${level.color}55`, boxShadow: `0 2px 10px ${level.color}30` }}>
                         {/* shimmer top */}
                         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1.5, background: `linear-gradient(90deg,transparent,${level.color}cc,transparent)`, zIndex: 3 }} />
                         {imgSrc
@@ -589,7 +635,7 @@ function GlobalPassView() {
                     <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 12, borderTop: i > 0 ? "1px solid var(--border-1)" : "none", paddingRight: 16, overflow: "hidden" }}>
                       <div style={{ width: 3, alignSelf: "stretch", background: color, flexShrink: 0 }} />
                       {/* Mini team pass card */}
-                      <div style={{ width: 38, height: 50, borderRadius: 7, overflow: "hidden", flexShrink: 0, position: "relative", background: level.gradient, border: `1px solid ${level.color}55`, boxShadow: `0 2px 10px ${level.color}30`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <div style={{ width: 38, height: 50, borderRadius: 7, overflow: "hidden", flexShrink: 0, position: "relative", background: patternBackground(e.pattern, level), border: `1px solid ${level.color}55`, boxShadow: `0 2px 10px ${level.color}30`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                         {/* shimmer top */}
                         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1.5, background: `linear-gradient(90deg,transparent,${level.color}cc,transparent)`, zIndex: 3 }} />
                         {/* colour glow blob */}
@@ -713,19 +759,22 @@ function PassesPageInner() {
   const [boughtPlayer, setBoughtPlayer]         = useState<{ pid: string; name: string; team: string; imgSrc: string; xp: number } | null>(null);
   const [selectedTeamPass, setSelectedTeamPass]       = useState<TeamPass | null>(null);
   const [leaderboardTeamPass, setLeaderboardTeamPass] = useState<TeamPass | null>(null);
-  const [cardPattern, setCardPattern]                 = useState<string | null>(null);
+  const [ownedPatterns, setOwnedPatterns] = useState<Cosmetic[]>([]);
   const autoClaimFired = useRef(false);
   const searchParams = useSearchParams();
 
-  // Equipped "Pass Background" cosmetic — applied to the user's own pass cards.
+  // Owned "Pass Background" patterns — selectable per-pass via the pattern picker.
   useEffect(() => {
     if (!userId) return;
     (async () => {
-      const { data: profile } = await supabase.from("profiles").select("equipped_cosmetics").eq("id", userId).single();
-      const equippedId = (profile?.equipped_cosmetics as EquippedCosmetics | null)?.card_back;
-      if (!equippedId) { setCardPattern(null); return; }
-      const { data: cosmetic } = await supabase.from("cosmetics").select("asset").eq("id", equippedId).maybeSingle();
-      setCardPattern(cosmetic?.asset ?? null);
+      const { data: rows } = await supabase
+        .from("user_cosmetics")
+        .select("cosmetics(*)")
+        .eq("user_id", userId);
+      const patterns = (rows ?? [])
+        .map((r: any) => r.cosmetics as Cosmetic | null)
+        .filter((c): c is Cosmetic => !!c && c.slot === "card_back");
+      setOwnedPatterns(patterns);
     })();
   }, [userId]);
 
@@ -776,6 +825,24 @@ function PassesPageInner() {
     } catch {}
     setLoading(false);
   }, []);
+
+  // Apply (or clear, when pattern is null) a background pattern on a single pass.
+  const applyPattern = useCallback(async (passType: "player" | "team", passId: string, pattern: string | null) => {
+    if (!token) return;
+    const res = await fetch("/api/passes/pattern", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ pass_type: passType, pass_id: passId, pattern }),
+    });
+    if (!res.ok) return;
+    if (passType === "player") {
+      setData((d) => d && { ...d, playerPasses: d.playerPasses.map((p) => p.id === passId ? { ...p, pattern } : p) });
+      setSelectedPass((p) => p && p.id === passId ? { ...p, pattern } : p);
+    } else {
+      setData((d) => d && { ...d, teamPasses: d.teamPasses.map((p) => p.id === passId ? { ...p, pattern } : p) });
+      setSelectedTeamPass((p) => p && p.id === passId ? { ...p, pattern } : p);
+    }
+  }, [token]);
 
   useEffect(() => {
     if (token) fetchData(token);
@@ -1055,7 +1122,7 @@ function PassesPageInner() {
             <div style={{ display: "grid", gridTemplateColumns: (data?.teamPasses?.length ?? 0) === 1 ? "1fr" : "1fr 1fr", gap: 10, maxWidth: (data?.teamPasses?.length ?? 0) === 1 ? 280 : undefined, margin: "0 auto" }}>
               {data!.teamPasses.map((pass) => (
                 <div key={pass.id} onClick={() => setSelectedTeamPass(pass)} style={{ cursor: "pointer" }}>
-                  <TeamCard pass={pass} pattern={cardPattern} />
+                  <TeamCard pass={pass} pattern={pass.pattern} />
                 </div>
               ))}
             </div>
@@ -1095,7 +1162,7 @@ function PassesPageInner() {
                   )
                   .map((pass) => (
                     <div key={pass.id} onClick={() => setSelectedPass(pass)} style={{ cursor: "pointer" }}>
-                      <PlayerCard pass={pass} pattern={cardPattern} />
+                      <PlayerCard pass={pass} pattern={pass.pattern} />
                     </div>
                   ))}
               </div>
@@ -1112,7 +1179,7 @@ function PassesPageInner() {
             {/* Card preview */}
             <div style={{ display: "flex", justifyContent: "center" }}>
               <div style={{ width: 180 }}>
-                <PlayerCard pass={selectedPass} pattern={cardPattern} />
+                <PlayerCard pass={selectedPass} pattern={selectedPass.pattern} />
               </div>
             </div>
             {/* Stats row */}
@@ -1137,6 +1204,13 @@ function PassesPageInner() {
                 </div>
               );
             })()}
+            {/* Pattern picker */}
+            <PatternPicker
+              owned={ownedPatterns}
+              current={selectedPass.pattern}
+              level={getPassLevel(selectedPass.xp ?? 0, PLAYER_PASS_LEVELS)}
+              onSelect={(pattern) => applyPattern("player", selectedPass.id, pattern)}
+            />
             {/* Leaderboard button */}
             <button
               onClick={() => { setLeaderboardPass(selectedPass); setSelectedPass(null); }}
@@ -1157,7 +1231,7 @@ function PassesPageInner() {
       {selectedTeamPass && (
         <Modal title={selectedTeamPass.team_name} onClose={() => setSelectedTeamPass(null)} centered>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <TeamCard pass={selectedTeamPass} pattern={cardPattern} />
+            <TeamCard pass={selectedTeamPass} pattern={selectedTeamPass.pattern} />
             {(() => {
               const level = getPassLevel(selectedTeamPass.xp ?? 0, TEAM_PASS_LEVELS);
               return (
@@ -1179,6 +1253,13 @@ function PassesPageInner() {
                 </div>
               );
             })()}
+            {/* Pattern picker */}
+            <PatternPicker
+              owned={ownedPatterns}
+              current={selectedTeamPass.pattern}
+              level={getPassLevel(selectedTeamPass.xp ?? 0, TEAM_PASS_LEVELS)}
+              onSelect={(pattern) => applyPattern("team", selectedTeamPass.id, pattern)}
+            />
             <button
               onClick={() => { setLeaderboardTeamPass(selectedTeamPass); setSelectedTeamPass(null); }}
               style={{ width: "100%", padding: "13px 0", borderRadius: 999, border: "none", background: "linear-gradient(135deg,#312e81,#4f46e5)", color: "#fff", fontWeight: 900, fontSize: 15, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
@@ -1282,7 +1363,7 @@ function PassesPageInner() {
                 </div>
                 {/* Card */}
                 <div style={{ width: "min(155px, 48vw)", animation: "passCardBounce 0.65s cubic-bezier(0.34,1.56,0.64,1) 0.15s both", zIndex: 1 }}>
-                  <PlayerPassCard pass={{ id: "", user_id: "", player_id: boughtPlayer.pid, player_name: boughtPlayer.name, team_name: boughtPlayer.team, active: true, xp: boughtPlayer.xp, serial_number: null, created_at: "" }} />
+                  <PlayerPassCard pass={{ id: "", user_id: "", player_id: boughtPlayer.pid, player_name: boughtPlayer.name, team_name: boughtPlayer.team, active: true, xp: boughtPlayer.xp, serial_number: null, pattern: null, created_at: "" }} />
                 </div>
               </div>
             </>
@@ -1306,6 +1387,7 @@ function PassesPageInner() {
                   active: true,
                   xp: pendingPlayer.xp,
                   serial_number: null,
+                  pattern: null,
                   created_at: "",
                 };
                 return (
@@ -1637,6 +1719,7 @@ function PlayerPassPickerPage({
     active: true,
     xp: pendingPlayer.xp,
     serial_number: null,
+    pattern: null,
     created_at: "",
   };
   const teamAccent = teamColor(pendingPlayer.team);
@@ -1732,7 +1815,7 @@ function PlayerPassPickerPage({
             </div>
           </div>
           <div style={{ width: "min(175px, 54vw)", animation: "detailCardBounce 0.65s cubic-bezier(0.34,1.56,0.64,1) 0.15s both" }}>
-            <PlayerPassCard pass={{ id: "", user_id: "", player_id: localBoughtPlayer.pid, player_name: localBoughtPlayer.name, team_name: localBoughtPlayer.team, active: true, xp: localBoughtPlayer.xp, serial_number: null, created_at: "" }} />
+            <PlayerPassCard pass={{ id: "", user_id: "", player_id: localBoughtPlayer.pid, player_name: localBoughtPlayer.name, team_name: localBoughtPlayer.team, active: true, xp: localBoughtPlayer.xp, serial_number: null, pattern: null, created_at: "" }} />
           </div>
         </div>
       </div>
@@ -1974,7 +2057,7 @@ function TeamPassPickerPage({
   const color        = teamColor(pendingTeam);
 
   const previewPass: TeamPass = (data?.teamPasses ?? []).find(p => p.team_name === pendingTeam) ?? {
-    id: "", user_id: "", team_name: pendingTeam, active: true, xp: 0, serial_number: null, created_at: "",
+    id: "", user_id: "", team_name: pendingTeam, active: true, xp: 0, serial_number: null, pattern: null, created_at: "",
   };
 
   const holderPreview = [...holders]

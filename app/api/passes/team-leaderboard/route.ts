@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 
   const { data: passes, error } = await supabaseServer
     .from("user_team_passes")
-    .select("id, user_id, team_name, serial_number, xp, created_at")
+    .select("id, user_id, team_name, serial_number, xp, pattern, created_at")
     .eq("team_name", team_name)
     .eq("active", true);
 
@@ -40,6 +40,7 @@ export async function GET(req: NextRequest) {
     team_name:     p.team_name,
     serial_number: p.serial_number,
     xp:            p.xp ?? 0,
+    pattern:       p.pattern ?? null,
     created_at:    p.created_at,
     username:      profileMap.get(p.user_id)?.username   ?? null,
     avatar_url:    profileMap.get(p.user_id)?.avatar_url ?? null,

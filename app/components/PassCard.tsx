@@ -85,6 +85,19 @@ const PASS_PATTERNS: Record<string, (level: PassLevelInfo) => string> = {
     `repeating-linear-gradient(0deg, ${level.color}26 0px, ${level.color}26 1px, transparent 1px, transparent 18px), repeating-linear-gradient(90deg, ${level.color}26 0px, ${level.color}26 1px, transparent 1px, transparent 18px), ${level.gradient}`,
   waves: (level) =>
     `radial-gradient(ellipse 60% 40% at 20% 25%, ${level.color}3a, transparent 60%), radial-gradient(ellipse 70% 50% at 80% 75%, ${level.darkColor}80, transparent 60%), ${level.gradient}`,
+  checker: (level) =>
+    `repeating-conic-gradient(${level.color}26 0% 25%, transparent 0% 50%) 0 0 / 24px 24px, ${level.gradient}`,
+  rings: (level) =>
+    `repeating-radial-gradient(circle, ${level.color}26 0px, ${level.color}26 2px, transparent 2px, transparent 14px), ${level.gradient}`,
+  splatter: (level) =>
+    `radial-gradient(circle at 15% 20%, ${level.color}40 0%, ${level.color}40 10%, transparent 11%), radial-gradient(circle at 70% 15%, ${level.color}33 0%, ${level.color}33 14%, transparent 15%), radial-gradient(circle at 40% 60%, ${level.color}3a 0%, ${level.color}3a 8%, transparent 9%), radial-gradient(circle at 85% 70%, ${level.color}26 0%, ${level.color}26 12%, transparent 13%), radial-gradient(circle at 25% 85%, ${level.color}33 0%, ${level.color}33 9%, transparent 10%), ${level.gradient}`,
+  hex: (level) => {
+    const size = "0 0/40px 70px";
+    const a = `linear-gradient(30deg, ${level.color}26 12%, transparent 12.5%, transparent 87%, ${level.color}26 87.5%, ${level.color}26) ${size}`;
+    const b = `linear-gradient(150deg, ${level.color}26 12%, transparent 12.5%, transparent 87%, ${level.color}26 87.5%, ${level.color}26) ${size}`;
+    const c = `linear-gradient(60deg, ${level.color}1a 25%, transparent 25.5%, transparent 75%, ${level.color}1a 75%, ${level.color}1a) ${size}`;
+    return `${a}, ${b}, ${a}, ${b}, ${c}, ${c}, ${level.gradient}`;
+  },
 };
 
 /** Resolves an equipped pattern key (e.g. "dots") into a CSS background for the given pass level. Falls back to the level's own gradient when no pattern is equipped. */
