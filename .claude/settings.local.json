@@ -221,7 +221,12 @@
       "Bash(ls public/token/)",
       "Bash(ls public/coin/)",
       "Bash(node -e \"const fs=require\\('fs'\\);['stack-100','stack-500','stack-1200','stack-7000'].forEach\\(n=>{const b=fs.readFileSync\\('public/token/'+n+'.png'\\);const w=b.readUInt32BE\\(16\\),h=b.readUInt32BE\\(20\\);console.log\\(n+': '+w+'x'+h+' \\(ratio '+\\(w/h\\).toFixed\\(2\\)+'\\)'\\);}\\);\")",
-      "Bash(grep -n \"selectedPass.player_name\\\\|selectedTeamPass.team_name\\\\|Leaderboard$\\\\|🏆 Leaderboard\" app/passes/page.tsx)"
+      "Bash(grep -n \"selectedPass.player_name\\\\|selectedTeamPass.team_name\\\\|Leaderboard$\\\\|🏆 Leaderboard\" app/passes/page.tsx)",
+      "Bash(curl -s \"http://localhost:3000/api/player-season-stats\" -o /tmp/season.json)",
+      "Bash(curl -s \"http://localhost:3000/api/player-season-stats\" -o season.tmp.json)",
+      "Bash(npx eslint *)",
+      "Bash(tasklist /FI \"PID eq 9212\")",
+      "PowerShell(Get-NetTCPConnection -OwningProcess 9212 -ErrorAction SilentlyContinue)"
     ]
   }
 }

@@ -6,6 +6,7 @@ import { CARD_PLAYERS, canonicalCardPlayerIdForCard, findCardPlayerForCard } fro
 import { getPassLevel, xpProgressLabel, PLAYER_PASS_LEVELS, TEAM_PASS_LEVELS, dedupePlayerPasses, type PlayerPass, type TeamPass } from "@/app/lib/passes";
 import PassLeaderboard from "@/app/components/PassLeaderboard";
 import TeamPassLeaderboard from "@/app/components/TeamPassLeaderboard";
+import { patternBackground } from "@/app/components/PassCard";
 import { supabase } from "@/app/lib/supabase";
 import { surname } from "@/app/lib/format";
 import { PlayerCard as SharedPlayerCard } from "@/app/components/PlayerCard";
@@ -525,7 +526,7 @@ function PassesView({ playerPasses, teamPasses, onPlayerPassClick, onTeamPassCli
               const logo  = TEAM_LOGOS[tp.team_name] ?? "/team-logos/default.png";
               const isMythic = isMythicLevel(level);
               return (
-                <div key={tp.id} onClick={() => onTeamPassClick(tp)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", borderRadius: 16, background: level.gradient, border: `1.5px solid ${isMythic ? "rgba(125,211,252,0.75)" : level.color + "44"}`, boxShadow: isMythic ? "0 6px 26px rgba(125,211,252,0.24), 0 0 18px rgba(167,139,250,0.18)" : "none", position: "relative", overflow: "hidden", cursor: "pointer" }}>
+                <div key={tp.id} onClick={() => onTeamPassClick(tp)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", borderRadius: 16, background: patternBackground(tp.pattern, level), border: `1.5px solid ${isMythic ? "rgba(125,211,252,0.75)" : level.color + "44"}`, boxShadow: isMythic ? "0 6px 26px rgba(125,211,252,0.24), 0 0 18px rgba(167,139,250,0.18)" : "none", position: "relative", overflow: "hidden", cursor: "pointer" }}>
                   {isMythic && <div className="mythic-pass-shine" style={{ zIndex: 1 }} />}
                   <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1.5, background: `linear-gradient(90deg,transparent,${level.color}cc,transparent)`, zIndex: 3 }} />
                   <div style={{ width: 52, height: 52, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(0,0,0,0.3)", position: "relative", zIndex: 2 }}>
@@ -585,7 +586,7 @@ function PassesView({ playerPasses, teamPasses, onPlayerPassClick, onTeamPassCli
               return (
                 <div key={pass.id} onClick={() => onPlayerPassClick(pass)} style={{
                   borderRadius: 16, overflow: "hidden", position: "relative",
-                  background: level.gradient, cursor: "pointer",
+                  background: patternBackground(pass.pattern, level), cursor: "pointer",
                   border: `1.5px solid ${isMythic ? "rgba(125,211,252,0.75)" : level.color + "55"}`,
                   boxShadow: isMythic
                     ? "0 4px 26px rgba(125,211,252,0.30), 0 0 18px rgba(167,139,250,0.22), 0 0 0 0.5px rgba(255,255,255,0.70)"

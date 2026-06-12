@@ -7,6 +7,10 @@ import { supabase } from "@/app/lib/supabase";
 import { PLAYER_IMG_BASE } from "@/app/lib/playerImage";
 import { createNotification, notifyMentions } from "@/app/lib/notifications";
 import MentionTextarea from "@/app/components/MentionTextarea";
+import CommentText from "@/app/components/CommentText";
+import StickerPicker from "@/app/components/StickerPicker";
+import MiniAvatar from "@/app/components/MiniAvatar";
+import SendArrowIcon from "@/app/components/SendArrowIcon";
 import playerStatsJson from "@/app/data/players.json";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import { foopyRating } from "@/app/match/[id]/utils";
@@ -231,6 +235,8 @@ function EventCommentsPageInner() {
   }, [gameId]);
 
   const [userId, setUserId] = useState<string | null>(null);
+  const [myAvatar, setMyAvatar] = useState<string | null>(null);
+  const [myName, setMyName] = useState("");
   const [comments, setComments] = useState<Comment[]>([]);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -365,7 +371,14 @@ function EventCommentsPageInner() {
     let mounted = true;
 
     supabase.auth.getSession().then(({ data }) => {
-      if (mounted) setUserId(data.session?.user.id ?? null);
+      const uid = data.session?.user.id ?? null;
+      if (mounted) setUserId(uid);
+      if (uid) {
+        supabase.from("profiles").select("username, display_name, avatar_url").eq("id", uid).maybeSingle()
+          .then(({ data: p }) => {
+            if (mounted && p) { setMyAvatar(p.avatar_url ?? null); setMyName(p.display_name || p.username || ""); }
+          });
+      }
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -648,6 +661,11 @@ function EventCommentsPageInner() {
     await loadComments(sort);
   }
 
+  function insertSticker(name: string) {
+    setBody(prev => `${prev}${prev && !prev.endsWith(" ") ? " " : ""}:${name} `);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  }
+
   function startReply(comment: Comment) {
     setReplyTo(comment);
     // Pre-fill with @username like Instagram
@@ -804,7 +822,9 @@ function EventCommentsPageInner() {
                 Wait {cooldown}s before commenting again
               </div>
             )}
+            <StickerPicker onPick={insertSticker} />
             <div style={inputRowStyle}>
+              <MiniAvatar name={myName} url={myAvatar} size={38} />
               <MentionTextarea
                 textareaRef={inputRef}
                 value={body}
@@ -829,10 +849,7 @@ function EventCommentsPageInner() {
                 ) : cooldown > 0 ? (
                   <span style={{ fontSize: 11, fontWeight: 900 }}>{cooldown}s</span>
                 ) : (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="22" y1="2" x2="11" y2="13" />
-                    <polygon points="22 2 15 22 11 13 2 9 22 2" fill="currentColor" stroke="none" />
-                  </svg>
+                  <SendArrowIcon />
                 )}
               </button>
             </div>
@@ -1004,6 +1021,10 @@ function PollStatCard({ question, stat, pollType, stats }: {
   );
 }
 
+function escapeHtmlAttr(s: string) {
+  return s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
+}
+
 function EventCard({ playerName, team, img, type, quarter, minute }: {
   playerName: string; team: string; img: string;
   type: string; quarter: string; minute: string;
@@ -1017,6 +1038,31 @@ function EventCard({ playerName, team, img, type, quarter, minute }: {
   const folder = CLUB_FOLDER[team] ?? slugify(team);
   const teamLogo = folder ? `/team-logos/${folder}.png` : "";
   const isTeamEvent = !img || imgFailed;
+
+  // Probe images on the client instead of <img onError>, so the avatar's
+  // inner markup can be set via dangerouslySetInnerHTML (avoids hydration
+  // mismatches from browser extensions injecting attrs/elements into <img>).
+  useEffect(() => {
+    if (!img) return;
+    setImgFailed(false);
+    const probe = new window.Image();
+    probe.onerror = () => setImgFailed(true);
+    probe.src = img;
+  }, [img]);
+
+  useEffect(() => {
+    if (!teamLogo) { setLogoFailed(true); return; }
+    setLogoFailed(false);
+    const probe = new window.Image();
+    probe.onerror = () => setLogoFailed(true);
+    probe.src = teamLogo;
+  }, [teamLogo]);
+
+  const avatarHtml = !isTeamEvent
+    ? `<img src="${escapeHtmlAttr(img)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block" />`
+    : teamLogo && !logoFailed
+    ? `<img src="${escapeHtmlAttr(teamLogo)}" alt="" style="width:70%;height:70%;object-fit:contain;display:block" />`
+    : `<span style="color:var(--text-1);font-size:18px;font-weight:1000">${escapeHtmlAttr(initials)}</span>`;
 
   return (
     <div style={{
@@ -1033,19 +1079,16 @@ function EventCard({ playerName, team, img, type, quarter, minute }: {
       overflow: "hidden",
     }}>
       {/* Avatar: player photo, or team logo, or initials fallback */}
-      <div suppressHydrationWarning style={{
-        width: 56, height: 56, borderRadius: "50%",
-        background: `${primary}55`,
-        overflow: "hidden", flexShrink: 0,
-        display: "inline-flex", alignItems: "center", justifyContent: "center",
-      }}>
-        {!isTeamEvent
-          ? <img src={img} alt={playerName} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} onError={() => setImgFailed(true)} />
-          : teamLogo && !logoFailed
-          ? <img src={teamLogo} alt={team} style={{ width: "70%", height: "70%", objectFit: "contain", display: "block" }} onError={() => setLogoFailed(true)} />
-          : <span style={{ color: "var(--text-1)", fontSize: 18, fontWeight: 1000 }}>{initials}</span>
-        }
-      </div>
+      <div
+        suppressHydrationWarning
+        style={{
+          width: 56, height: 56, borderRadius: "50%",
+          background: `${primary}55`,
+          overflow: "hidden", flexShrink: 0,
+          display: "inline-flex", alignItems: "center", justifyContent: "center",
+        }}
+        dangerouslySetInnerHTML={{ __html: avatarHtml }}
+      />
 
       {/* Name + event type — matches liveFeedInfoStyle */}
       <div style={{ minWidth: 0 }}>
@@ -1099,26 +1142,6 @@ function PlayerCardHeader({ name, img, team, rating, slug }: { name: string; img
         </div>
       )}
     </div>
-  );
-}
-
-function CommentBody({ text }: { text: string }) {
-  const router = useRouter();
-  const parts = text.split(/(@\w+)/g);
-  return (
-    <p style={commentBodyStyle}>
-      {parts.map((part, i) =>
-        /^@\w+$/.test(part) ? (
-          <span
-            key={i}
-            onClick={() => router.push(`/profile/${part.slice(1)}`)}
-            style={{ color: "#60a5fa", fontWeight: 700, cursor: "pointer" }}
-          >
-            {part}
-          </span>
-        ) : part
-      )}
-    </p>
   );
 }
 
@@ -1184,7 +1207,7 @@ function CommentRow({
               </span>
               {comment.profile?.verified && <VerifiedBadge size={12} />}
             </div>
-            <CommentBody text={comment.body} />
+            <CommentText text={comment.body} style={commentBodyStyle} />
 
             <div style={commentActionsStyle}>
               <span style={commentTimeStyle}>{formatCommentTime(comment.created_at)}</span>
@@ -1697,7 +1720,7 @@ const textareaStyle: CSSProperties = {
   maxHeight: 110,
   background: "var(--surface-3)",
   border: "1.5px solid var(--border-3)",
-  borderRadius: 22,
+  borderRadius: 999,
   color: "var(--text-1)",
   fontSize: 14,
   padding: "11px 16px",

@@ -54,8 +54,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ use
 
   const [cardsResult, playerPassesResult, teamPassesResult] = await Promise.allSettled([
     fetchAllUserCards(profile.id),
-    supabaseAdmin.from("user_player_passes").select("id, user_id, player_id, player_name, team_name, active, xp, serial_number, created_at").eq("user_id", profile.id).eq("active", true).order("created_at", { ascending: true }),
-    supabaseAdmin.from("user_team_passes").select("id, user_id, team_name, active, xp, serial_number, created_at").eq("user_id", profile.id).eq("active", true).order("created_at", { ascending: true }),
+    supabaseAdmin.from("user_player_passes").select("id, user_id, player_id, player_name, team_name, active, xp, serial_number, pattern, created_at").eq("user_id", profile.id).eq("active", true).order("created_at", { ascending: true }),
+    supabaseAdmin.from("user_team_passes").select("id, user_id, team_name, active, xp, serial_number, pattern, created_at").eq("user_id", profile.id).eq("active", true).order("created_at", { ascending: true }),
   ]);
 
   if (cardsResult.status === "rejected") {

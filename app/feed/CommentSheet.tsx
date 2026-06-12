@@ -7,6 +7,10 @@ import { useRouter } from "next/navigation";
 import { auraToastEmitter } from "@/app/lib/auraToastEmitter";
 import { VerifiedBadge } from "@/app/components/VerifiedBadge";
 import { nameColorStyle } from "@/app/lib/cosmetics";
+import CommentText from "@/app/components/CommentText";
+import StickerPicker from "@/app/components/StickerPicker";
+import MiniAvatar from "@/app/components/MiniAvatar";
+import SendArrowIcon from "@/app/components/SendArrowIcon";
 
 type Profile = {
   id: string;
@@ -41,6 +45,8 @@ export default function CommentSheet({ gameId, gameLabel, eventKey, onClose }: P
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
+  const [myAvatar, setMyAvatar] = useState<string | null>(null);
+  const [myName, setMyName] = useState("");
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [body, setBody] = useState("");
@@ -54,8 +60,15 @@ export default function CommentSheet({ gameId, gameLabel, eventKey, onClose }: P
   // Auth
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      setUserId(data.session?.user.id ?? null);
+      const uid = data.session?.user.id ?? null;
+      setUserId(uid);
       setAuthToken(data.session?.access_token ?? null);
+      if (uid) {
+        supabase.from("profiles").select("username, display_name, avatar_url").eq("id", uid).maybeSingle()
+          .then(({ data: p }) => {
+            if (p) { setMyAvatar(p.avatar_url ?? null); setMyName(p.display_name || p.username || ""); }
+          });
+      }
     });
   }, []);
 
@@ -192,6 +205,11 @@ export default function CommentSheet({ gameId, gameLabel, eventKey, onClose }: P
     await loadComments();
   }
 
+  function insertSticker(name: string) {
+    setBody(prev => `${prev}${prev && !prev.endsWith(" ") ? " " : ""}:${name} `);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  }
+
   function startReply(comment: Comment) {
     setReplyThreadId(null);
     setReplyTo(comment);
@@ -278,7 +296,9 @@ export default function CommentSheet({ gameId, gameLabel, eventKey, onClose }: P
                   <button onClick={() => setReplyTo(null)} style={cancelReplyBtnStyle}>✕</button>
                 </div>
               )}
+              <StickerPicker onPick={insertSticker} />
               <div style={inputRowStyle}>
+                <MiniAvatar name={myName} url={myAvatar} size={38} />
                 <textarea
                   ref={inputRef}
                   value={body}
@@ -298,7 +318,7 @@ export default function CommentSheet({ gameId, gameLabel, eventKey, onClose }: P
                     opacity: !body.trim() || submitting ? 0.4 : 1,
                   }}
                 >
-                  <SendIcon />
+                  <SendArrowIcon />
                 </button>
               </div>
             </>
@@ -363,7 +383,7 @@ function CommentRow({
             {comment.profile?.verified && <VerifiedBadge size={13} />}
           </div>
           {/* Body */}
-          <p style={commentBodyStyle}>{comment.body}</p>
+          <CommentText text={comment.body} style={commentBodyStyle} />
           {/* Actions: time · reply · delete */}
           <div style={commentActionsStyle}>
             <span style={commentTimeStyle}>{time}</span>
@@ -448,15 +468,6 @@ function HeartIcon({ filled }: { filled: boolean }) {
   return (
     <svg width="13" height="13" viewBox="0 0 24 24" fill={filled ? "#f43f5e" : "none"} stroke={filled ? "#f43f5e" : "currentColor"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-    </svg>
-  );
-}
-
-function SendIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="22" y1="2" x2="11" y2="13" />
-      <polygon points="22 2 15 22 11 13 2 9 22 2" />
     </svg>
   );
 }
@@ -734,10 +745,10 @@ const textareaStyle: CSSProperties = {
   flex: 1,
   background: "var(--surface-3)",
   border: "1px solid var(--border-2)",
-  borderRadius: 12,
+  borderRadius: 999,
   color: "var(--text-1)",
   fontSize: 14,
-  padding: "10px 14px",
+  padding: "10px 16px",
   resize: "none",
   outline: "none",
   fontFamily: "inherit",

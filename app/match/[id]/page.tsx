@@ -19,6 +19,10 @@ import { teamColors } from "./utils";
 import { supabase } from "@/app/lib/supabase";
 import { createNotification, notifyMentions } from "@/app/lib/notifications";
 import MentionTextarea from "@/app/components/MentionTextarea";
+import CommentText from "@/app/components/CommentText";
+import StickerPicker from "@/app/components/StickerPicker";
+import MiniAvatar from "@/app/components/MiniAvatar";
+import SendArrowIcon from "@/app/components/SendArrowIcon";
 import { auraToastEmitter } from "@/app/lib/auraToastEmitter";
 import { VerifiedBadge } from "@/app/components/VerifiedBadge";
 import {
@@ -5018,6 +5022,8 @@ function mcRelTime(dateString: string) {
 function MatchComments({ gameId, highlight }: { gameId: number; highlight: string | null }) {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
+  const [myAvatar, setMyAvatar] = useState<string | null>(null);
+  const [myName, setMyName] = useState("");
   const [comments, setComments] = useState<MatchComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [body, setBody] = useState("");
@@ -5042,6 +5048,11 @@ function MatchComments({ gameId, highlight }: { gameId: number; highlight: strin
     setTimeout(() => setDupToast(false), 2500);
   }
 
+  function insertSticker(name: string) {
+    setBody(prev => `${prev}${prev && !prev.endsWith(" ") ? " " : ""}:${name} `);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  }
+
   function startReply(comment: MatchComment) {
     setReplyThreadId(null);
     setReplyTo(comment);
@@ -5056,7 +5067,16 @@ function MatchComments({ gameId, highlight }: { gameId: number; highlight: strin
   );
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setUserId(data.session?.user.id ?? null));
+    supabase.auth.getSession().then(({ data }) => {
+      const uid = data.session?.user.id ?? null;
+      setUserId(uid);
+      if (uid) {
+        supabase.from("profiles").select("username, display_name, avatar_url").eq("id", uid).maybeSingle()
+          .then(({ data: p }) => {
+            if (p) { setMyAvatar(p.avatar_url ?? null); setMyName(p.display_name || p.username || ""); }
+          });
+      }
+    });
   }, []);
 
   const load = useCallback(async (currentSort: "live" | "top" = "live") => {
@@ -5319,7 +5339,9 @@ function MatchComments({ gameId, highlight }: { gameId: number; highlight: strin
                 Wait {cooldown}s before commenting again
               </div>
             )}
+            <StickerPicker onPick={insertSticker} />
             <div style={{ display: "flex", alignItems: "flex-end", gap: 10 }}>
+              <MiniAvatar name={myName} url={myAvatar} size={38} />
               <MentionTextarea
                 textareaRef={inputRef}
                 value={body}
@@ -5328,7 +5350,7 @@ function MatchComments({ gameId, highlight }: { gameId: number; highlight: strin
                 placeholder={cooldown > 0 ? `Wait ${cooldown}s…` : replyTo ? "Write a reply…" : "Write a comment…"}
                 rows={1}
                 maxLength={500}
-                style={{ width: "100%", minHeight: 44, maxHeight: 110, background: "var(--surface-3)", border: "1.5px solid var(--border-3)", borderRadius: 22, color: "var(--text-1)", fontSize: 14, padding: "11px 16px", resize: "none", outline: "none", fontFamily: "inherit", lineHeight: 1.45 }}
+                style={{ width: "100%", minHeight: 44, maxHeight: 110, background: "var(--surface-3)", border: "1.5px solid var(--border-3)", borderRadius: 999, color: "var(--text-1)", fontSize: 14, padding: "11px 16px", resize: "none", outline: "none", fontFamily: "inherit", lineHeight: 1.45 }}
               />
               <button
                 onClick={() => submit()}
@@ -5339,7 +5361,7 @@ function MatchComments({ gameId, highlight }: { gameId: number; highlight: strin
                   ? <div style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
                   : cooldown > 0
                   ? <span style={{ fontSize: 11, fontWeight: 900 }}>{cooldown}s</span>
-                  : <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" fill="currentColor" stroke="none" /></svg>
+                  : <SendArrowIcon />
                 }
               </button>
             </div>
@@ -5362,22 +5384,6 @@ function CommentBody({ text }: { text: string }) {
             onClick={() => router.push(`/profile/${part.slice(1)}`)}
             style={{ color: "#60a5fa", fontWeight: 700, cursor: "pointer" }}
           >
-            {part}
-          </span>
-        ) : part
-      )}
-    </p>
-  );
-}
-
-function MCCommentBody({ text }: { text: string }) {
-  const router = useRouter();
-  const parts = text.split(/(@\w+)/g);
-  return (
-    <p style={{ margin: 0, fontSize: 14, color: "var(--text-1)", lineHeight: 1.45, wordBreak: "break-word" }}>
-      {parts.map((part, i) =>
-        /^@\w+$/.test(part) ? (
-          <span key={i} onClick={() => router.push(`/profile/${part.slice(1)}`)} style={{ color: "#60a5fa", fontWeight: 700, cursor: "pointer" }}>
             {part}
           </span>
         ) : part
@@ -5425,7 +5431,7 @@ function MCRow({ comment, userId, onLike, onDelete, onReply, onViewReplies, liki
             {comment.profile?.verified && <VerifiedBadge size={13} />}
           </div>
           {/* Body */}
-          <MCCommentBody text={comment.body} />
+          <CommentText text={comment.body} style={{ margin: 0, fontSize: 14, color: "var(--text-1)", lineHeight: 1.45, wordBreak: "break-word" }} />
           {/* Actions */}
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 6 }}>
             <span style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 600 }}>{mcRelTime(comment.created_at)}</span>
