@@ -1342,18 +1342,15 @@ function LiveFeedPlayer({
                 <span style={liveFeedMinuteStyle}>{event.minute ?? "-"}'</span>
               </div>
             </div>
-            <div style={{ display: "flex", alignItems: "center", marginTop: 2 }}>
+            <div style={{ display: "flex", flexDirection: "column", marginTop: 2 }}>
               <div style={{ ...liveFeedActionStyle, color: type === "GOAL" ? "#22c55e" : type === "BEHIND" ? "#f8fafc" : "#facc15", fontSize: type === "BEHIND" ? 18 : liveFeedActionStyle.fontSize }}>
                 {type}
               </div>
-              {playerFP != null && !isInferred && (
-                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", fontWeight: 500, marginLeft: 10, lineHeight: 1 }}>
-                  {playerFP} FP
-                </span>
-              )}
-              {playerFoopy != null && !isInferred && (
-                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", fontWeight: 500, marginLeft: 10, lineHeight: 1 }}>
-                  {playerDisposals ?? 0} D · {playerGoals ?? 0} G
+              {!isInferred && (playerFP != null || playerFoopy != null) && (
+                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", fontWeight: 500, lineHeight: 1.4 }}>
+                  {playerFP != null && `${playerFP} FP`}
+                  {playerFP != null && playerFoopy != null && " · "}
+                  {playerFoopy != null && `${playerDisposals ?? 0} DISP · ${playerGoals ?? 0} GOAL/S`}
                 </span>
               )}
             </div>
