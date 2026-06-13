@@ -1350,7 +1350,7 @@ function LiveFeedPlayer({
                 <span style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", fontWeight: 500, lineHeight: 1.4, marginTop: 4 }}>
                   {playerFP != null && `${playerFP} FP`}
                   {playerFP != null && playerFoopy != null && " · "}
-                  {playerFoopy != null && `${playerDisposals ?? 0} DISP · ${playerGoals ?? 0} GOAL/S`}
+                  {playerFoopy != null && `${playerDisposals ?? 0} DISP · ${playerGoals ?? 0} ${(playerGoals ?? 0) === 1 ? "GOAL" : "GOALS"}`}
                 </span>
               )}
             </div>

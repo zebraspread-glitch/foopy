@@ -232,7 +232,9 @@
       "Bash(node -e \"const p=require\\('./app/data/players.json'\\); console.log\\(Array.isArray\\(p\\), p.length\\); console.log\\(JSON.stringify\\(p[0],null,2\\)\\); console.log\\(JSON.stringify\\(p.find\\(x=>x.eventIds||x.statsIds||x.aliases\\),null,2\\)\\);\")",
       "Bash(curl -s \"https://qbmtaooovvxpqsbslrga.supabase.co/rest/v1/live_game_feed?select=api_game_id,type,player_id,player_name,team_id&type=in.\\(GOAL,BEHIND\\)&order=api_game_id\" -H \"apikey: $\\(grep SUPABASE_SERVICE_ROLE_KEY .env.local)",
       "Bash(sed -n '79,179p' /tmp/result3.txt)",
-      "Bash(node -e \"const d=require\\('./app/data/players.json'\\); console.log\\(JSON.stringify\\(d.filter\\(p=>/kentfield/i.test\\(p.name\\)||/kentfield/i.test\\(p.id\\)\\),null,2\\)\\)\")"
+      "Bash(node -e \"const d=require\\('./app/data/players.json'\\); console.log\\(JSON.stringify\\(d.filter\\(p=>/kentfield/i.test\\(p.name\\)||/kentfield/i.test\\(p.id\\)\\),null,2\\)\\)\")",
+      "Bash(timeout 12 cmd /c \"ping -n 13 127.0.0.1 >nul\")",
+      "Bash(cmd /c \"ping -n 16 127.0.0.1 >nul\")"
     ]
   }
 }
