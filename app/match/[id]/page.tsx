@@ -1768,14 +1768,23 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
   }, [stats, sortKey, sortDir]);
 
   function sortColStyle(key: SortKey): CSSProperties {
-    return sortKey === key ? { background: "rgba(255,255,255,0.045)" } : {};
+    return sortKey === key ? { boxShadow: "inset 0 0 0 1000px rgba(255,255,255,0.045)" } : {};
+  }
+
+  // Sticky <th> cells need an opaque background layered with the highlight
+  // (box-shadow on sticky cells causes the row underneath to peek through
+  // while scrolling), so use a background-image overlay instead.
+  function sortHeaderColStyle(key: SortKey): CSSProperties {
+    return sortKey === key
+      ? { backgroundColor: "var(--bg-1, #0a0a0f)", backgroundImage: "linear-gradient(rgba(255,255,255,0.045), rgba(255,255,255,0.045))" }
+      : {};
   }
 
   function sortHeader(label: string, key: SortKey, extraStyle?: CSSProperties) {
     const active = sortKey === key;
     return (
       <th
-        style={{ ...thStyle, top: stickyTop, ...sortColStyle(key), ...extraStyle, color: active ? "#0ea5e9" : "#9ca3af", cursor: "pointer" }}
+        style={{ ...thStyle, top: stickyTop, ...sortHeaderColStyle(key), ...extraStyle, color: active ? "#0ea5e9" : "#9ca3af", cursor: "pointer" }}
         onClick={() => {
           if (onSort) { onSort(key); return; }
           if (sortKey === key) setSortDirLocal(sortDir === "desc" ? "asc" : "desc");
@@ -1804,7 +1813,7 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
           <thead>
             <tr>
               <th
-                style={{ ...thPlayerStyle, top: stickyTop, width: 220, minWidth: 220, cursor: "pointer" }}
+                style={{ ...thPlayerStyle, top: stickyTop, ...sortHeaderColStyle("foopy"), width: 220, minWidth: 220, cursor: "pointer" }}
                 onClick={() => {
                   const key: SortKey = "foopy";
                   if (onSort) { onSort(key); return; }
