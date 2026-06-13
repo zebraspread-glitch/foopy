@@ -3288,7 +3288,8 @@ function MatchPageInner() {
   const scrollRef = useRef(0);
   const rafRef = useRef<number>(0);
   const matchSectionRef = useRef<HTMLElement>(null);
-  const stickyHeaderRef    = useRef<HTMLDivElement>(null);
+  const stickyHeaderRoRef  = useRef<ResizeObserver | null>(null);
+  const stickyHeaderElRef  = useRef<HTMLDivElement | null>(null);
   const headerContainerRef = useRef<HTMLDivElement>(null); // receives --p; CSS does the rest
   const [stickyHeaderH, setStickyHeaderH] = useState(0);
   /** Prevents re-fetching final stats on every 5-second game-poll tick */
@@ -3771,15 +3772,36 @@ function MatchPageInner() {
     supabase.auth.getSession().then(({ data }) => setIsSignedIn(!!data.session));
   }, []);
 
-  // Track sticky header height so the table thead can stick just below it
-  useEffect(() => {
-    const el = stickyHeaderRef.current;
+  // Track sticky header height so the table thead can stick just below it.
+  // A callback ref (rather than useRef + useEffect) because the header div
+  // doesn't exist on the first render (page is still loading data), so an
+  // effect with `[]` deps would see a null ref and never re-measure once the
+  // div actually mounts.
+  const stickyHeaderRef = useCallback((el: HTMLDivElement | null) => {
+    if (stickyHeaderRoRef.current) {
+      stickyHeaderRoRef.current.disconnect();
+      stickyHeaderRoRef.current = null;
+    }
+    stickyHeaderElRef.current = el;
     if (!el) return;
-    const ro = new ResizeObserver(() => setStickyHeaderH(el.offsetHeight));
+    const measure = () => setStickyHeaderH(el.offsetHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
     ro.observe(el);
-    setStickyHeaderH(el.offsetHeight);
-    return () => ro.disconnect();
+    stickyHeaderRoRef.current = ro;
   }, []);
+
+  // Switching tabs can change the header's contents (e.g. the stat-mode
+  // toggle only shows on the Players tab), which changes its height — but
+  // that doesn't always trigger the ResizeObserver above, so re-measure
+  // explicitly when the active tab changes.
+  useEffect(() => {
+    const el = stickyHeaderElRef.current;
+    if (!el) return;
+    setStickyHeaderH(el.offsetHeight);
+    const raf = requestAnimationFrame(() => setStickyHeaderH(el.offsetHeight));
+    return () => cancelAnimationFrame(raf);
+  }, [activeTab]);
 
   useEffect(() => {
     if (activeTab === "game" && !showStatsTabs) setActiveTab("feed");
