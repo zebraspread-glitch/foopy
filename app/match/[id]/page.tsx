@@ -1784,7 +1784,7 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
     const active = sortKey === key;
     return (
       <th
-        style={{ ...thStyle, top: stickyTop, ...sortHeaderColStyle(key), ...extraStyle, color: active ? "#0ea5e9" : "#9ca3af", cursor: "pointer" }}
+        style={{ ...thStyle, top: 0, ...sortHeaderColStyle(key), ...extraStyle, color: active ? "#0ea5e9" : "#9ca3af", cursor: "pointer" }}
         onClick={() => {
           if (onSort) { onSort(key); return; }
           if (sortKey === key) setSortDirLocal(sortDir === "desc" ? "asc" : "desc");
@@ -1813,7 +1813,7 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
           <thead>
             <tr>
               <th
-                style={{ ...thPlayerStyle, top: stickyTop, ...sortHeaderColStyle("foopy"), width: 220, minWidth: 220, cursor: "pointer" }}
+                style={{ ...thPlayerStyle, top: 0, ...sortHeaderColStyle("foopy"), width: 220, minWidth: 220, cursor: "pointer" }}
                 onClick={() => {
                   const key: SortKey = "foopy";
                   if (onSort) { onSort(key); return; }
