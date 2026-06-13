@@ -1143,7 +1143,7 @@ function PlayerCardHeader({ name, img, team, rating, slug }: { name: string; img
       style={{ ...playerCardHeaderStyle, cursor: slug ? "pointer" : undefined }}
       onClick={slug ? () => router.push(`/player/${slug}`) : undefined}
     >
-      <span style={{ position: "relative", display: "inline-flex", flexShrink: 0 }}>
+      <span style={{ position: "relative", display: "inline-flex", flexShrink: 0 }} suppressHydrationWarning>
         <div style={{ ...playerAvatarLargeStyle, background: `${colours.primary}80`, border: `2px solid ${colours.secondary}66` }}>
           {img && !imgFailed
             ? <img src={img} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} onError={() => setImgFailed(true)} />
