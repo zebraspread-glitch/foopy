@@ -4786,7 +4786,6 @@ function MatchPageInner() {
                 ["Clearances", "stoppages", "clearances"],
                 ["Goals Kicked", "scoring", "goals"],
                 ["Behinds Kicked", "scoring", "behinds"],
-                ["Free Kicks", "disposals", "free_kicks"],
               ].map(([label, category, key]) => {
                 const apiHomeTotal = getTeamStatFromBlock(homeTeamBlock, category, key);
                 const apiAwayTotal = getTeamStatFromBlock(awayTeamBlock, category, key);
