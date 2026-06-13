@@ -1315,21 +1315,21 @@ function LiveFeedPlayer({
           border: "none",
           borderRadius: 0,
           minHeight: type === "BEHIND" ? 56 : liveFeedBoxStyle.minHeight,
-          padding: type === "BEHIND" ? "8px 14px 8px 12px" : liveFeedBoxStyle.padding,
+          padding: type === "BEHIND" ? "12px 16px 12px 14px" : liveFeedBoxStyle.padding,
         }}>
-          {isInferred ? <TeamEventAvatar team={team} /> : <PlayerAvatar name={playerName} team={team} />}
+          {isInferred ? <TeamEventAvatar team={team} /> : <PlayerAvatar name={playerName} team={team} size={56} />}
 
           <div style={liveFeedInfoStyle}>
             <div style={liveFeedNameRowStyle}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
                 <div style={liveFeedNameStyle}>{playerName}</div>
                 {playerFoopy != null && !isInferred && (
                   <span style={{
                     display: "inline-flex", alignItems: "center", justifyContent: "center",
-                    minWidth: 22, padding: "1px 4px", borderRadius: 5,
+                    minWidth: 26, padding: "2px 5px", borderRadius: 6,
                     background: foopyColor(playerFoopy),
                     border: "1.5px solid var(--bg-1)",
-                    color: "var(--text-1)", fontWeight: 900, fontSize: 10, lineHeight: 1.4,
+                    color: "var(--text-1)", fontWeight: 900, fontSize: 12, lineHeight: 1.4,
                     flexShrink: 0,
                   }}>
                     {playerFoopy}
@@ -1342,17 +1342,17 @@ function LiveFeedPlayer({
                 <span style={liveFeedMinuteStyle}>{event.minute ?? "-"}'</span>
               </div>
             </div>
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <div style={{ ...liveFeedActionStyle, color: type === "GOAL" ? "#22c55e" : type === "BEHIND" ? "#f8fafc" : "#facc15", fontSize: type === "BEHIND" ? 15 : liveFeedActionStyle.fontSize }}>
+            <div style={{ display: "flex", alignItems: "center", marginTop: 2 }}>
+              <div style={{ ...liveFeedActionStyle, color: type === "GOAL" ? "#22c55e" : type === "BEHIND" ? "#f8fafc" : "#facc15", fontSize: type === "BEHIND" ? 18 : liveFeedActionStyle.fontSize }}>
                 {type}
               </div>
               {playerFP != null && !isInferred && (
-                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontWeight: 500, marginLeft: 10, lineHeight: 1 }}>
+                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", fontWeight: 500, marginLeft: 10, lineHeight: 1 }}>
                   {playerFP} FP
                 </span>
               )}
               {playerFoopy != null && !isInferred && (
-                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontWeight: 500, marginLeft: 10, lineHeight: 1 }}>
+                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", fontWeight: 500, marginLeft: 10, lineHeight: 1 }}>
                   {playerDisposals ?? 0} D · {playerGoals ?? 0} G
                 </span>
               )}
@@ -7096,27 +7096,27 @@ const tinyLogoStyle: CSSProperties = { width: 16, height: 16, objectFit: "contai
 const miniLogoStyle: CSSProperties = { width: 14, height: 14, objectFit: "contain" };
 const statsLoadingStyle: CSSProperties = { margin: "12px 0 0", color: "#facc15", fontSize: 13, fontWeight: 800 };
 const liveStatsBadgeStyle: CSSProperties = { width: "fit-content", margin: "0 auto 14px", padding: "7px 12px", borderRadius: 999, background: "rgba(34,197,94,.12)", border: "1px solid rgba(34,197,94,.35)", color: "#4ade80", fontSize: 12, fontWeight: 1000, letterSpacing: ".08em" };
-const liveFeedListStyle: CSSProperties = { marginTop: 12, display: "flex", flexDirection: "column", gap: 10 };
-const liveFeedBoxStyle: CSSProperties = { minHeight: 72, display: "grid", gridTemplateColumns: "60px minmax(0, 1fr)", alignItems: "center", gap: 12, background: "var(--bg)", borderRadius: 18, padding: "10px 14px 10px 12px", overflow: "hidden" };
+const liveFeedListStyle: CSSProperties = { marginTop: 12, display: "flex", flexDirection: "column", gap: 14 };
+const liveFeedBoxStyle: CSSProperties = { minHeight: 88, display: "grid", gridTemplateColumns: "68px minmax(0, 1fr)", alignItems: "center", gap: 14, background: "var(--bg)", borderRadius: 18, padding: "14px 16px 14px 14px", overflow: "hidden" };
 const liveFeedInfoStyle: CSSProperties = { minWidth: 0 };
 const liveFeedNameRowStyle: CSSProperties = { display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, minWidth: 0 };
-const liveFeedNameStyle: CSSProperties = { color: "var(--text-1)", fontSize: 14, fontWeight: 700, lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0, flex: "1 1 auto" };
-const liveFeedActionStyle: CSSProperties = { marginTop: 4, fontSize: 20, lineHeight: 1, fontWeight: 900, letterSpacing: ".04em" };
+const liveFeedNameStyle: CSSProperties = { color: "var(--text-1)", fontSize: 17, fontWeight: 800, lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0, flex: "1 1 auto" };
+const liveFeedActionStyle: CSSProperties = { marginTop: 6, fontSize: 24, lineHeight: 1, fontWeight: 900, letterSpacing: ".04em" };
 const liveFeedScoreRowStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 5 };
 const liveFeedScoreTextStyle: CSSProperties = { fontSize: 13, fontWeight: 900, color: "var(--text-1)", fontVariantNumeric: "tabular-nums" };
 const liveFeedTimeBadgeStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 5, color: "rgba(148,163,184,0.95)", lineHeight: 1, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", flexShrink: 0 };
-const liveFeedQuarterStyle: CSSProperties = { fontSize: 12, fontWeight: 900, color: "rgba(148,163,184,0.95)", letterSpacing: "0.02em" };
-const liveFeedTimeDotStyle: CSSProperties = { fontSize: 12, color: "rgba(148,163,184,0.95)", fontWeight: 900 };
-const liveFeedMinuteStyle: CSSProperties = { fontSize: 12, fontWeight: 900, color: "rgba(148,163,184,0.95)" };
-const commentCountStyle: CSSProperties = { fontSize: 12, fontWeight: 850, color: "inherit", fontVariantNumeric: "tabular-nums" };
-const eventReactionBarStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 10, padding: "4px 12px 11px 12px", minHeight: 40, overflow: "hidden" };
-const eventReactionSummaryButtonStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 7, height: 28, border: "none", background: "transparent", color: "rgba(148,163,184,0.95)", padding: 0, fontSize: 13, fontWeight: 850, cursor: "pointer", flexShrink: 0, lineHeight: 1 };
+const liveFeedQuarterStyle: CSSProperties = { fontSize: 13, fontWeight: 900, color: "rgba(148,163,184,0.95)", letterSpacing: "0.02em" };
+const liveFeedTimeDotStyle: CSSProperties = { fontSize: 13, color: "rgba(148,163,184,0.95)", fontWeight: 900 };
+const liveFeedMinuteStyle: CSSProperties = { fontSize: 13, fontWeight: 900, color: "rgba(148,163,184,0.95)" };
+const commentCountStyle: CSSProperties = { fontSize: 13, fontWeight: 850, color: "inherit", fontVariantNumeric: "tabular-nums" };
+const eventReactionBarStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 10, padding: "4px 16px 13px 14px", minHeight: 44, overflow: "hidden" };
+const eventReactionSummaryButtonStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 7, height: 32, border: "none", background: "transparent", color: "rgba(148,163,184,0.95)", padding: 0, fontSize: 14, fontWeight: 850, cursor: "pointer", flexShrink: 0, lineHeight: 1 };
 const eventReactionLeadStyle: CSSProperties = { display: "inline-flex", alignItems: "center", color: "rgba(226,232,240,0.95)" };
 const eventReactionSummaryGlyphsStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 5 };
 const eventReactionSummaryEmptyStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 5, color: "rgba(148,163,184,0.95)" };
-const eventReactionSummaryCountStyle: CSSProperties = { color: "inherit", fontSize: 13, fontWeight: 850, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", lineHeight: 1 };
+const eventReactionSummaryCountStyle: CSSProperties = { color: "inherit", fontSize: 14, fontWeight: 850, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", lineHeight: 1 };
 const eventReactionBarSpacerStyle: CSSProperties = { flex: "1 1 auto", minWidth: 10 };
-const eventReactionCommentStyle: CSSProperties = { height: 31, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, background: "transparent", border: "none", color: "rgba(148,163,184,0.9)", padding: "0 0 0 8px", fontSize: 12, fontWeight: 850, cursor: "pointer", flexShrink: 0 };
+const eventReactionCommentStyle: CSSProperties = { height: 34, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, background: "transparent", border: "none", color: "rgba(148,163,184,0.9)", padding: "0 0 0 8px", fontSize: 13, fontWeight: 850, cursor: "pointer", flexShrink: 0 };
 const eventReactionPopupBackdropStyle: CSSProperties = { position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 0, overflow: "hidden" };
 const eventReactionPopupPanelStyle: CSSProperties = { width: "min(620px, 100vw)", maxHeight: "86dvh", margin: "0 auto", display: "flex", flexDirection: "column", background: "rgba(10,12,16,0.8)", border: "1px solid rgba(148,163,184,0.16)", borderBottom: "none", borderRadius: "26px 26px 0 0", boxShadow: "0 -12px 60px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.06) inset", overflow: "hidden", backdropFilter: "blur(26px)", WebkitBackdropFilter: "blur(26px)", paddingBottom: "env(safe-area-inset-bottom)" };
 const eventReactionPopupOptionActiveStyle: CSSProperties = { background: "rgba(255,255,255,0.12)", color: "var(--text-1)", borderColor: "rgba(255,255,255,0.45)", boxShadow: "0 0 0 1px rgba(255,255,255,0.1) inset" };
