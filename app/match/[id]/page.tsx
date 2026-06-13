@@ -15,7 +15,7 @@ import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import { lookupVenue } from "@/app/data/venues";
 import WinnerPick from "./components/WinnerPick";
 import DuelsTab from "./components/DuelsTab";
-import { teamColors } from "./utils";
+import { teamColors, matchupBarColors } from "./utils";
 import { supabase } from "@/app/lib/supabase";
 import { createNotification, notifyMentions } from "@/app/lib/notifications";
 import MentionTextarea from "@/app/components/MentionTextarea";
@@ -975,20 +975,29 @@ function toTeamSlug(name: string): string {
 }
 
 function QuarterScoresTable({
-  quarterScores, hteam, ateam, currentPeriod,
+  quarterScores, hteam, ateam, currentPeriod, isLoading,
 }: {
-  quarterScores: { home: ({ goals: number; behinds: number; total: number } | null)[]; away: ({ goals: number; behinds: number; total: number } | null)[] };
+  quarterScores: { home: ({ goals: number; behinds: number; total: number } | null)[]; away: ({ goals: number; behinds: number; total: number } | null)[] } | null;
   hteam: string;
   ateam: string;
   currentPeriod: number;
+  isLoading?: boolean;
 }) {
   const labels = ["Q1", "Q2", "Q3", "Q4"];
 
   const cols = labels.map((lbl, i) => ({
     lbl,
-    home: quarterScores.home[i] ?? null,
-    away: quarterScores.away[i] ?? null,
+    home: quarterScores?.home[i] ?? null,
+    away: quarterScores?.away[i] ?? null,
   }));
+
+  const placeholder = (
+    <span style={{
+      display: "inline-block", width: 20, height: 14, borderRadius: 4,
+      background: "var(--border-2)", opacity: 0.6,
+      animation: "qstats-pulse 1.2s ease-in-out infinite",
+    }} />
+  );
 
   const sep = "1px solid var(--border-2)";
 
@@ -1021,7 +1030,9 @@ function QuarterScoresTable({
               ? <span style={{ fontWeight: 800, fontSize: 17, color: "var(--text-1)", letterSpacing: "-0.02em" }}>
                   {c.home.total}
                 </span>
-              : <span style={{ color: "var(--text-3)", fontSize: 14 }}>—</span>
+              : isLoading
+                ? placeholder
+                : <span style={{ color: "var(--text-3)", fontSize: 14 }}>—</span>
             }
           </div>
         ))}
@@ -1038,11 +1049,19 @@ function QuarterScoresTable({
               ? <span style={{ fontWeight: 800, fontSize: 17, color: "var(--text-1)", letterSpacing: "-0.02em" }}>
                   {c.away.total}
                 </span>
-              : <span style={{ color: "var(--text-3)", fontSize: 14 }}>—</span>
+              : isLoading
+                ? placeholder
+                : <span style={{ color: "var(--text-3)", fontSize: 14 }}>—</span>
             }
           </div>
         ))}
       </div>
+      <style jsx>{`
+        @keyframes qstats-pulse {
+          0%, 100% { opacity: 0.35; }
+          50% { opacity: 0.8; }
+        }
+      `}</style>
     </div>
   );
 }
@@ -1680,7 +1699,11 @@ function SeasonAvgTable({ stats }: { stats: any[] }) {
   );
 }
 
-function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating, stickyTop = 0, statMode: statModeProp, sortKey: sortKeyProp, sortDir: sortDirProp, onSort }: { stats: PlayerStat[]; isLive?: boolean; isFinal?: boolean; team?: string; gameId: number; bestRating: number; stickyTop?: number; statMode?: StatMode; sortKey?: SortKey; sortDir?: "desc"|"asc"; onSort?: (k: SortKey) => void }) {
+function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameId, bestRating, stickyTop = 0, statMode: statModeProp, sortKey: sortKeyProp, sortDir: sortDirProp, onSort }: { stats: PlayerStat[]; isLive?: boolean; isFinal?: boolean; currentPeriod?: number; team?: string; gameId: number; bestRating: number; stickyTop?: number; statMode?: StatMode; sortKey?: SortKey; sortDir?: "desc"|"asc"; onSort?: (k: SortKey) => void }) {
+  // Early in a live game almost every player's rating sits just below 0
+  // (near-empty stat lines), which reads as a wall of red "negative" pills.
+  // Only start showing those once the game is past half time.
+  const showNegativeRatings = isFinal || currentPeriod >= 3;
   const [sortKeyLocal, setSortKeyLocal] = useState<SortKey>("foopy");
   const [sortDirLocal, setSortDirLocal] = useState<"desc" | "asc">("desc");
   const [statModeLocal, setStatModeLocal] = useState<StatMode>("basic");
@@ -1805,7 +1828,7 @@ function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating, stic
                   </td>
 
                   <td style={tdStyle}>
-                    {rating !== null && rating > -1 && (() => {
+                    {rating !== null && (rating >= 0 || showNegativeRatings) && (() => {
                       const isBest = isFinal && bestRating > 0 && rating === bestRating;
                       return (
                         <span style={{ ...ratingPillStyle, background: foopyColor(rating), ...(isBest ? { display: "inline-flex", alignItems: "center", gap: 3 } : {}) }}>
@@ -3222,6 +3245,7 @@ function MatchPageInner() {
     home: ({ goals: number; behinds: number; total: number } | null)[];
     away: ({ goals: number; behinds: number; total: number } | null)[];
   } | null>(null);
+  const [quarterScoresLoading, setQuarterScoresLoading] = useState(true);
 
   const apiSportsGameId = useMemo(() => {
     const mapped = (API_SPORTS_MATCH_IDS as Record<string, any>)[id];
@@ -3254,7 +3278,8 @@ function MatchPageInner() {
         }
         if (home.some(Boolean) || away.some(Boolean)) setQuarterScores({ home, away });
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setQuarterScoresLoading(false));
   }, [activeTab, apiSportsGameId, game]);
 
   useEffect(() => {
@@ -4756,14 +4781,13 @@ function MatchPageInner() {
           <section style={sectionStyle}>
             <h2 style={sectionHeadingStyle}>Game Stats</h2>
 
-            {quarterScores && (
-              <QuarterScoresTable
-                quarterScores={quarterScores}
-                hteam={game.hteam}
-                ateam={game.ateam}
-                currentPeriod={currentPeriod}
-              />
-            )}
+            <QuarterScoresTable
+              quarterScores={quarterScores}
+              isLoading={quarterScoresLoading}
+              hteam={game.hteam}
+              ateam={game.ateam}
+              currentPeriod={currentPeriod}
+            />
 
             <div style={gameHeaderStyle}>
               <div style={gameTeamStyle}>
@@ -4805,8 +4829,8 @@ function MatchPageInner() {
                     </div>
 
                     <div style={barShellStyle}>
-                      <div style={{ ...barLeftStyle, width: `${homePct}%`, background: teamColor(game.hteam, "home") }} />
-                      <div style={{ ...barRightStyle, width: `${awayPct}%`, background: teamColor(game.ateam, "away") }} />
+                      <div style={{ ...barLeftStyle, width: `${homePct}%`, background: matchupBarColors(game.hteam, game.ateam).home }} />
+                      <div style={{ ...barRightStyle, width: `${awayPct}%`, background: matchupBarColors(game.hteam, game.ateam).away }} />
                     </div>
                   </div>
                 );
@@ -4833,8 +4857,8 @@ function MatchPageInner() {
               </div>
 
               <div style={freeKickBarShellStyle}>
-                <div style={{ ...freeKickBarLeftStyle, width: `${homeFreePct}%`, background: teamColor(game.hteam, "home") }} />
-                <div style={{ ...freeKickBarRightStyle, width: `${awayFreePct}%`, background: teamColor(game.ateam, "away") }} />
+                <div style={{ ...freeKickBarLeftStyle, width: `${homeFreePct}%`, background: matchupBarColors(game.hteam, game.ateam).home }} />
+                <div style={{ ...freeKickBarRightStyle, width: `${awayFreePct}%`, background: matchupBarColors(game.hteam, game.ateam).away }} />
               </div>
 
             </div>
@@ -4884,19 +4908,19 @@ function MatchPageInner() {
 
               {activeTab === "players" && status !== "UPCOMING" && playerSubTab === "all" && (
                 <section style={{ borderBottom: "1px solid var(--border-2)" }}>
-                  <StatTable stats={allMatchPlayers} isLive={isLiveGame} isFinal={status === "FINAL"} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} statMode={playerStatMode} sortKey={playerSortKey} sortDir={playerSortDir} onSort={(k) => { if(playerSortKey===k) setPlayerSortDir(d=>d==="desc"?"asc":"desc"); else{setPlayerSortKey(k);setPlayerSortDir("desc");} }} />
+                  <StatTable stats={allMatchPlayers} isLive={isLiveGame} isFinal={status === "FINAL"} currentPeriod={currentPeriod} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} statMode={playerStatMode} sortKey={playerSortKey} sortDir={playerSortDir} onSort={(k) => { if(playerSortKey===k) setPlayerSortDir(d=>d==="desc"?"asc":"desc"); else{setPlayerSortKey(k);setPlayerSortDir("desc");} }} />
                 </section>
               )}
 
               {activeTab === "players" && status !== "UPCOMING" && playerSubTab === "home" && (
                 <section style={{ borderBottom: "1px solid var(--border-2)" }}>
-                  <StatTable stats={displayHomeStats} isLive={isLiveGame} isFinal={status === "FINAL"} team={game.hteam} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} statMode={playerStatMode} sortKey={playerSortKey} sortDir={playerSortDir} onSort={(k) => { if(playerSortKey===k) setPlayerSortDir(d=>d==="desc"?"asc":"desc"); else{setPlayerSortKey(k);setPlayerSortDir("desc");} }} />
+                  <StatTable stats={displayHomeStats} isLive={isLiveGame} isFinal={status === "FINAL"} currentPeriod={currentPeriod} team={game.hteam} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} statMode={playerStatMode} sortKey={playerSortKey} sortDir={playerSortDir} onSort={(k) => { if(playerSortKey===k) setPlayerSortDir(d=>d==="desc"?"asc":"desc"); else{setPlayerSortKey(k);setPlayerSortDir("desc");} }} />
                 </section>
               )}
 
               {activeTab === "players" && status !== "UPCOMING" && playerSubTab === "away" && (
                 <section style={{ borderBottom: "1px solid var(--border-2)" }}>
-                  <StatTable stats={displayAwayStats} isLive={isLiveGame} isFinal={status === "FINAL"} team={game.ateam} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} statMode={playerStatMode} sortKey={playerSortKey} sortDir={playerSortDir} onSort={(k) => { if(playerSortKey===k) setPlayerSortDir(d=>d==="desc"?"asc":"desc"); else{setPlayerSortKey(k);setPlayerSortDir("desc");} }} />
+                  <StatTable stats={displayAwayStats} isLive={isLiveGame} isFinal={status === "FINAL"} currentPeriod={currentPeriod} team={game.ateam} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} statMode={playerStatMode} sortKey={playerSortKey} sortDir={playerSortDir} onSort={(k) => { if(playerSortKey===k) setPlayerSortDir(d=>d==="desc"?"asc":"desc"); else{setPlayerSortKey(k);setPlayerSortDir("desc");} }} />
                 </section>
               )}
             </>

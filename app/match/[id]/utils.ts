@@ -179,6 +179,44 @@ export function teamBarColor(team: string, side: "home" | "away") {
   return teamColor(team, side);
 }
 
+function hexToRgb(hex: string) {
+  const h = hex.replace("#", "");
+  const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  const num = parseInt(full, 16);
+  return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+}
+
+function colorsAreSimilar(a: string, b: string, threshold = 60) {
+  const ca = hexToRgb(a);
+  const cb = hexToRgb(b);
+  const dist = Math.sqrt((ca.r - cb.r) ** 2 + (ca.g - cb.g) ** 2 + (ca.b - cb.b) ** 2);
+  return dist < threshold;
+}
+
+/**
+ * Returns a colour pair for the home/away stat bars, picking fallbacks
+ * when both teams' default bar colours would look the same (e.g. two
+ * yellow clubs facing off).
+ */
+export function matchupBarColors(hteam: string, ateam: string): { home: string; away: string } {
+  const home = teamColor(hteam, "home");
+  let away = teamColor(ateam, "away");
+
+  if (colorsAreSimilar(home, away)) {
+    const awaySecondary = teamColor(ateam, "secondary");
+    if (!colorsAreSimilar(home, awaySecondary)) {
+      away = awaySecondary;
+    } else {
+      const awayPrimary = teamColor(ateam, "primary");
+      if (!colorsAreSimilar(home, awayPrimary)) {
+        away = awayPrimary;
+      }
+    }
+  }
+
+  return { home, away };
+}
+
 export function findPlayerByApiSportsId(id?: number | string) {
   if (id == null || id === "") return null;
 

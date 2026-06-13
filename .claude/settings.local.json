@@ -226,7 +226,13 @@
       "Bash(curl -s \"http://localhost:3000/api/player-season-stats\" -o season.tmp.json)",
       "Bash(npx eslint *)",
       "Bash(tasklist /FI \"PID eq 9212\")",
-      "PowerShell(Get-NetTCPConnection -OwningProcess 9212 -ErrorAction SilentlyContinue)"
+      "PowerShell(Get-NetTCPConnection -OwningProcess 9212 -ErrorAction SilentlyContinue)",
+      "Bash(cd app/.. && npx tsc --noEmit -p . 2>&1 | head -50)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"http://localhost:3000/match/1\")",
+      "Bash(node -e \"const p=require\\('./app/data/players.json'\\); console.log\\(Array.isArray\\(p\\), p.length\\); console.log\\(JSON.stringify\\(p[0],null,2\\)\\); console.log\\(JSON.stringify\\(p.find\\(x=>x.eventIds||x.statsIds||x.aliases\\),null,2\\)\\);\")",
+      "Bash(curl -s \"https://qbmtaooovvxpqsbslrga.supabase.co/rest/v1/live_game_feed?select=api_game_id,type,player_id,player_name,team_id&type=in.\\(GOAL,BEHIND\\)&order=api_game_id\" -H \"apikey: $\\(grep SUPABASE_SERVICE_ROLE_KEY .env.local)",
+      "Bash(sed -n '79,179p' /tmp/result3.txt)",
+      "Bash(node -e \"const d=require\\('./app/data/players.json'\\); console.log\\(JSON.stringify\\(d.filter\\(p=>/kentfield/i.test\\(p.name\\)||/kentfield/i.test\\(p.id\\)\\),null,2\\)\\)\")"
     ]
   }
 }
