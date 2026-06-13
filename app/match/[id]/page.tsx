@@ -4395,6 +4395,16 @@ function MatchPageInner() {
           max-height: clamp(0px, calc(52px - 52px * var(--p,0)), 52px);
           overflow: hidden;
         }
+        .mh-gb {
+          font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.45);
+          font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+          line-height: 1; white-space: nowrap; margin-top: -4px;
+          transform: scale(calc(1 - 0.45 * var(--p,0)));
+          transform-origin: center center; will-change: transform, opacity;
+          opacity: clamp(0, calc(1.8 - var(--p,0) * 3.6), 1);
+          max-height: clamp(0px, calc(16px - 16px * var(--p,0)), 16px);
+          overflow: hidden;
+        }
         .mh-sub { line-height: 1.3; transform: scale(calc(1 - 0.18 * var(--p,0))); transform-origin: center center; will-change: transform; white-space: nowrap; }
         .mh-mini {
           font-size: 20px; font-weight: 1000; font-variant-numeric: tabular-nums;
@@ -4494,11 +4504,18 @@ function MatchPageInner() {
                   {status === "UPCOMING" ? (
                     <div className="mh-score" style={{ fontWeight: 900 }}>{formatMatchTime(game.date)}</div>
                   ) : (
-                    <div className="mh-score">
-                      {scoreText(game.hscore)}
-                      <span style={{ fontWeight: 300, color: "rgba(255,255,255,0.25)", margin: "0 6px" }}>–</span>
-                      {scoreText(game.ascore)}
-                    </div>
+                    <>
+                      <div className="mh-score">
+                        {scoreText(game.hscore)}
+                        <span style={{ fontWeight: 300, color: "rgba(255,255,255,0.25)", margin: "0 6px" }}>–</span>
+                        {scoreText(game.ascore)}
+                      </div>
+                      <div className="mh-gb">
+                        {game.hgoals ?? 0}.{game.hbehinds ?? 0}
+                        <span style={{ margin: "0 4px", color: "rgba(255,255,255,0.25)" }}>–</span>
+                        {game.agoals ?? 0}.{game.abehinds ?? 0}
+                      </div>
+                    </>
                   )}
                   <div className="mh-sub">
                     {status === "LIVE" ? (

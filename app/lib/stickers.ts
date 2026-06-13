@@ -1,7 +1,30 @@
 // Sticker pack — files live in public/stickers/{name}.png
 // To rename a sticker, just rename its file (e.g. 1.png -> brad.png) and
 // update STICKER_NAMES below; the shortcode (:name) and rendering update automatically.
-export const STICKER_NAMES = Array.from({ length: 22 }, (_, i) => String(i + 1));
+export const STICKER_NAMES = [
+  "bradscott",
+  "cinema",
+  "dafoe",
+  "dan1",
+  "depression",
+  "dexteregg",
+  "dog",
+  "drakeyachty",
+  "flight1",
+  "flight2",
+  "flight3",
+  "kevinjames",
+  "lebronscared",
+  "longmuir",
+  "me",
+  "nas1",
+  "patrick1",
+  "rachele1",
+  "shocked",
+  "speed1",
+  "stop",
+  "talknothink",
+];
 
 export function stickerUrl(name: string) {
   return `/stickers/${name}.png`;
