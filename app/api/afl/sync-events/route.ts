@@ -160,17 +160,38 @@ export async function GET(req: Request) {
 
     const statsMap = await statsMapPromise;
 
+    // The games/statistics/players snapshot can lag behind games/events — a
+    // goal might appear in the events feed before the stats API has updated
+    // the player's goal tally. Track a running per-player goal count from the
+    // events themselves (which are in chronological order) and use whichever
+    // is higher, so a freshly-kicked goal is never shown as "0 GOAL/S".
+    const goalCounter = new Map<number, number>();
+
     const apiRows = rawRows.map((row) => {
       const k = key(row);
       const stored = existingSnapshotMap.get(k);
       const isNew = !existingSnapshotMap.has(k);
       const snapshot = row.player_id != null ? statsMap.get(Number(row.player_id)) : undefined;
+
+      let runningGoals: number | undefined;
+      if (row.player_id != null) {
+        const pid = Number(row.player_id);
+        const prev = goalCounter.get(pid) ?? 0;
+        const next = row.type === "GOAL" ? prev + 1 : prev;
+        goalCounter.set(pid, next);
+        runningGoals = next;
+      }
+
+      const goals = isNew
+        ? Math.max(snapshot?.goals ?? 0, runningGoals ?? 0)
+        : (stored?.goals ?? null);
+
       return {
         ...row,
         player_fp: isNew ? (snapshot?.fp ?? null) : (stored?.fp ?? null),
         player_foopy: isNew ? (snapshot?.foopy ?? null) : (stored?.foopy ?? null),
         player_disposals: isNew ? (snapshot?.disposals ?? null) : (stored?.disposals ?? null),
-        player_goals: isNew ? (snapshot?.goals ?? null) : (stored?.goals ?? null),
+        player_goals: goals,
       };
     });
 
