@@ -1164,7 +1164,7 @@ function PlayerAvatar({ name, team, size = 48, rating, ratingColor, isBest }: { 
       {rating !== undefined && rating !== null && (
         <span style={{
           position: "absolute", bottom: -2, left: -2, zIndex: 1,
-          display: "inline-flex", alignItems: "center", gap: 2,
+          display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 2,
           minWidth: 22, padding: "1px 3px", borderRadius: 5,
           background: ratingColor ?? "var(--surface-3)",
           border: "1.5px solid var(--bg-1)",
