@@ -1729,7 +1729,7 @@ function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating, stic
     const active = sortKey === key;
     return (
       <th
-        style={{ ...thStyle, top: stickyTop, color: active ? "#0ea5e9" : "#9ca3af", cursor: "pointer" }}
+        style={{ ...thStyle, color: active ? "#0ea5e9" : "#9ca3af", cursor: "pointer" }}
         onClick={() => {
           if (onSort) { onSort(key); return; }
           if (sortKey === key) setSortDirLocal(sortDir === "desc" ? "asc" : "desc");
@@ -1754,31 +1754,23 @@ function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating, stic
     <div>
 
       <div style={tableWrapStyle}>
-        <table style={{ ...tableStyle, minWidth: statMode === "basic" ? 640 : 520 }}>
+        <table style={{ ...tableStyle, minWidth: 1040 }}>
           <thead>
             <tr>
-              <th style={{ ...thPlayerStyle, top: stickyTop }}>Player</th>
-              {statMode === "basic" ? (
-                <>
-                  {sortHeader("FOOPY", "foopy")}
-                  {sortHeader("G.B", "goals")}
-                  {sortHeader("D", "disposals")}
-                  {sortHeader("K", "kicks")}
-                  {sortHeader("H", "handballs")}
-                  {sortHeader("M", "marks")}
-                  {sortHeader("T", "tackles")}
-                  {sortHeader("HO", "hitouts")}
-                </>
-              ) : (
-                <>
-                  {sortHeader("FP", "fantasy")}
-                  {sortHeader("CLR", "clearances")}
-                  {sortHeader("GA", "goalAssists")}
-                  {sortHeader("FF", "freesFor")}
-                  {sortHeader("FA", "freesAgainst")}
-                </>
-              )}
-              <th style={{ ...thStyle, top: stickyTop, width: 36 }} aria-label="Comments" />
+              <th style={thPlayerStyle}>Player</th>
+              {sortHeader("FOOPY", "foopy")}
+              {sortHeader("G.B", "goals")}
+              {sortHeader("D", "disposals")}
+              {sortHeader("K", "kicks")}
+              {sortHeader("H", "handballs")}
+              {sortHeader("M", "marks")}
+              {sortHeader("T", "tackles")}
+              {sortHeader("HO", "hitouts")}
+              {sortHeader("FP", "fantasy")}
+              {sortHeader("CLR", "clearances")}
+              {sortHeader("GA", "goalAssists")}
+              {sortHeader("FF", "freesFor")}
+              {sortHeader("FA", "freesAgainst")}
             </tr>
           </thead>
           <tbody>
@@ -1800,52 +1792,45 @@ function StatTable({ stats, isLive, isFinal, team = "", gameId, bestRating, stic
                   <td style={tdPlayerStyle}>
                     <span style={playerNameCellStyle}>
                       <PlayerAvatar name={name} team={rowTeam} />
-                      <span>{name}</span>
+                      <span>
+                        <div>{name}</div>
+                        <span style={playerBubbleStyle}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                          </svg>
+                          {count > 0 && <span>{count}</span>}
+                        </span>
+                      </span>
                     </span>
                   </td>
 
-                  {statMode === "basic" ? (
-                    <>
-                      <td style={tdStyle}>
-                        {rating !== null && rating > -1 && (() => {
-                          const isBest = isFinal && bestRating > 0 && rating === bestRating;
-                          return (
-                            <span style={{ ...ratingPillStyle, background: foopyColor(rating), ...(isBest ? { display: "inline-flex", alignItems: "center", gap: 3 } : {}) }}>
-                              {isBest && (
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="white" style={{ flexShrink: 0, filter: "drop-shadow(0 1px 1px rgba(0,0,0,.4))" }}>
-                                  <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
-                                </svg>
-                              )}
-                              {rating}
-                            </span>
-                          );
-                        })()}
-                      </td>
-                      <td style={tdStyle}>{statValue(p.goals)}.{statValue(p.behinds)}</td>
-                      <td style={tdStyle}>{statValue(p.disposals)}</td>
-                      <td style={tdStyle}>{statValue(p.kicks)}</td>
-                      <td style={tdStyle}>{statValue(p.handballs)}</td>
-                      <td style={tdStyle}>{statValue(p.marks)}</td>
-                      <td style={tdStyle}>{statValue(p.tackles)}</td>
-                      <td style={tdStyle}>{statValue(p.hitouts)}</td>
-                    </>
-                  ) : (
-                    <>
-  <td style={tdStyle}>{fantasyPoints(p)}</td>
-  <td style={tdStyle}>{statValue(p.clearances)}</td>
-  <td style={tdStyle}>{statValue((p as any).goalAssists ?? 0)}</td>
-  <td style={tdStyle}>{statValue(p.freesFor)}</td>
-  <td style={tdStyle}>{statValue(p.freesAgainst)}</td>
-</>
-                  )}
-                  <td style={{ ...tdStyle, paddingRight: 12 }}>
-                    <span style={playerBubbleStyle}>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                      </svg>
-                      {count > 0 && <span>{count}</span>}
-                    </span>
+                  <td style={tdStyle}>
+                    {rating !== null && rating > -1 && (() => {
+                      const isBest = isFinal && bestRating > 0 && rating === bestRating;
+                      return (
+                        <span style={{ ...ratingPillStyle, background: foopyColor(rating), ...(isBest ? { display: "inline-flex", alignItems: "center", gap: 3 } : {}) }}>
+                          {isBest && (
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="white" style={{ flexShrink: 0, filter: "drop-shadow(0 1px 1px rgba(0,0,0,.4))" }}>
+                              <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+                            </svg>
+                          )}
+                          {rating}
+                        </span>
+                      );
+                    })()}
                   </td>
+                  <td style={tdStyle}>{statValue(p.goals)}.{statValue(p.behinds)}</td>
+                  <td style={tdStyle}>{statValue(p.disposals)}</td>
+                  <td style={tdStyle}>{statValue(p.kicks)}</td>
+                  <td style={tdStyle}>{statValue(p.handballs)}</td>
+                  <td style={tdStyle}>{statValue(p.marks)}</td>
+                  <td style={tdStyle}>{statValue(p.tackles)}</td>
+                  <td style={tdStyle}>{statValue(p.hitouts)}</td>
+                  <td style={tdStyle}>{fantasyPoints(p)}</td>
+                  <td style={tdStyle}>{statValue(p.clearances)}</td>
+                  <td style={tdStyle}>{statValue((p as any).goalAssists ?? 0)}</td>
+                  <td style={tdStyle}>{statValue(p.freesFor)}</td>
+                  <td style={tdStyle}>{statValue(p.freesAgainst)}</td>
                 </tr>
               );
             })}
@@ -4612,39 +4597,6 @@ function MatchPageInner() {
                   })}
                 </nav>
               )}
-              {activeTab === "players" && status !== "UPCOMING" && (
-                <div style={{ display: "flex", alignItems: "center", padding: "6px 10px", borderTop: "1px solid var(--border-2)", background: "var(--bg)", gap: 4 }}>
-                    <button onClick={() => setPlayerStatMode("basic")} style={playerStatMode === "basic" ? activeStatSwitchStyle : statSwitchStyle}>Basic</button>
-                    <button onClick={() => setPlayerStatMode("advanced")} style={playerStatMode === "advanced" ? activeStatSwitchStyle : statSwitchStyle}>Advanced</button>
-                  <div style={{ display: "none" }}>
-                  {(playerStatMode === "basic"
-                    ? (["foopy","goals","disposals","kicks","handballs","marks","tackles","hitouts"] as SortKey[])
-                    : (["fantasy","clearances","goalAssists","freesFor","freesAgainst"] as SortKey[])
-                  ).map(key => {
-                    const labels: Partial<Record<SortKey, string>> = {
-                      foopy:"FOOPY", goals:"G.B", disposals:"D", kicks:"K", handballs:"H",
-                      marks:"M", tackles:"T", hitouts:"HO",
-                      fantasy:"FP", clearances:"CLR", goalAssists:"GA", freesFor:"FF", freesAgainst:"FA",
-                    };
-                    const active = playerSortKey === key;
-                    return (
-                      <button key={key} onClick={() => {
-                        if (playerSortKey === key) setPlayerSortDir(d => d === "desc" ? "asc" : "desc");
-                        else { setPlayerSortKey(key); setPlayerSortDir("desc"); }
-                      }} style={{
-                        background: "none", border: "none", cursor: "pointer", padding: "2px 6px",
-                        fontSize: 10, fontWeight: 900, letterSpacing: "0.08em",
-                        textTransform: "uppercase" as const, whiteSpace: "nowrap" as const,
-                        color: active ? "#0ea5e9" : "#9ca3af",
-                      }}>
-                        {labels[key]}{active ? (playerSortDir === "desc" ? " ↓" : " ↑") : ""}
-                      </button>
-                    );
-                  })}
-                  <div style={{ width: 28, flexShrink: 0 }} />
-                  </div>
-                </div>
-              )}
             </div>
           );
         })()}
@@ -7080,7 +7032,7 @@ const countdownBoxStyle: CSSProperties = {
 const countdownLabelStyle: CSSProperties = { color: "#facc15", fontSize: 11, fontWeight: 1000, letterSpacing: ".16em" };
 const countdownTimeStyle: CSSProperties = { marginTop: 8, color: "var(--text-1)", fontSize: 36, lineHeight: 1, fontWeight: 1000, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" };
 const tableWrapStyle: CSSProperties = { overflowX: "auto" };
-const tableStyle: CSSProperties = { width: "100%", borderCollapse: "collapse" };
+const tableStyle: CSSProperties = { width: "100%", borderCollapse: "separate", borderSpacing: 0 };
 const thStyle: CSSProperties = { position: "sticky", top: 0, zIndex: 2, background: "var(--bg-1, #0a0a0f)", textAlign: "center", padding: "9px 10px", borderBottom: "1px solid var(--border-2)", whiteSpace: "nowrap", fontSize: 10, fontWeight: 900, textTransform: "uppercase" as const, letterSpacing: "0.08em", color: "var(--text-3)" };
 const thPlayerStyle: CSSProperties = { ...thStyle, minWidth: 180, textAlign: "left" };
 const tdStyle: CSSProperties = { padding: "13px 10px", borderBottom: "1px solid var(--border-1)", whiteSpace: "nowrap", fontSize: 14, fontWeight: 700, fontVariantNumeric: "tabular-nums", textAlign: "center" };

@@ -86,8 +86,10 @@
     "name": "Aidan Johnson",
     "team": "Melbourne",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1892,
+    "eventIds": [
+      1892
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-melbourne-demons--aidan-johnson"
   },
@@ -248,8 +250,10 @@
     "name": "Angus Clarke",
     "team": "Essendon",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1969,
+    "eventIds": [
+      1969
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-essendon-bombers--angus-clarke"
   },
@@ -518,8 +522,10 @@
     "name": "Balyn O'Brien",
     "team": "Port Adelaide",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 2115,
+    "eventIds": [
+      2115
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-port-adelaide-power--balyn-o-brien"
   },
@@ -540,8 +546,10 @@
     "name": "Beau Addinsall",
     "team": "Gold Coast",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 2112,
+    "eventIds": [
+      2112
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-gold-coast-suns--beau-addinsall"
   },
@@ -856,8 +864,10 @@
     "name": "Braeden Campbell",
     "team": "Sydney",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1070,
+    "eventIds": [
+      1070
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-sydney-swans--braeden-campbell"
   },
@@ -866,8 +876,10 @@
     "name": "Brandon Starcevich",
     "team": "West Coast",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 880,
+    "eventIds": [
+      880
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-west-coast-eagles--brandon-starcevich"
   },
@@ -1076,8 +1088,10 @@
     "name": "Caleb May",
     "team": "Western Bulldogs",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 2116,
+    "eventIds": [
+      2116
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-western-bulldogs--caleb-may"
   },
@@ -1258,8 +1272,10 @@
     "name": "Campbell Lake",
     "team": "St Kilda",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 2122,
+    "eventIds": [
+      2122
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-st-kilda-saints--campbell-lake"
   },
@@ -1512,8 +1528,10 @@
     "name": "Cody Angove",
     "team": "GWS",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1901,
+    "eventIds": [
+      1901
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-greater-western-sydney-giants--cody-angove"
   },
@@ -1724,8 +1742,10 @@
     "name": "Cooper Simpson",
     "team": "Fremantle",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1760,
+    "eventIds": [
+      1760
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-fremantle-dockers--cooper-simpson"
   },
@@ -1952,8 +1972,10 @@
     "name": "Darcy Jones",
     "team": "GWS",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1785,
+    "eventIds": [
+      1785
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-greater-western-sydney-giants--darcy-jones"
   },
@@ -2220,8 +2242,10 @@
     "name": "Eric Hipwood",
     "team": "Brisbane",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 872,
+    "eventIds": [
+      872
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-brisbane-lions--eric-hipwood"
   },
@@ -2556,8 +2580,10 @@
     "name": "Harrison Ramm",
     "team": "Port Adelaide",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 2027,
+    "eventIds": [
+      2027
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-port-adelaide-power--harrison-ramm"
   },
@@ -2578,8 +2604,10 @@
     "name": "Harry Barnett",
     "team": "West Coast",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1728,
+    "eventIds": [
+      1728
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-west-coast-eagles--harry-barnett"
   },
@@ -2622,8 +2650,10 @@
     "name": "Harry Demattia",
     "team": "Collingwood",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1864,
+    "eventIds": [
+      1864
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-collingwood-magpies--harry-demattia"
   },
@@ -2658,8 +2688,10 @@
     "name": "Harry Kyle",
     "team": "Sydney",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 2109,
+    "eventIds": [
+      2109
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-sydney-swans--harry-kyle"
   },
@@ -2692,8 +2724,10 @@
     "name": "Harry O'Farrell",
     "team": "Carlton",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1971,
+    "eventIds": [
+      1971
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-carlton-blues--harry-o-farrell"
   },
@@ -2858,8 +2892,10 @@
     "name": "Henry Hustwaite",
     "team": "Hawthorn",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 839,
+    "eventIds": [
+      839
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-hawthorn-hawks--henry-hustwaite"
   },
@@ -2868,8 +2904,10 @@
     "name": "Henry Smith",
     "team": "Brisbane",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1786,
+    "eventIds": [
+      1786
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-brisbane-lions--henry-smith"
   },
@@ -3110,8 +3148,10 @@
     "name": "Ivan Soldo",
     "team": "Port Adelaide",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1033,
+    "eventIds": [
+      1033
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-port-adelaide-power--ivan-soldo"
   },
@@ -3360,8 +3400,10 @@
     "name": "Jack Payne",
     "team": "Brisbane",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 878,
+    "eventIds": [
+      878
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-brisbane-lions--jack-payne"
   },
@@ -3430,8 +3472,10 @@
     "name": "Jack Viney",
     "team": "Melbourne",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1074,
+    "eventIds": [
+      1074
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-melbourne-demons--jack-viney"
   },
@@ -3476,8 +3520,10 @@
     "name": "Jackson Archer",
     "team": "North Melbourne",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1701,
+    "eventIds": [
+      1701
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-kangaroos--jackson-archer"
   },
@@ -3652,8 +3698,10 @@
     "name": "Jai Murray",
     "team": "Gold Coast",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 2113,
+    "eventIds": [
+      2113
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-gold-coast-suns--jai-murray"
   },
@@ -3880,8 +3928,10 @@
     "name": "James Harmes",
     "team": "Western Bulldogs",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1365,
+    "eventIds": [
+      1365
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-western-bulldogs--james-harmes"
   },
@@ -4198,8 +4248,10 @@
     "name": "Jed Bews",
     "team": "Geelong",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1839,
+    "eventIds": [
+      1839
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-geelong-cats--jed-bews"
   },
@@ -4302,8 +4354,10 @@
     "name": "Jesse Motlop",
     "team": "Carlton",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1824,
+    "eventIds": [
+      1824
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-carlton-blues--jesse-motlop"
   },
@@ -4418,8 +4472,10 @@
     "name": "Joel Fitzgerald",
     "team": "Melbourne",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 2119,
+    "eventIds": [
+      2119
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-melbourne-demons--joel-fitzgerald"
   },
@@ -4634,8 +4690,10 @@
     "name": "Josh Draper",
     "team": "Fremantle",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1761,
+    "eventIds": [
+      1761
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-fremantle-dockers--josh-draper"
   },
@@ -4656,8 +4714,10 @@
     "name": "Josh Goater",
     "team": "North Melbourne",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 791,
+    "eventIds": [
+      791
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-kangaroos--josh-goater"
   },
@@ -4702,8 +4762,10 @@
     "name": "Josh Sinn",
     "team": "Port Adelaide",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1669,
+    "eventIds": [
+      1669
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-port-adelaide-power--josh-sinn"
   },
@@ -4786,8 +4848,10 @@
     "name": "Joshua Kelly",
     "team": "GWS",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1123,
+    "eventIds": [
+      1123
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-greater-western-sydney-giants--joshua-kelly"
   },
@@ -4808,8 +4872,10 @@
     "name": "Judson Clarke",
     "team": "Richmond",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1688,
+    "eventIds": [
+      1688
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-richmond-tigers--judson-clarke"
   },
@@ -5060,8 +5126,10 @@
     "name": "Kye Annand",
     "team": "Richmond",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 2121,
+    "eventIds": [
+      2121
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-richmond-tigers--kye-annand"
   },
@@ -5306,8 +5374,10 @@
     "name": "Lachlan Sholl",
     "team": "Adelaide",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1603,
+    "eventIds": [
+      1603
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-adelaide-crows--lachlan-sholl"
   },
@@ -5450,8 +5520,10 @@
     "name": "Lewis Hayes",
     "team": "Essendon",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1915,
+    "eventIds": [
+      1915
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-essendon-bombers--lewis-hayes"
   },
@@ -5542,8 +5614,10 @@
     "name": "Liam McMahon",
     "team": "Essendon",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 2006,
+    "eventIds": [
+      2006
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-essendon-bombers--liam-mcmahon"
   },
@@ -5692,8 +5766,10 @@
     "name": "Lucas Camporeale",
     "team": "Carlton",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1895,
+    "eventIds": [
+      1895
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-carlton-blues--lucas-camporeale"
   },
@@ -5702,8 +5778,10 @@
     "name": "Lucca Grego",
     "team": "West Coast",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 2028,
+    "eventIds": [
+      2028
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-west-coast-eagles--lucca-grego"
   },
@@ -5712,8 +5790,10 @@
     "name": "Lukas Cooke",
     "team": "Melbourne",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 2118,
+    "eventIds": [
+      2118
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-melbourne-demons--lukas-cooke"
   },
@@ -5722,8 +5802,10 @@
     "name": "Luke Beecken",
     "team": "Brisbane",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1973,
+    "eventIds": [
+      1973
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-brisbane-lions--luke-beecken"
   },
@@ -5932,8 +6014,10 @@
     "name": "Mani Liddy",
     "team": "Port Adelaide",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1997,
+    "eventIds": [
+      1997
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-port-adelaide-power--mani-liddy"
   },
@@ -6000,8 +6084,10 @@
     "name": "Mark Keane",
     "team": "Adelaide",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 989,
+    "eventIds": [
+      989
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-adelaide-crows--mark-keane"
   },
@@ -6342,8 +6428,10 @@
     "name": "Max King",
     "team": "St Kilda",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1578,
+    "eventIds": [
+      1578
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-st-kilda-saints--max-king-1"
   },
@@ -6532,8 +6620,10 @@
     "name": "Mitch Podhajski",
     "team": "Collingwood",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 2117,
+    "eventIds": [
+      2117
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-collingwood-magpies--mitch-podhajski"
   },
@@ -6670,8 +6760,10 @@
     "name": "Ned Bowman",
     "team": "Sydney",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1956,
+    "eventIds": [
+      1956
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-sydney-swans--ned-bowman"
   },
@@ -6972,8 +7064,10 @@
     "name": "Noah Long",
     "team": "West Coast",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 977,
+    "eventIds": [
+      977
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-west-coast-eagles--noah-long"
   },
@@ -7274,8 +7368,10 @@
     "name": "Paddy Dow",
     "team": "St Kilda",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1801,
+    "eventIds": [
+      1801
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-st-kilda-saints--paddy-dow"
   },
@@ -7434,8 +7530,10 @@
     "name": "Reef McInnes",
     "team": "Collingwood",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 767,
+    "eventIds": [
+      767
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-collingwood-magpies--reef-mcinnes"
   },
@@ -7516,8 +7614,10 @@
     "name": "Rhys Unwin",
     "team": "Essendon",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 2017,
+    "eventIds": [
+      2017
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-essendon-bombers--rhys-unwin"
   },
@@ -7536,8 +7636,10 @@
     "name": "Ricky Mentha",
     "team": "Melbourne",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1929,
+    "eventIds": [
+      1929
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-melbourne-demons--ricky-mentha"
   },
@@ -7558,8 +7660,10 @@
     "name": "Riley Garcia",
     "team": "Western Bulldogs",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 951,
+    "eventIds": [
+      951
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-western-bulldogs--riley-garcia"
   },
@@ -7982,8 +8086,10 @@
     "name": "Sam Powell-Pepper",
     "team": "Port Adelaide",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1010,
+    "eventIds": [
+      1010
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-port-adelaide-power--sam-powell-pepper"
   },
@@ -7992,8 +8098,10 @@
     "name": "Sam Sturt",
     "team": "Fremantle",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 852,
+    "eventIds": [
+      852
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-fremantle-dockers--sam-sturt"
   },
@@ -8014,8 +8122,10 @@
     "name": "Sam Taylor",
     "team": "GWS",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1131,
+    "eventIds": [
+      1131
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-greater-western-sydney-giants--sam-taylor"
   },
@@ -8142,8 +8252,10 @@
     "name": "Shane McAdam",
     "team": "Melbourne",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1812,
+    "eventIds": [
+      1812
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-melbourne-demons--shane-mcadam"
   },
@@ -8176,8 +8288,10 @@
     "name": "Sid Draper",
     "team": "Adelaide",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1887,
+    "eventIds": [
+      1887
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-adelaide-crows--sid-draper"
   },
@@ -8222,8 +8336,10 @@
     "name": "Steven May",
     "team": "Melbourne",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 475,
+    "eventIds": [
+      475
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-melbourne-demons--steven-may"
   },
@@ -8254,8 +8370,10 @@
     "name": "Taj Hotton",
     "team": "Richmond",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 2001,
+    "eventIds": [
+      2001
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-richmond-tigers--taj-hotton"
   },
@@ -8288,8 +8406,10 @@
     "name": "Taylor Adams",
     "team": "Sydney",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 694,
+    "eventIds": [
+      694
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-sydney-swans--taylor-adams"
   },
@@ -8298,8 +8418,10 @@
     "name": "Taylor Goad",
     "team": "North Melbourne",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 2011,
+    "eventIds": [
+      2011
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-kangaroos--taylor-goad"
   },
@@ -8320,8 +8442,10 @@
     "name": "Tew Jiath",
     "team": "Collingwood",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1817,
+    "eventIds": [
+      1817
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-collingwood-magpies--tew-jiath"
   },
@@ -8366,8 +8490,10 @@
     "name": "Thomas Sims",
     "team": "Richmond",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1961,
+    "eventIds": [
+      1961
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-richmond-tigers--thomas-sims"
   },
@@ -8448,8 +8574,10 @@
     "name": "Toby Conway",
     "team": "Geelong",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 932,
+    "eventIds": [
+      932
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-geelong-cats--toby-conway"
   },
@@ -8550,8 +8678,10 @@
     "name": "Tom Anastasopoulos",
     "team": "Port Adelaide",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1815,
+    "eventIds": [
+      1815
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-port-adelaide-power--thomas-anastasopoulos"
   },
@@ -8622,8 +8752,10 @@
     "name": "Tom Campbell",
     "team": "Melbourne",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 890,
+    "eventIds": [
+      890
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-melbourne-demons--tom-campbell"
   },
@@ -8632,8 +8764,10 @@
     "name": "Tom Cochrane",
     "team": "Port Adelaide",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1935,
+    "eventIds": [
+      1935
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-port-adelaide-power--tom-cochrane"
   },
@@ -8666,8 +8800,10 @@
     "name": "Tom Doedee",
     "team": "Brisbane",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1954,
+    "eventIds": [
+      1954
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-brisbane-lions--tom-doedee"
   },
@@ -8676,8 +8812,10 @@
     "name": "Tom Green",
     "team": "GWS",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1137,
+    "eventIds": [
+      1137
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-greater-western-sydney-giants--tom-green"
   },
@@ -8890,8 +9028,10 @@
     "name": "Tyler Brockman",
     "team": "West Coast",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 831,
+    "eventIds": [
+      831
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-west-coast-eagles--tyler-brockman"
   },
@@ -8922,8 +9062,10 @@
     "name": "Tyrell Dewar",
     "team": "West Coast",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1758,
+    "eventIds": [
+      1758
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-west-coast-eagles--tyrell-dewar"
   },
@@ -8932,8 +9074,10 @@
     "name": "Tyson Stengle",
     "team": "Geelong",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 921,
+    "eventIds": [
+      921
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-geelong-cats--tyson-stengle"
   },
@@ -8942,8 +9086,10 @@
     "name": "Vigo Visentini",
     "team": "Essendon",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1984,
+    "eventIds": [
+      1984
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-essendon-bombers--vigo-visentini"
   },
@@ -9070,8 +9216,10 @@
     "name": "Will Green",
     "team": "Sydney",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 2022,
+    "eventIds": [
+      2022
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-sydney-swans--will-green"
   },
@@ -9204,8 +9352,10 @@
     "name": "Xavier Bamert",
     "team": "Port Adelaide",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 2120,
+    "eventIds": [
+      2120
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-port-adelaide-power--xavier-bamert"
   },
@@ -9296,8 +9446,10 @@
     "name": "Zac Fisher",
     "team": "North Melbourne",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 1108,
+    "eventIds": [
+      1108
+    ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-kangaroos--zac-fisher"
   },
