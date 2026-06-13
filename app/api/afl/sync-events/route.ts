@@ -182,9 +182,12 @@ export async function GET(req: Request) {
         runningGoals = next;
       }
 
+      // The running count is deterministic from event order alone, so it's safe
+      // to apply even to previously-synced rows — it only ever corrects a stale
+      // 0/low snapshot up to the true cumulative count, never changes a correct one.
       const goals = isNew
         ? Math.max(snapshot?.goals ?? 0, runningGoals ?? 0)
-        : (stored?.goals ?? null);
+        : Math.max(stored?.goals ?? 0, runningGoals ?? 0);
 
       return {
         ...row,
