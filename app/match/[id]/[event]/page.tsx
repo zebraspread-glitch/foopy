@@ -13,7 +13,7 @@ import MiniAvatar from "@/app/components/MiniAvatar";
 import SendArrowIcon from "@/app/components/SendArrowIcon";
 import playerStatsJson from "@/app/data/players.json";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
-import { foopyRating } from "@/app/match/[id]/utils";
+import { foopyRating, teamColors, getLogo } from "@/app/match/[id]/utils";
 import { foopyColor } from "@/app/lib/foopyRating";
 import { haptic } from "@/app/lib/haptic";
 import { VerifiedBadge } from "@/app/components/VerifiedBadge";
@@ -738,7 +738,11 @@ function EventCommentsPageInner() {
       )}
 
       {playerCard && (
-        <section style={playerCardStyle}>
+        <section style={{
+          ...playerCardStyle,
+          background: `linear-gradient(135deg, ${teamColors(playerCard.team).primary}26, rgba(255,255,255,0.03))`,
+          borderColor: `${teamColors(playerCard.team).primary}40`,
+        }}>
           <PlayerCardHeader name={label} img={playerCard.img} team={playerCard.team} rating={playerCard.rating} slug={playerSlug(label)} />
           <div style={statChipsStyle}>
             {[
@@ -1131,18 +1135,25 @@ function PlayerCardHeader({ name, img, team, rating, slug }: { name: string; img
   const initials = name.trim().split(/\s+/).filter(Boolean).map(p => p[0]).join("").toUpperCase().slice(0, 2) || "?";
   const ratingNum = parseFloat(rating) || 0;
   const ratingColor = foopyColor(ratingNum);
+  const colours = teamColors(team);
+  const logo = getLogo(team);
 
   return (
     <div
       style={{ ...playerCardHeaderStyle, cursor: slug ? "pointer" : undefined }}
       onClick={slug ? () => router.push(`/player/${slug}`) : undefined}
     >
-      <div style={playerAvatarLargeStyle}>
-        {img && !imgFailed
-          ? <img src={img} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} onError={() => setImgFailed(true)} />
-          : <span style={playerAvatarInitialsStyle}>{initials}</span>
-        }
-      </div>
+      <span style={{ position: "relative", display: "inline-flex", flexShrink: 0 }}>
+        <div style={{ ...playerAvatarLargeStyle, background: `${colours.primary}80`, border: `2px solid ${colours.secondary}66` }}>
+          {img && !imgFailed
+            ? <img src={img} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} onError={() => setImgFailed(true)} />
+            : <span style={playerAvatarInitialsStyle}>{initials}</span>
+          }
+        </div>
+        {logo && (
+          <img src={logo} alt="" style={{ position: "absolute", bottom: -2, right: -2, width: 22, height: 22, borderRadius: "50%", background: "var(--bg-1)", border: "2px solid var(--bg-1)", objectFit: "contain", pointerEvents: "none" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+        )}
+      </span>
       <div style={playerCardInfoStyle}>
         <span style={playerCardNameStyle}>{name}</span>
         {team && <span style={playerCardTeamStyle}>{team}</span>}
@@ -1446,7 +1457,7 @@ const playerAvatarLargeStyle: CSSProperties = {
 const playerAvatarInitialsStyle: CSSProperties = {
   fontSize: 20,
   fontWeight: 950,
-  color: "#60a5fa",
+  color: "#ffffff",
 };
 
 const playerCardInfoStyle: CSSProperties = {
