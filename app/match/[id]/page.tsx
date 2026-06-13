@@ -1120,7 +1120,7 @@ function timeUntilStart(date?: string, now = Date.now()) {
   return `${totalHours}h ${minutes}m`;
 }
 
-function PlayerAvatar({ name, team, size = 48 }: { name: any; team?: any; size?: number }) {
+function PlayerAvatar({ name, team, size = 48, rating, ratingColor, isBest }: { name: any; team?: any; size?: number; rating?: number | string | null; ratingColor?: string; isBest?: boolean }) {
   const safeName = safePlayerName(name, "");
   const safeTeam = safeText(team, "");
   const [failed, setFailed] = useState(false);
@@ -1135,7 +1135,7 @@ function PlayerAvatar({ name, team, size = 48 }: { name: any; team?: any; size?:
 
   const logo = getLogo(safeTeam);
   return (
-    <span style={{ position: "relative", display: "inline-flex", flexShrink: 0, width: size, height: size }}>
+    <span style={{ position: "relative", display: "inline-flex", flexShrink: 0, width: size, height: size, zIndex: 1 }}>
       <span
         style={{
           ...playerAvatarWrapStyle,
@@ -1160,6 +1160,25 @@ function PlayerAvatar({ name, team, size = 48 }: { name: any; team?: any; size?:
       </span>
       {logo && (
         <img src={logo} alt="" style={{ position: "absolute", bottom: -2, right: -2, width: 16, height: 16, borderRadius: "50%", background: "var(--bg-1)", border: "1.5px solid var(--bg-1)", objectFit: "contain", pointerEvents: "none" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+      )}
+      {rating !== undefined && rating !== null && (
+        <span style={{
+          position: "absolute", bottom: -2, left: -2, zIndex: 1,
+          display: "inline-flex", alignItems: "center", gap: 2,
+          minWidth: 22, padding: "1px 3px", borderRadius: 5,
+          background: ratingColor ?? "var(--surface-3)",
+          border: "1.5px solid var(--bg-1)",
+          color: "var(--text-1)", fontWeight: 900, fontSize: 10,
+          textAlign: "center", lineHeight: 1.4,
+          pointerEvents: "none",
+        }}>
+          {isBest && (
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="#fff" style={{ flexShrink: 0 }}>
+              <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+            </svg>
+          )}
+          {rating}
+        </span>
       )}
     </span>
   );
@@ -1748,11 +1767,15 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
     });
   }, [stats, sortKey, sortDir]);
 
-  function sortHeader(label: string, key: SortKey) {
+  function sortColStyle(key: SortKey): CSSProperties {
+    return sortKey === key ? { background: "rgba(255,255,255,0.045)" } : {};
+  }
+
+  function sortHeader(label: string, key: SortKey, extraStyle?: CSSProperties) {
     const active = sortKey === key;
     return (
       <th
-        style={{ ...thStyle, color: active ? "#0ea5e9" : "#9ca3af", cursor: "pointer" }}
+        style={{ ...thStyle, top: stickyTop, ...sortColStyle(key), ...extraStyle, color: active ? "#0ea5e9" : "#9ca3af", cursor: "pointer" }}
         onClick={() => {
           if (onSort) { onSort(key); return; }
           if (sortKey === key) setSortDirLocal(sortDir === "desc" ? "asc" : "desc");
@@ -1776,12 +1799,21 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
   return (
     <div>
 
-      <div style={tableWrapStyle}>
-        <table style={{ ...tableStyle, minWidth: 1040 }}>
+      <div style={{ ...tableWrapStyle, maxHeight: `calc(100dvh - ${stickyTop}px)`, overflowY: "auto" }}>
+        <table style={{ ...tableStyle, minWidth: 1040, tableLayout: "fixed" }}>
           <thead>
             <tr>
-              <th style={thPlayerStyle}>Player</th>
-              {sortHeader("FOOPY", "foopy")}
+              <th
+                style={{ ...thPlayerStyle, top: stickyTop, width: 220, minWidth: 220, cursor: "pointer" }}
+                onClick={() => {
+                  const key: SortKey = "foopy";
+                  if (onSort) { onSort(key); return; }
+                  if (sortKey === key) setSortDirLocal(sortDir === "desc" ? "asc" : "desc");
+                  else { setSortKeyLocal(key); setSortDirLocal("desc"); }
+                }}
+              >
+                Player{sortKey === "foopy" ? (sortDir === "desc" ? " ↓" : " ↑") : ""}
+              </th>
               {sortHeader("G.B", "goals")}
               {sortHeader("D", "disposals")}
               {sortHeader("K", "kicks")}
@@ -1802,6 +1834,8 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
               const knownPlayer = findPlayerInfo(name);
               const rowTeam = safeText(knownPlayer?.club ?? knownPlayer?.team ?? p.team ?? team, "");
               const rating = getFoopyValue(p);
+              const ratingVisible = rating !== null && (rating >= 0 || showNegativeRatings);
+              const isBest = ratingVisible && isFinal && bestRating > 0 && rating === bestRating;
               const playerSlugUrl = slugName(name);
               const playerDbKey = `player_${playerSlugUrl}`; // DB event_key still uses player_ prefix
               const count = playerCommentCounts[playerDbKey] ?? 0;
@@ -1814,7 +1848,13 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
                 >
                   <td style={tdPlayerStyle}>
                     <span style={playerNameCellStyle}>
-                      <PlayerAvatar name={name} team={rowTeam} />
+                      <PlayerAvatar
+                        name={name}
+                        team={rowTeam}
+                        rating={ratingVisible ? rating : undefined}
+                        ratingColor={rating !== null ? foopyColor(rating) : undefined}
+                        isBest={isBest}
+                      />
                       <span>
                         <div>{name}</div>
                         <span style={playerBubbleStyle}>
@@ -1827,33 +1867,18 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
                     </span>
                   </td>
 
-                  <td style={tdStyle}>
-                    {rating !== null && (rating >= 0 || showNegativeRatings) && (() => {
-                      const isBest = isFinal && bestRating > 0 && rating === bestRating;
-                      return (
-                        <span style={{ ...ratingPillStyle, background: foopyColor(rating), ...(isBest ? { display: "inline-flex", alignItems: "center", gap: 3 } : {}) }}>
-                          {isBest && (
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="white" style={{ flexShrink: 0, filter: "drop-shadow(0 1px 1px rgba(0,0,0,.4))" }}>
-                              <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
-                            </svg>
-                          )}
-                          {rating}
-                        </span>
-                      );
-                    })()}
-                  </td>
-                  <td style={tdStyle}>{statValue(p.goals)}.{statValue(p.behinds)}</td>
-                  <td style={tdStyle}>{statValue(p.disposals)}</td>
-                  <td style={tdStyle}>{statValue(p.kicks)}</td>
-                  <td style={tdStyle}>{statValue(p.handballs)}</td>
-                  <td style={tdStyle}>{statValue(p.marks)}</td>
-                  <td style={tdStyle}>{statValue(p.tackles)}</td>
-                  <td style={tdStyle}>{statValue(p.hitouts)}</td>
-                  <td style={tdStyle}>{fantasyPoints(p)}</td>
-                  <td style={tdStyle}>{statValue(p.clearances)}</td>
-                  <td style={tdStyle}>{statValue((p as any).goalAssists ?? 0)}</td>
-                  <td style={tdStyle}>{statValue(p.freesFor)}</td>
-                  <td style={tdStyle}>{statValue(p.freesAgainst)}</td>
+                  <td style={{ ...tdStyle, ...sortColStyle("goals") }}>{statValue(p.goals)}.{statValue(p.behinds)}</td>
+                  <td style={{ ...tdStyle, ...sortColStyle("disposals") }}>{statValue(p.disposals)}</td>
+                  <td style={{ ...tdStyle, ...sortColStyle("kicks") }}>{statValue(p.kicks)}</td>
+                  <td style={{ ...tdStyle, ...sortColStyle("handballs") }}>{statValue(p.handballs)}</td>
+                  <td style={{ ...tdStyle, ...sortColStyle("marks") }}>{statValue(p.marks)}</td>
+                  <td style={{ ...tdStyle, ...sortColStyle("tackles") }}>{statValue(p.tackles)}</td>
+                  <td style={{ ...tdStyle, ...sortColStyle("hitouts") }}>{statValue(p.hitouts)}</td>
+                  <td style={{ ...tdStyle, ...sortColStyle("fantasy") }}>{fantasyPoints(p)}</td>
+                  <td style={{ ...tdStyle, ...sortColStyle("clearances") }}>{statValue(p.clearances)}</td>
+                  <td style={{ ...tdStyle, ...sortColStyle("goalAssists") }}>{statValue((p as any).goalAssists ?? 0)}</td>
+                  <td style={{ ...tdStyle, ...sortColStyle("freesFor") }}>{statValue(p.freesFor)}</td>
+                  <td style={{ ...tdStyle, ...sortColStyle("freesAgainst") }}>{statValue(p.freesAgainst)}</td>
                 </tr>
               );
             })}
