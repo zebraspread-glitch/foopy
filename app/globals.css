@@ -1221,6 +1221,23 @@ textarea::placeholder { color: var(--text-3); }
 }
 
 /* ============================================================
+   FEED EVENT — premium gold "just happened" highlight
+   Applied only on first appearance of a live event; fades back
+   to the normal dark card over ~2s with layered background tint
+   + outer glow. Never replays on re-render/scroll.
+   ============================================================ */
+
+.feed-event-new-glow {
+  animation: feed-event-glow-gold 2.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feed-event-new-glow {
+    animation: feed-event-glow-gold-reduced 0.6s ease both;
+  }
+}
+
+/* ============================================================
    SCORE FLASH — applied to score spans when score updates
    ============================================================ */
 
@@ -1546,6 +1563,26 @@ img {
   0%   { box-shadow: 0 0 0   0   rgba(255,255,255,0); }
   30%  { box-shadow: 0 0 22px 4px rgba(255,255,255,0.18); }
   100% { box-shadow: 0 0 0   0   rgba(255,255,255,0); }
+}
+
+@keyframes feed-event-glow-gold {
+  0% {
+    background-color: rgba(250, 204, 21, 0.16);
+    box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.38), 0 0 32px 6px rgba(250, 204, 21, 0.24);
+  }
+  45% {
+    background-color: rgba(250, 204, 21, 0.09);
+    box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.22), 0 0 22px 4px rgba(250, 204, 21, 0.14);
+  }
+  100% {
+    background-color: var(--surface-1);
+    box-shadow: 0 0 0 0 rgba(250, 204, 21, 0);
+  }
+}
+
+@keyframes feed-event-glow-gold-reduced {
+  0%   { background-color: rgba(250, 204, 21, 0.14); }
+  100% { background-color: var(--surface-1); }
 }
 
 @keyframes livePulse {

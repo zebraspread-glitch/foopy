@@ -368,6 +368,46 @@ function scoreEventKey(event: LiveEvent, index = 0) {
   return eventKeyAliases(event, index)[0];
 }
 
+// Stable per-event identity for "new event" glow tracking. Unlike
+// scoreEventKey(), this must NOT depend on the event's position in the
+// array — new events are prepended to the feed, which shifts every other
+// event's index each poll and would otherwise mark all of them "new".
+function stableEventIdentityKey(event: LiveEvent, index = 0) {
+  if (event.type === "QUARTER_BREAK") return `quarterbreak_${(event as any).label ?? index}`;
+  const team = safeText((event as any).teamName || teamNameFromEvent(event), "");
+  const base = `q${eventQuarter(event)}_m${event.minute ?? 0}_t${event.type ?? ""}`;
+  if (event.playerId != null) return `${base}_p${event.playerId}`;
+  if (team) return `${base}_team${team}`;
+  return eventScoreBasedKey(event) || `${base}_i${index}`;
+}
+
+// Persists which feed events a user has already seen for a given game, so
+// the "new event" glow survives reloads and only fires for events that
+// appeared since the user's last visit.
+function seenEventsStorageKey(gameId: string) {
+  return `foopy_seen_events_${gameId}`;
+}
+
+function loadSeenEventKeys(gameId: string): Set<string> {
+  try {
+    const raw = localStorage.getItem(seenEventsStorageKey(gameId));
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveSeenEventKeys(gameId: string, keys: Set<string>) {
+  try {
+    // Cap to avoid unbounded localStorage growth over a long game.
+    localStorage.setItem(seenEventsStorageKey(gameId), JSON.stringify(Array.from(keys).slice(-300)));
+  } catch {
+    // ignore (e.g. private browsing / storage disabled)
+  }
+}
+
 function eventKeyAliases(event: LiveEvent, index = 0) {
   const team = safeText((event as any).teamName || teamNameFromEvent(event), "");
   const aliases = [
@@ -1202,6 +1242,7 @@ function TeamEventAvatar({ team }: { team: any }) {
 
 function LiveFeedPlayer({
   event,
+  isNew,
   homeTeam,
   awayTeam,
   commentCount,
@@ -1216,6 +1257,7 @@ function LiveFeedPlayer({
   onOpenReactionPopup,
 }: {
   event: LiveEvent;
+  isNew?: boolean;
   homeTeam: any;
   awayTeam: any;
   eventKey?: string;
@@ -1302,7 +1344,7 @@ function LiveFeedPlayer({
         cursor: "pointer",
       }}
     >
-      <div style={{
+      <div className={isNew ? "feed-event-new-glow" : undefined} style={{
         background: "var(--surface-1)",
         border: "none",
         borderRadius: 18,
@@ -3738,35 +3780,47 @@ function MatchPageInner() {
     return () => { cancelled = true; };
   }, [id, game, currentPeriod]);
 
-  // Detect newly-added feed events and animate them — skip the first batch on page load
+  // Detect feed events the user hasn't seen yet and glow them once. "Seen"
+  // is persisted to localStorage per game so the glow only fires for events
+  // that appeared since the user's last visit — not on every reload.
   useEffect(() => {
     if (displayLiveEvents.length === 0) return;
 
     if (!initialFeedLoaded.current) {
-      // First load: seed the seen set silently so nothing animates on reload
+      const persisted = loadSeenEventKeys(id);
+      const fresh = new Set<string>();
       displayLiveEvents.forEach((event, index) => {
-        const ek = scoreEventKey(event, index);
+        const ek = stableEventIdentityKey(event, index);
+        // First-ever visit to this game: seed silently, don't glow everything.
+        if (persisted.size > 0 && !persisted.has(ek)) fresh.add(ek);
         seenEventKeys.current.add(ek);
       });
+      saveSeenEventKeys(id, seenEventKeys.current);
       initialFeedLoaded.current = true;
+      if (fresh.size > 0) {
+        setFreshEventKeys(fresh);
+        const t = setTimeout(() => setFreshEventKeys(new Set()), 2200);
+        return () => clearTimeout(t);
+      }
       return;
     }
 
     // Subsequent polls: only animate genuinely new events
     const fresh = new Set<string>();
     displayLiveEvents.forEach((event, index) => {
-      const ek = scoreEventKey(event, index);
+      const ek = stableEventIdentityKey(event, index);
       if (!seenEventKeys.current.has(ek)) {
         fresh.add(ek);
         seenEventKeys.current.add(ek);
       }
     });
     if (fresh.size > 0) {
+      saveSeenEventKeys(id, seenEventKeys.current);
       setFreshEventKeys(fresh);
-      const t = setTimeout(() => setFreshEventKeys(new Set()), 800);
+      const t = setTimeout(() => setFreshEventKeys(new Set()), 2200);
       return () => clearTimeout(t);
     }
-  }, [displayLiveEvents]);
+  }, [displayLiveEvents, id]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setIsSignedIn(!!data.session));
@@ -4831,7 +4885,7 @@ function MatchPageInner() {
                 {displayLiveEvents.map((event, index) => {
                   const ek = scoreEventKey(event, index);
                   const commentKey = commentKeyForEvent(eventCommentCounts, event, index);
-                  const isFresh = freshEventKeys.has(ek);
+                  const isFresh = freshEventKeys.has(stableEventIdentityKey(event, index));
                   // Use the snapshots captured when this event first appeared.
                   const eventPlayerFP: number | null = eventFPSnapshots.current[ek] ?? null;
                   const eventPlayerStats = eventStatSnapshots.current[ek] ?? null;
@@ -4841,7 +4895,7 @@ function MatchPageInner() {
                     <div
                       key={ek}
                       style={isFresh ? {
-                        animation: "feed-event-in 0.5s cubic-bezier(0.22,1,0.36,1) forwards, feed-event-glow 0.8s ease-out forwards",
+                        animation: "feed-event-in 0.5s cubic-bezier(0.22,1,0.36,1) forwards",
                         borderRadius: 18,
                       } : undefined}
                     >
@@ -4856,6 +4910,7 @@ function MatchPageInner() {
                       ) : (
                         <LiveFeedPlayer
                           event={event}
+                          isNew={isFresh}
                           homeTeam={game.hteam}
                           awayTeam={game.ateam}
                           eventKey={commentKey}
