@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { claimSync, markSyncFinal } from "@/app/lib/matchCache";
+import { foopyRating, rawPlayerToStats } from "@/app/lib/foopyRating";
 
 export const dynamic = "force-dynamic";
 
@@ -31,8 +32,15 @@ function computeFP(stats: any): number {
   );
 }
 
-async function fetchPlayerFPMap(gameId: string): Promise<Map<number, number>> {
-  const fpMap = new Map<number, number>();
+interface PlayerSnapshot {
+  fp: number;
+  foopy: number;
+  disposals: number;
+  goals: number;
+}
+
+async function fetchPlayerStatsMap(gameId: string): Promise<Map<number, PlayerSnapshot>> {
+  const snapshotMap = new Map<number, PlayerSnapshot>();
   try {
     const res = await fetch(
       `${API_BASE}/games/statistics/players?id=${gameId}`,
@@ -41,7 +49,7 @@ async function fetchPlayerFPMap(gameId: string): Promise<Map<number, number>> {
         cache: "no-store",
       }
     );
-    if (!res.ok) return fpMap;
+    if (!res.ok) return snapshotMap;
 
     const data = await res.json();
     const teams: any[] = data?.response?.[0]?.teams ?? [];
@@ -50,25 +58,19 @@ async function fetchPlayerFPMap(gameId: string): Promise<Map<number, number>> {
       for (const playerEntry of team.players ?? []) {
         const pid = playerEntry?.player?.id;
         if (!pid) continue;
-        const s = playerEntry.statistics ?? playerEntry;
-        const stats = {
-          kicks:        s.kicks        ?? s.Kicks        ?? 0,
-          handballs:    s.handballs    ?? s.Handballs    ?? 0,
-          marks:        s.marks        ?? s.Marks        ?? 0,
-          tackles:      s.tackles      ?? s.Tackles      ?? 0,
-          freesFor:     s.freesFor     ?? s.frees_for    ?? s.FreesFor    ?? 0,
-          freesAgainst: s.freesAgainst ?? s.frees_against ?? s.FreesAgainst ?? 0,
-          hitouts:      s.hitouts      ?? s.Hitouts      ?? 0,
-          goals:        s.goals        ?? s.Goals        ?? 0,
-          behinds:      s.behinds      ?? s.Behinds      ?? 0,
-        };
-        fpMap.set(Number(pid), computeFP(stats));
+        const stats = rawPlayerToStats(playerEntry);
+        snapshotMap.set(Number(pid), {
+          fp: computeFP(stats),
+          foopy: foopyRating(stats),
+          disposals: Number(stats.disposals) || (Number(stats.kicks) + Number(stats.handballs)),
+          goals: Number(stats.goals),
+        });
       }
     }
   } catch {
     // Non-fatal
   }
-  return fpMap;
+  return snapshotMap;
 }
 
 export async function GET(req: Request) {
@@ -107,7 +109,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ synced: true, inserted: 0 });
     }
 
-    const fpMapPromise = fetchPlayerFPMap(gameId);
+    const statsMapPromise = fetchPlayerStatsMap(gameId);
     const supabase = adminSupabase();
 
     const key = (r: any) =>
@@ -134,12 +136,17 @@ export async function GET(req: Request) {
 
     const { data: existing } = await supabase
       .from("live_game_feed")
-      .select("id, period, minute, type, team_id, player_id, home_score, away_score, inferred, player_fp")
+      .select("id, period, minute, type, team_id, player_id, home_score, away_score, inferred, player_fp, player_foopy, player_disposals, player_goals")
       .eq("api_game_id", gameId);
 
     const realExisting = (existing ?? []).filter((r: any) => !r.inferred);
-    const existingFPMap = new Map<string, number | null>(
-      realExisting.map((r: any) => [key(r), r.player_fp ?? null])
+    const existingSnapshotMap = new Map<string, Partial<PlayerSnapshot>>(
+      realExisting.map((r: any) => [key(r), {
+        fp: r.player_fp ?? null,
+        foopy: r.player_foopy ?? null,
+        disposals: r.player_disposals ?? null,
+        goals: r.player_goals ?? null,
+      }])
     );
 
     const apiKeys = new Set(rawRows.map(key));
@@ -151,27 +158,36 @@ export async function GET(req: Request) {
       return NextResponse.json({ synced: true, inserted: 0 });
     }
 
-    const fpMap = await fpMapPromise;
+    const statsMap = await statsMapPromise;
 
     const apiRows = rawRows.map((row) => {
       const k = key(row);
-      const storedFP = existingFPMap.get(k);
-      const isNew = !existingFPMap.has(k);
+      const stored = existingSnapshotMap.get(k);
+      const isNew = !existingSnapshotMap.has(k);
+      const snapshot = row.player_id != null ? statsMap.get(Number(row.player_id)) : undefined;
       return {
         ...row,
-        player_fp: isNew
-          ? (row.player_id != null ? (fpMap.get(Number(row.player_id)) ?? null) : null)
-          : storedFP,
+        player_fp: isNew ? (snapshot?.fp ?? null) : (stored?.fp ?? null),
+        player_foopy: isNew ? (snapshot?.foopy ?? null) : (stored?.foopy ?? null),
+        player_disposals: isNew ? (snapshot?.disposals ?? null) : (stored?.disposals ?? null),
+        player_goals: isNew ? (snapshot?.goals ?? null) : (stored?.goals ?? null),
       };
     });
 
-    // Delete all rows then reinsert clean APISports data
-    await supabase.from("live_game_feed").delete().eq("api_game_id", gameId);
-    const { error } = await supabase.from("live_game_feed").insert(apiRows);
+    // Insert the fresh rows first, then delete the old ones — if the insert
+    // fails (e.g. schema mismatch), the existing rows are left intact instead
+    // of being wiped out.
+    const { error: insertError } = await supabase.from("live_game_feed").insert(apiRows);
 
-    if (error) {
-      console.error("[sync-events] insert error:", error.message);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (insertError) {
+      console.error("[sync-events] insert error:", insertError.message);
+      return NextResponse.json({ error: insertError.message }, { status: 500 });
+    }
+
+    const oldIds = (existing ?? []).map((r: any) => r.id).filter((id: any) => id != null);
+    if (oldIds.length) {
+      const { error: deleteError } = await supabase.from("live_game_feed").delete().in("id", oldIds);
+      if (deleteError) console.error("[sync-events] delete error:", deleteError.message);
     }
 
     if (isFinal) await markSyncFinal(gameId);

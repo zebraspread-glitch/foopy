@@ -1207,6 +1207,9 @@ function LiveFeedPlayer({
   commentCount,
   topComment,
   playerFP,
+  playerFoopy,
+  playerDisposals,
+  playerGoals,
   reactions,
   myReactions,
   onCommentClick,
@@ -1219,6 +1222,9 @@ function LiveFeedPlayer({
   commentCount?: number;
   topComment?: { body: string; username: string; avatar: string | null };
   playerFP?: number | null;
+  playerFoopy?: number | null;
+  playerDisposals?: number | null;
+  playerGoals?: number | null;
   reactions?: EventReactionSummary[];
   myReactions?: string[];
   onCommentClick?: () => void;
@@ -1315,7 +1321,21 @@ function LiveFeedPlayer({
 
           <div style={liveFeedInfoStyle}>
             <div style={liveFeedNameRowStyle}>
-              <div style={liveFeedNameStyle}>{playerName}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+                <div style={liveFeedNameStyle}>{playerName}</div>
+                {playerFoopy != null && !isInferred && (
+                  <span style={{
+                    display: "inline-flex", alignItems: "center", justifyContent: "center",
+                    minWidth: 22, padding: "1px 4px", borderRadius: 5,
+                    background: foopyColor(playerFoopy),
+                    border: "1.5px solid var(--bg-1)",
+                    color: "var(--text-1)", fontWeight: 900, fontSize: 10, lineHeight: 1.4,
+                    flexShrink: 0,
+                  }}>
+                    {playerFoopy}
+                  </span>
+                )}
+              </div>
               <div style={liveFeedTimeBadgeStyle}>
                 <span style={liveFeedQuarterStyle}>{eventQuarter(event)}</span>
                 <span style={liveFeedTimeDotStyle}>·</span>
@@ -1329,6 +1349,11 @@ function LiveFeedPlayer({
               {playerFP != null && !isInferred && (
                 <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontWeight: 500, marginLeft: 10, lineHeight: 1 }}>
                   {playerFP} FP
+                </span>
+              )}
+              {playerFoopy != null && !isInferred && (
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontWeight: 500, marginLeft: 10, lineHeight: 1 }}>
+                  {playerDisposals ?? 0} D · {playerGoals ?? 0} G
                 </span>
               )}
             </div>
@@ -3242,6 +3267,9 @@ function MatchPageInner() {
   // Keyed by the event's scoreEventKey so the displayed FP never changes as
   // the player accumulates more points during the game.
   const eventFPSnapshots = useRef<Record<string, number>>({});
+  // Same idea for foopy rating / disposals / goals, used as a fallback for
+  // events whose live_game_feed row doesn't have a stored snapshot yet.
+  const eventStatSnapshots = useRef<Record<string, { foopy: number; disposals: number; goals: number }>>({});
   const initialFeedLoaded = useRef(false);
   const lastScoreRef = useRef<{ home: number; away: number } | null>(null);
   const [freshEventKeys, setFreshEventKeys] = useState(new Set<string>());
@@ -3943,6 +3971,9 @@ function MatchPageInner() {
         awayScore: e.away_score,
         inferred: e.inferred ?? false,
         playerFP: e.player_fp ?? null,
+        playerFoopy: e.player_foopy ?? null,
+        playerDisposals: e.player_disposals ?? null,
+        playerGoals: e.player_goals ?? null,
       }));
 
     const chronological = [...normalised].sort((a, b) => {
@@ -4266,25 +4297,47 @@ function MatchPageInner() {
   const displayHomeStats = useLiveStats ? liveHomeStats : homeStats;
   const displayAwayStats = useLiveStats ? liveAwayStats : awayStats;
 
-  // Snapshot each player's FP the first time their event appears.
-  // Already-snapshotted events are skipped so the stored value never changes.
+  // Snapshot each player's FP/foopy rating/disposals/goals the first time their
+  // event appears. Already-snapshotted events are skipped so the displayed
+  // values never change as the player accumulates more stats during the game.
   useEffect(() => {
     const allStats = [...displayHomeStats, ...displayAwayStats];
     if (allStats.length === 0) return;
     displayLiveEvents.forEach((event, index) => {
       if (event.type === "QUARTER_BREAK") return;
       const ek = scoreEventKey(event, index);
-      if (eventFPSnapshots.current[ek] != null) return;
-      if ((event as any).playerFP != null) {
+
+      const haveFP = eventFPSnapshots.current[ek] != null;
+      const haveStats = eventStatSnapshots.current[ek] != null;
+      if (haveFP && haveStats) return;
+
+      if (!haveFP && (event as any).playerFP != null) {
         eventFPSnapshots.current[ek] = (event as any).playerFP;
-        return;
       }
+      if (!haveStats && (event as any).playerFoopy != null) {
+        eventStatSnapshots.current[ek] = {
+          foopy: (event as any).playerFoopy,
+          disposals: (event as any).playerDisposals ?? 0,
+          goals: (event as any).playerGoals ?? 0,
+        };
+      }
+
+      if (eventFPSnapshots.current[ek] != null && eventStatSnapshots.current[ek] != null) return;
+
       const player = findPlayerForLiveEvent(event, safeText(game?.hteam, ""), safeText(game?.ateam, ""));
       if (!player) return;
       const stat = allStats.find(p =>
         ((p as any).name || (p as any).player || "").toLowerCase() === (player.name || "").toLowerCase()
       );
-      if (stat) eventFPSnapshots.current[ek] = fantasyPoints(stat);
+      if (!stat) return;
+      if (eventFPSnapshots.current[ek] == null) eventFPSnapshots.current[ek] = fantasyPoints(stat);
+      if (eventStatSnapshots.current[ek] == null) {
+        eventStatSnapshots.current[ek] = {
+          foopy: foopyRating(stat),
+          disposals: num((stat as any).disposals) || (num((stat as any).kicks) + num((stat as any).handballs)),
+          goals: num((stat as any).goals),
+        };
+      }
     });
   }, [displayLiveEvents, displayHomeStats, displayAwayStats, game]);
 
@@ -4760,8 +4813,9 @@ function MatchPageInner() {
                   const ek = scoreEventKey(event, index);
                   const commentKey = commentKeyForEvent(eventCommentCounts, event, index);
                   const isFresh = freshEventKeys.has(ek);
-                  // Use the FP snapshot captured when this event first appeared.
+                  // Use the snapshots captured when this event first appeared.
                   const eventPlayerFP: number | null = eventFPSnapshots.current[ek] ?? null;
+                  const eventPlayerStats = eventStatSnapshots.current[ek] ?? null;
                   const eventMeta = liveFeedEventMeta(event, index, game.hteam, game.ateam);
 
                   return (
@@ -4789,6 +4843,9 @@ function MatchPageInner() {
                           commentCount={commentCountForEvent(eventCommentCounts, event, index)}
                           topComment={eventTopComments[commentKey]}
                           playerFP={eventPlayerFP}
+                          playerFoopy={eventPlayerStats?.foopy ?? null}
+                          playerDisposals={eventPlayerStats?.disposals ?? null}
+                          playerGoals={eventPlayerStats?.goals ?? null}
                           reactions={eventReactions[commentKey] ?? []}
                           myReactions={myEventReactions[commentKey] ?? []}
                           onOpenReactionPopup={() => setReactionPopup({ eventKey: commentKey, label: eventMeta.label })}
@@ -7052,7 +7109,7 @@ const liveFeedQuarterStyle: CSSProperties = { fontSize: 12, fontWeight: 900, col
 const liveFeedTimeDotStyle: CSSProperties = { fontSize: 12, color: "rgba(148,163,184,0.95)", fontWeight: 900 };
 const liveFeedMinuteStyle: CSSProperties = { fontSize: 12, fontWeight: 900, color: "rgba(148,163,184,0.95)" };
 const commentCountStyle: CSSProperties = { fontSize: 12, fontWeight: 850, color: "inherit", fontVariantNumeric: "tabular-nums" };
-const eventReactionBarStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 10, padding: "4px 12px 11px 12px", borderTop: "1px solid rgba(255,255,255,0.035)", minHeight: 40, overflow: "hidden" };
+const eventReactionBarStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 10, padding: "4px 12px 11px 12px", minHeight: 40, overflow: "hidden" };
 const eventReactionSummaryButtonStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 7, height: 28, border: "none", background: "transparent", color: "rgba(148,163,184,0.95)", padding: 0, fontSize: 13, fontWeight: 850, cursor: "pointer", flexShrink: 0, lineHeight: 1 };
 const eventReactionLeadStyle: CSSProperties = { display: "inline-flex", alignItems: "center", color: "rgba(226,232,240,0.95)" };
 const eventReactionSummaryGlyphsStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 5 };
