@@ -47,6 +47,14 @@ function isFresh(row: CacheRow, ttlSeconds: number): boolean {
   return Date.now() - new Date(row.fetched_at).getTime() < ttlSeconds * 1000;
 }
 
+// API-Sports sometimes returns an empty `response` array for a game that
+// previously returned real data (rate limiting, transient upstream issue).
+// Treat that as "no new data" so it can't clobber a good cached row.
+function isEmptyResponse(data: unknown): boolean {
+  const response = (data as any)?.response;
+  return Array.isArray(response) && response.length === 0;
+}
+
 /**
  * Returns cached data if fresh (or final), otherwise calls `fetcher` exactly once
  * across all concurrent requests within this process. Stale data is returned as
@@ -62,10 +70,10 @@ export async function withCache<T>(
   const cached = await readRow(gameId, dataType);
 
   if (cached) {
-    // Only treat a row as permanently cached when the *caller* confirms it's
-    // final too. If isFinalHint is false (live game), always fall back to the
-    // TTL — this prevents sync-stats-by-date from locking live-game stats.
-    if ((isFinalHint && cached.is_final) || isFresh(cached, ttlSeconds)) {
+    // A row already marked final is immutable — never re-fetch and risk
+    // overwriting good final stats with an empty/partial upstream response
+    // (e.g. API-Sports returning nothing for older completed games).
+    if (cached.is_final || isFresh(cached, ttlSeconds)) {
       return { data: cached.payload as T, fromCache: true };
     }
   }
@@ -79,6 +87,11 @@ export async function withCache<T>(
 
   const promise = fetcher()
     .then(async (data) => {
+      // Don't let an empty response overwrite a previously-good cached payload.
+      if (isEmptyResponse(data) && cached?.payload && !isEmptyResponse(cached.payload)) {
+        inFlight.delete(key);
+        return cached.payload as T;
+      }
       await writeRow(gameId, dataType, data, isFinalHint);
       inFlight.delete(key);
       return data;
