@@ -250,6 +250,18 @@ function EventCommentsPageInner() {
   const [commentsSent, setCommentsSent] = useState(0);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const inputAreaRef = useRef<HTMLElement>(null);
+  const [inputAreaHeight, setInputAreaHeight] = useState(90);
+
+  useEffect(() => {
+    const el = inputAreaRef.current;
+    if (!el) return;
+    const update = () => setInputAreaHeight(el.offsetHeight);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [userId, replyTo, cooldown]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -687,7 +699,7 @@ function EventCommentsPageInner() {
   }
 
   return (
-    <main style={pageStyle}>
+    <main style={{ ...pageStyle, paddingBottom: `calc(${inputAreaHeight}px + 16px + env(safe-area-inset-bottom))` }}>
       <header style={headerStyle}>
         <button onClick={() => router.back()} style={backBtnStyle} aria-label="Back">
           <svg width="10" height="17" viewBox="0 0 10 18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -799,7 +811,7 @@ function EventCommentsPageInner() {
         )}
       </section>
 
-      <section style={inputAreaStyle}>
+      <section ref={inputAreaRef} style={inputAreaStyle}>
         {!userId ? (
           <button onClick={() => router.push("/login")} style={signInBtnStyle}>
             Sign in to comment
