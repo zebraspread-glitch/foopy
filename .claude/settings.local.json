@@ -234,7 +234,10 @@
       "Bash(sed -n '79,179p' /tmp/result3.txt)",
       "Bash(node -e \"const d=require\\('./app/data/players.json'\\); console.log\\(JSON.stringify\\(d.filter\\(p=>/kentfield/i.test\\(p.name\\)||/kentfield/i.test\\(p.id\\)\\),null,2\\)\\)\")",
       "Bash(timeout 12 cmd /c \"ping -n 13 127.0.0.1 >nul\")",
-      "Bash(cmd /c \"ping -n 16 127.0.0.1 >nul\")"
+      "Bash(cmd /c \"ping -n 16 127.0.0.1 >nul\")",
+      "Bash(git grep *)",
+      "Bash(git ls-tree *)",
+      "mcp__visualize__read_me"
     ]
   }
 }

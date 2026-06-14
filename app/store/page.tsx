@@ -6,36 +6,64 @@ import { type Cosmetic, type EquippedCosmetics, nameColorStyle, avatarFrameStyle
 import { patternBackground } from "@/app/components/PassCard";
 import { getPassLevel, PLAYER_PASS_LEVELS } from "@/app/lib/passes";
 
-// Representative level used to preview pass background patterns in the store.
-const PATTERN_PREVIEW_LEVEL = getPassLevel(375, PLAYER_PASS_LEVELS); // Sapphire
+const PATTERN_PREVIEW_LEVEL = getPassLevel(375, PLAYER_PASS_LEVELS);
 
-// Rarity visual identity: label, accent colour, and the gradient used for
-// CTA buttons. Kept subtle — accents, not glowing borders.
 const RARITY: Record<string, { label: string; color: string; grad: string; tint: string }> = {
-  common:    { label: "Common",    color: "#60a5fa", grad: "linear-gradient(135deg,#2563eb,#38bdf8)", tint: "rgba(96,165,250,.08)" },
-  rare:      { label: "Rare",      color: "#a78bfa", grad: "linear-gradient(135deg,#7c3aed,#a78bfa)", tint: "rgba(167,139,250,.10)" },
-  epic:      { label: "Epic",      color: "#fb923c", grad: "linear-gradient(135deg,#ec4899,#f59e0b)", tint: "rgba(251,146,60,.10)" },
-  legendary: { label: "Legendary", color: "#fbbf24", grad: "linear-gradient(135deg,#f59e0b,#fbbf24)", tint: "rgba(251,191,36,.10)" },
+  common:    { label: "Common",    color: "#9ca3af", grad: "linear-gradient(135deg,#6b7280,#9ca3af)", tint: "rgba(156,163,175,0.16)" },
+  rare:      { label: "Rare",      color: "#38bdf8", grad: "linear-gradient(135deg,#2563eb,#38bdf8)", tint: "rgba(56,189,248,0.15)" },
+  epic:      { label: "Epic",      color: "#d946ef", grad: "linear-gradient(135deg,#7c3aed,#d946ef)", tint: "rgba(217,70,239,0.15)" },
+  legendary: { label: "Legendary", color: "#facc15", grad: "linear-gradient(135deg,#f59e0b,#facc15)", tint: "rgba(250,204,21,0.16)" },
 };
-const rarOf = (c: Cosmetic) => RARITY[c.rarity ?? "common"] ?? RARITY.common;
+
+const RARITY_WEIGHT: Record<string, number> = {
+  legendary: 4,
+  epic: 3,
+  rare: 2,
+  common: 1,
+};
 
 const SECTION_TITLE: Record<string, string> = {
-  name_color: "Name Colours",
   profile_frame: "Profile Rings",
+  profile_banner: "Banners",
+  profile_background: "Banners",
+  name_color: "Name Colours",
   card_back: "Pass Backgrounds",
+  name_effect: "Name Effects",
+  badge: "Badges",
+  chat_bubble: "Chat Bubbles",
+  reaction_effect: "Reactions",
+  feed_flair: "Feed Flair",
 };
+
+const SECTION_ORDER = [
+  "profile_frame",
+  "profile_banner",
+  "profile_background",
+  "name_color",
+  "card_back",
+  "badge",
+  "name_effect",
+  "chat_bubble",
+  "reaction_effect",
+  "feed_flair",
+];
+
+const sectionId = (slot: string) => `store-section-${slot.replace(/[^a-z0-9_-]/gi, "-")}`;
+const rarityOf = (c: Cosmetic) => RARITY[c.rarity ?? "common"] ?? RARITY.common;
 
 export default function StorePage() {
   const [token, setToken] = useState<string | null>(null);
-  const [username, setUsername] = useState<string>("You");
+  const [username, setUsername] = useState("You");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [tokens, setTokens] = useState<number>(0);
+  const [tokens, setTokens] = useState(0);
   const [catalog, setCatalog] = useState<Cosmetic[]>([]);
   const [owned, setOwned] = useState<Set<string>>(new Set());
   const [equipped, setEquipped] = useState<EquippedCosmetics>({});
   const [loading, setLoading] = useState(true);
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [activeSlot, setActiveSlot] = useState<string | null>(null);
+  const [expandedSlots, setExpandedSlots] = useState<Set<string>>(new Set());
 
   async function load() {
     const { data: { session } } = await supabase.auth.getSession();
@@ -56,6 +84,7 @@ export default function StorePage() {
       setTokens(profileRes.data.tokens ?? 0);
       setEquipped((profileRes.data.equipped_cosmetics ?? {}) as EquippedCosmetics);
     }
+
     setCatalog((catalogRes.data ?? []) as Cosmetic[]);
     setOwned(new Set((ownedRes.data ?? []).map((r: { cosmetic_id: string }) => r.cosmetic_id)));
     setLoading(false);
@@ -65,7 +94,8 @@ export default function StorePage() {
 
   async function buy(c: Cosmetic) {
     if (!token || busyKey) return;
-    setBusyKey(c.key); setMsg(null);
+    setBusyKey(c.key);
+    setMsg(null);
     try {
       const res = await fetch("/api/cosmetics/purchase", {
         method: "POST",
@@ -76,13 +106,16 @@ export default function StorePage() {
       if (!res.ok) { setMsg(data?.error ?? "Purchase failed"); return; }
       setTokens(data.tokens);
       setOwned(prev => new Set(prev).add(c.id));
-    } finally { setBusyKey(null); }
+    } finally {
+      setBusyKey(null);
+    }
   }
 
   async function toggleEquip(c: Cosmetic) {
     if (!token || busyKey || !c.slot) return;
     const isEquipped = equipped[c.slot] === c.id;
-    setBusyKey(c.key); setMsg(null);
+    setBusyKey(c.key);
+    setMsg(null);
     try {
       const res = await fetch("/api/cosmetics/equip", {
         method: "POST",
@@ -92,27 +125,29 @@ export default function StorePage() {
       const data = await res.json().catch(() => null);
       if (!res.ok) { setMsg(data?.error ?? "Failed"); return; }
       setEquipped(data.equipped ?? {});
-    } finally { setBusyKey(null); }
+    } finally {
+      setBusyKey(null);
+    }
   }
 
   const equippedNameAsset = useMemo(() => {
-    const id = equipped["name_color"];
+    const id = equipped.name_color;
     return id ? (catalog.find(c => c.id === id)?.asset ?? null) : null;
   }, [equipped, catalog]);
 
   const equippedFrameAsset = useMemo(() => {
-    const id = equipped["profile_frame"];
+    const id = equipped.profile_frame;
     return id ? (catalog.find(c => c.id === id)?.asset ?? null) : null;
   }, [equipped, catalog]);
 
-  // The featured item: highest rarity available (legendary → epic → first).
-  const featured = useMemo(() =>
-    catalog.find(c => c.rarity === "legendary") ?? catalog.find(c => c.rarity === "epic") ?? catalog[0] ?? null,
-  [catalog]);
+  const featured = useMemo(() => {
+    return [...catalog].sort((a, b) => {
+      const rarityDiff = (RARITY_WEIGHT[b.rarity ?? "common"] ?? 0) - (RARITY_WEIGHT[a.rarity ?? "common"] ?? 0);
+      if (rarityDiff) return rarityDiff;
+      return (b.token_price ?? 0) - (a.token_price ?? 0);
+    })[0] ?? null;
+  }, [catalog]);
 
-  const limited = useMemo(() => catalog.filter(c => c.is_limited), [catalog]);
-
-  // Sections grouped by equip slot (Name Colours, Profile Rings, …).
   const sections = useMemo(() => {
     const map = new Map<string, Cosmetic[]>();
     for (const c of catalog) {
@@ -121,41 +156,111 @@ export default function StorePage() {
       arr.push(c);
       map.set(key, arr);
     }
-    return [...map.entries()];
+
+    return [...map.entries()]
+      .map(([slot, items]) => [
+        slot,
+        [...items].sort((a, b) => {
+          const rarityDiff = (RARITY_WEIGHT[b.rarity ?? "common"] ?? 0) - (RARITY_WEIGHT[a.rarity ?? "common"] ?? 0);
+          if (rarityDiff) return rarityDiff;
+          return (a.sort_order ?? 0) - (b.sort_order ?? 0);
+        }),
+      ] as [string, Cosmetic[]])
+      .sort(([a], [b]) => {
+        const ai = SECTION_ORDER.indexOf(a);
+        const bi = SECTION_ORDER.indexOf(b);
+        return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+      });
   }, [catalog]);
 
-  // ── Reusable bits ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!activeSlot && sections.length) setActiveSlot(sections[0][0]);
+  }, [activeSlot, sections]);
 
-  const Sample = ({ c, size, boxWidth }: { c: Cosmetic; size: number; boxWidth?: number }) => {
+  const ownedCount = useMemo(() => catalog.filter(c => owned.has(c.id)).length, [catalog, owned]);
+
+  function jumpToSection(slot: string) {
+    setActiveSlot(slot);
+    document.getElementById(sectionId(slot))?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function toggleExpanded(slot: string) {
+    setExpandedSlots(prev => {
+      const next = new Set(prev);
+      if (next.has(slot)) next.delete(slot);
+      else next.add(slot);
+      return next;
+    });
+  }
+
+  const Sample = ({ c, size, boxWidth, featured: isFeatured = false }: { c: Cosmetic; size: number; boxWidth?: number; featured?: boolean }) => {
+    const r = rarityOf(c);
+    const asset = c.asset ?? "linear-gradient(135deg,#334155,#111827)";
+
     if (c.slot === "profile_frame") {
       return (
-        <div className="s-sample-inner" style={avatarFrameStyle(c.asset, Math.max(2.5, size / 18)) ?? undefined}>
-          <div style={{ width: size, height: size, borderRadius: "50%", background: "var(--surface-2)", border: "2px solid var(--bg)" }} />
+        <div
+          style={{
+            width: size,
+            height: size,
+            borderRadius: "50%",
+            padding: Math.max(3, Math.round(size * 0.055)),
+            background: asset,
+            boxShadow: `0 0 ${isFeatured ? 42 : 26}px ${r.color}66, inset 0 0 12px rgba(255,255,255,0.28)`,
+          }}
+        >
+          <div style={{ width: "100%", height: "100%", borderRadius: "50%", background: "var(--bg)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.12)" }} />
         </div>
       );
     }
+
     if (c.slot === "card_back") {
-      const w = boxWidth ?? size * 2;
+      const w = boxWidth ?? size * 2.25;
       return (
-        <div className="s-sample-inner" style={{ width: w, height: size * 1.6, borderRadius: 10, background: patternBackground(c.asset, PATTERN_PREVIEW_LEVEL), border: "1px solid rgba(255,255,255,.08)" }} />
+        <div
+          style={{
+            width: w,
+            height: size,
+            borderRadius: isFeatured ? 26 : 12,
+            background: patternBackground(c.asset, PATTERN_PREVIEW_LEVEL),
+            border: "1px solid rgba(255,255,255,0.14)",
+            boxShadow: isFeatured ? "0 24px 70px -30px rgba(59,130,246,0.85)" : "inset 0 1px 0 rgba(255,255,255,0.08)",
+          }}
+        />
       );
     }
+
+    if (c.slot === "profile_banner" || c.slot === "profile_background") {
+      const w = boxWidth ?? size * 2.4;
+      return (
+        <div
+          style={{
+            width: w,
+            height: size,
+            borderRadius: isFeatured ? 24 : 12,
+            background: asset,
+            border: "1px solid rgba(255,255,255,0.14)",
+            boxShadow: isFeatured ? `0 24px 70px -32px ${r.color}` : "inset 0 1px 0 rgba(255,255,255,0.08)",
+          }}
+        />
+      );
+    }
+
     const label = `@${username}`;
-    const maxFont = size * 0.6;
-    // Shrink the font so the username always fits the available width.
-    const fitFont = boxWidth ? (boxWidth * 0.9) / (label.length * 0.75) : maxFont;
-    const fontSize = Math.max(9, Math.min(maxFont, fitFont));
+    const maxFont = size * 0.38;
+    const fitFont = boxWidth ? (boxWidth * 0.9) / (label.length * 0.65) : maxFont;
+    const fontSize = Math.max(16, Math.min(maxFont, fitFont));
     return (
       <span
-        className="s-sample-inner"
         style={{
           fontSize,
-          fontWeight: 800,
+          fontWeight: 950,
           lineHeight: 1,
           maxWidth: "100%",
           overflow: "hidden",
           textOverflow: "ellipsis",
           whiteSpace: "nowrap",
+          letterSpacing: "-0.03em",
           ...nameColorStyle(c.slot === "name_color" ? c.asset : null),
         }}
       >
@@ -164,257 +269,753 @@ export default function StorePage() {
     );
   };
 
-  const Price = ({ c, size = 14 }: { c: Cosmetic; size?: number }) => (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-      <img src="/token/token.png" alt="" style={{ width: size, height: size, objectFit: "contain" }} />
-      {c.token_price.toLocaleString()}
+  const TokenPrice = ({ c, size = 18 }: { c: Cosmetic; size?: number }) => (
+    <span className="store-price">
+      <img src="/token/token.png" alt="" style={{ width: size, height: size }} />
+      <span>{c.token_price.toLocaleString()}</span>
     </span>
   );
 
-  const ActionButton = ({ c, large }: { c: Cosmetic; large?: boolean }) => {
+  const FeaturedAction = ({ c }: { c: Cosmetic }) => {
     const isOwned = owned.has(c.id);
     const isEquipped = c.slot ? equipped[c.slot] === c.id : false;
     const canAfford = tokens >= c.token_price;
     const busy = busyKey === c.key;
-    const r = rarOf(c);
 
     if (isOwned) {
-      if (c.slot === "card_back") {
-        return (
-          <button className={`s-btn s-btn-owned${large ? " s-btn-lg" : ""}`} disabled>
-            Owned
-          </button>
-        );
-      }
+      if (c.slot === "card_back") return <button className="store-buy featured-owned" disabled>Owned</button>;
       return (
-        <button
-          className={`s-btn ${isEquipped ? "s-btn-equipped" : "s-btn-owned"}${large ? " s-btn-lg" : ""}`}
-          onClick={() => toggleEquip(c)}
-          disabled={busy || !c.slot}
-        >
-          {busy ? "…" : isEquipped ? "Equipped" : "Owned · Equip"}
+        <button className="store-buy featured-owned" onClick={() => toggleEquip(c)} disabled={busy || !c.slot}>
+          {busy ? "..." : isEquipped ? "Equipped" : "Equip"}
         </button>
       );
     }
+
     return (
-      <button
-        className={`s-btn s-btn-buy${large ? " s-btn-lg" : ""}`}
-        style={{ "--rg": r.grad } as CSSProperties}
-        onClick={() => buy(c)}
-        disabled={busy || !canAfford}
-      >
-        {busy ? "…" : <>Buy&nbsp;·&nbsp;<Price c={c} size={large ? 16 : 13} /></>}
+      <button className="store-buy" onClick={() => buy(c)} disabled={busy || !canAfford}>
+        {busy ? "..." : <>Buy <TokenPrice c={c} size={20} /></>}
       </button>
     );
   };
 
-  const Card = ({ c, i }: { c: Cosmetic; i: number }) => {
+  const CardAction = ({ c }: { c: Cosmetic }) => {
+    const isOwned = owned.has(c.id);
     const isEquipped = c.slot ? equipped[c.slot] === c.id : false;
-    const r = rarOf(c);
+    const canAfford = tokens >= c.token_price;
+    const busy = busyKey === c.key;
+
+    if (isOwned) {
+      if (c.slot === "card_back") return <button className="store-card-action owned" disabled>Owned</button>;
+      return (
+        <button className={`store-card-action${isEquipped ? " equipped" : ""}`} onClick={() => toggleEquip(c)} disabled={busy || !c.slot}>
+          {busy ? "..." : isEquipped ? "Equipped" : "Equip"}
+        </button>
+      );
+    }
+
     return (
-      <div
-        className={`s-card${isEquipped ? " equipped" : ""}`}
-        style={{ "--rc": r.color, "--rtint": r.tint, animationDelay: `${Math.min(i, 12) * 0.035}s` } as CSSProperties}
-      >
-        <div className="s-preview">
-          <Sample c={c} size={30} boxWidth={120} />
-          {c.is_limited && <span className="s-limited-tag">Limited</span>}
-        </div>
-        <div className="s-card-body">
-          <div className="s-card-name">{c.name}</div>
-          <span className="s-rarity-badge" style={{ color: r.color }}>{r.label}</span>
-          <ActionButton c={c} />
-        </div>
-      </div>
+      <button className="store-card-action" onClick={() => buy(c)} disabled={busy || !canAfford}>
+        {busy ? "..." : <TokenPrice c={c} size={18} />}
+      </button>
     );
   };
 
-  const SectionHeader = ({ title }: { title: string }) => (
-    <div className="s-section-head">
-      <span>{title}</span>
-    </div>
-  );
-
-  const Featured = ({ c }: { c: Cosmetic }) => {
-    const r = rarOf(c);
+  const ProductCard = ({ c }: { c: Cosmetic }) => {
+    const r = rarityOf(c);
+    const isEquipped = c.slot ? equipped[c.slot] === c.id : false;
     return (
-      <div className="s-featured" style={{ "--rg": r.grad } as CSSProperties}>
-        <div className="s-featured-inner">
-          <div className="s-featured-shine" />
-          <span className="s-featured-tag">★ Featured Today</span>
-          <div className="s-featured-row" style={{ "--rtint": r.tint } as CSSProperties}>
-            <div className="s-featured-art">
-              <Sample c={c} size={c.slot === "profile_frame" ? 52 : 46} boxWidth={66} />
-            </div>
-            <div className="s-featured-meta">
-              <div className="s-featured-name">{c.name}</div>
-              <span className="s-rarity-badge" style={{ color: r.color }}>{r.label}</span>
-              <p className="s-featured-desc">Stand out with an exclusive look for your profile.</p>
-            </div>
-            <div className="s-featured-action">
-              <ActionButton c={c} large />
-            </div>
-          </div>
+      <article className={`store-product${isEquipped ? " equipped" : ""}`}>
+        <div className="store-product-preview">
+          <Sample c={c} size={c.slot === "profile_frame" ? 122 : 74} boxWidth={166} />
+          <span className="store-badge" style={{ color: r.color, background: r.tint }}>{r.label}</span>
         </div>
-      </div>
+        <div className="store-product-name">{c.name}</div>
+        <CardAction c={c} />
+      </article>
+    );
+  };
+
+  const Shelf = ({ slot, items }: { slot: string; items: Cosmetic[] }) => {
+    const isExpanded = expandedSlots.has(slot);
+    const shown = isExpanded ? items : items.slice(0, 4);
+    return (
+      <section id={sectionId(slot)} className="store-section">
+        <div className="store-section-head">
+          <h2>{SECTION_TITLE[slot] ?? slot}</h2>
+          {items.length > 4 && (
+            <button type="button" onClick={() => toggleExpanded(slot)}>
+              {isExpanded ? "Show less" : "View all"}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14" />
+                <path d="M13 6l6 6-6 6" />
+              </svg>
+            </button>
+          )}
+        </div>
+        <div className="store-grid">
+          {shown.map(c => <ProductCard key={c.id} c={c} />)}
+        </div>
+      </section>
     );
   };
 
   return (
-    <main className="s-main">
+    <main className="store-page page-enter">
       <style>{`
-        @keyframes sFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes sShine { 0% { transform: translateX(-130%); } 60%, 100% { transform: translateX(130%); } }
+        .store-page {
+          min-height: 100dvh;
+          background:
+            radial-gradient(80% 55% at 50% -15%, rgba(37,99,235,0.14), transparent 68%),
+            radial-gradient(50% 42% at 100% 10%, rgba(236,72,153,0.08), transparent 65%),
+            var(--bg);
+          color: var(--text-1);
+          padding-bottom: calc(var(--nav-h) + 22px);
+        }
 
-        .s-main { min-height: 100dvh; background: var(--bg); color: var(--text-1); padding-bottom: calc(90px + env(safe-area-inset-bottom)); position: relative; overflow-x: hidden; }
-        .s-ambient { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 150%; height: 420px; pointer-events: none; z-index: 0;
-          background: radial-gradient(56% 100% at 50% 0%, rgba(56,189,248,.20), rgba(99,102,241,.08) 46%, transparent 74%); }
+        .store-wrap {
+          width: min(100%, 1120px);
+          margin: 0 auto;
+          padding: calc(env(safe-area-inset-top) + 30px) 32px 22px;
+        }
 
-        .s-header { position: sticky; top: 0; z-index: 50; height: calc(52px + env(safe-area-inset-top)); padding: env(safe-area-inset-top) 16px 0 58px;
-          display: flex; align-items: center; justify-content: space-between;
-          background: linear-gradient(180deg, rgba(10,10,15,.82), rgba(10,10,15,.30)); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
-        .s-title { font-size: 19px; font-weight: 900; letter-spacing: -.02em; color: var(--text-1); }
-        .s-token-pill { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 6px 13px; border-radius: 999px; overflow: hidden;
-          background: linear-gradient(135deg,#38bdf8,#6366f1); box-shadow: 0 4px 16px rgba(99,102,241,.45), inset 0 1px 0 rgba(255,255,255,.35); }
-        .s-token-pill img { width: 16px; height: 16px; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
-        .s-token-pill span { font-size: 13.5px; font-weight: 900; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.3); }
+        .store-top {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 22px;
+          margin-bottom: 36px;
+        }
 
-        .s-content { position: relative; z-index: 1; max-width: 680px; margin: 0 auto; padding: 16px 14px; display: flex; flex-direction: column; gap: 18px; }
+        .store-kicker h1 {
+          margin: 0;
+          font-size: 44px;
+          line-height: 0.95;
+          font-weight: 1000;
+          letter-spacing: -0.05em;
+        }
 
-        /* Your Look */
-        .s-myprofile { position: relative; overflow: hidden; display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: 18px;
-          background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.013)); border: 1px solid rgba(255,255,255,.07);
-          animation: sFadeUp .4s cubic-bezier(.2,.7,.3,1) both; }
-        .s-preview-av-inner { width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background: var(--surface-3); border: 2px solid var(--border-2); display: flex; align-items: center; justify-content: center; color: var(--text-2); font-weight: 800; font-size: 18px; flex-shrink: 0; }
-        .s-preview-av-inner img { width: 100%; height: 100%; object-fit: cover; }
-        .s-myprofile-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-        .s-myprofile-name { font-size: 16px; font-weight: 800; letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .s-myprofile-sub { font-size: 12px; font-weight: 600; color: var(--text-3); }
+        .store-kicker p {
+          margin: 12px 0 0;
+          color: rgba(203,213,225,0.78);
+          font-size: 20px;
+          line-height: 1.25;
+          font-weight: 600;
+        }
 
-        /* Section headers */
-        .s-section-head { font-size: 11px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; color: var(--text-3); padding: 0 2px; margin: 4px 0 -4px; }
+        .store-user {
+          display: flex;
+          align-items: center;
+          gap: 24px;
+          flex-shrink: 0;
+        }
 
-        /* Featured hero */
-        .s-featured { position: relative; padding: 1.5px; border-radius: 22px; background: linear-gradient(160deg, rgba(99,102,241,.55), rgba(56,189,248,.15) 60%, rgba(99,102,241,.22));
-          box-shadow: 0 22px 48px -22px rgba(0,0,0,.7), 0 0 44px -18px rgba(56,189,248,.35);
-          animation: sFadeUp .4s cubic-bezier(.2,.7,.3,1) both; }
-        .s-featured-inner { position: relative; overflow: hidden; border-radius: 20.5px; background: var(--surface-1); padding: 18px; }
-        .s-featured-shine { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(110deg, transparent 38%, rgba(255,255,255,.07) 50%, transparent 62%); transform: translateX(-130%); animation: sShine 6s ease-in-out infinite; }
-        .s-featured-tag { position: relative; display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; color: #fff;
-          background: var(--rg); padding: 4px 11px; border-radius: 999px; margin-bottom: 14px; box-shadow: 0 5px 14px -5px rgba(99,102,241,.6); }
-        .s-featured-row { position: relative; display: flex; align-items: center; gap: 16px; }
-        .s-featured-art { width: 78px; height: 78px; flex-shrink: 0; border-radius: 16px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;
-          background: var(--rtint); border: 1px solid rgba(255,255,255,.06); }
-        .s-featured-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-        .s-featured-name { font-size: 18px; font-weight: 800; color: var(--text-1); letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .s-featured-desc { font-size: 12.5px; color: var(--text-3); font-weight: 600; margin: 1px 0 0; }
-        .s-featured-action { flex-shrink: 0; }
+        .store-balance {
+          height: 68px;
+          min-width: 150px;
+          padding: 0 24px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          border-radius: 22px;
+          border: 1px solid rgba(255,255,255,0.16);
+          background: rgba(255,255,255,0.035);
+          color: #38bdf8;
+          font-size: 22px;
+          font-weight: 950;
+          font-variant-numeric: tabular-nums;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+        }
 
-        /* Product grid + cards */
-        .s-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 10px; }
-        .s-card { position: relative; border-radius: 16px; background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.012)); border: 1px solid rgba(255,255,255,.06);
-          padding: 10px; display: flex; flex-direction: column; gap: 10px;
-          animation: sFadeUp .35s cubic-bezier(.2,.7,.3,1) both;
-          transition: transform .18s cubic-bezier(.2,.8,.3,1), box-shadow .2s ease, border-color .2s ease; }
-        .s-card:hover { transform: translateY(-3px); box-shadow: 0 14px 30px -16px rgba(0,0,0,.6); border-color: rgba(255,255,255,.12); }
-        .s-card:active { transform: translateY(-1px) scale(.99); }
-        .s-card.equipped { border-color: var(--rc); }
-        .s-preview { position: relative; overflow: hidden; height: 80px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
-          background: var(--rtint); }
-        .s-sample-inner { position: relative; transition: transform .2s cubic-bezier(.2,.8,.3,1); }
-        .s-card:hover .s-sample-inner { transform: scale(1.08); }
-        .s-limited-tag { position: absolute; top: 6px; right: 6px; font-size: 8px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #fff; background: rgba(0,0,0,.5); padding: 3px 7px; border-radius: 6px; }
-        .s-card-body { display: flex; flex-direction: column; gap: 3px; }
-        .s-card-name { font-size: 13px; font-weight: 700; color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .s-rarity-badge { font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px; }
+        .store-balance img,
+        .store-price img {
+          object-fit: contain;
+          flex-shrink: 0;
+        }
 
-        /* Buttons */
-        .s-btn { position: relative; overflow: hidden; padding: 9px 0; border-radius: 11px; border: none; cursor: pointer; font-weight: 800; font-size: 12.5px; transition: filter .15s ease, transform .12s ease, background .15s ease; width: 100%; }
-        .s-btn:hover:not(:disabled) { filter: brightness(1.1); }
-        .s-btn:active:not(:disabled) { transform: scale(.97); }
-        .s-btn-buy { color: #fff; background: var(--rg); box-shadow: inset 0 1px 0 rgba(255,255,255,.22); }
-        .s-btn-buy::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.35) 50%, transparent 70%); transform: translateX(-130%); }
-        .s-btn-buy:hover:not(:disabled)::after { animation: sShine 1.2s ease-in-out; }
-        .s-btn-buy:disabled { background: var(--surface-3); color: var(--text-4); box-shadow: none; cursor: not-allowed; filter: none; }
-        .s-btn-buy:disabled::after { display: none; }
-        .s-btn-owned { color: var(--text-2); background: var(--surface-3); }
-        .s-btn-equipped { color: #60a5fa; background: var(--blue-dim); border: 1px solid rgba(96,165,250,.25); }
-        .s-btn-lg { padding: 13px 22px; border-radius: 13px; font-size: 14px; width: auto; min-width: 124px; }
+        .store-avatar-ring {
+          border-radius: 50%;
+          flex-shrink: 0;
+        }
 
-        .s-msg { padding: 10px 14px; border-radius: 12px; background: rgba(239,68,68,.12); border: 1px solid rgba(239,68,68,.3); color: #ef4444; font-size: 13px; font-weight: 700; text-align: center; }
-        .s-state { text-align: center; color: var(--text-3); padding: 48px 0; font-weight: 700; }
-        .s-foot { font-size: 11px; color: var(--text-3); text-align: center; margin: 0; padding: 6px 0 18px; line-height: 1.5; }
+        .store-avatar {
+          width: 72px;
+          height: 72px;
+          border-radius: 50%;
+          overflow: hidden;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: linear-gradient(135deg,#ec4899,#f472b6);
+          border: 1px solid rgba(255,255,255,0.18);
+          color: #fff;
+          font-size: 25px;
+          font-weight: 950;
+        }
 
-        @media (max-width: 420px) {
-          .s-featured-row { flex-wrap: wrap; }
-          .s-featured-action { width: 100%; }
-          .s-btn-lg { width: 100%; }
+        .store-avatar img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .store-message,
+        .store-state,
+        .store-lock {
+          border: 1px solid rgba(255,255,255,0.12);
+          background: rgba(255,255,255,0.035);
+          border-radius: 18px;
+        }
+
+        .store-message {
+          margin-bottom: 22px;
+          padding: 13px 16px;
+          color: #fca5a5;
+          font-size: 14px;
+          font-weight: 800;
+        }
+
+        .store-state {
+          padding: 64px 22px;
+          text-align: center;
+          color: rgba(203,213,225,0.72);
+          font-size: 15px;
+          font-weight: 800;
+        }
+
+        .store-feature {
+          position: relative;
+          padding: 2px;
+          border-radius: 26px;
+          background: linear-gradient(115deg,#f472b6 0%,#8b5cf6 38%,#38bdf8 63%,#facc15 100%);
+          margin-bottom: 44px;
+          overflow: hidden;
+        }
+
+        .store-feature-inner {
+          position: relative;
+          overflow: hidden;
+          min-height: 350px;
+          border-radius: 24px;
+          background:
+            radial-gradient(85% 120% at 76% 35%, rgba(37,99,235,0.18), transparent 60%),
+            linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01)),
+            #050506;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) minmax(270px, 380px);
+          align-items: center;
+          gap: 48px;
+          padding: 34px 52px;
+        }
+
+        .store-feature-copy {
+          min-width: 0;
+        }
+
+        .store-feature-tag {
+          width: fit-content;
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          margin-bottom: 26px;
+          padding: 9px 15px;
+          border-radius: 0 13px 13px 0;
+          background: linear-gradient(135deg, rgba(124,58,237,0.75), rgba(88,28,135,0.85));
+          color: #fff;
+          font-size: 14px;
+          line-height: 1;
+          font-weight: 950;
+          text-transform: uppercase;
+          letter-spacing: -0.01em;
+        }
+
+        .store-feature-name {
+          margin: 0;
+          font-size: 38px;
+          line-height: 1.05;
+          font-weight: 1000;
+          letter-spacing: -0.05em;
+        }
+
+        .store-feature-rarity {
+          display: block;
+          margin-top: 12px;
+          font-size: 17px;
+          font-weight: 1000;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+        }
+
+        .store-feature-desc {
+          margin: 24px 0 34px;
+          max-width: 360px;
+          color: rgba(203,213,225,0.78);
+          font-size: 21px;
+          line-height: 1.45;
+          font-weight: 600;
+        }
+
+        .store-buy {
+          min-width: 206px;
+          height: 66px;
+          border: none;
+          border-radius: 18px;
+          background: linear-gradient(135deg,#fbbf24,#f59e0b);
+          color: #050506;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 18px;
+          font-size: 21px;
+          font-weight: 1000;
+          cursor: pointer;
+          box-shadow: 0 18px 44px -26px rgba(251,191,36,0.9), inset 0 1px 0 rgba(255,255,255,0.35);
+        }
+
+        .store-buy:disabled {
+          cursor: not-allowed;
+          opacity: 0.55;
+        }
+
+        .featured-owned {
+          background: rgba(255,255,255,0.08);
+          color: #e5e7eb;
+          border: 1px solid rgba(255,255,255,0.15);
+          box-shadow: none;
+        }
+
+        .store-feature-art {
+          min-height: 245px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .store-dots {
+          position: absolute;
+          left: 50%;
+          bottom: 30px;
+          transform: translateX(-50%);
+          display: flex;
+          gap: 18px;
+        }
+
+        .store-dots span {
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          background: rgba(255,255,255,0.18);
+        }
+
+        .store-dots span:first-child {
+          background: #fff;
+        }
+
+        .store-tabs {
+          display: flex;
+          gap: 26px;
+          overflow-x: auto;
+          scrollbar-width: none;
+          padding: 0 0 34px;
+          margin-bottom: 2px;
+        }
+
+        .store-tabs::-webkit-scrollbar {
+          display: none;
+        }
+
+        .store-tab {
+          flex-shrink: 0;
+          min-height: 60px;
+          padding: 0 30px;
+          border-radius: 24px;
+          border: 1px solid rgba(255,255,255,0.14);
+          background: transparent;
+          color: rgba(203,213,225,0.82);
+          font-size: 17px;
+          font-weight: 900;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+
+        .store-tab.active {
+          border-color: transparent;
+          color: #fff;
+          background: linear-gradient(135deg,#3b82f6,#4338ca);
+          box-shadow: 0 18px 42px -26px rgba(59,130,246,0.95);
+        }
+
+        .store-section {
+          scroll-margin-top: 18px;
+          margin-bottom: 50px;
+        }
+
+        .store-section-head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 18px;
+          margin-bottom: 24px;
+        }
+
+        .store-section-head h2 {
+          margin: 0;
+          font-size: 29px;
+          line-height: 1.05;
+          font-weight: 1000;
+          letter-spacing: -0.04em;
+        }
+
+        .store-section-head button {
+          display: inline-flex;
+          align-items: center;
+          gap: 12px;
+          border: none;
+          background: transparent;
+          color: #c084fc;
+          font-size: 17px;
+          font-weight: 900;
+          cursor: pointer;
+          padding: 6px 0;
+          white-space: nowrap;
+        }
+
+        .store-grid {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 22px;
+        }
+
+        .store-product {
+          min-width: 0;
+          min-height: 270px;
+          border-radius: 15px;
+          border: 1px solid rgba(255,255,255,0.16);
+          background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012));
+          padding: 18px;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .store-product.equipped {
+          border-color: rgba(56,189,248,0.55);
+          box-shadow: 0 0 0 1px rgba(56,189,248,0.18), 0 22px 60px -45px rgba(56,189,248,0.75);
+        }
+
+        @media (hover: hover) {
+          .store-product:hover {
+            transform: translateY(-3px);
+            border-color: rgba(255,255,255,0.26);
+          }
+        }
+
+        .store-product-preview {
+          position: relative;
+          height: 164px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 16px;
+        }
+
+        .store-badge {
+          position: absolute;
+          top: -3px;
+          left: -1px;
+          padding: 5px 9px;
+          border-radius: 8px;
+          font-size: 12px;
+          line-height: 1;
+          font-weight: 1000;
+          text-transform: uppercase;
+          letter-spacing: 0.03em;
+        }
+
+        .store-product-name {
+          min-width: 0;
+          margin-top: auto;
+          color: #fff;
+          font-size: 18px;
+          line-height: 1.15;
+          font-weight: 950;
+          letter-spacing: -0.03em;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .store-card-action {
+          width: fit-content;
+          margin-top: 18px;
+          border: none;
+          background: transparent;
+          color: #38bdf8;
+          font-size: 18px;
+          font-weight: 1000;
+          padding: 0;
+          cursor: pointer;
+        }
+
+        .store-card-action:disabled {
+          cursor: default;
+        }
+
+        .store-card-action.owned {
+          color: rgba(148,163,184,0.44);
+        }
+
+        .store-card-action.equipped {
+          color: #facc15;
+        }
+
+        .store-card-action:not(.owned):disabled {
+          color: rgba(56,189,248,0.42);
+        }
+
+        .store-price {
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          font-variant-numeric: tabular-nums;
+        }
+
+        .store-lock {
+          min-height: 78px;
+          display: flex;
+          align-items: center;
+          gap: 22px;
+          padding: 0 30px;
+          color: rgba(203,213,225,0.72);
+          font-size: 17px;
+          font-weight: 700;
+        }
+
+        .store-lock svg {
+          color: rgba(203,213,225,0.48);
+          flex-shrink: 0;
+        }
+
+        .store-foot {
+          margin: 22px 0 0;
+          color: rgba(148,163,184,0.65);
+          font-size: 12px;
+          line-height: 1.5;
+          text-align: center;
+        }
+
+        @media (max-width: 860px) {
+          .store-wrap {
+            padding: calc(env(safe-area-inset-top) + 22px) 18px 18px;
+          }
+
+          .store-top {
+            margin-bottom: 26px;
+          }
+
+          .store-kicker h1 {
+            font-size: 38px;
+          }
+
+          .store-kicker p {
+            font-size: 17px;
+          }
+
+          .store-user {
+            gap: 14px;
+          }
+
+          .store-balance {
+            height: 56px;
+            min-width: 118px;
+            padding: 0 16px;
+            border-radius: 18px;
+            font-size: 18px;
+          }
+
+          .store-avatar {
+            width: 58px;
+            height: 58px;
+          }
+
+          .store-feature-inner {
+            min-height: 0;
+            grid-template-columns: 1fr;
+            gap: 26px;
+            padding: 26px 24px 58px;
+          }
+
+          .store-feature-art {
+            order: -1;
+            min-height: 170px;
+          }
+
+          .store-feature-name {
+            font-size: 32px;
+          }
+
+          .store-feature-desc {
+            font-size: 17px;
+            margin: 18px 0 24px;
+          }
+
+          .store-buy {
+            width: 100%;
+          }
+
+          .store-tabs {
+            gap: 12px;
+            padding-bottom: 28px;
+          }
+
+          .store-tab {
+            min-height: 52px;
+            padding: 0 22px;
+            border-radius: 19px;
+            font-size: 15px;
+          }
+
+          .store-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+          }
+
+          .store-product {
+            min-height: 236px;
+            padding: 14px;
+          }
+
+          .store-product-preview {
+            height: 138px;
+          }
+        }
+
+        @media (max-width: 520px) {
+          .store-top {
+            align-items: center;
+          }
+
+          .store-user {
+            gap: 10px;
+          }
+
+          .store-balance {
+            min-width: 104px;
+            height: 50px;
+            padding: 0 12px;
+            font-size: 16px;
+            border-radius: 16px;
+          }
+
+          .store-avatar {
+            width: 50px;
+            height: 50px;
+          }
+
+          .store-section-head h2 {
+            font-size: 25px;
+          }
         }
 
         @media (prefers-reduced-motion: reduce) {
-          .s-card, .s-myprofile, .s-featured, .s-featured-shine, .s-btn-buy::after { animation: none !important; }
-          .s-card { opacity: 1; }
+          .store-product,
+          .store-tab {
+            transition: none;
+          }
         }
       `}</style>
 
-      <div className="s-ambient" />
-
-      <header className="s-header">
-        <span className="s-title">Store</span>
-        <div
-          className="s-token-pill"
-          suppressHydrationWarning
-          dangerouslySetInnerHTML={{
-            __html: `<img src="/token/token.png" alt="" /><span>${tokens.toLocaleString()}</span>`,
-          }}
-        />
-      </header>
-
-      <div className="s-content">
-        {/* Your look preview */}
-        <section className="s-myprofile">
-          <div className="s-preview-av-inner" style={avatarFrameStyle(equippedFrameAsset) ?? undefined}>
-            {avatarUrl ? <img src={avatarUrl} alt="" /> : (username[0] ?? "?").toUpperCase()}
+      <div className="store-wrap">
+        <header className="store-top">
+          <div className="store-kicker">
+            <h1>Store</h1>
+            <p>Customize your profile. Stand out.</p>
           </div>
-          <div className="s-myprofile-text">
-            <div className="s-myprofile-name" style={nameColorStyle(equippedNameAsset)}>@{username}</div>
-            <span className="s-myprofile-sub">Customize your identity</span>
-          </div>
-        </section>
 
-        {msg && <div className="s-msg">{msg}</div>}
+          <div className="store-user">
+            <div className="store-balance" suppressHydrationWarning>
+              <img src="/token/token.png" alt="" width="28" height="28" />
+              <span>{tokens.toLocaleString()}</span>
+            </div>
+            <div className="store-avatar-ring" style={avatarFrameStyle(equippedFrameAsset, 3) ?? undefined}>
+              <div className="store-avatar">
+                {avatarUrl ? <img src={avatarUrl} alt="" /> : (username[0] ?? "?").toUpperCase()}
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {msg && <div className="store-message">{msg}</div>}
 
         {loading ? (
-          <div className="s-state">Loading…</div>
+          <div className="store-state">Loading...</div>
         ) : !token ? (
-          <div className="s-state">Sign in to shop cosmetics.</div>
+          <div className="store-state">Sign in to shop cosmetics.</div>
         ) : catalog.length === 0 ? (
-          <div className="s-state">No cosmetics available yet.</div>
+          <div className="store-state">No cosmetics available yet.</div>
         ) : (
           <>
             {featured && (
-              <section style={{ display: "flex", flexDirection: "column", gap: 11 }}>
-                <Featured c={featured} />
+              <section className="store-feature">
+                <div className="store-feature-inner">
+                  <div className="store-feature-copy">
+                    <span className="store-feature-tag">Featured</span>
+                    <h2 className="store-feature-name">{featured.name}</h2>
+                    <span className="store-feature-rarity" style={{ color: rarityOf(featured).color }}>{rarityOf(featured).label}</span>
+                    <p className="store-feature-desc">{featured.description || "Stand out with an exclusive look for your profile."}</p>
+                    <FeaturedAction c={featured} />
+                  </div>
+
+                  <div className="store-feature-art">
+                    <Sample
+                      c={featured}
+                      featured
+                      size={featured.slot === "profile_frame" ? 190 : 250}
+                      boxWidth={featured.slot === "profile_frame" ? 190 : 310}
+                    />
+                  </div>
+
+                  <div className="store-dots" aria-hidden="true">
+                    <span />
+                    <span />
+                    <span />
+                  </div>
+                </div>
               </section>
             )}
 
-            {limited.length > 0 && (
-              <section style={{ display: "flex", flexDirection: "column", gap: 11 }}>
-                <SectionHeader title="Limited Time" />
-                <div className="s-grid">{limited.map((c, i) => <Card key={c.id} c={c} i={i} />)}</div>
-              </section>
+            {sections.length > 0 && (
+              <nav className="store-tabs" aria-label="Store categories">
+                {sections.map(([slot]) => (
+                  <button
+                    key={slot}
+                    className={`store-tab${slot === activeSlot ? " active" : ""}`}
+                    type="button"
+                    onClick={() => jumpToSection(slot)}
+                  >
+                    {SECTION_TITLE[slot] ?? slot}
+                  </button>
+                ))}
+              </nav>
             )}
 
-            {sections.map(([slot, items]) => (
-              <section key={slot} style={{ display: "flex", flexDirection: "column", gap: 11 }}>
-                <SectionHeader title={SECTION_TITLE[slot] ?? slot} />
-                <div className="s-grid">{items.map((c, i) => <Card key={c.id} c={c} i={i} />)}</div>
-              </section>
-            ))}
+            {sections.map(([slot, items]) => <Shelf key={slot} slot={slot} items={items} />)}
+
+            <div className="store-lock">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="4" y="11" width="16" height="10" rx="2" />
+                <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+              </svg>
+              <span>More cosmetics coming soon.</span>
+            </div>
+
+            <p className="store-foot">
+              {ownedCount > 0 ? `${ownedCount} cosmetic${ownedCount === 1 ? "" : "s"} owned. ` : ""}
+              Foopy Tokens are spent on cosmetics only and never affect gameplay.
+            </p>
           </>
         )}
-
-        <p className="s-foot">Cosmetics are visual only and never affect gameplay. Foopy Tokens are bought with real money and are non-refundable.</p>
       </div>
     </main>
   );
