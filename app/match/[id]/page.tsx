@@ -1282,6 +1282,10 @@ function LiveFeedPlayer({
   const colours = liveFeedTeamColors(team);
 
   const type = safeText(event.type, "event").toUpperCase();
+  // A GOAL event is, by definition, at least the player's first goal — so the
+  // box must never read "0 GOALS" on a goal, even if an upstream stat snapshot
+  // lagged behind the score. Clamp goals up to 1 for goal events only.
+  const goalsShown = type === "GOAL" ? Math.max(playerGoals ?? 0, 1) : (playerGoals ?? 0);
   const selectedReactionSet = new Set(myReactions ?? []);
   const sortedReactions = sortEventReactionSummaries(reactions ?? []);
   const reactionTotal = totalReactionCount(sortedReactions);
@@ -1392,7 +1396,7 @@ function LiveFeedPlayer({
                 <span style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", fontWeight: 500, lineHeight: 1.4, marginTop: 4 }}>
                   {playerFP != null && `${playerFP} FP`}
                   {playerFP != null && playerFoopy != null && " · "}
-                  {playerFoopy != null && `${playerDisposals ?? 0} DISP · ${playerGoals ?? 0} ${(playerGoals ?? 0) === 1 ? "GOAL" : "GOALS"}`}
+                  {playerFoopy != null && `${playerDisposals ?? 0} DISP · ${goalsShown} ${goalsShown === 1 ? "GOAL" : "GOALS"}`}
                 </span>
               )}
             </div>
@@ -4408,7 +4412,10 @@ function MatchPageInner() {
         eventStatSnapshots.current[ek] = {
           foopy: foopyRating(stat),
           disposals: num((stat as any).disposals) || (num((stat as any).kicks) + num((stat as any).handballs)),
-          goals: num((stat as any).goals),
+          // Prefer the server's event-order goal count (deterministic, frozen at
+          // the moment scored). Only fall back to the live cumulative total for
+          // legacy rows that predate that column — and that total can lag to 0.
+          goals: (event as any).playerGoals ?? num((stat as any).goals),
         };
       }
     });

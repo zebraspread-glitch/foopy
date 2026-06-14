@@ -142,11 +142,12 @@ export async function GET(req: Request) {
     const realExisting = (existing ?? []).filter((r: any) => !r.inferred);
     const existingSnapshotMap = new Map<string, Partial<PlayerSnapshot>>(
       realExisting.map((r: any) => [key(r), {
-        // goals are recomputed from event order each sync, never read back, so
-        // they're intentionally not preserved here — only fp/foopy/disposals are.
+        // Everything on an event box is frozen at first write and read back here
+        // on later syncs so the stored values are reused verbatim, never changed.
         fp: r.player_fp ?? null,
         foopy: r.player_foopy ?? null,
         disposals: r.player_disposals ?? null,
+        goals: r.player_goals ?? null,
       }])
     );
 
@@ -202,9 +203,11 @@ export async function GET(req: Request) {
         player_fp: isNew ? (snapshot?.fp ?? null) : (stored?.fp ?? null),
         player_foopy: isNew ? (snapshot?.foopy ?? null) : (stored?.foopy ?? null),
         player_disposals: isNew ? (snapshot?.disposals ?? null) : (stored?.disposals ?? null),
-        // Deterministic from event order, identical on every sync — the box
-        // shows the goal number as it was when scored and never drifts.
-        player_goals: runningGoals,
+        // A new row records the event-order tally at the moment it's scored;
+        // existing rows keep their stored value untouched, so the count is frozen
+        // for good and the box can never change. (A legacy row with no stored
+        // count falls back to the deterministic tally to backfill it once.)
+        player_goals: isNew ? runningGoals : (stored?.goals ?? runningGoals),
       };
     });
 
