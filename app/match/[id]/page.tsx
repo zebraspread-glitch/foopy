@@ -1782,7 +1782,9 @@ function SeasonAvgTable({ stats }: { stats: any[] }) {
                 <td style={tdPlayerStyle}>
                   <span style={playerNameCellStyle}>
                     <PlayerAvatar name={name} team={rowTeam} size={38} />
-                    <span>{name}</span>
+                    <span style={playerInfoStyle}>
+                      <span style={playerNameTextStyle} title={name}>{name}</span>
+                    </span>
                   </span>
                 </td>
                 <td style={tdStyle}>
@@ -1947,8 +1949,8 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
                         ratingColor={rating !== null ? foopyColor(rating) : undefined}
                         isBest={isBest}
                       />
-                      <span>
-                        <div>{name}</div>
+                      <span style={playerInfoStyle}>
+                        <div style={playerNameTextStyle} title={name}>{name}</div>
                         <span style={playerBubbleStyle}>
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -7276,7 +7278,9 @@ const thStyle: CSSProperties = { position: "sticky", top: 0, zIndex: 2, backgrou
 const thPlayerStyle: CSSProperties = { ...thStyle, minWidth: 180, textAlign: "left" };
 const tdStyle: CSSProperties = { padding: "13px 10px", borderBottom: "1px solid var(--border-1)", whiteSpace: "nowrap", fontSize: 14, fontWeight: 700, fontVariantNumeric: "tabular-nums", textAlign: "center" };
 const tdPlayerStyle: CSSProperties = { ...tdStyle, fontWeight: 800, fontSize: 14, color: "var(--text-1)", minWidth: 180, textAlign: "left" };
-const playerNameCellStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 14 };
+const playerNameCellStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 14, width: "100%", minWidth: 0, overflow: "hidden" };
+const playerInfoStyle: CSSProperties = { display: "flex", flexDirection: "column", minWidth: 0, flex: "1 1 auto", overflow: "hidden" };
+const playerNameTextStyle: CSSProperties = { display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" };
 const ratingPillStyle: CSSProperties = { display: "inline-block", minWidth: 48, padding: "5px 9px", borderRadius: 8, color: "var(--text-1)", fontWeight: 900, fontSize: 13, border: "1.5px solid rgba(0,0,0,0.3)", textAlign: "center" };
 const statSwitchWrapStyle: CSSProperties = { display: "flex", justifyContent: "center", gap: 6, marginBottom: 14 };
 const statSwitchStyle: CSSProperties = { appearance: "none", border: "1px solid var(--border-2)", background: "var(--surface-2)", color: "var(--text-2)", borderRadius: 999, padding: "3px 8px", fontSize: 10, fontWeight: 800, cursor: "pointer", letterSpacing: "0.01em" };
