@@ -64,6 +64,7 @@ export default function StorePage() {
   const [msg, setMsg] = useState<string | null>(null);
   const [activeSlot, setActiveSlot] = useState<string | null>(null);
   const [expandedSlots, setExpandedSlots] = useState<Set<string>>(new Set());
+  const [mounted, setMounted] = useState(false);
 
   async function load() {
     const { data: { session } } = await supabase.auth.getSession();
@@ -90,6 +91,7 @@ export default function StorePage() {
     setLoading(false);
   }
 
+  useEffect(() => { setMounted(true); }, []);
   useEffect(() => { load(); }, []);
 
   async function buy(c: Cosmetic) {
@@ -269,7 +271,7 @@ export default function StorePage() {
     );
   };
 
-  const TokenPrice = ({ c, size = 18 }: { c: Cosmetic; size?: number }) => (
+  const TokenPrice = ({ c, size = 15 }: { c: Cosmetic; size?: number }) => (
     <span className="store-price">
       <img src="/token/token.png" alt="" style={{ width: size, height: size }} />
       <span>{c.token_price.toLocaleString()}</span>
@@ -293,7 +295,7 @@ export default function StorePage() {
 
     return (
       <button className="store-buy" onClick={() => buy(c)} disabled={busy || !canAfford}>
-        {busy ? "..." : <>Buy <TokenPrice c={c} size={20} /></>}
+        {busy ? "..." : <>Buy <TokenPrice c={c} size={16} /></>}
       </button>
     );
   };
@@ -315,7 +317,7 @@ export default function StorePage() {
 
     return (
       <button className="store-card-action" onClick={() => buy(c)} disabled={busy || !canAfford}>
-        {busy ? "..." : <TokenPrice c={c} size={18} />}
+        {busy ? "..." : <TokenPrice c={c} size={15} />}
       </button>
     );
   };
@@ -326,7 +328,7 @@ export default function StorePage() {
     return (
       <article className={`store-product${isEquipped ? " equipped" : ""}`}>
         <div className="store-product-preview">
-          <Sample c={c} size={c.slot === "profile_frame" ? 122 : 74} boxWidth={166} />
+          <Sample c={c} size={c.slot === "profile_frame" ? 88 : 50} boxWidth={128} />
           <span className="store-badge" style={{ color: r.color, background: r.tint }}>{r.label}</span>
         </div>
         <div className="store-product-name">{c.name}</div>
@@ -373,31 +375,31 @@ export default function StorePage() {
         }
 
         .store-wrap {
-          width: min(100%, 1120px);
+          width: min(100%, 980px);
           margin: 0 auto;
-          padding: calc(env(safe-area-inset-top) + 30px) 32px 22px;
+          padding: calc(env(safe-area-inset-top) + 22px) 24px 18px;
         }
 
         .store-top {
           display: flex;
           align-items: flex-start;
           justify-content: space-between;
-          gap: 22px;
-          margin-bottom: 36px;
+          gap: 18px;
+          margin-bottom: 22px;
         }
 
         .store-kicker h1 {
           margin: 0;
-          font-size: 44px;
+          font-size: 34px;
           line-height: 0.95;
           font-weight: 1000;
           letter-spacing: -0.05em;
         }
 
         .store-kicker p {
-          margin: 12px 0 0;
+          margin: 7px 0 0;
           color: rgba(203,213,225,0.78);
-          font-size: 20px;
+          font-size: 15px;
           line-height: 1.25;
           font-weight: 600;
         }
@@ -405,23 +407,23 @@ export default function StorePage() {
         .store-user {
           display: flex;
           align-items: center;
-          gap: 24px;
+          gap: 14px;
           flex-shrink: 0;
         }
 
         .store-balance {
-          height: 68px;
-          min-width: 150px;
-          padding: 0 24px;
+          height: 48px;
+          min-width: 126px;
+          padding: 0 16px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
           gap: 12px;
-          border-radius: 22px;
+          border-radius: 16px;
           border: 1px solid rgba(255,255,255,0.16);
           background: rgba(255,255,255,0.035);
           color: #38bdf8;
-          font-size: 22px;
+          font-size: 18px;
           font-weight: 950;
           font-variant-numeric: tabular-nums;
           box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
@@ -439,8 +441,8 @@ export default function StorePage() {
         }
 
         .store-avatar {
-          width: 72px;
-          height: 72px;
+          width: 52px;
+          height: 52px;
           border-radius: 50%;
           overflow: hidden;
           display: flex;
@@ -449,7 +451,7 @@ export default function StorePage() {
           background: linear-gradient(135deg,#ec4899,#f472b6);
           border: 1px solid rgba(255,255,255,0.18);
           color: #fff;
-          font-size: 25px;
+          font-size: 20px;
           font-weight: 950;
         }
 
@@ -486,26 +488,26 @@ export default function StorePage() {
         .store-feature {
           position: relative;
           padding: 2px;
-          border-radius: 26px;
+          border-radius: 22px;
           background: linear-gradient(115deg,#f472b6 0%,#8b5cf6 38%,#38bdf8 63%,#facc15 100%);
-          margin-bottom: 44px;
+          margin-bottom: 28px;
           overflow: hidden;
         }
 
         .store-feature-inner {
           position: relative;
           overflow: hidden;
-          min-height: 350px;
-          border-radius: 24px;
+          min-height: 220px;
+          border-radius: 20px;
           background:
             radial-gradient(85% 120% at 76% 35%, rgba(37,99,235,0.18), transparent 60%),
             linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01)),
             #050506;
           display: grid;
-          grid-template-columns: minmax(0, 1fr) minmax(270px, 380px);
+          grid-template-columns: minmax(0, 1fr) minmax(210px, 270px);
           align-items: center;
-          gap: 48px;
-          padding: 34px 52px;
+          gap: 28px;
+          padding: 22px 32px;
         }
 
         .store-feature-copy {
@@ -517,12 +519,12 @@ export default function StorePage() {
           display: inline-flex;
           align-items: center;
           gap: 7px;
-          margin-bottom: 26px;
-          padding: 9px 15px;
-          border-radius: 0 13px 13px 0;
+          margin-bottom: 16px;
+          padding: 6px 11px;
+          border-radius: 0 10px 10px 0;
           background: linear-gradient(135deg, rgba(124,58,237,0.75), rgba(88,28,135,0.85));
           color: #fff;
-          font-size: 14px;
+          font-size: 11px;
           line-height: 1;
           font-weight: 950;
           text-transform: uppercase;
@@ -531,7 +533,7 @@ export default function StorePage() {
 
         .store-feature-name {
           margin: 0;
-          font-size: 38px;
+          font-size: 28px;
           line-height: 1.05;
           font-weight: 1000;
           letter-spacing: -0.05em;
@@ -539,34 +541,34 @@ export default function StorePage() {
 
         .store-feature-rarity {
           display: block;
-          margin-top: 12px;
-          font-size: 17px;
+          margin-top: 7px;
+          font-size: 12px;
           font-weight: 1000;
           text-transform: uppercase;
           letter-spacing: 0.04em;
         }
 
         .store-feature-desc {
-          margin: 24px 0 34px;
-          max-width: 360px;
+          margin: 14px 0 20px;
+          max-width: 320px;
           color: rgba(203,213,225,0.78);
-          font-size: 21px;
+          font-size: 14px;
           line-height: 1.45;
           font-weight: 600;
         }
 
         .store-buy {
-          min-width: 206px;
-          height: 66px;
+          min-width: 138px;
+          height: 44px;
           border: none;
-          border-radius: 18px;
+          border-radius: 12px;
           background: linear-gradient(135deg,#fbbf24,#f59e0b);
           color: #050506;
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          gap: 18px;
-          font-size: 21px;
+          gap: 10px;
+          font-size: 16px;
           font-weight: 1000;
           cursor: pointer;
           box-shadow: 0 18px 44px -26px rgba(251,191,36,0.9), inset 0 1px 0 rgba(255,255,255,0.35);
@@ -585,7 +587,7 @@ export default function StorePage() {
         }
 
         .store-feature-art {
-          min-height: 245px;
+          min-height: 150px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -594,15 +596,15 @@ export default function StorePage() {
         .store-dots {
           position: absolute;
           left: 50%;
-          bottom: 30px;
+          bottom: 16px;
           transform: translateX(-50%);
           display: flex;
-          gap: 18px;
+          gap: 10px;
         }
 
         .store-dots span {
-          width: 12px;
-          height: 12px;
+          width: 8px;
+          height: 8px;
           border-radius: 50%;
           background: rgba(255,255,255,0.18);
         }
@@ -613,10 +615,10 @@ export default function StorePage() {
 
         .store-tabs {
           display: flex;
-          gap: 26px;
+          gap: 12px;
           overflow-x: auto;
           scrollbar-width: none;
-          padding: 0 0 34px;
+          padding: 0 0 22px;
           margin-bottom: 2px;
         }
 
@@ -626,13 +628,13 @@ export default function StorePage() {
 
         .store-tab {
           flex-shrink: 0;
-          min-height: 60px;
-          padding: 0 30px;
-          border-radius: 24px;
+          min-height: 42px;
+          padding: 0 18px;
+          border-radius: 16px;
           border: 1px solid rgba(255,255,255,0.14);
           background: transparent;
           color: rgba(203,213,225,0.82);
-          font-size: 17px;
+          font-size: 13px;
           font-weight: 900;
           cursor: pointer;
           white-space: nowrap;
@@ -647,20 +649,20 @@ export default function StorePage() {
 
         .store-section {
           scroll-margin-top: 18px;
-          margin-bottom: 50px;
+          margin-bottom: 30px;
         }
 
         .store-section-head {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 18px;
-          margin-bottom: 24px;
+          gap: 14px;
+          margin-bottom: 14px;
         }
 
         .store-section-head h2 {
           margin: 0;
-          font-size: 29px;
+          font-size: 22px;
           line-height: 1.05;
           font-weight: 1000;
           letter-spacing: -0.04em;
@@ -669,11 +671,11 @@ export default function StorePage() {
         .store-section-head button {
           display: inline-flex;
           align-items: center;
-          gap: 12px;
+          gap: 8px;
           border: none;
           background: transparent;
           color: #c084fc;
-          font-size: 17px;
+          font-size: 14px;
           font-weight: 900;
           cursor: pointer;
           padding: 6px 0;
@@ -683,16 +685,16 @@ export default function StorePage() {
         .store-grid {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 22px;
+          gap: 14px;
         }
 
         .store-product {
           min-width: 0;
-          min-height: 270px;
-          border-radius: 15px;
+          min-height: 190px;
+          border-radius: 12px;
           border: 1px solid rgba(255,255,255,0.16);
           background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012));
-          padding: 18px;
+          padding: 12px;
           display: flex;
           flex-direction: column;
           overflow: hidden;
@@ -713,20 +715,20 @@ export default function StorePage() {
 
         .store-product-preview {
           position: relative;
-          height: 164px;
+          height: 105px;
           display: flex;
           align-items: center;
           justify-content: center;
-          margin-bottom: 16px;
+          margin-bottom: 10px;
         }
 
         .store-badge {
           position: absolute;
           top: -3px;
           left: -1px;
-          padding: 5px 9px;
-          border-radius: 8px;
-          font-size: 12px;
+          padding: 4px 7px;
+          border-radius: 7px;
+          font-size: 9px;
           line-height: 1;
           font-weight: 1000;
           text-transform: uppercase;
@@ -737,7 +739,7 @@ export default function StorePage() {
           min-width: 0;
           margin-top: auto;
           color: #fff;
-          font-size: 18px;
+          font-size: 14px;
           line-height: 1.15;
           font-weight: 950;
           letter-spacing: -0.03em;
@@ -748,11 +750,11 @@ export default function StorePage() {
 
         .store-card-action {
           width: fit-content;
-          margin-top: 18px;
+          margin-top: 10px;
           border: none;
           background: transparent;
           color: #38bdf8;
-          font-size: 18px;
+          font-size: 15px;
           font-weight: 1000;
           padding: 0;
           cursor: pointer;
@@ -782,13 +784,13 @@ export default function StorePage() {
         }
 
         .store-lock {
-          min-height: 78px;
+          min-height: 60px;
           display: flex;
           align-items: center;
-          gap: 22px;
-          padding: 0 30px;
+          gap: 14px;
+          padding: 0 20px;
           color: rgba(203,213,225,0.72);
-          font-size: 17px;
+          font-size: 14px;
           font-weight: 700;
         }
 
@@ -798,7 +800,7 @@ export default function StorePage() {
         }
 
         .store-foot {
-          margin: 22px 0 0;
+          margin: 14px 0 0;
           color: rgba(148,163,184,0.65);
           font-size: 12px;
           line-height: 1.5;
@@ -807,19 +809,19 @@ export default function StorePage() {
 
         @media (max-width: 860px) {
           .store-wrap {
-            padding: calc(env(safe-area-inset-top) + 22px) 18px 18px;
+            padding: calc(env(safe-area-inset-top) + 18px) 16px 16px;
           }
 
           .store-top {
-            margin-bottom: 26px;
+            margin-bottom: 18px;
           }
 
           .store-kicker h1 {
-            font-size: 38px;
+            font-size: 30px;
           }
 
           .store-kicker p {
-            font-size: 17px;
+            font-size: 14px;
           }
 
           .store-user {
@@ -827,37 +829,37 @@ export default function StorePage() {
           }
 
           .store-balance {
-            height: 56px;
-            min-width: 118px;
-            padding: 0 16px;
-            border-radius: 18px;
-            font-size: 18px;
+            height: 44px;
+            min-width: 100px;
+            padding: 0 12px;
+            border-radius: 14px;
+            font-size: 15px;
           }
 
           .store-avatar {
-            width: 58px;
-            height: 58px;
+            width: 44px;
+            height: 44px;
           }
 
           .store-feature-inner {
             min-height: 0;
             grid-template-columns: 1fr;
-            gap: 26px;
-            padding: 26px 24px 58px;
+            gap: 16px;
+            padding: 18px 18px 42px;
           }
 
           .store-feature-art {
             order: -1;
-            min-height: 170px;
+            min-height: 118px;
           }
 
           .store-feature-name {
-            font-size: 32px;
+            font-size: 24px;
           }
 
           .store-feature-desc {
-            font-size: 17px;
-            margin: 18px 0 24px;
+            font-size: 14px;
+            margin: 12px 0 18px;
           }
 
           .store-buy {
@@ -865,29 +867,29 @@ export default function StorePage() {
           }
 
           .store-tabs {
-            gap: 12px;
-            padding-bottom: 28px;
+            gap: 8px;
+            padding-bottom: 18px;
           }
 
           .store-tab {
-            min-height: 52px;
-            padding: 0 22px;
-            border-radius: 19px;
-            font-size: 15px;
+            min-height: 38px;
+            padding: 0 16px;
+            border-radius: 14px;
+            font-size: 12px;
           }
 
           .store-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 14px;
+            gap: 10px;
           }
 
           .store-product {
-            min-height: 236px;
-            padding: 14px;
+            min-height: 164px;
+            padding: 10px;
           }
 
           .store-product-preview {
-            height: 138px;
+            height: 92px;
           }
         }
 
@@ -901,20 +903,20 @@ export default function StorePage() {
           }
 
           .store-balance {
-            min-width: 104px;
-            height: 50px;
-            padding: 0 12px;
-            font-size: 16px;
-            border-radius: 16px;
+            min-width: 90px;
+            height: 42px;
+            padding: 0 10px;
+            font-size: 14px;
+            border-radius: 13px;
           }
 
           .store-avatar {
-            width: 50px;
-            height: 50px;
+            width: 42px;
+            height: 42px;
           }
 
           .store-section-head h2 {
-            font-size: 25px;
+            font-size: 21px;
           }
         }
 
@@ -934,15 +936,24 @@ export default function StorePage() {
           </div>
 
           <div className="store-user">
-            <div className="store-balance" suppressHydrationWarning>
-              <img src="/token/token.png" alt="" width="28" height="28" />
-              <span>{tokens.toLocaleString()}</span>
-            </div>
-            <div className="store-avatar-ring" style={avatarFrameStyle(equippedFrameAsset, 3) ?? undefined}>
-              <div className="store-avatar">
-                {avatarUrl ? <img src={avatarUrl} alt="" /> : (username[0] ?? "?").toUpperCase()}
-              </div>
-            </div>
+            {mounted ? (
+              <>
+                <div className="store-balance">
+                  <img src="/token/token.png" alt="" width="22" height="22" suppressHydrationWarning />
+                  <span>{tokens.toLocaleString()}</span>
+                </div>
+                <div className="store-avatar-ring" style={avatarFrameStyle(equippedFrameAsset, 3) ?? undefined}>
+                  <div className="store-avatar">
+                    {avatarUrl ? <img src={avatarUrl} alt="" /> : (username[0] ?? "?").toUpperCase()}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="store-balance" />
+                <div className="store-avatar" />
+              </>
+            )}
           </div>
         </header>
 
@@ -971,8 +982,8 @@ export default function StorePage() {
                     <Sample
                       c={featured}
                       featured
-                      size={featured.slot === "profile_frame" ? 190 : 250}
-                      boxWidth={featured.slot === "profile_frame" ? 190 : 310}
+                      size={featured.slot === "profile_frame" ? 120 : 145}
+                      boxWidth={featured.slot === "profile_frame" ? 120 : 210}
                     />
                   </div>
 
