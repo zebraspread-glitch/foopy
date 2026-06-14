@@ -142,10 +142,11 @@ export async function GET(req: Request) {
     const realExisting = (existing ?? []).filter((r: any) => !r.inferred);
     const existingSnapshotMap = new Map<string, Partial<PlayerSnapshot>>(
       realExisting.map((r: any) => [key(r), {
+        // goals are recomputed from event order each sync, never read back, so
+        // they're intentionally not preserved here — only fp/foopy/disposals are.
         fp: r.player_fp ?? null,
         foopy: r.player_foopy ?? null,
         disposals: r.player_disposals ?? null,
-        goals: r.player_goals ?? null,
       }])
     );
 
@@ -160,11 +161,18 @@ export async function GET(req: Request) {
 
     const statsMap = await statsMapPromise;
 
-    // The games/statistics/players snapshot can lag behind games/events — a
-    // goal might appear in the events feed before the stats API has updated
-    // the player's goal tally. Track a running per-player goal count from the
-    // events themselves (which are in chronological order) and use whichever
-    // is higher, so a freshly-kicked goal is never shown as "0 GOAL/S".
+    // The goal count on an event box must reflect the moment the event happened
+    // and then stay frozen: Jasper's FIRST goal box must always read "1 GOAL",
+    // even after he kicks his second. So we derive each event's goal tally
+    // purely from event ORDER — events arrive chronologically, so the Nth GOAL
+    // event for a player is that player's Nth goal. This count is identical on
+    // every sync, so the box never drifts.
+    //
+    // We deliberately do NOT fold in the player's cumulative goal total from the
+    // games/statistics/players snapshot. That total reflects *now*: if the first
+    // goal's row is first synced after the second goal is already on the board
+    // (the events feed and the stats snapshot can both lag), the cumulative total
+    // is 2 and the first goal box would wrongly read "2 GOALS".
     const goalCounter = new Map<number, number>();
 
     const apiRows = rawRows.map((row) => {
@@ -173,28 +181,30 @@ export async function GET(req: Request) {
       const isNew = !existingSnapshotMap.has(k);
       const snapshot = row.player_id != null ? statsMap.get(Number(row.player_id)) : undefined;
 
-      let runningGoals: number | undefined;
+      let runningGoals: number | null = null;
       if (row.player_id != null) {
         const pid = Number(row.player_id);
         const prev = goalCounter.get(pid) ?? 0;
-        const next = row.type === "GOAL" ? prev + 1 : prev;
+        // The events API reports types lower-case ("goal"/"behind"), so we must
+        // normalise before counting — a raw === "GOAL" never matches and the
+        // tally would stay stuck at 0, showing every goal box as "0 GOALS".
+        const isGoal = String(row.type ?? "").toUpperCase() === "GOAL";
+        const next = isGoal ? prev + 1 : prev;
         goalCounter.set(pid, next);
         runningGoals = next;
       }
 
-      // The running count is deterministic from event order alone, so it's safe
-      // to apply even to previously-synced rows — it only ever corrects a stale
-      // 0/low snapshot up to the true cumulative count, never changes a correct one.
-      const goals = isNew
-        ? Math.max(snapshot?.goals ?? 0, runningGoals ?? 0)
-        : Math.max(stored?.goals ?? 0, runningGoals ?? 0);
-
       return {
         ...row,
+        // FP / foopy / disposals are snapshotted once, when the event is first
+        // seen, then frozen (existing rows keep their stored value) so the box
+        // never changes as the player accumulates more during the game.
         player_fp: isNew ? (snapshot?.fp ?? null) : (stored?.fp ?? null),
         player_foopy: isNew ? (snapshot?.foopy ?? null) : (stored?.foopy ?? null),
         player_disposals: isNew ? (snapshot?.disposals ?? null) : (stored?.disposals ?? null),
-        player_goals: goals,
+        // Deterministic from event order, identical on every sync — the box
+        // shows the goal number as it was when scored and never drifts.
+        player_goals: runningGoals,
       };
     });
 
