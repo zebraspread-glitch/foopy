@@ -1363,24 +1363,22 @@ function LiveFeedPlayer({
           minHeight: type === "BEHIND" ? 56 : liveFeedBoxStyle.minHeight,
           padding: type === "BEHIND" ? "12px 16px 12px 14px" : liveFeedBoxStyle.padding,
         }}>
-          {isInferred ? <TeamEventAvatar team={team} /> : <PlayerAvatar name={playerName} team={team} size={56} />}
+          {isInferred ? (
+            <TeamEventAvatar team={team} />
+          ) : (
+            <PlayerAvatar
+              name={playerName}
+              team={team}
+              size={56}
+              rating={playerFoopy}
+              ratingColor={playerFoopy != null ? foopyColor(playerFoopy) : undefined}
+            />
+          )}
 
           <div style={liveFeedInfoStyle}>
             <div style={liveFeedNameRowStyle}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
                 <div style={liveFeedNameStyle}>{playerName}</div>
-                {playerFoopy != null && !isInferred && (
-                  <span style={{
-                    display: "inline-flex", alignItems: "center", justifyContent: "center",
-                    minWidth: 26, padding: "2px 5px", borderRadius: 6,
-                    background: foopyColor(playerFoopy),
-                    border: "1.5px solid var(--bg-1)",
-                    color: "var(--text-1)", fontWeight: 900, fontSize: 12, lineHeight: 1.4,
-                    flexShrink: 0,
-                  }}>
-                    {playerFoopy}
-                  </span>
-                )}
               </div>
               <div style={liveFeedTimeBadgeStyle}>
                 <span style={liveFeedQuarterStyle}>{eventQuarter(event)}</span>
