@@ -290,6 +290,18 @@ function idListIncludes(ids: unknown, target: number) {
   return ids.map(Number).includes(target);
 }
 
+// Stats-feed player ids (apiSportsId / statsIds) are a DIFFERENT namespace from
+// eventIds, yet their numeric ranges overlap — so matching a stats-feed id
+// against eventIds can hand it to the wrong player (e.g. Will Ashcroft's stats
+// id 1830 collides with Roan Steele's eventId 1830, putting Ashcroft's rating
+// under Steele's name). Leaderboards read stats-feed data, so they must resolve
+// players by stats ids only, never eventIds.
+function findPlayerByStatsId(players: PlayerStatsPlayer[], apiPlayerId: number) {
+  return players.find(
+    (p) => p.apiSportsId === apiPlayerId || idListIncludes(p.statsIds, apiPlayerId)
+  );
+}
+
 function makeTeamGradient(colors: string[]) {
   if (colors.length === 1) return colors[0];
   return `linear-gradient(90deg, ${colors.join(", ")})`;
@@ -1033,12 +1045,7 @@ free_kicks?: {
           const apiPlayerId = rawPlayer.player?.id;
           if (!apiPlayerId) continue;
 
-          const found = playerData.find(
-            (p) =>
-              p.apiSportsId === apiPlayerId ||
-              idListIncludes(p.eventIds, apiPlayerId) ||
-              idListIncludes(p.statsIds, apiPlayerId)
-          );
+          const found = findPlayerByStatsId(playerData, apiPlayerId);
 
           if (!found) continue;
 
@@ -1086,12 +1093,7 @@ free_kicks?: {
         const apiPlayerId = playerEntry?.player?.id;
         if (!apiPlayerId) continue;
 
-        const found = playerData.find(
-          (p) =>
-            p.apiSportsId === apiPlayerId ||
-            idListIncludes(p.eventIds, apiPlayerId) ||
-            idListIncludes(p.statsIds, apiPlayerId)
-        );
+        const found = findPlayerByStatsId(playerData, apiPlayerId);
         if (!found) continue;
 
         const name = String(found.name || "").trim();
@@ -1188,12 +1190,7 @@ free_kicks?: {
         for (const rawPlayer of teamEntry.players ?? []) {
           const apiPlayerId = rawPlayer.player?.id;
           if (!apiPlayerId) continue;
-          const found = playerData.find(
-            (p) =>
-              p.apiSportsId === apiPlayerId ||
-              idListIncludes(p.eventIds, apiPlayerId) ||
-              idListIncludes(p.statsIds, apiPlayerId)
-          );
+          const found = findPlayerByStatsId(playerData, apiPlayerId);
           if (found) processPlayerEntry(rawPlayer, found);
         }
       }
@@ -1204,12 +1201,7 @@ free_kicks?: {
       for (const playerEntry of players) {
         const apiPlayerId = playerEntry?.player?.id;
         if (!apiPlayerId) continue;
-        const found = playerData.find(
-          (p) =>
-            p.apiSportsId === apiPlayerId ||
-            idListIncludes(p.eventIds, apiPlayerId) ||
-            idListIncludes(p.statsIds, apiPlayerId)
-        );
+        const found = findPlayerByStatsId(playerData, apiPlayerId);
         if (found) processPlayerEntry(playerEntry, found);
       }
     }

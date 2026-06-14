@@ -37,6 +37,9 @@ interface PlayerSnapshot {
   foopy: number;
   disposals: number;
   goals: number;
+  tackles: number;
+  marks: number;
+  hitouts: number;
 }
 
 async function fetchPlayerStatsMap(gameId: string): Promise<Map<number, PlayerSnapshot>> {
@@ -64,6 +67,9 @@ async function fetchPlayerStatsMap(gameId: string): Promise<Map<number, PlayerSn
           foopy: foopyRating(stats),
           disposals: Number(stats.disposals) || (Number(stats.kicks) + Number(stats.handballs)),
           goals: Number(stats.goals),
+          tackles: Number(stats.tackles) || 0,
+          marks: Number(stats.marks) || 0,
+          hitouts: Number(stats.hitouts) || 0,
         });
       }
     }
@@ -136,7 +142,7 @@ export async function GET(req: Request) {
 
     const { data: existing } = await supabase
       .from("live_game_feed")
-      .select("id, period, minute, type, team_id, player_id, home_score, away_score, inferred, player_fp, player_foopy, player_disposals, player_goals")
+      .select("id, period, minute, type, team_id, player_id, home_score, away_score, inferred, player_fp, player_foopy, player_disposals, player_goals, player_tackles, player_marks, player_hitouts")
       .eq("api_game_id", gameId);
 
     const realExisting = (existing ?? []).filter((r: any) => !r.inferred);
@@ -148,6 +154,9 @@ export async function GET(req: Request) {
         foopy: r.player_foopy ?? null,
         disposals: r.player_disposals ?? null,
         goals: r.player_goals ?? null,
+        tackles: r.player_tackles ?? null,
+        marks: r.player_marks ?? null,
+        hitouts: r.player_hitouts ?? null,
       }])
     );
 
@@ -203,6 +212,11 @@ export async function GET(req: Request) {
         player_fp: isNew ? (snapshot?.fp ?? null) : (stored?.fp ?? null),
         player_foopy: isNew ? (snapshot?.foopy ?? null) : (stored?.foopy ?? null),
         player_disposals: isNew ? (snapshot?.disposals ?? null) : (stored?.disposals ?? null),
+        // Tackles / marks / hitouts are snapshotted and frozen the same way, so
+        // the box can show whichever the player had most of at the time (T/M/HO).
+        player_tackles: isNew ? (snapshot?.tackles ?? null) : (stored?.tackles ?? null),
+        player_marks: isNew ? (snapshot?.marks ?? null) : (stored?.marks ?? null),
+        player_hitouts: isNew ? (snapshot?.hitouts ?? null) : (stored?.hitouts ?? null),
         // A new row records the event-order tally at the moment it's scored;
         // existing rows keep their stored value untouched, so the count is frozen
         // for good and the box can never change. (A legacy row with no stored

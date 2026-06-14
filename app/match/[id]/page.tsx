@@ -1251,6 +1251,9 @@ function LiveFeedPlayer({
   playerFoopy,
   playerDisposals,
   playerGoals,
+  playerTackles,
+  playerMarks,
+  playerHitouts,
   reactions,
   myReactions,
   onCommentClick,
@@ -1267,6 +1270,9 @@ function LiveFeedPlayer({
   playerFoopy?: number | null;
   playerDisposals?: number | null;
   playerGoals?: number | null;
+  playerTackles?: number | null;
+  playerMarks?: number | null;
+  playerHitouts?: number | null;
   reactions?: EventReactionSummary[];
   myReactions?: string[];
   onCommentClick?: () => void;
@@ -1286,6 +1292,15 @@ function LiveFeedPlayer({
   // box must never read "0 GOALS" on a goal, even if an upstream stat snapshot
   // lagged behind the score. Clamp goals up to 1 for goal events only.
   const goalsShown = type === "GOAL" ? Math.max(playerGoals ?? 0, 1) : (playerGoals ?? 0);
+  // Third stat on the box: whichever peripheral the player has the most of —
+  // tackles (T), marks (M) or hitouts (HO). Ties fall back in that order.
+  const peripheral = (() => {
+    const t = playerTackles ?? 0, m = playerMarks ?? 0, h = playerHitouts ?? 0;
+    let value = t, label = "T";
+    if (m > value) { value = m; label = "M"; }
+    if (h > value) { value = h; label = "HO"; }
+    return { value, label };
+  })();
   const selectedReactionSet = new Set(myReactions ?? []);
   const sortedReactions = sortEventReactionSummaries(reactions ?? []);
   const reactionTotal = totalReactionCount(sortedReactions);
@@ -1390,11 +1405,9 @@ function LiveFeedPlayer({
               <div style={{ ...liveFeedActionStyle, color: type === "GOAL" ? "#22c55e" : type === "BEHIND" ? "#f8fafc" : "#facc15", fontSize: type === "BEHIND" ? 18 : liveFeedActionStyle.fontSize }}>
                 {type}
               </div>
-              {!isInferred && (playerFP != null || playerFoopy != null) && (
+              {!isInferred && playerFoopy != null && (
                 <span style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", fontWeight: 500, lineHeight: 1.4, marginTop: 4 }}>
-                  {playerFP != null && `${playerFP} FP`}
-                  {playerFP != null && playerFoopy != null && " · "}
-                  {playerFoopy != null && `${playerDisposals ?? 0} DISP · ${goalsShown} ${goalsShown === 1 ? "GOAL" : "GOALS"}`}
+                  {`${goalsShown} G · ${playerDisposals ?? 0} D · ${peripheral.value} ${peripheral.label}`}
                 </span>
               )}
             </div>
@@ -3310,7 +3323,7 @@ function MatchPageInner() {
   const eventFPSnapshots = useRef<Record<string, number>>({});
   // Same idea for foopy rating / disposals / goals, used as a fallback for
   // events whose live_game_feed row doesn't have a stored snapshot yet.
-  const eventStatSnapshots = useRef<Record<string, { foopy: number; disposals: number; goals: number }>>({});
+  const eventStatSnapshots = useRef<Record<string, { foopy: number; disposals: number; goals: number; tackles: number; marks: number; hitouts: number }>>({});
   const initialFeedLoaded = useRef(false);
   const lastScoreRef = useRef<{ home: number; away: number } | null>(null);
   const [freshEventKeys, setFreshEventKeys] = useState(new Set<string>());
@@ -4049,6 +4062,9 @@ function MatchPageInner() {
         playerFoopy: e.player_foopy ?? null,
         playerDisposals: e.player_disposals ?? null,
         playerGoals: e.player_goals ?? null,
+        playerTackles: e.player_tackles ?? null,
+        playerMarks: e.player_marks ?? null,
+        playerHitouts: e.player_hitouts ?? null,
       }));
 
     const chronological = [...normalised].sort((a, b) => {
@@ -4394,6 +4410,9 @@ function MatchPageInner() {
           foopy: (event as any).playerFoopy,
           disposals: (event as any).playerDisposals ?? 0,
           goals: (event as any).playerGoals ?? 0,
+          tackles: (event as any).playerTackles ?? 0,
+          marks: (event as any).playerMarks ?? 0,
+          hitouts: (event as any).playerHitouts ?? 0,
         };
       }
 
@@ -4414,6 +4433,9 @@ function MatchPageInner() {
           // the moment scored). Only fall back to the live cumulative total for
           // legacy rows that predate that column — and that total can lag to 0.
           goals: (event as any).playerGoals ?? num((stat as any).goals),
+          tackles: (event as any).playerTackles ?? num((stat as any).tackles),
+          marks: (event as any).playerMarks ?? num((stat as any).marks),
+          hitouts: (event as any).playerHitouts ?? num((stat as any).hitouts),
         };
       }
     });
@@ -4925,6 +4947,9 @@ function MatchPageInner() {
                           playerFoopy={eventPlayerStats?.foopy ?? null}
                           playerDisposals={eventPlayerStats?.disposals ?? null}
                           playerGoals={eventPlayerStats?.goals ?? null}
+                          playerTackles={eventPlayerStats?.tackles ?? null}
+                          playerMarks={eventPlayerStats?.marks ?? null}
+                          playerHitouts={eventPlayerStats?.hitouts ?? null}
                           reactions={eventReactions[commentKey] ?? []}
                           myReactions={myEventReactions[commentKey] ?? []}
                           onOpenReactionPopup={() => setReactionPopup({ eventKey: commentKey, label: eventMeta.label })}
