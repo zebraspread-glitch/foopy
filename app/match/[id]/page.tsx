@@ -1876,10 +1876,14 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
   }
 
   if (!stats.length) {
+    // A live or finished game HAS player stats — they're just still being
+    // fetched. Showing "once the game has been played" there is wrong, so only
+    // upcoming games get that copy; played games get a loading state instead.
+    const played = isFinal || isLive;
     return (
       <div style={noStatsStyle}>
-        <strong>No player stats available yet.</strong>
-        <span>Stats will appear here once the game has been played.</span>
+        <strong>{played ? "Loading player stats…" : "No player stats available yet."}</strong>
+        <span>{played ? "Final stats are on their way." : "Stats will appear here once the game has been played."}</span>
       </div>
     );
   }
