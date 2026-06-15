@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle, Search, Ticket, TrendingUp, Trophy, Users, Zap } from "lucide-react";
+import PageHeader from "@/app/components/PageHeader";
 import { VerifiedBadge } from "@/app/components/VerifiedBadge";
 import { supabase } from "@/app/lib/supabase";
 import {
@@ -941,11 +942,14 @@ function PassesPageInner() {
   const canGetMore = tab === "player"
     ? (data?.playerPassCount ?? 0) < MAX_PLAYER_PASSES
     : (data?.teamPasses?.length ?? 0) < MAX_TEAM_PASSES;
+  const passBalance = data
+    ? <span style={passHeaderBalanceStyle}><CoinImg size={16} />{fmtCoins(coins)}</span>
+    : <div style={passHeaderSpinnerStyle} />;
 
   if (authed === false) {
     return (
       <div style={pageStyle}>
-        <div style={headerStyle}><span style={titleStyle}>Passes</span></div>
+        <PageHeader title="Passes" subtitle="Player and team rewards" />
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "80px 32px", textAlign: "center", gap: 14 }}>
           <div style={{ fontSize: 44 }}>🎫</div>
           <div style={{ fontWeight: 900, fontSize: 18, color: "var(--text-1)" }}>Sign in to use Passes</div>
@@ -1039,9 +1043,24 @@ function PassesPageInner() {
 
   return (
     <div style={pageStyle}>
-      {/* Header */}
-      <div style={headerStyle}>
-        {/* Passes / Global mode toggle */}
+      <PageHeader
+        title="Passes"
+        subtitle={passesMode === "global" ? "Global leaderboards" : "Player and team rewards"}
+        right={
+          data ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              {passBalance}
+              {passesMode === "my" && (
+                <button onClick={() => setEarningsOpen(true)} style={{ padding: "7px 14px", borderRadius: 999, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.75)", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>
+                  Earnings
+                </button>
+              )}
+            </div>
+          ) : undefined
+        }
+      />
+
+      <div style={{ padding: "14px 16px 0", display: "flex", justifyContent: "center" }}>
         <div style={{ display: "flex", background: "rgba(255,255,255,0.06)", borderRadius: 999, padding: 3 }}>
           {(["my", "global"] as const).map(m => (
             <button key={m} onClick={() => setPassesMode(m)} style={{
@@ -1054,14 +1073,6 @@ function PassesPageInner() {
               {m === "my" ? "Passes" : "Global"}
             </button>
           ))}
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {data && <span style={{ fontSize: 13, fontWeight: 800, color: "#fbbf24", display: "flex", alignItems: "center", gap: 4 }}><CoinImg size={16} />{fmtCoins(coins)}</span>}
-          {data && passesMode === "my" && (
-            <button onClick={() => setEarningsOpen(true)} style={{ padding: "7px 14px", borderRadius: 999, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.75)", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>
-              Earnings
-            </button>
-          )}
         </div>
       </div>
 
@@ -2316,12 +2327,40 @@ export default function PassesPage() {
 const pageStyle: CSSProperties = { minHeight: "100dvh", background: "var(--bg)" };
 
 const headerStyle: CSSProperties = {
-  display: "flex", alignItems: "center", justifyContent: "space-between",
-  padding: "56px 16px 12px", borderBottom: "1px solid var(--border-1)",
+  position: "sticky",
+  top: 0,
+  zIndex: 50,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 12,
+  height: "calc(56px + env(safe-area-inset-top))",
+  marginTop: "calc(-1 * env(safe-area-inset-top, 0px))",
+  padding: "env(safe-area-inset-top) 16px 0",
+  background: "var(--bottom-nav-bg)",
+  backdropFilter: "blur(28px) saturate(200%)",
+  WebkitBackdropFilter: "blur(28px) saturate(200%)",
+  borderBottom: "0.5px solid var(--bottom-nav-border)",
 };
 
-const titleStyle: CSSProperties = {
-  fontSize: 26, fontWeight: 900, color: "var(--text-1)", letterSpacing: "-0.03em",
+const passHeaderBalanceStyle: CSSProperties = {
+  fontSize: 13,
+  fontWeight: 900,
+  color: "#fbbf24",
+  display: "flex",
+  alignItems: "center",
+  gap: 4,
+  flexShrink: 0,
+};
+
+const passHeaderSpinnerStyle: CSSProperties = {
+  width: 14,
+  height: 14,
+  border: "2px solid rgba(255,255,255,.2)",
+  borderTopColor: "#fbbf24",
+  borderRadius: "50%",
+  animation: "spin 0.7s linear infinite",
+  flexShrink: 0,
 };
 
 const passPageBackButtonStyle: CSSProperties = {

@@ -6,6 +6,7 @@ import rawStats from "@/app/data/player-season-stats.json";
 import { CARD_PLAYERS } from "@/app/data/cardPlayers";
 import { PLAYER_IMG_BASE } from "@/app/lib/playerImage";
 import { foopyRating, foopyColor } from "@/app/lib/foopyRating";
+import PageHeader from "@/app/components/PageHeader";
 
 type PlayerStat = {
   id: string; name: string; team: string; apiSportsId: number;
@@ -424,39 +425,25 @@ export default function ComparePage() {
       }}>
 
         {/* Header */}
-        <header style={{
-          position: "sticky", top: 0, zIndex: 50,
-          background: "var(--bottom-nav-bg)", backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
-          borderBottom: "1px solid var(--border-1)",
-          padding: "env(safe-area-inset-top) 16px 0 58px",
-          height: "calc(52px + env(safe-area-inset-top))",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <button className="c-btn" onClick={() => router.push("/stats")} style={{
-              background: "none", border: "none", cursor: "pointer", padding: 0,
-              color: "#60a5fa", fontSize: 15, fontWeight: 900,
-            }}>← Stats</button>
-            <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", display: "flex", alignItems: "baseline", gap: 8, pointerEvents: "none" }}>
-              <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--text-1)" }}>
-                Compare
-              </span>
+        <PageHeader
+          title="Compare"
+          onBack={() => router.push("/stats")}
+          align="left"
+          right={
+            <div style={{ display: "inline-flex", background: "var(--surface-3)", borderRadius: 9, padding: 2 }}>
+              {(["avg", "total"] as const).map(m => (
+                <button key={m} className="c-btn" onClick={() => setMode(m)} style={{
+                  padding: "4px 11px", borderRadius: 7, border: "none", cursor: "pointer",
+                  background: mode === m ? "var(--border-3)" : "transparent",
+                  color: mode === m ? "#fff" : "#3a3a3a",
+                  fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase",
+                }}>
+                  {m === "avg" ? "Avg" : "Total"}
+                </button>
+              ))}
             </div>
-          </div>
-          <div style={{ display: "inline-flex", background: "var(--surface-3)", borderRadius: 9, padding: 2 }}>
-            {(["avg", "total"] as const).map(m => (
-              <button key={m} className="c-btn" onClick={() => setMode(m)} style={{
-                padding: "4px 11px", borderRadius: 7, border: "none", cursor: "pointer",
-                background: mode === m ? "var(--border-3)" : "transparent",
-                color: mode === m ? "#fff" : "#3a3a3a",
-                fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase",
-              }}>
-                {m === "avg" ? "Avg" : "Total"}
-              </button>
-            ))}
-          </div>
-        </header>
+          }
+        />
 
         <div style={{ maxWidth: 760, margin: "0 auto", padding: "16px 12px" }}>
 

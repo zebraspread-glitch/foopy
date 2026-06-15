@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import PageHeader from "@/app/components/PageHeader";
 
 const TEAM_LOGOS: Record<string, string> = {
   Adelaide: "/team-logos/crows.png",
@@ -719,9 +720,7 @@ export default function RecordsPage() {
         .rec-tab:active { opacity: 0.7; }
       `}</style>
 
-      <header style={headerStyle}>
-        <span style={titleStyle}>Records</span>
-      </header>
+      <PageHeader title="Records" />
 
       {/* Segmented control */}
       <div style={segWrapStyle}>
@@ -854,28 +853,6 @@ const pageStyle: CSSProperties = {
   background: "var(--bg)",
   color: "var(--text-1)",
   paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
-};
-
-const headerStyle: CSSProperties = {
-  position: "sticky",
-  top: 0,
-  zIndex: 50,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  height: "calc(56px + env(safe-area-inset-top))",
-  padding: "env(safe-area-inset-top) 16px 0",
-  background: "var(--bottom-nav-bg)",
-  backdropFilter: "blur(28px) saturate(200%)",
-  WebkitBackdropFilter: "blur(28px) saturate(200%)",
-  borderBottom: "0.5px solid var(--border-2)",
-};
-
-const titleStyle: CSSProperties = {
-  fontSize: 20,
-  fontWeight: 950,
-  letterSpacing: "-0.03em",
 };
 
 const segWrapStyle: CSSProperties = {

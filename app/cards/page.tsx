@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import PageHeader from "@/app/components/PageHeader";
 import { supabase } from "@/app/lib/supabase";
 import type { User } from "@supabase/supabase-js";
 import TradesInboxModal from "@/app/components/TradesInboxModal";
@@ -665,9 +666,7 @@ export default function CardsPage() {
   if (authLoading) {
     return (
       <main style={pageStyle}>
-        <header style={headerStyle}>
-          <span style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", fontSize: 18, fontWeight: 900, color: "var(--text-1)", letterSpacing: "-0.01em" }}>Cards</span>
-        </header>
+        <PageHeader title="Cards" />
         <CardGridSkeleton count={6} />
       </main>
     );
@@ -741,10 +740,10 @@ export default function CardsPage() {
         }
       `}</style>
 
-      {/* Header bar */}
-      <header style={headerStyle}>
-        <span style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", fontSize: 18, fontWeight: 900, color: "var(--text-1)", letterSpacing: "-0.01em", pointerEvents: "none" }}>Cards</span>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginLeft: "auto" }}>
+      <PageHeader
+        title="Cards"
+        right={
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <Link href="/album" style={{ fontSize: 12, fontWeight: 800, color: "rgba(255,255,255,.5)", textDecoration: "none", background: "var(--surface-3)", borderRadius: 99, padding: "5px 11px" }}>
             Album
           </Link>
@@ -781,8 +780,9 @@ export default function CardsPage() {
               </div>
             </>
           )}
-        </div>
-      </header>
+          </div>
+        }
+      />
 
       {showTradesInbox && user && accessToken && (
         <TradesInboxModal
@@ -1992,20 +1992,6 @@ const pageStyle: React.CSSProperties = {
   background: "var(--bg)",
   color: "var(--text-1)",
   paddingBottom: "calc(80px + env(safe-area-inset-bottom))",
-};
-
-const headerStyle: React.CSSProperties = {
-  position: "sticky",
-  top: 0,
-  zIndex: 20,
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  padding: "calc(env(safe-area-inset-top) + 12px) 18px 12px 58px",
-  background: "var(--bottom-nav-bg)",
-  backdropFilter: "blur(28px) saturate(200%)",
-  WebkitBackdropFilter: "blur(28px) saturate(200%)",
-  borderBottom: "0.5px solid var(--border-2)",
 };
 
 const coinBadgeStyle: React.CSSProperties = {

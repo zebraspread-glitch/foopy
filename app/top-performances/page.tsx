@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
 import Link from "next/link";
 import { foopyColor } from "@/app/lib/foopyRating";
+import PageHeader from "@/app/components/PageHeader";
 
 type PerformanceEntry = {
   rank: number;
@@ -118,18 +119,14 @@ function TopPerformancesInner() {
   return (
     <main style={{ maxWidth: 600, margin: "0 auto", padding: "0 0 60px" }}>
       {/* Header */}
-      <div style={{ padding: "16px 16px 0" }}>
-        <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-          <Link href="/" style={{ padding: "8px 14px", borderRadius: 10, background: "var(--surface-2)", border: "1px solid var(--border-2)", color: "var(--text-1)", textDecoration: "none", fontSize: 13, fontWeight: 600 }}>
-            ← Back
-          </Link>
-          <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", textAlign: "center", pointerEvents: "none" }}>
-            <h1 style={{ margin: 0, fontSize: 20, fontWeight: 900, letterSpacing: "-0.02em" }}>
-              Foopy Ratings
-            </h1>
-            {subtitle && <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 600, marginTop: 2 }}>{subtitle}</div>}
-          </div>
-        </div>
+      <PageHeader
+        title="Foopy Ratings"
+        subtitle={subtitle}
+        backHref="/"
+        align="left"
+      />
+
+      <div style={{ padding: "14px 16px 0" }}>
 
         {/* Filter tabs */}
         <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 2 }} className="no-scrollbar">

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { CSSProperties, ReactNode } from "react";
+import PageHeader from "@/app/components/PageHeader";
 import {
   FOOPY_THEME_KEY,
   themeColorForMode,
@@ -80,36 +81,12 @@ export type { FoopyThemeMode };
 export function SettingsHeader({ title, backHref }: { title: string; backHref?: string }) {
   const router = useRouter();
   return (
-    <header
-      style={{
-        position: "sticky", top: 0, zIndex: 50,
-        background: "var(--bottom-nav-bg)",
-        backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
-        borderBottom: "1px solid var(--border-1)",
-        paddingTop: "env(safe-area-inset-top)",
-        height: "calc(52px + env(safe-area-inset-top))",
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}
-    >
-      <button
-        onClick={() => (backHref ? router.push(backHref) : router.back())}
-        aria-label="Back"
-        style={{
-          position: "absolute", left: 8, top: "env(safe-area-inset-top)",
-          height: "52px", width: 44,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          background: "none", border: "none", cursor: "pointer",
-          color: "var(--text-1)", padding: 0,
-        }}
-      >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M15 18l-6-6 6-6" />
-        </svg>
-      </button>
-      <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em", color: "var(--text-1)" }}>
-        {title}
-      </span>
-    </header>
+    <PageHeader
+      title={title}
+      backHref={backHref}
+      onBack={backHref ? undefined : () => router.back()}
+      align="left"
+    />
   );
 }
 

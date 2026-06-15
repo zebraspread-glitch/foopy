@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { getGames, getGamesCached } from "@/app/lib/gameCache";
+import PageHeader from "@/app/components/PageHeader";
 
 function toTeamSlug(name: string): string {
   const overrides: Record<string, string> = {
@@ -672,31 +673,33 @@ export default function LadderPage() {
         }
       `}</style>
 
-      <header style={headerStyle} className="ladder-header">
-        <span style={{ ...titleStyle, position: "absolute", left: "50%", transform: "translateX(-50%)", pointerEvents: "none" }}>Ladder</span>
-        <div style={{ ...tabsStyle, marginLeft: "auto" }}>
-          {tabs.map((t) => (
-            <button
-              type="button"
-              key={t}
-              onClick={() => setActiveTab(t)}
-              style={{ ...tabBtnStyle, ...(activeTab === t ? (t === "live" ? activeTabLiveStyle : activeTabStyle) : {}) }}
-            >
-              {t === "live" ? (
-                <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                  <span style={{
-                    width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
-                    background: hasLiveGames ? "#22c55e" : "#475569",
-                    boxShadow: hasLiveGames ? "0 0 0 2px rgba(34,197,94,0.3)" : "none",
-                    animation: hasLiveGames ? "livePulse 1.8s ease-in-out infinite" : "none",
-                  }} />
-                  Live
-                </span>
-              ) : t === "league" ? "League" : "Finals"}
-            </button>
-          ))}
-        </div>
-      </header>
+      <PageHeader
+        title="Ladder"
+        right={
+          <div style={tabsStyle}>
+            {tabs.map((t) => (
+              <button
+                type="button"
+                key={t}
+                onClick={() => setActiveTab(t)}
+                style={{ ...tabBtnStyle, ...(activeTab === t ? (t === "live" ? activeTabLiveStyle : activeTabStyle) : {}) }}
+              >
+                {t === "live" ? (
+                  <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                    <span style={{
+                      width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
+                      background: hasLiveGames ? "#22c55e" : "#475569",
+                      boxShadow: hasLiveGames ? "0 0 0 2px rgba(34,197,94,0.3)" : "none",
+                      animation: hasLiveGames ? "livePulse 1.8s ease-in-out infinite" : "none",
+                    }} />
+                    Live
+                  </span>
+                ) : t === "league" ? "League" : "Finals"}
+              </button>
+            ))}
+          </div>
+        }
+      />
 
       <div style={wrapStyle} className="ladder-wrap">
         {error && (
@@ -839,28 +842,6 @@ const pageStyle: CSSProperties = {
   background: "var(--bg)",
   color: "var(--text-1)",
   paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
-};
-
-const headerStyle: CSSProperties = {
-  position: "sticky",
-  top: 0,
-  zIndex: 50,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: 12,
-  height: "calc(56px + env(safe-area-inset-top))",
-  padding: "env(safe-area-inset-top) 16px 0 58px",
-  background: "var(--bottom-nav-bg)",
-  backdropFilter: "blur(28px) saturate(200%)",
-  WebkitBackdropFilter: "blur(28px) saturate(200%)",
-  borderBottom: "0.5px solid var(--border-2)",
-};
-
-const titleStyle: CSSProperties = {
-  fontSize: 20,
-  fontWeight: 950,
-  letterSpacing: "-0.03em",
 };
 
 const tabsStyle: CSSProperties = {

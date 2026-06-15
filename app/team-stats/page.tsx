@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import teamStatsData from "@/app/data/team-stats.json";
+import PageHeader from "@/app/components/PageHeader";
 
 type TeamBlock = {
   team?: { id?: number | string };
@@ -244,28 +245,28 @@ export default function TeamStatsPage() {
       `}</style>
 
       <main style={pageStyle}>
-        <header style={headerStyle}>
-          <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", display: "flex", alignItems: "baseline", gap: 8, pointerEvents: "none", whiteSpace: "nowrap" }}>
-            <span style={titleStyle}>Team Stats</span>
-            <span style={seasonStyle}>AFL 2026</span>
-          </div>
-          <div style={{ ...toggleStyle, marginLeft: "auto" }}>
-            {(["avg", "total"] as const).map((item) => (
-              <button
-                key={item}
-                className="ts-btn"
-                onClick={() => setMode(item)}
-                style={{
-                  ...toggleButtonStyle,
-                  background: mode === item ? "var(--border-3)" : "transparent",
-                  color: mode === item ? "#fff" : "#515151",
-                }}
-              >
-                {item === "avg" ? "Avg" : "Total"}
-              </button>
-            ))}
-          </div>
-        </header>
+        <PageHeader
+          title="Team Stats"
+          subtitle="AFL 2026"
+          right={
+            <div style={toggleStyle}>
+              {(["avg", "total"] as const).map((item) => (
+                <button
+                  key={item}
+                  className="ts-btn"
+                  onClick={() => setMode(item)}
+                  style={{
+                    ...toggleButtonStyle,
+                    background: mode === item ? "var(--border-3)" : "transparent",
+                    color: mode === item ? "#fff" : "#515151",
+                  }}
+                >
+                  {item === "avg" ? "Avg" : "Total"}
+                </button>
+              ))}
+            </div>
+          }
+        />
 
         <div style={tabsStyle}>
           {STAT_CATEGORIES.map((item) => {
@@ -341,37 +342,6 @@ const pageStyle: React.CSSProperties = {
   background: "var(--bg)",
   color: "var(--text-1)",
   paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
-};
-
-const headerStyle: React.CSSProperties = {
-  position: "sticky",
-  top: 0,
-  zIndex: 50,
-  background: "var(--bottom-nav-bg)",
-  backdropFilter: "blur(24px)",
-  WebkitBackdropFilter: "blur(24px)",
-  borderBottom: "1px solid var(--border-1)",
-  padding: "env(safe-area-inset-top) 16px 0 58px",
-  height: "calc(52px + env(safe-area-inset-top))",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: 12,
-};
-
-const titleStyle: React.CSSProperties = {
-  fontSize: 18,
-  fontWeight: 900,
-  letterSpacing: "-0.03em",
-  color: "var(--text-1)",
-};
-
-const seasonStyle: React.CSSProperties = {
-  fontSize: 10,
-  fontWeight: 800,
-  color: "var(--text-3)",
-  letterSpacing: ".06em",
-  textTransform: "uppercase",
 };
 
 const toggleStyle: React.CSSProperties = {

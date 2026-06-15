@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import type { CSSProperties } from "react";
 import seasons from "@/app/data/seasons.json";
+import PageHeader from "@/app/components/PageHeader";
 
 type Season = {
   year: number;
@@ -130,9 +131,7 @@ export default function SeasonsPage() {
         }
       `}</style>
 
-      <header style={headerStyle}>
-        <span style={titleStyle}>Seasons</span>
-      </header>
+      <PageHeader title="Seasons" />
 
       <div style={listStyle}>
         {(seasons as Season[]).map((season) => (
@@ -152,28 +151,6 @@ const pageStyle: CSSProperties = {
   background: "var(--bg)",
   color: "var(--text-1)",
   paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
-};
-
-const headerStyle: CSSProperties = {
-  position: "sticky",
-  top: 0,
-  zIndex: 50,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  height: "calc(56px + env(safe-area-inset-top))",
-  padding: "env(safe-area-inset-top) 16px 0",
-  background: "var(--bottom-nav-bg)",
-  backdropFilter: "blur(28px) saturate(200%)",
-  WebkitBackdropFilter: "blur(28px) saturate(200%)",
-  borderBottom: "0.5px solid var(--border-2)",
-};
-
-const titleStyle: CSSProperties = {
-  fontSize: 20,
-  fontWeight: 950,
-  letterSpacing: "-0.03em",
 };
 
 const listStyle: CSSProperties = {

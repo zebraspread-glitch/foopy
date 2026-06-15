@@ -3,6 +3,7 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
+import PageHeader from "@/app/components/PageHeader";
 
 type TokenPack = {
   id: string;
@@ -57,12 +58,6 @@ export default function TokensPage() {
         .tk-ambient { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 150%; height: 420px; pointer-events: none; z-index: 0;
           background: radial-gradient(56% 100% at 50% 0%, rgba(56,189,248,.26), rgba(99,102,241,.10) 46%, transparent 74%); }
 
-        .tk-header { position: sticky; top: 0; z-index: 50; height: calc(52px + env(safe-area-inset-top)); padding: env(safe-area-inset-top) 14px 0 14px;
-          display: flex; align-items: center; gap: 10px; justify-content: space-between;
-          background: linear-gradient(180deg, rgba(10,10,15,.82), rgba(10,10,15,.30)); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
-        .tk-back { background: none; border: none; color: var(--text-2); cursor: pointer; padding: 6px; margin: -6px; display: flex; border-radius: 10px; transition: background .15s ease; }
-        .tk-back:hover { background: rgba(255,255,255,.07); }
-        .tk-title { position: absolute; left: 50%; transform: translateX(-50%); font-size: 17px; font-weight: 900; letter-spacing: -.02em; }
         .tk-pill { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 6px 13px; border-radius: 999px; overflow: hidden;
           background: linear-gradient(135deg,#38bdf8,#6366f1); box-shadow: 0 4px 16px rgba(99,102,241,.45), inset 0 1px 0 rgba(255,255,255,.35); }
         .tk-pill img { width: 16px; height: 16px; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
@@ -134,18 +129,17 @@ export default function TokensPage() {
 
       <div className="tk-ambient" />
 
-      <header className="tk-header">
-        <button className="tk-back" onClick={() => router.back()} aria-label="Back">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-        </button>
-        <span className="tk-title">Get Tokens</span>
-        <div className="tk-pill">
-          <img src="/token/token.png" alt="" />
-          <span>{tokens.toLocaleString()}</span>
-        </div>
-      </header>
+      <PageHeader
+        title="Get Tokens"
+        onBack={() => router.back()}
+        align="left"
+        right={
+          <div className="tk-pill">
+            <img src="/token/token.png" alt="" />
+            <span>{tokens.toLocaleString()}</span>
+          </div>
+        }
+      />
 
       <div className="tk-content">
         <section className="tk-hero">

@@ -3,6 +3,7 @@ import fs from "fs";
 import Link from "next/link";
 import { foopyColor } from "@/app/lib/foopyRating";
 import { computeAvgFoopyMap } from "@/app/lib/computeAvgFoopy.server";
+import PageHeader from "@/app/components/PageHeader";
 
 type PlayerInfo = {
   id: string;
@@ -66,15 +67,14 @@ export default async function TeamAveragePage() {
 
   return (
     <main style={pageStyle}>
+      <PageHeader
+        title="Team Average"
+        subtitle="Teams ranked by average player Foopy rating"
+        backHref=".."
+        align="left"
+        right={<span style={countStyle}>{rankings.length} teams</span>}
+      />
       <div style={wrapStyle}>
-        <Link href=".." style={backStyle}>Back</Link>
-        <header style={headerStyle}>
-          <div>
-            <h1 style={titleStyle}>Team Average</h1>
-            <p style={subStyle}>Teams ranked by average player Foopy rating</p>
-          </div>
-          <span style={countStyle}>{rankings.length} teams</span>
-        </header>
 
         <section style={cardStyle}>
           {rankings.map((team, index) => (
@@ -106,47 +106,10 @@ const pageStyle: React.CSSProperties = {
 const wrapStyle: React.CSSProperties = {
   maxWidth: 680,
   margin: "0 auto",
-  padding: "calc(env(safe-area-inset-top) + 14px) 12px 0",
-};
-
-const backStyle: React.CSSProperties = {
-  display: "inline-flex",
-  color: "#60a5fa",
-  textDecoration: "none",
-  fontSize: 15,
-  fontWeight: 900,
-  margin: "0 0 12px 6px",
-};
-
-const headerStyle: React.CSSProperties = {
-  position: "relative",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  gap: 14,
-  padding: "0 6px 14px",
-};
-
-const titleStyle: React.CSSProperties = {
-  margin: 0,
-  color: "var(--text-1)",
-  fontSize: 26,
-  fontWeight: 950,
-  letterSpacing: "-0.04em",
-};
-
-const subStyle: React.CSSProperties = {
-  margin: "4px 0 0",
-  color: "var(--text-3)",
-  fontSize: 12,
-  fontWeight: 800,
+  padding: "14px 12px 0",
 };
 
 const countStyle: React.CSSProperties = {
-  position: "absolute",
-  right: 6,
-  top: 0,
   flexShrink: 0,
   fontSize: 11,
   fontWeight: 850,

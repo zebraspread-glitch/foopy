@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { getGames, getGamesCached } from "@/app/lib/gameCache";
 import { playerImgUrl } from "@/app/lib/playerImage";
 import type { PlayerRank } from "@/app/api/power-rankings/route";
+import PageHeader from "@/app/components/PageHeader";
 
 /* ─── Types ──────────────────────────────────────────────── */
 
@@ -280,10 +281,9 @@ export default function PowerRankingsPage() {
       `}</style>
 
       {/* ── Sticky header ── */}
-      <header style={headerStyle}>
-        <span style={{ ...titleStyle, position: "absolute", left: "50%", transform: "translateX(-50%)", pointerEvents: "none", whiteSpace: "nowrap" }}>Power Rankings</span>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginLeft: "auto" }}>
-          {/* Player / Team toggle */}
+      <PageHeader
+        title="Power Rankings"
+        right={
           <div style={toggleWrapStyle}>
             <button onClick={() => setView("player")} style={{ ...toggleBtnStyle, ...(view === "player" ? toggleActiveStyle : {}) }}>
               Player
@@ -292,8 +292,8 @@ export default function PowerRankingsPage() {
               Team
             </button>
           </div>
-        </div>
-      </header>
+        }
+      />
 
       {/* ── Period tabs ── */}
       <div style={periodBarStyle}>
@@ -457,26 +457,6 @@ const pageStyle: CSSProperties = {
   background: "var(--bg)",
   color: "var(--text-1)",
   paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
-};
-
-const headerStyle: CSSProperties = {
-  position: "sticky",
-  top: 0,
-  zIndex: 50,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: 12,
-  height: "calc(56px + env(safe-area-inset-top))",
-  padding: "env(safe-area-inset-top) 16px 0 58px",
-  background: "var(--bottom-nav-bg)",
-  backdropFilter: "blur(28px) saturate(200%)",
-  WebkitBackdropFilter: "blur(28px) saturate(200%)",
-  borderBottom: "0.5px solid var(--border-2)",
-};
-
-const titleStyle: CSSProperties = {
-  fontSize: 20, fontWeight: 950, letterSpacing: "-0.03em",
 };
 
 const toggleWrapStyle: CSSProperties = {

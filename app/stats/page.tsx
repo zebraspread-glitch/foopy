@@ -6,6 +6,7 @@ import rawStats from "@/app/data/player-season-stats.json";
 import { CARD_PLAYERS } from "@/app/data/cardPlayers";
 import { PLAYER_IMG_BASE } from "@/app/lib/playerImage";
 import { StatsTableSkeleton } from "@/app/components/Skeleton";
+import PageHeader from "@/app/components/PageHeader";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -266,25 +267,11 @@ export default function StatsPage() {
       }}>
 
         {/* ── Header ── */}
-        <header style={{
-          position: "sticky", top: 0, zIndex: 50,
-          background: "var(--bottom-nav-bg)", backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
-          borderBottom: "1px solid var(--border-1)",
-          padding: "env(safe-area-inset-top) 16px 0",
-          height: "calc(52px + env(safe-area-inset-top))",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-        }}>
-          <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", display: "flex", alignItems: "baseline", gap: 8, pointerEvents: "none", whiteSpace: "nowrap" }}>
-            <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--text-1)" }}>
-              Player Stats
-            </span>
-            <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-              AFL 2026
-            </span>
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "auto" }}>
+        <PageHeader
+          title="Player Stats"
+          subtitle="AFL 2026"
+          right={
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             {/* Team filter */}
             <button
               className="s-btn"
@@ -319,14 +306,15 @@ export default function StatsPage() {
               Compare
             </button>
           </div>
-        </header>
+          }
+        />
 
         {/* ── Tabs ── */}
         <div style={{
           overflowX: "auto", scrollbarWidth: "none", display: "flex",
           background: "var(--bottom-nav-bg)",
           borderBottom: "1px solid var(--border-1)",
-          position: "sticky", top: `calc(52px + env(safe-area-inset-top))`, zIndex: 49,
+          position: "sticky", top: `calc(56px + env(safe-area-inset-top))`, zIndex: 49,
         }}>
           {CATEGORIES.map(c => {
             const active = cat === c.key;

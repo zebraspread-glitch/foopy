@@ -11,6 +11,7 @@ import { nameColorStyle } from "@/app/lib/cosmetics";
 import { getMyBlockedIds } from "@/app/lib/blocks";
 import playersData from "@/app/data/players.json";
 import { playerImgUrl } from "@/app/lib/playerImage";
+import PageHeader from "@/app/components/PageHeader";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -147,9 +148,7 @@ export default function SearchPage() {
 
   return (
     <main style={pageStyle} className="page-enter">
-      <header style={headerStyle}>
-        <span style={titleStyle}>Search</span>
-      </header>
+      <PageHeader title="Search" />
 
       <div style={contentStyle}>
         {/* Search bar */}
@@ -270,25 +269,6 @@ const pageStyle: CSSProperties = {
   color: "var(--text-1)",
   paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
 };
-
-const headerStyle: CSSProperties = {
-  position: "sticky",
-  top: 0,
-  zIndex: 50,
-  height: "calc(56px + env(safe-area-inset-top))",
-  paddingTop: "env(safe-area-inset-top)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "env(safe-area-inset-top) 16px 0",
-  background: "var(--bottom-nav-bg)",
-  backdropFilter: "blur(28px) saturate(200%)",
-  WebkitBackdropFilter: "blur(28px) saturate(200%)",
-  borderBottom: "0.5px solid var(--border-2)",
-};
-
-const titleStyle: CSSProperties = { fontSize: 18, fontWeight: 950, letterSpacing: "-0.02em" };
 
 const contentStyle: CSSProperties = {
   maxWidth: 640,

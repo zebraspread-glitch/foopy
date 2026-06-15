@@ -6,6 +6,7 @@ import { type Cosmetic, type EquippedCosmetics, nameColorStyle, avatarFrameStyle
 import { patternBackground } from "@/app/components/PassCard";
 import { StoreItemSkeleton } from "@/app/components/Skeleton";
 import { getPassLevel, PLAYER_PASS_LEVELS } from "@/app/lib/passes";
+import PageHeader from "@/app/components/PageHeader";
 
 const PATTERN_PREVIEW_LEVEL = getPassLevel(375, PLAYER_PASS_LEVELS);
 
@@ -378,7 +379,7 @@ export default function StorePage() {
         .store-wrap {
           width: min(100%, 980px);
           margin: 0 auto;
-          padding: calc(env(safe-area-inset-top) + 22px) 24px 18px;
+          padding: 18px 24px;
         }
 
         .store-top {
@@ -810,7 +811,7 @@ export default function StorePage() {
 
         @media (max-width: 860px) {
           .store-wrap {
-            padding: calc(env(safe-area-inset-top) + 18px) 16px 16px;
+            padding: 16px;
           }
 
           .store-top {
@@ -929,13 +930,10 @@ export default function StorePage() {
         }
       `}</style>
 
-      <div className="store-wrap">
-        <header className="store-top">
-          <div className="store-kicker">
-            <h1>Store</h1>
-            <p>Customize your profile. Stand out.</p>
-          </div>
-
+      <PageHeader
+        title="Store"
+        subtitle="Customize your profile. Stand out."
+        right={
           <div className="store-user">
             {mounted ? (
               <>
@@ -956,8 +954,10 @@ export default function StorePage() {
               </>
             )}
           </div>
-        </header>
+        }
+      />
 
+      <div className="store-wrap">
         {msg && <div className="store-message">{msg}</div>}
 
         {loading ? (

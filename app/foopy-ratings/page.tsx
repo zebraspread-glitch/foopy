@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { foopyColor } from "@/app/lib/foopyRating";
 import { playerImgUrl } from "@/app/lib/playerImage";
+import PageHeader from "@/app/components/PageHeader";
 
 /* ─── Types ───────────────────────────────────────────────── */
 
@@ -45,19 +46,6 @@ const pageStyle = {
   background: "var(--bg)",
   paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
 } as const;
-
-const headerStyle = {
-  position: "sticky" as const,
-  top: 0,
-  zIndex: 50,
-  background: "var(--surface-1)",
-  borderBottom: "1px solid var(--border-1)",
-  padding: "env(safe-area-inset-top) 16px 0",
-  height: 52,
-  display: "flex",
-  alignItems: "center",
-  gap: 12,
-};
 
 const cardStyle = {
   background: "var(--surface-1)",
@@ -168,22 +156,12 @@ export default function FoopyRatingsPage() {
         }
       `}</style>
 
-      {/* Header */}
-      <header style={headerStyle}>
-        <button
-          onClick={() => router.back()}
-          style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 8px 4px 0", color: "var(--text-1)", fontSize: 22, lineHeight: 1 }}
-          aria-label="Back"
-        >‹</button>
-        <span style={{ fontSize: 17, fontWeight: 900, letterSpacing: "-0.02em", color: "var(--text-1)", flex: 1, textAlign: "center" }}>
-          Season Foopy Ratings
-        </span>
-        {!loading && (
-          <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-3)" }}>
-            {players.length} players
-          </span>
-        )}
-      </header>
+      <PageHeader
+        title="Season Foopy Ratings"
+        onBack={() => router.back()}
+        align="left"
+        right={!loading ? <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-3)" }}>{players.length} players</span> : undefined}
+      />
 
       {/* Search */}
       <div style={{ padding: "10px 12px 0" }}>
