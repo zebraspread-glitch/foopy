@@ -2,6 +2,7 @@
 
 import { formatAura, formatCoins } from "@/app/lib/format";
 import { ProfileSkeleton } from "@/app/components/Skeleton";
+import { useSession } from "@/app/context/SessionProvider";
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
@@ -852,6 +853,9 @@ function FavSlotButton({
 /* ═══════════════════ Main Page ═══════════════════ */
 export default function ProfilePage() {
   const router = useRouter();
+  // Editing here is the source of truth for the profile; refreshProfile() keeps
+  // the shared session (drawer avatar, coin/aura displays) in sync after edits.
+  const { refreshProfile } = useSession();
   const compactProfileHeader = useMediaQuery("(max-width: 430px)");
   const headerProgress = useProfileHeaderProgress(compactProfileHeader ? 172 : 204);
   const headerEase = easeProfile(headerProgress);
@@ -1556,6 +1560,7 @@ export default function ProfilePage() {
     setLocalAvatarUrl(null); // clear optimistic — real URL now in profile
     setAvatarUploading(false);
     setEditSection(null);
+    void refreshProfile(); // sync drawer/header avatar
   }
 
   async function uploadBannerFile(file: File) {
@@ -1607,6 +1612,7 @@ export default function ProfilePage() {
     setProfile(data as Profile);
     setLocalBannerUrl(null);
     setBannerUploading(false);
+    void refreshProfile(); // sync shared profile (banner)
     setEditSection(null);
   }
 

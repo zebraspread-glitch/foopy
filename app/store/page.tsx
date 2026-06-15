@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { supabase } from "@/app/lib/supabase";
+import { useSession } from "@/app/context/SessionProvider";
 import { type Cosmetic, type EquippedCosmetics, nameColorStyle, avatarFrameStyle } from "@/app/lib/cosmetics";
 import { patternBackground } from "@/app/components/PassCard";
 import { StoreItemSkeleton } from "@/app/components/Skeleton";
@@ -54,10 +55,11 @@ const sectionId = (slot: string) => `store-section-${slot.replace(/[^a-z0-9_-]/g
 const rarityOf = (c: Cosmetic) => RARITY[c.rarity ?? "common"] ?? RARITY.common;
 
 export default function StorePage() {
-  const [token, setToken] = useState<string | null>(null);
-  const [username, setUsername] = useState("You");
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [tokens, setTokens] = useState(0);
+  const { user, accessToken, profile, loading: sessionLoading, mutateProfile } = useSession();
+  const token = accessToken;
+  const username = profile?.username || "You";
+  const avatarUrl = profile?.avatar_url ?? null;
+  const tokens = profile?.tokens ?? 0;
   const [catalog, setCatalog] = useState<Cosmetic[]>([]);
   const [owned, setOwned] = useState<Set<string>>(new Set());
   const [equipped, setEquipped] = useState<EquippedCosmetics>({});
@@ -68,33 +70,26 @@ export default function StorePage() {
   const [expandedSlots, setExpandedSlots] = useState<Set<string>>(new Set());
   const [mounted, setMounted] = useState(false);
 
-  async function load() {
-    const { data: { session } } = await supabase.auth.getSession();
-    const accessToken = session?.access_token ?? null;
-    setToken(accessToken);
-    if (!session) { setLoading(false); return; }
-
-    const uid = session.user.id;
+  // Cosmetics-specific data (equipped + catalog + owned). Identity, tokens and
+  // auth come from the shared session provider.
+  const load = useCallback(async (uid: string) => {
     const [profileRes, catalogRes, ownedRes] = await Promise.all([
-      supabase.from("profiles").select("username, avatar_url, tokens, equipped_cosmetics").eq("id", uid).single(),
+      supabase.from("profiles").select("equipped_cosmetics").eq("id", uid).single(),
       supabase.from("cosmetics").select("*").eq("is_active", true).order("category").order("sort_order"),
       supabase.from("user_cosmetics").select("cosmetic_id").eq("user_id", uid),
     ]);
-
-    if (profileRes.data) {
-      setUsername(profileRes.data.username || "You");
-      setAvatarUrl(profileRes.data.avatar_url ?? null);
-      setTokens(profileRes.data.tokens ?? 0);
-      setEquipped((profileRes.data.equipped_cosmetics ?? {}) as EquippedCosmetics);
-    }
-
+    if (profileRes.data) setEquipped((profileRes.data.equipped_cosmetics ?? {}) as EquippedCosmetics);
     setCatalog((catalogRes.data ?? []) as Cosmetic[]);
     setOwned(new Set((ownedRes.data ?? []).map((r: { cosmetic_id: string }) => r.cosmetic_id)));
     setLoading(false);
-  }
+  }, []);
 
   useEffect(() => { setMounted(true); }, []);
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    if (sessionLoading) return;                 // wait for session — avoids sign-in flash
+    if (!user) { setLoading(false); return; }
+    load(user.id);
+  }, [sessionLoading, user, load]);
 
   async function buy(c: Cosmetic) {
     if (!token || busyKey) return;
@@ -108,7 +103,7 @@ export default function StorePage() {
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) { setMsg(data?.error ?? "Purchase failed"); return; }
-      setTokens(data.tokens);
+      mutateProfile({ tokens: data.tokens });
       setOwned(prev => new Set(prev).add(c.id));
     } finally {
       setBusyKey(null);

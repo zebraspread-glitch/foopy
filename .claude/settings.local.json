@@ -238,7 +238,13 @@
       "Bash(git grep *)",
       "Bash(git ls-tree *)",
       "mcp__visualize__read_me",
-      "Bash(echo \"EXIT: $?\")"
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(taskkill /PID 20388 /F)",
+      "PowerShell(Stop-Process -Id 20388 -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(\"killed\")",
+      "Bash(sed -n '1,15p;50,75p' app/layout.tsx)",
+      "Bash(ls app/context)",
+      "PowerShell(Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $_.OwningProcess -and \\(Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue\\).ProcessName -eq 'node' } | Select-Object LocalPort, OwningProcess | Sort-Object LocalPort -Unique)"
     ]
   }
 }

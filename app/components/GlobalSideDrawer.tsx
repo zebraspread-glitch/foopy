@@ -1,7 +1,7 @@
 "use client";
 
-import { supabase } from "@/app/lib/supabase";
 import { formatAura, formatCoins } from "@/app/lib/format";
+import { useSession } from "@/app/context/SessionProvider";
 import { nameColorStyle, avatarFrameStyle } from "@/app/lib/cosmetics";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -169,14 +169,18 @@ export default function GlobalSideDrawer() {
   // Profile button (opens the drawer) lives on the root tab sections only.
   // Pushed/detail screens get a back arrow from PageHeader instead.
   const showAvatarButton = showsDrawerButton(pathname);
+  const { user, profile } = useSession();
   const [open, setOpen] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [username, setUsername] = useState<string | null>(null);
-  const [initials, setInitials] = useState("?");
-  const [aura, setAura] = useState<number>(0);
-  const [coins, setCoins] = useState<number>(0);
-  const [nameColor, setNameColor] = useState<string | null>(null);
-  const [frameAsset, setFrameAsset] = useState<string | null>(null);
+
+  // Profile values come from the shared session provider (one query, app-wide).
+  const avatarUrl = profile?.avatar_url ?? null;
+  const username = profile?.username ?? null;
+  const aura = profile?.aura ?? 0;
+  const coins = profile?.coins ?? 0;
+  const nameColor = profile?.name_color ?? null;
+  const frameAsset = profile?.avatar_frame ?? null;
+  const initials = (profile?.username || user?.email?.split("@")[0] || "?").charAt(0).toUpperCase();
+
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
 
   const toggleGroup = (label: string) =>
@@ -195,29 +199,6 @@ export default function GlobalSideDrawer() {
       }
     }
   }, [pathname]);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) return;
-      const user = session.user;
-      supabase
-        .from("profiles")
-        .select("avatar_url, username, aura, coins, name_color, avatar_frame")
-        .eq("id", user.id)
-        .single()
-        .then(({ data }) => {
-          if (!data) return;
-          setAvatarUrl(data.avatar_url ?? null);
-          setUsername(data.username ?? null);
-          setAura(data.aura ?? 0);
-          setCoins(data.coins ?? 0);
-          setNameColor(data.name_color ?? null);
-          setFrameAsset(data.avatar_frame ?? null);
-          const label = data.username || user.email?.split("@")[0] || "?";
-          setInitials(label[0].toUpperCase());
-        });
-    });
-  }, []);
 
   useEffect(() => {
     if (!showAvatarButton) setOpen(false);

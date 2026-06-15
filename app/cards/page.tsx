@@ -7,7 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import PageHeader from "@/app/components/PageHeader";
 import { supabase } from "@/app/lib/supabase";
-import type { User } from "@supabase/supabase-js";
+import { useSession } from "@/app/context/SessionProvider";
 import TradesInboxModal from "@/app/components/TradesInboxModal";
 import { PlayerCard as SharedPlayerCard } from "@/app/components/PlayerCard";
 import { CardGridSkeleton } from "@/app/components/Skeleton";
@@ -405,12 +405,10 @@ function CardPlayerImage({
 const CARDS_LAZY_BATCH = 24;
 
 export default function CardsPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const { user, accessToken, loading: authLoading, profile, refreshProfile, mutateProfile } = useSession();
+  const coins = profile?.coins ?? 0;
   const [showTradesInbox, setShowTradesInbox] = useState(false);
   const [prefetchedTrades, setPrefetchedTrades] = useState<any[] | undefined>(undefined);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [coins, setCoins] = useState(0);
   const [cards, setCards] = useState<UserCard[]>([]);
   const [cardsLoading, setCardsLoading] = useState(false);
   const [opening, setOpening] = useState<PackType | null>(null);
@@ -438,25 +436,14 @@ export default function CardsPage() {
 
   // ── Auth ──────────────────────────────────────────────────────────────────
 
+  // Pre-fetch trades in the background so the inbox opens instantly.
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setAccessToken(session?.access_token ?? null);
-      setAuthLoading(false);
-      // Pre-fetch trades in background so inbox opens instantly
-      if (session?.access_token) {
-        fetch("/api/trades", { headers: { Authorization: `Bearer ${session.access_token}` } })
-          .then(r => r.ok ? r.json() : null)
-          .then(d => { if (d) setPrefetchedTrades(d.trades ?? []); })
-          .catch(() => {});
-      }
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
-      setUser(session?.user ?? null);
-      setAccessToken(session?.access_token ?? null);
-    });
-    return () => subscription.unsubscribe();
-  }, []);
+    if (!accessToken) return;
+    fetch("/api/trades", { headers: { Authorization: `Bearer ${accessToken}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) setPrefetchedTrades(d.trades ?? []); })
+      .catch(() => {});
+  }, [accessToken]);
 
   // ── Data fetching ─────────────────────────────────────────────────────────
 
@@ -467,12 +454,11 @@ export default function CardsPage() {
     // header isn't gated behind the (slow, paginated) card-collection fetch.
     supabase
       .from("profiles")
-      .select("coins, featured_cards, last_daily_pack_at")
+      .select("featured_cards, last_daily_pack_at")
       .eq("id", user.id)
       .single()
       .then(({ data }) => {
         if (!data) return;
-        setCoins(data.coins ?? 0);
         setLastDailyPackAt(data.last_daily_pack_at ?? null);
         if (Array.isArray(data.featured_cards)) {
           setFeaturedCards(data.featured_cards as { player_id: string; rarity: Rarity }[]);
@@ -515,10 +501,11 @@ export default function CardsPage() {
     // 2. Show the full-screen loading overlay right away.
     // 3. Optimistically deduct coins so the balance updates without delay.
     const packCost = [...PACKS, ...TEAM_PACKS].find(p => p.type === packType)?.cost ?? 0;
+    const coinsBefore = coins;
     setOpening(packType);
     setShopPack(null);
     setPendingPackType(packType);
-    setCoins(prev => Math.max(0, prev - packCost));
+    mutateProfile({ coins: Math.max(0, coinsBefore - packCost) });
 
     try {
       const res = await fetch("/api/cards/open-pack", {
@@ -532,17 +519,19 @@ export default function CardsPage() {
       const data = await res.json();
       if (!res.ok) {
         // Roll back the optimistic deduction on failure.
-        setCoins(prev => prev + packCost);
+        mutateProfile({ coins: coinsBefore });
         setPendingPackType(null);
         alert(data.error ?? "Failed to open pack");
         return;
       }
       // Server confirms exact balance (handles any race conditions).
-      setCoins(data.newCoins);
+      mutateProfile({ coins: data.newCoins });
       setOpenedCards(data.cards as OpenedCard[]);
       setPendingPackType(null);
+      // Sync coins + aura (and anything else the pack changed) from the server.
+      void refreshProfile();
     } catch {
-      setCoins(prev => prev + packCost);
+      mutateProfile({ coins: coinsBefore });
       setPendingPackType(null);
       alert("Something went wrong. Please try again.");
     } finally {
