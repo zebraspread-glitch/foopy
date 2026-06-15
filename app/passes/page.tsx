@@ -595,9 +595,7 @@ function GlobalPassView() {
                   const level  = getPassLevel(e.xp, PLAYER_PASS_LEVELS);
                   const imgSrc = playerPassImgSrc(e.player_name, e.team_name);
                   return (
-                    <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 12, borderTop: i > 0 ? "1px solid var(--border-1)" : "none", paddingRight: 16, overflow: "hidden" }}>
-                      {/* Left accent bar */}
-                      <div style={{ width: 3, alignSelf: "stretch", background: level.color, flexShrink: 0 }} />
+                    <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 12, borderTop: i > 0 ? "1px solid var(--border-1)" : "none", padding: "0 16px", overflow: "hidden" }}>
                       {/* Mini player pass card */}
                       <div style={{ width: 38, height: 50, borderRadius: 7, overflow: "hidden", flexShrink: 0, position: "relative", background: patternBackground(e.pattern, level), border: `1px solid ${level.color}55`, boxShadow: `0 2px 10px ${level.color}30` }}>
                         {/* shimmer top */}
@@ -633,8 +631,7 @@ function GlobalPassView() {
                   const color = teamColor(e.team_name);
                   const logo  = teamLogo(e.team_name);
                   return (
-                    <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 12, borderTop: i > 0 ? "1px solid var(--border-1)" : "none", paddingRight: 16, overflow: "hidden" }}>
-                      <div style={{ width: 3, alignSelf: "stretch", background: color, flexShrink: 0 }} />
+                    <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 12, borderTop: i > 0 ? "1px solid var(--border-1)" : "none", padding: "0 16px", overflow: "hidden" }}>
                       {/* Mini team pass card */}
                       <div style={{ width: 38, height: 50, borderRadius: 7, overflow: "hidden", flexShrink: 0, position: "relative", background: patternBackground(e.pattern, level), border: `1px solid ${level.color}55`, boxShadow: `0 2px 10px ${level.color}30`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                         {/* shimmer top */}
@@ -683,8 +680,7 @@ function GlobalPassView() {
                 playerPurch.map((e, i) => {
                   const imgSrc = playerPassImgSrc(e.player_name, e.team_name);
                   return (
-                    <div key={e.player_id} style={{ display: "flex", alignItems: "center", gap: 12, borderTop: i > 0 ? "1px solid var(--border-1)" : "none", paddingRight: 16, overflow: "hidden" }}>
-                      <div style={{ width: 3, alignSelf: "stretch", background: i === 0 ? "#fbbf24" : i === 1 ? "#9ca3af" : i === 2 ? "#d97706" : "var(--border-2)", flexShrink: 0 }} />
+                    <div key={e.player_id} style={{ display: "flex", alignItems: "center", gap: 12, borderTop: i > 0 ? "1px solid var(--border-1)" : "none", padding: "0 16px", overflow: "hidden" }}>
                       {/* Mini player pass card (purchases) */}
                       <div style={{ width: 38, height: 50, borderRadius: 7, overflow: "hidden", flexShrink: 0, position: "relative", background: "linear-gradient(155deg,#1a0a33,#2d1060)", border: "1px solid rgba(167,139,250,0.3)", boxShadow: "0 2px 8px rgba(109,40,217,0.25)" }}>
                         {imgSrc
@@ -708,8 +704,7 @@ function GlobalPassView() {
                   const color = teamColor(e.team_name);
                   const logo  = teamLogo(e.team_name);
                   return (
-                    <div key={e.team_name} style={{ display: "flex", alignItems: "center", gap: 12, borderTop: i > 0 ? "1px solid var(--border-1)" : "none", paddingRight: 16, overflow: "hidden" }}>
-                      <div style={{ width: 3, alignSelf: "stretch", background: i === 0 ? "#fbbf24" : i === 1 ? "#9ca3af" : i === 2 ? "#d97706" : color, flexShrink: 0 }} />
+                    <div key={e.team_name} style={{ display: "flex", alignItems: "center", gap: 12, borderTop: i > 0 ? "1px solid var(--border-1)" : "none", padding: "0 16px", overflow: "hidden" }}>
                       {/* Mini team pass card (purchases) */}
                       <div style={{ width: 38, height: 50, borderRadius: 7, overflow: "hidden", flexShrink: 0, position: "relative", background: `linear-gradient(155deg,#1a0a33,#2d1060)`, border: `1px solid ${color}55`, boxShadow: `0 2px 8px ${color}25`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                         <div style={{ position: "absolute", width: "80%", height: "70%", borderRadius: "50%", background: `${color}50`, filter: "blur(10px)", zIndex: 0 }} />

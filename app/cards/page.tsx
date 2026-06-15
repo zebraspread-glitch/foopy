@@ -719,10 +719,7 @@ export default function CardsPage() {
         .open-btn:active:not(:disabled) { opacity: 0.8 !important; transform: scale(0.97); }
         .pill-scroll { scrollbar-width: none; }
         .pill-scroll::-webkit-scrollbar { display: none; }
-        .passes-banner-link:active { opacity: 0.85; transform: scale(0.99); }
-        @media (hover: hover) {
-          .passes-banner-link:hover { border-color: rgba(251,191,36,.3) !important; background: linear-gradient(135deg, rgba(251,191,36,.11) 0%, rgba(59,130,246,.07) 100%) !important; }
-        }
+        .cards-action-btn:active { opacity: 0.78; transform: scale(0.98); }
         @media (min-width: 720px) {
           .team-filter-button {
             height: 34px;
@@ -744,9 +741,6 @@ export default function CardsPage() {
         title="Cards"
         right={
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Link href="/album" style={{ fontSize: 12, fontWeight: 800, color: "rgba(255,255,255,.5)", textDecoration: "none", background: "var(--surface-3)", borderRadius: 99, padding: "5px 11px" }}>
-            Album
-          </Link>
           {user && (
             <>
               <button
@@ -794,34 +788,22 @@ export default function CardsPage() {
       )}
 
       <div style={contentStyle}>
-        {/* ── Passes entry point ── */}
-        <Link href="/passes" style={passesBannerStyle} className="passes-banner-link">
-          {/* Top shimmer line */}
-          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: "linear-gradient(90deg, transparent, rgba(251,191,36,.6) 40%, rgba(96,165,250,.5) 70%, transparent)", borderRadius: "14px 14px 0 0" }} />
-          {/* Left glow */}
-          <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: 3, background: "linear-gradient(180deg, #f59e0b, #3b82f6)", borderRadius: "14px 0 0 14px", opacity: 0.7 }} />
-
-          <div style={{ display: "flex", alignItems: "center", gap: 12, paddingLeft: 8 }}>
-            {/* Icon */}
-            <div style={{ width: 38, height: 38, borderRadius: 10, background: "linear-gradient(135deg, rgba(251,191,36,.25) 0%, rgba(245,158,11,.1) 100%)", border: "1px solid rgba(251,191,36,.25)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                {/* Ticket outline with semicircle notches on left & right */}
-                <path d="M2 9V7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z" />
-                {/* Dashed tear-line */}
-                <line x1="15" y1="5" x2="15" y2="19" strokeDasharray="2.5 2" strokeOpacity="0.6" />
-              </svg>
-            </div>
-
-            <div>
-              <div style={{ fontWeight: 900, fontSize: 15, color: "#fff", letterSpacing: "-0.02em", lineHeight: 1 }}>Passes</div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", fontWeight: 600, marginTop: 3 }}>Earn Aura &amp; Coins from your team &amp; players</div>
-            </div>
-          </div>
-
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-            <path d="M9 18l6-6-6-6" />
-          </svg>
-        </Link>
+        {/* ── Cards actions ── */}
+        <div style={cardsActionsStyle}>
+          <Link href="/passes" style={cardsActionButtonStyle} className="cards-action-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 9V7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z" />
+              <line x1="15" y1="5" x2="15" y2="19" strokeDasharray="2.5 2" strokeOpacity="0.6" />
+            </svg>
+            Passes
+          </Link>
+          <Link href="/album" style={cardsActionButtonStyle} className="cards-action-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+            </svg>
+            Album
+          </Link>
+        </div>
 
         {/* ── NOT LOGGED IN ── */}
         {!user && (
@@ -2010,19 +1992,31 @@ const contentStyle: React.CSSProperties = {
   padding: "16px 14px",
 };
 
-const passesBannerStyle: React.CSSProperties = {
+const cardsActionsStyle: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: 10,
+  marginBottom: 16,
+};
+
+const cardsActionButtonStyle: React.CSSProperties = {
+  minWidth: 0,
+  minHeight: 48,
   display: "flex",
   alignItems: "center",
-  justifyContent: "space-between",
-  padding: "13px 14px 13px 13px",
-  marginBottom: 16,
+  justifyContent: "center",
+  gap: 8,
+  padding: "0 14px",
   borderRadius: 14,
-  background: "linear-gradient(135deg, rgba(251,191,36,.07) 0%, rgba(59,130,246,.04) 100%)",
-  border: "1px solid rgba(251,191,36,.15)",
+  fontSize: 14,
+  fontWeight: 850,
+  letterSpacing: "-0.01em",
   textDecoration: "none",
-  position: "relative",
-  overflow: "hidden",
-  transition: "border-color 0.15s ease, background 0.15s ease",
+  color: "#fff",
+  background: "transparent",
+  border: "1px solid #fff",
+  WebkitTapHighlightColor: "transparent",
+  transition: "transform 0.12s ease, opacity 0.12s ease",
 };
 
 const guestBannerStyle: React.CSSProperties = {
