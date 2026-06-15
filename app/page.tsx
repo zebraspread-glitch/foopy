@@ -585,29 +585,6 @@ export default function HomePage() {
   const [showTradesInbox, setShowTradesInbox] = useState(false);
   const [prefetchedTrades, setPrefetchedTrades] = useState<any[] | undefined>(undefined);
 
-  // My Team feature
-  const [favTeamId, setFavTeamId]                 = useState<number | null>(null);
-  const [teamFeaturedMatch, setTeamFeaturedMatch]  = useState(true);
-  const [teamBorderColor, setTeamBorderColor]      = useState("#c9962a");
-  useEffect(() => {
-    const FAV_TEAM_TO_ID: Record<string, number> = {
-      Adelaide: 1, Brisbane: 2, Carlton: 3, Collingwood: 4,
-      Essendon: 5, Fremantle: 6, Geelong: 7, "Gold Coast": 8,
-      GWS: 9, Hawthorn: 10, Melbourne: 11, "North Melbourne": 12,
-      "Port Adelaide": 13, Richmond: 14, "St Kilda": 15,
-      Sydney: 16, "West Coast": 17, "Western Bulldogs": 18,
-    };
-    const load = () => {
-      const name = localStorage.getItem("foopy_fav_team") ?? "";
-      setFavTeamId(name ? (FAV_TEAM_TO_ID[name] ?? null) : null);
-      setTeamFeaturedMatch(localStorage.getItem("foopy_team_featured") !== "false");
-      setTeamBorderColor(localStorage.getItem("foopy_team_border_color") ?? "#c9962a");
-    };
-    load();
-    window.addEventListener("foopy-settings-changed", load);
-    return () => window.removeEventListener("foopy-settings-changed", load);
-  }, []);
-
   useEffect(() => {
     let cancelled = false;
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -1376,7 +1353,7 @@ free_kicks?: {
                 style={{
                   ...cardStyle,
                   minHeight: 210,
-                  border: "1px solid var(--border-1)",
+                  border: "none",
                   background: "none",
                   pointerEvents: "none",
                 }}
@@ -1414,9 +1391,6 @@ free_kicks?: {
 
                   const homeLost = status === "COMPLETED" && homeScore < awayScore;
                   const awayLost = status === "COMPLETED" && awayScore < homeScore;
-                  const isFavGame = teamFeaturedMatch && favTeamId !== null &&
-                    (homeId === favTeamId || awayId === favTeamId);
-
                   return (
                     <Link
                       key={game.id}
@@ -1426,10 +1400,6 @@ free_kicks?: {
                       style={{
                         ...cardStyle,
                         gridColumn: group.games.length === 1 ? "1 / -1" : undefined,
-                        ...(isFavGame && status !== "LIVE" ? {
-                          border: `3px solid ${teamBorderColor}`,
-                          boxShadow: "none",
-                        } : {}),
                       }}
                     >
                       <section style={teamsStyle}>
@@ -1488,9 +1458,6 @@ free_kicks?: {
                   <MobileRoundPanel
                     groups={swipeTarget !== null && swipeTarget < selectedRound ? targetGroups : mobileGroups}
                     games={games}
-                    teamFeaturedMatch={teamFeaturedMatch}
-                    favTeamId={favTeamId}
-                    teamBorderColor={teamBorderColor}
                   />
                   {(swipeTarget !== null && swipeTarget < selectedRound ? targetGroups : mobileGroups).length === 0 && (
                     <div style={emptyBoxStyle}>
@@ -1504,9 +1471,6 @@ free_kicks?: {
                     <MobileRoundPanel
                       groups={swipeTarget > selectedRound ? targetGroups : mobileGroups}
                       games={games}
-                      teamFeaturedMatch={teamFeaturedMatch}
-                      favTeamId={favTeamId}
-                      teamBorderColor={teamBorderColor}
                     />
                     {(swipeTarget > selectedRound ? targetGroups : mobileGroups).length === 0 && (
                       <div style={emptyBoxStyle}>
@@ -1751,15 +1715,9 @@ function PlayerPhoto({
 function MobileRoundPanel({
   groups,
   games,
-  teamFeaturedMatch,
-  favTeamId,
-  teamBorderColor,
 }: {
   groups: Array<{ label: string; games: Game[] }>;
   games: Game[];
-  teamFeaturedMatch: boolean;
-  favTeamId: number | null;
-  teamBorderColor: string;
 }) {
   return (
     <>
@@ -1794,9 +1752,6 @@ function MobileRoundPanel({
               ? TEAM_NICKNAMES[awayId] ?? displayTeamName(game.ateam || TEAM_NAMES[awayId])
               : TEAM_ABBR[awayId] ?? displayTeamName(game.ateam || TEAM_NAMES[awayId]);
 
-            const isFavGame = teamFeaturedMatch && favTeamId !== null &&
-              (homeId === favTeamId || awayId === favTeamId);
-
             return (
               <Link
                 key={game.id}
@@ -1806,10 +1761,6 @@ function MobileRoundPanel({
                 style={{
                   ...mobileMatchStyle,
                   gridColumn: group.games.length === 1 ? "1 / -1" : undefined,
-                  ...(isFavGame && status !== "LIVE" ? {
-                    border: `3px solid ${teamBorderColor}`,
-                    boxShadow: "none",
-                  } : {}),
                 }}
               >
                 <MobileMatchRow
@@ -2107,7 +2058,7 @@ const cardVenueFooterStyle: React.CSSProperties = {
   gap: 8,
   padding: "10px 12px 8px",
   overflow: "hidden",
-  background: "linear-gradient(180deg, rgba(18,18,18,0) 0%, rgba(18,18,18,0.62) 58%, rgba(18,18,18,0.86) 100%)",
+  background: "transparent",
   pointerEvents: "none",
 };
 
@@ -2164,9 +2115,9 @@ const mobileGroupLabelStyle: React.CSSProperties = {
 const mobileMatchStyle: React.CSSProperties = {
   position: "relative",
   borderRadius: "16px",
-  border: "1px solid var(--border-1)",
+  border: "none",
   background: "var(--surface-3)",
-  boxShadow: "0 2px 12px rgba(0,0,0,0.35)",
+  boxShadow: "none",
   color: "var(--text-1)",
   textDecoration: "none",
   overflow: "hidden",
@@ -2197,7 +2148,7 @@ const mobileMatchFooterStyle: React.CSSProperties = {
   minHeight: "30px",
   padding: "10px 8px 7px",
   overflow: "hidden",
-  background: "linear-gradient(180deg, rgba(18,18,18,0) 0%, rgba(18,18,18,0.62) 58%, rgba(18,18,18,0.86) 100%)",
+  background: "transparent",
   pointerEvents: "none",
 };
 
@@ -2392,9 +2343,9 @@ const cardStyle: React.CSSProperties = {
   flexDirection: "column",
   overflow: "hidden",
   borderRadius: "16px",
-  border: "1px solid var(--border-1)",
+  border: "none",
   background: "var(--surface-3)",
-  boxShadow: "0 2px 12px rgba(0,0,0,0.35)",
+  boxShadow: "none",
   color: "var(--text-1)",
   textDecoration: "none",
 };
@@ -2760,7 +2711,7 @@ const byeTeamsSectionStyle: React.CSSProperties = {
   border: "1px solid var(--border-1)",
   background: "var(--surface-3)",
   overflow: "hidden",
-  boxShadow: "0 2px 12px rgba(0,0,0,0.35)",
+  boxShadow: "none",
 };
 
 const byeTeamsHeaderStyle: React.CSSProperties = {

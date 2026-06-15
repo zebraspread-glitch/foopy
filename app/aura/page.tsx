@@ -331,7 +331,7 @@ function AuraPageInner() {
             {EARN_WAYS.map(w => (
               <div key={w.label} style={{
                 background: "var(--surface-2)",
-                border: "1px solid var(--border-1)",
+                border: "none",
                 borderRadius: 14, padding: "12px 14px",
                 display: "flex", flexDirection: "column", gap: 4,
               }}>

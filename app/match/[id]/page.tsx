@@ -1042,7 +1042,7 @@ function QuarterScoresTable({
   const sep = "1px solid var(--border-2)";
 
   return (
-    <div style={{ background: "var(--surface-2)", border: "1px solid var(--border-2)", borderRadius: 12, overflow: "hidden", marginBottom: 14 }}>
+    <div style={{ background: "var(--surface-2)", border: "none", borderRadius: 12, overflow: "hidden", marginBottom: 14 }}>
       <div style={{ display: "grid", gridTemplateColumns: `44px repeat(${cols.length}, 1fr)` }}>
 
         {/* Header row */}
@@ -2382,7 +2382,7 @@ function TeamFormBox({ homeTeam, awayTeam, allGames, currentGame }: {
       margin: "0 0 14px",
       borderRadius: 18,
       background: "linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
-      border: "1px solid rgba(255,255,255,0.10)",
+      border: "none",
       overflow: "hidden",
     }}>
       <div style={{ padding: "18px 18px 0" }}>
@@ -2540,7 +2540,7 @@ function PreviewLeaderRow({ player, metric }: { player: PreviewPlayerLeader; met
       borderRadius: 16,
       overflow: "hidden",
       background: `linear-gradient(155deg, ${colours.primary}50 0%, rgba(9,11,15,0.98) 52%)`,
-      border: "1px solid rgba(255,255,255,0.10)",
+      border: "none",
       boxShadow: `0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.07)`,
       boxSizing: "border-box",
     }}>
@@ -2655,8 +2655,8 @@ function PreviewLeaderboard({ title, players, metric }: { title: string; players
       padding: "14px",
       borderRadius: 17,
       background: "rgba(255,255,255,0.035)",
-      border: "1px solid rgba(255,255,255,0.10)",
-      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.045)",
+      border: "none",
+      boxShadow: "none",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 1000, color: "var(--text-1)", marginBottom: 4 }}>
         <span style={{ width: 3, height: 15, borderRadius: 999, background: metric === "foopy" ? "#60a5fa" : "#facc15" }} />
@@ -2806,7 +2806,7 @@ function VenueCard({ venue, date, gameId }: { venue: string; date?: string; game
       margin: "0 0 14px",
       borderRadius: 18,
       background: "linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
-      border: "1px solid rgba(255,255,255,0.10)",
+      border: "none",
       overflow: "hidden",
     }}>
       {/* Header */}
@@ -2898,7 +2898,7 @@ function LadderPositionsBox({ homeTeam, awayTeam, allGames }: { homeTeam: string
   return (
     <Link href="/ladder" prefetch={false} style={{ textDecoration: "none", display: "block", margin: "0 0 14px", borderRadius: 18,
       background: "linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
-      border: "1px solid rgba(255,255,255,0.10)",
+      border: "none",
       overflow: "hidden",
     }}>
       {/* title + header */}
@@ -2953,7 +2953,7 @@ function InsightsBox({ game, allGames }: { game: MatchGame; allGames: MatchGame[
     <div style={{
       margin: "20px 0 8px",
       background: "var(--surface-1)",
-      border: "1px solid var(--border-2)",
+      border: "none",
       borderRadius: 16,
       overflow: "hidden",
     }}>
@@ -6180,7 +6180,7 @@ function PollLeaderboard({
   if (entries.length === 0) return null;
 
   return (
-    <div style={{ background: "var(--surface-2)", border: "1px solid var(--border-1)", borderRadius: 16, overflow: "hidden", marginBottom: 4 }}>
+    <div style={{ background: "var(--surface-2)", border: "none", borderRadius: 16, overflow: "hidden", marginBottom: 4 }}>
       {/* Header */}
       <div style={{ padding: "12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid var(--border-1)" }}>
         <span style={{ fontSize: 11, fontWeight: 900, color: "var(--text-3)", letterSpacing: "0.08em", textTransform: "uppercase" as const }}>Poll Leaderboard</span>
@@ -7187,11 +7187,11 @@ function CorrectPollTick() {
 /* ================= STYLES ================= */
 
 const createPollBtnStyle: CSSProperties = { display: "block", margin: "0 16px 16px", padding: "10px 16px", borderRadius: 12, background: "rgba(59,130,246,.15)", border: "1px solid rgba(59,130,246,.3)", color: "#60a5fa", fontWeight: 800, fontSize: 14, cursor: "pointer" };
-const pollCardStyle: CSSProperties = { background: "var(--surface-1)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "14px 14px 12px" };
+const pollCardStyle: CSSProperties = { background: "var(--surface-1)", border: "none", borderRadius: 16, padding: "14px 14px 12px" };
 const pollQuestionStyle: CSSProperties = { fontSize: 18, fontWeight: 900, color: "var(--text-1)", lineHeight: 1.3, display: "block", letterSpacing: "-0.02em" };
 const pollResultRowStyle: CSSProperties = { padding: "0" };
 const pollOptionBtnStyle: CSSProperties = { width: "100%", padding: "12px 14px", borderRadius: 14, background: "var(--surface-2)", border: "1.5px solid var(--border-2)", color: "var(--text-1)", fontSize: 14, fontWeight: 700, cursor: "pointer", textAlign: "left", transition: "background 0.15s, border-color 0.15s" };
-const createFormStyle: CSSProperties = { margin: "0 16px 16px", padding: "16px", borderRadius: 16, background: "var(--surface-1)", border: "1px solid var(--border-2)" };
+const createFormStyle: CSSProperties = { margin: "0 16px 16px", padding: "16px", borderRadius: 16, background: "var(--surface-1)", border: "none" };
 const pollTypeToggleStyle: CSSProperties = { flex: 1, padding: "8px 0", borderRadius: 8, border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer" };
 
 const pageStyle: CSSProperties = { minHeight: "100dvh", background: "var(--bg)", color: "var(--text-1)", paddingBottom: "calc(90px + env(safe-area-inset-bottom))" };
@@ -7261,7 +7261,7 @@ const playerAvatarWrapStyle: CSSProperties = {
 };
 const playerAvatarImageStyle: CSSProperties = { objectFit: "cover", objectPosition: "center top" };
 const playerInitialsStyle: CSSProperties = { color: "var(--text-1)", fontSize: 15, fontWeight: 900 };
-const emptyFeedStyle: CSSProperties = { marginTop: 12, background: "var(--surface-2)", border: "1px solid var(--border-2)", borderRadius: 14, padding: "20px 16px", color: "var(--text-3)", fontSize: 14, fontWeight: 600, textAlign: "center" };
+const emptyFeedStyle: CSSProperties = { marginTop: 12, background: "var(--surface-2)", border: "none", borderRadius: 14, padding: "20px 16px", color: "var(--text-3)", fontSize: 14, fontWeight: 600, textAlign: "center" };
 const countdownBoxStyle: CSSProperties = {
   margin: "18px 0 8px",
   display: "flex",
@@ -7285,7 +7285,7 @@ const ratingPillStyle: CSSProperties = { display: "inline-block", minWidth: 48, 
 const statSwitchWrapStyle: CSSProperties = { display: "flex", justifyContent: "center", gap: 6, marginBottom: 14 };
 const statSwitchStyle: CSSProperties = { appearance: "none", border: "1px solid var(--border-2)", background: "var(--surface-2)", color: "var(--text-2)", borderRadius: 999, padding: "3px 8px", fontSize: 10, fontWeight: 800, cursor: "pointer", letterSpacing: "0.01em" };
 const activeStatSwitchStyle: CSSProperties = { ...statSwitchStyle, background: "#3b82f6", color: "var(--text-1)", border: "1px solid #3b82f6" };
-const noStatsStyle: CSSProperties = { background: "var(--surface-2)", border: "1px solid var(--border-1)", borderRadius: 14, padding: "20px 16px", color: "var(--text-3)", display: "flex", flexDirection: "column", gap: 6, fontSize: 14, fontWeight: 600, textAlign: "center" };
+const noStatsStyle: CSSProperties = { background: "var(--surface-2)", border: "none", borderRadius: 14, padding: "20px 16px", color: "var(--text-3)", display: "flex", flexDirection: "column", gap: 6, fontSize: 14, fontWeight: 600, textAlign: "center" };
 const mutedStyle: CSSProperties = { color: "#9ca3af" };
 const emptyStyle: CSSProperties = { maxWidth: 760, margin: "0 auto", padding: 24 };
 const loadingTitleStyle: CSSProperties = { margin: "0 0 8px" };
@@ -7305,7 +7305,7 @@ const compareLabelStyle: CSSProperties = { color: "#9ca3af", textAlign: "center"
 const barShellStyle: CSSProperties = { display: "flex", height: 9, overflow: "hidden", borderRadius: 999, background: "var(--surface-2)" };
 const barLeftStyle: CSSProperties = { height: "100%" };
 const barRightStyle: CSSProperties = { height: "100%" };
-const freeKickBoxStyle: CSSProperties = { marginTop: 22, background: "var(--surface-1)", border: "1px solid var(--border-3)", borderRadius: 16, padding: 16 };
+const freeKickBoxStyle: CSSProperties = { marginTop: 22, background: "var(--surface-1)", border: "none", borderRadius: 16, padding: 16 };
 const freeKickTitleStyle: CSSProperties = { textAlign: "center", color: "#9ca3af", fontWeight: 1000, marginBottom: 12 };
 const freeKickMainStyle: CSSProperties = { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 };
 const freeKickTeamStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 8 };
