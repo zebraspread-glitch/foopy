@@ -277,6 +277,7 @@ function AuraPageInner() {
               </svg>
             </button>
             <div style={{
+              flex: 1, textAlign: "center",
               fontSize: 18, fontWeight: 900, letterSpacing: "-0.02em",
               background: "linear-gradient(90deg, #c084fc 0%, #818cf8 40%, #fbbf24 70%, #c084fc 100%)",
               backgroundSize: "200% auto",
@@ -285,6 +286,7 @@ function AuraPageInner() {
             }}>
               ✦ Aura
             </div>
+            <div style={{ width: 30, flexShrink: 0 }} />
           </div>
         </div>
 

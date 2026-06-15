@@ -438,7 +438,7 @@ export default function ComparePage() {
               background: "none", border: "none", cursor: "pointer", padding: 0,
               color: "#60a5fa", fontSize: 15, fontWeight: 900,
             }}>← Stats</button>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+            <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", display: "flex", alignItems: "baseline", gap: 8, pointerEvents: "none" }}>
               <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--text-1)" }}>
                 Compare
               </span>

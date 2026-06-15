@@ -253,7 +253,7 @@ export default function AlbumPage() {
             ←
           </button>
 
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, textAlign: "center" }}>
             <div style={{ fontSize: 18, fontWeight: 1000, letterSpacing: "-.02em", lineHeight: 1.2 }}>Card Album</div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,.4)", fontWeight: 600, marginTop: 1 }}>
               {unlockedCount} of {totalCount} unlocked · {pct}%

@@ -6,6 +6,9 @@ import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/app/lib/supabase";
 import { VerifiedBadge } from "@/app/components/VerifiedBadge";
 import { nameColorStyle } from "@/app/lib/cosmetics";
+import { Skeleton, NotificationSkeleton } from "@/app/components/Skeleton";
+import { ReportBlockSheet, type ReportBlockTarget } from "@/app/components/ReportBlockMenu";
+import { getHiddenUserIds, isBlockedBetween, blocksChanged } from "@/app/lib/blocks";
 
 /* ── Types ── */
 type Profile = { id: string; username: string; display_name: string; avatar_url?: string | null; verified?: boolean; name_color?: string | null };
@@ -187,6 +190,26 @@ function DMsPageInner() {
   const [sendError,       setSendError]       = useState("");
   const [deletingIds,     setDeletingIds]     = useState<Set<string>>(() => new Set());
   const [selectedMsgId,   setSelectedMsgId]   = useState<string | null>(null);
+
+  /* ── Report / block state ── */
+  const [dmSheetOpen,  setDmSheetOpen]  = useState(false);
+  const [dmBlocked,    setDmBlocked]    = useState(false);
+  const [reportTarget, setReportTarget] = useState<ReportBlockTarget | null>(null);
+  const [hiddenIds,    setHiddenIds]    = useState<Set<string>>(() => new Set());
+
+  // Load the hidden-user set, and refresh it whenever a block changes.
+  useEffect(() => {
+    const load = () => getHiddenUserIds(true).then(setHiddenIds);
+    load();
+    return blocksChanged.subscribe(load);
+  }, []);
+
+  // Track block status for the open DM thread (gates the composer both ways).
+  useEffect(() => {
+    const other = activeConv?.other?.id;
+    if (!other) { setDmBlocked(false); return; }
+    isBlockedBetween(other).then(setDmBlocked);
+  }, [activeConv?.other?.id, hiddenIds]);
 
   /* ── Group state ── */
   const [groupChats,           setGroupChats]           = useState<GroupChat[]>([]);
@@ -597,6 +620,11 @@ function DMsPageInner() {
   /* ── Send DM ── */
   async function send() {
     if (!text.trim() || !activeConv || !myProfile) return;
+    if (dmBlocked || (activeConv.other?.id && await isBlockedBetween(activeConv.other.id))) {
+      setDmBlocked(true);
+      setSendError("You can't message this user.");
+      return;
+    }
     const content = text.trim(); setText(""); setSendError("");
     let convId = activeConv.convId;
     if (!convId) {
@@ -842,15 +870,27 @@ function DMsPageInner() {
   const grouped: { day: string; msgs: Msg[] }[] = [];
   messages.forEach(m => { const d = fmtDay(m.created_at); const last = grouped[grouped.length - 1]; if (last?.day === d) last.msgs.push(m); else grouped.push({ day: d, msgs: [m] }); });
   const groupedGroup: { day: string; msgs: GroupMsg[] }[] = [];
-  groupMessages.forEach(m => { const d = fmtDay(m.created_at); const last = groupedGroup[groupedGroup.length - 1]; if (last?.day === d) last.msgs.push(m); else groupedGroup.push({ day: d, msgs: [m] }); });
+  groupMessages.filter(m => !hiddenIds.has(m.sender_id)).forEach(m => { const d = fmtDay(m.created_at); const last = groupedGroup[groupedGroup.length - 1]; if (last?.day === d) last.msgs.push(m); else groupedGroup.push({ day: d, msgs: [m] }); });
 
-  const filteredInbox = inbox.filter(e => !search || e.other?.username?.toLowerCase().includes(search.toLowerCase()) || e.other?.display_name?.toLowerCase().includes(search.toLowerCase()));
+  const filteredInbox = inbox.filter(e => !hiddenIds.has(e.other?.id ?? "") && (!search || e.other?.username?.toLowerCase().includes(search.toLowerCase()) || e.other?.display_name?.toLowerCase().includes(search.toLowerCase())));
   const filteredGroups = groupChats.filter(g => !search || g.team_name.toLowerCase().includes(search.toLowerCase()));
   const filteredInviteFriends = inviteFriends.filter(f => !inviteSearch || f.username.toLowerCase().includes(inviteSearch.toLowerCase()) || f.display_name.toLowerCase().includes(inviteSearch.toLowerCase()));
   const myGroupIds = new Set(groupChats.map(g => g.id));
 
   /* ── Guards ── */
-  if (!ready) return <div style={{ minHeight: "100dvh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center" }}><div className="spinner" /></div>;
+  if (!ready) return (
+    <main style={{ minHeight: "100dvh", background: "var(--bg)", color: "var(--text-1)", display: "flex", justifyContent: "center" }} className="page-enter">
+      <div style={{ width: "100%", maxWidth: 700, borderInline: "0.5px solid var(--border-2)" }}>
+        {/* Header placeholder */}
+        <div style={{ padding: "calc(env(safe-area-inset-top) + 14px) 16px 12px", borderBottom: "0.5px solid var(--border-2)" }}>
+          <Skeleton width={140} height={26} radius={8} style={{ marginBottom: 12 }} />
+          <Skeleton height={40} radius={12} style={{ marginBottom: 10 }} />
+          <Skeleton height={38} radius={10} />
+        </div>
+        <NotificationSkeleton count={7} />
+      </div>
+    </main>
+  );
   if (!user) return <SignInGate />;
   if (!myProfile?.username) return (
     <main style={{ minHeight: "100dvh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
@@ -1038,6 +1078,11 @@ function DMsPageInner() {
                         Delete
                       </button>
                     )}
+                    {!sameNext && !mine && !m.id.startsWith("t") && (
+                      <button onClick={() => setReportTarget({ userId: m.sender_id, username: m.sender?.username, displayName: m.sender?.display_name, targetType: "group_message", targetId: m.id, context: activeGroup.id })} style={{ background: "none", border: "none", padding: "4px 0 0", fontSize: 11, fontWeight: 700, cursor: "pointer", color: "var(--text-3)" }}>
+                        Report
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -1059,6 +1104,12 @@ function DMsPageInner() {
           )}
         </div>
       </div>
+
+      <ReportBlockSheet
+        open={!!reportTarget}
+        onClose={() => setReportTarget(null)}
+        target={reportTarget ?? { userId: "" }}
+      />
     </div>
     </main>
   );
@@ -1081,8 +1132,8 @@ function DMsPageInner() {
             <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 400 }}>@{activeConv.other?.username}</div>
           </div>
         </button>
-        <button onClick={() => router.push(`/profile/${activeConv.other?.username}`)} style={{ background: "none", border: "none", padding: "6px 10px", cursor: "pointer", color: "var(--text-2)", flexShrink: 0 }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.8"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+        <button onClick={() => setDmSheetOpen(true)} aria-label="Conversation options" style={{ background: "none", border: "none", padding: "6px 10px", cursor: "pointer", color: "var(--text-2)", flexShrink: 0 }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
         </button>
       </div>
 
@@ -1165,6 +1216,11 @@ function DMsPageInner() {
 
       {sendError && <div style={{ padding: "8px 16px", background: "rgba(239,68,68,.12)", borderTop: "1px solid rgba(239,68,68,.25)", color: "#fca5a5", fontSize: 12, fontWeight: 700 }}>⚠️ {sendError}</div>}
 
+      {dmBlocked ? (
+        <div style={{ padding: "16px", paddingBottom: "calc(16px + env(safe-area-inset-bottom))", borderTop: "0.5px solid var(--border-1)", background: "var(--bg)", textAlign: "center", color: "var(--text-3)", fontSize: 13, fontWeight: 600, flexShrink: 0 }}>
+          You can't message this user.
+        </div>
+      ) : (
       <div style={{ display: "flex", alignItems: "flex-end", gap: 10, padding: "10px 12px", paddingBottom: "calc(10px + env(safe-area-inset-bottom))", borderTop: "0.5px solid var(--border-1)", background: "var(--bg)", flexShrink: 0 }}>
         <div style={{ flex: 1, display: "flex", alignItems: "center", background: "var(--surface-2)", borderRadius: 24, border: "1px solid var(--border-2)", padding: "2px 6px 2px 16px", minHeight: 44 }}>
           <input ref={inputRef} value={text} onChange={e => setText(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} placeholder="Message…" style={{ flex: 1, background: "none", border: "none", outline: "none", color: "var(--text-1)", fontSize: 15, fontFamily: "inherit", padding: "8px 0" }} />
@@ -1175,6 +1231,17 @@ function DMsPageInner() {
           )}
         </div>
       </div>
+      )}
+
+      {activeConv.other && (
+        <ReportBlockSheet
+          open={dmSheetOpen}
+          onClose={() => setDmSheetOpen(false)}
+          target={{ userId: activeConv.other.id, username: activeConv.other.username, displayName: activeConv.other.display_name, context: activeConv.convId ?? undefined }}
+          extraActions={[{ label: "View profile", onClick: () => router.push(`/profile/${activeConv.other?.username}`) }]}
+          onChanged={() => { if (activeConv.other?.id) isBlockedBetween(activeConv.other.id).then(setDmBlocked); }}
+        />
+      )}
     </div>
     </main>
   );
@@ -1454,8 +1521,8 @@ function DMsPageInner() {
         <div style={{ position: "sticky", top: 0, zIndex: 50, background: "var(--bottom-nav-bg)", backdropFilter: "blur(28px) saturate(200%)", WebkitBackdropFilter: "blur(28px) saturate(200%)", borderBottom: "0.5px solid var(--border-2)", paddingTop: "env(safe-area-inset-top)" }}>
 
           {/* Title row */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px 12px" }}>
-            <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, letterSpacing: "-0.03em" }}>{myProfile.display_name || myProfile.username}</h1>
+          <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "14px 16px 12px" }}>
+            <h1 style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", margin: 0, fontSize: 24, fontWeight: 800, letterSpacing: "-0.03em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "70%", textAlign: "center" }}>{myProfile.display_name || myProfile.username}</h1>
             {tab === "groups" ? (
               /* + button opens the discover/create sheet */
               <button onClick={() => setDiscoverOpen(true)} title="Create or join a group" style={{ background: "none", border: "none", cursor: "pointer", padding: 6, color: "var(--text-1)", display: "flex", alignItems: "center" }}>

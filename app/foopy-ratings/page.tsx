@@ -175,7 +175,7 @@ export default function FoopyRatingsPage() {
           style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 8px 4px 0", color: "var(--text-1)", fontSize: 22, lineHeight: 1 }}
           aria-label="Back"
         >‹</button>
-        <span style={{ fontSize: 17, fontWeight: 900, letterSpacing: "-0.02em", color: "var(--text-1)", flex: 1 }}>
+        <span style={{ fontSize: 17, fontWeight: 900, letterSpacing: "-0.02em", color: "var(--text-1)", flex: 1, textAlign: "center" }}>
           Season Foopy Ratings
         </span>
         {!loading && (

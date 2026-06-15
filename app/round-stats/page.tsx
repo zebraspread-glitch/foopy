@@ -256,7 +256,8 @@ function RoundStatsInner() {
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </Link>
-          <span style={{ fontSize: 17, fontWeight: 800, letterSpacing: "-0.02em" }}>Round Stats</span>
+          <span style={{ flex: 1, textAlign: "center", fontSize: 17, fontWeight: 800, letterSpacing: "-0.02em" }}>Round Stats</span>
+          <div style={{ width: 32, flexShrink: 0 }} />
         </div>
 
         {/* Stat tabs + round dropdown in one row */}

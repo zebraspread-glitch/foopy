@@ -673,8 +673,8 @@ export default function LadderPage() {
       `}</style>
 
       <header style={headerStyle} className="ladder-header">
-        <span style={titleStyle}>Ladder</span>
-        <div style={tabsStyle}>
+        <span style={{ ...titleStyle, position: "absolute", left: "50%", transform: "translateX(-50%)", pointerEvents: "none" }}>Ladder</span>
+        <div style={{ ...tabsStyle, marginLeft: "auto" }}>
           {tabs.map((t) => (
             <button
               type="button"

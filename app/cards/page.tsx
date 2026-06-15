@@ -9,6 +9,7 @@ import { supabase } from "@/app/lib/supabase";
 import type { User } from "@supabase/supabase-js";
 import TradesInboxModal from "@/app/components/TradesInboxModal";
 import { PlayerCard as SharedPlayerCard } from "@/app/components/PlayerCard";
+import { CardGridSkeleton } from "@/app/components/Skeleton";
 import { PLAYER_IMG_BASE } from "@/app/lib/playerImage";
 
 const USER_CARDS_PAGE_SIZE = 1000;
@@ -664,10 +665,10 @@ export default function CardsPage() {
   if (authLoading) {
     return (
       <main style={pageStyle}>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-        <div style={{ display: "flex", justifyContent: "center", padding: "60px 0" }}>
-          <Spinner />
-        </div>
+        <header style={headerStyle}>
+          <span style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", fontSize: 18, fontWeight: 900, color: "var(--text-1)", letterSpacing: "-0.01em" }}>Cards</span>
+        </header>
+        <CardGridSkeleton count={6} />
       </main>
     );
   }
@@ -742,8 +743,8 @@ export default function CardsPage() {
 
       {/* Header bar */}
       <header style={headerStyle}>
-        <span style={{ fontSize: 18, fontWeight: 900, color: "var(--text-1)", letterSpacing: "-0.01em" }}>Cards</span>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <span style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", fontSize: 18, fontWeight: 900, color: "var(--text-1)", letterSpacing: "-0.01em", pointerEvents: "none" }}>Cards</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginLeft: "auto" }}>
           <Link href="/album" style={{ fontSize: 12, fontWeight: 800, color: "rgba(255,255,255,.5)", textDecoration: "none", background: "var(--surface-3)", borderRadius: 99, padding: "5px 11px" }}>
             Album
           </Link>

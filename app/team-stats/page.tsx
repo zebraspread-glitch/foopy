@@ -245,11 +245,11 @@ export default function TeamStatsPage() {
 
       <main style={pageStyle}>
         <header style={headerStyle}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+          <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", display: "flex", alignItems: "baseline", gap: 8, pointerEvents: "none", whiteSpace: "nowrap" }}>
             <span style={titleStyle}>Team Stats</span>
             <span style={seasonStyle}>AFL 2026</span>
           </div>
-          <div style={toggleStyle}>
+          <div style={{ ...toggleStyle, marginLeft: "auto" }}>
             {(["avg", "total"] as const).map((item) => (
               <button
                 key={item}

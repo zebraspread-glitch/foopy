@@ -7,7 +7,24 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const NAV_ITEMS = [
+type NavItem = {
+  label: string;
+  href?: string;
+  icon: React.ReactNode;
+  children?: { label: string; href: string; icon: React.ReactNode }[];
+};
+
+const NAV_ITEMS: NavItem[] = [
+  {
+    label: "Notifications",
+    href: "/notifications",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+      </svg>
+    ),
+  },
   {
     label: "Store",
     href: "/store",
@@ -25,16 +42,6 @@ const NAV_ITEMS = [
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
         <path d="M12 2 L13.8 8.2 L20 8.2 L14.9 11.8 L16.7 18 L12 14.4 L7.3 18 L9.1 11.8 L4 8.2 L10.2 8.2 Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" fill="none"/>
-      </svg>
-    ),
-  },
-  {
-    label: "Notifications",
-    href: "/notifications",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
       </svg>
     ),
   },
@@ -61,8 +68,7 @@ const NAV_ITEMS = [
     ),
   },
   {
-    label: "Player Stats",
-    href: "/stats",
+    label: "Stats",
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <line x1="18" y1="20" x2="18" y2="10" />
@@ -70,44 +76,52 @@ const NAV_ITEMS = [
         <line x1="6"  y1="20" x2="6"  y2="14" />
       </svg>
     ),
-  },
-  {
-    label: "Team Stats",
-    href: "/team-stats",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    ),
-  },
-  {
-    label: "Seasons",
-    href: "/seasons",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="4" width="18" height="18" rx="2" />
-        <line x1="16" y1="2" x2="16" y2="6" />
-        <line x1="8" y1="2" x2="8" y2="6" />
-        <line x1="3" y1="10" x2="21" y2="10" />
-        <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" />
-      </svg>
-    ),
-  },
-  {
-    label: "Records",
-    href: "/records",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M6 9H4a2 2 0 0 1-2-2V5h4" />
-        <path d="M18 9h2a2 2 0 0 0 2-2V5h-4" />
-        <path d="M12 17v4" />
-        <path d="M8 21h8" />
-        <path d="M6 5h12v8a6 6 0 0 1-12 0V5z" />
-      </svg>
-    ),
+    children: [
+      {
+        label: "Player Stats",
+        href: "/stats",
+        icon: (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+          </svg>
+        ),
+      },
+      {
+        label: "Team Stats",
+        href: "/team-stats",
+        icon: (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+        ),
+      },
+      {
+        label: "Records",
+        href: "/records",
+        icon: (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="8" r="6" />
+            <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" />
+          </svg>
+        ),
+      },
+      {
+        label: "Seasons",
+        href: "/seasons",
+        icon: (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+            <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" />
+          </svg>
+        ),
+      },
+    ],
   },
   {
     label: "Birthdays",
@@ -137,10 +151,29 @@ const NAV_ITEMS = [
   },
 ];
 
+// Every navigable href, flattening group children — used to decide
+// whether to show the avatar menu button.
+const NAV_HREFS = NAV_ITEMS.flatMap(i =>
+  i.children ? i.children.map(c => c.href) : i.href ? [i.href] : []
+);
+
 const AVATAR_BUTTON_PATHS = new Set([
   "/", "/cards", "/dms", "/search",
-  ...NAV_ITEMS.map(i => i.href),
+  // Settings has its own back-arrow header, so the avatar menu button is omitted there.
+  ...NAV_HREFS.filter(h => h !== "/settings"),
 ]);
+
+const navRowStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 14,
+  padding: "16px 20px",
+  fontSize: 15,
+  fontWeight: 650,
+  textDecoration: "none",
+  letterSpacing: "-0.01em",
+  transition: "background 0.12s ease",
+};
 
 export default function GlobalSideDrawer() {
   const pathname = usePathname();
@@ -154,6 +187,24 @@ export default function GlobalSideDrawer() {
   const [coins, setCoins] = useState<number>(0);
   const [nameColor, setNameColor] = useState<string | null>(null);
   const [frameAsset, setFrameAsset] = useState<string | null>(null);
+  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
+
+  const toggleGroup = (label: string) =>
+    setOpenGroups((prev) => {
+      const next = new Set(prev);
+      next.has(label) ? next.delete(label) : next.add(label);
+      return next;
+    });
+
+  // Auto-expand a group when the current route is one of its children.
+  useEffect(() => {
+    const current = pathname?.replace(/\/$/, "") ?? "";
+    for (const item of NAV_ITEMS) {
+      if (item.children?.some((c) => current === c.href || current.startsWith(c.href + "/"))) {
+        setOpenGroups((prev) => (prev.has(item.label) ? prev : new Set(prev).add(item.label)));
+      }
+    }
+  }, [pathname]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -339,29 +390,77 @@ export default function GlobalSideDrawer() {
 
         {/* Nav rows */}
         <div style={{ flex: 1 }}>
-          {NAV_ITEMS.map(({ label, href, icon }) => (
-            <Link
-              key={href}
-              href={href}
-              onClick={() => setOpen(false)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 14,
-                padding: "16px 20px",
-                borderBottom: "1px solid var(--border-1)",
-                color: "var(--text-1)",
-                fontSize: 15,
-                fontWeight: 650,
-                textDecoration: "none",
-                letterSpacing: "-0.01em",
-                transition: "background 0.12s ease",
-              }}
-            >
-              <span style={{ color: "var(--text-3)", flexShrink: 0 }}>{icon}</span>
-              {label}
-            </Link>
-          ))}
+          {NAV_ITEMS.map((item) =>
+            item.children ? (
+              <div key={item.label}>
+                {/* Group header — toggles the submenu */}
+                <button
+                  onClick={() => toggleGroup(item.label)}
+                  style={{
+                    ...navRowStyle,
+                    width: "100%",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                    textAlign: "left",
+                  }}
+                >
+                  <span style={{ color: "var(--text-3)", flexShrink: 0 }}>{item.icon}</span>
+                  {item.label}
+                  <svg
+                    width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+                    style={{
+                      marginLeft: "auto",
+                      color: "var(--text-3)",
+                      transform: openGroups.has(item.label) ? "rotate(180deg)" : "rotate(0deg)",
+                      transition: "transform 0.2s ease",
+                    }}
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+                {/* Submenu */}
+                <div
+                  style={{
+                    overflow: "hidden",
+                    maxHeight: openGroups.has(item.label) ? `${item.children.length * 56}px` : 0,
+                    transition: "max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1)",
+                  }}
+                >
+                  {item.children.map((child) => (
+                    <Link
+                      key={child.href}
+                      href={child.href}
+                      onClick={() => setOpen(false)}
+                      style={{
+                        ...navRowStyle,
+                        paddingLeft: 30,
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: pathname === child.href ? "var(--text-1)" : "var(--text-2)",
+                        background: pathname === child.href ? "var(--surface-2)" : "transparent",
+                      }}
+                    >
+                      <span style={{ color: "var(--text-3)", flexShrink: 0 }}>{child.icon}</span>
+                      {child.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <Link
+                key={item.href}
+                href={item.href!}
+                onClick={() => setOpen(false)}
+                style={{ ...navRowStyle, color: "var(--text-1)" }}
+              >
+                <span style={{ color: "var(--text-3)", flexShrink: 0 }}>{item.icon}</span>
+                {item.label}
+              </Link>
+            )
+          )}
         </div>
 
         {/* Footer */}

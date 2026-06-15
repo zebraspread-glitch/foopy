@@ -281,8 +281,8 @@ export default function PowerRankingsPage() {
 
       {/* ── Sticky header ── */}
       <header style={headerStyle}>
-        <span style={titleStyle}>Power Rankings</span>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <span style={{ ...titleStyle, position: "absolute", left: "50%", transform: "translateX(-50%)", pointerEvents: "none", whiteSpace: "nowrap" }}>Power Rankings</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginLeft: "auto" }}>
           {/* Player / Team toggle */}
           <div style={toggleWrapStyle}>
             <button onClick={() => setView("player")} style={{ ...toggleBtnStyle, ...(view === "player" ? toggleActiveStyle : {}) }}>

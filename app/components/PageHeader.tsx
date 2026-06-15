@@ -27,11 +27,13 @@ export default function PageHeader({
   sidebarPad?: boolean;
 }) {
   return (
-    <header style={{ ...headerStyle, paddingLeft: sidebarPad ? 58 : 16, borderBottom: noBorder ? "none" : "1px solid var(--border-1)" }}>
+    <header style={{ ...headerStyle, borderBottom: noBorder ? "none" : "1px solid var(--border-1)" }}>
+      {/* Centred title */}
       <div style={leftStyle}>
         <span style={titleStyle}>{title}</span>
         {subtitle && <span style={subtitleStyle}>{subtitle}</span>}
       </div>
+      {/* Right slot floats over the right edge so it doesn't shift the centre */}
       {right && <div style={rightStyle}>{right}</div>}
     </header>
   );
@@ -43,8 +45,8 @@ const headerStyle: CSSProperties = {
   zIndex: 50,
   display: "flex",
   alignItems: "center",
-  justifyContent: "space-between",
-  gap: 12,
+  justifyContent: "center",
+  textAlign: "center",
   height: "calc(56px + env(safe-area-inset-top))",
   padding: "env(safe-area-inset-top) 16px 0",
   background: "var(--bottom-nav-bg)",
@@ -57,6 +59,7 @@ const headerStyle: CSSProperties = {
 const leftStyle: CSSProperties = {
   display: "flex",
   flexDirection: "column",
+  alignItems: "center",
   gap: 1,
   minWidth: 0,
 };
@@ -77,6 +80,10 @@ const subtitleStyle: CSSProperties = {
 };
 
 const rightStyle: CSSProperties = {
+  position: "absolute",
+  right: 16,
+  bottom: 0,
+  height: "56px",
   flexShrink: 0,
   display: "flex",
   alignItems: "center",

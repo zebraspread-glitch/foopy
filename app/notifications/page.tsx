@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
 import { NOTIF_LAST_SEEN_KEY } from "@/app/components/TopBar";
 import { VerifiedBadge } from "@/app/components/VerifiedBadge";
+import { NotificationSkeleton } from "@/app/components/Skeleton";
 
 /* ── Types ── */
 type NotifType =
@@ -307,13 +308,13 @@ export default function NotificationsPage() {
 
         {/* Header */}
         <div style={{ position: "sticky", top: 0, zIndex: 20, background: "var(--bottom-nav-bg)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: "1px solid var(--border-1)", padding: "calc(16px + env(safe-area-inset-top)) 18px 12px 58px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <button onClick={() => router.back()} style={{ background: "none", border: "none", color: "var(--text-2)", cursor: "pointer", padding: 0, display: "flex" }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="15 18 9 12 15 6" />
-                </svg>
-              </button>
+          <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", minHeight: 28 }}>
+            <button onClick={() => router.back()} style={{ background: "none", border: "none", color: "var(--text-2)", cursor: "pointer", padding: 0, display: "flex" }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+            <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", display: "flex", alignItems: "center", gap: 8, pointerEvents: "none" }}>
               <span style={{ fontSize: 20, fontWeight: 900, color: "var(--text-1)" }}>Notifications</span>
               {unreadCount > 0 && (
                 <span style={{ fontSize: 11, fontWeight: 800, background: "#ef4444", color: "var(--text-1)", borderRadius: 999, padding: "2px 7px", minWidth: 20, textAlign: "center" }}>
@@ -349,9 +350,7 @@ export default function NotificationsPage() {
 
         {/* Content */}
         {loading ? (
-          <div style={{ display: "flex", justifyContent: "center", padding: "64px 0" }}>
-            <div className="spinner" />
-          </div>
+          <NotificationSkeleton count={7} />
         ) : displayed.length === 0 ? (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "72px 24px", color: "var(--text-3)", textAlign: "center" }}>
             <div style={{ width: 56, height: 56, borderRadius: "50%", background: "var(--surface-2)", border: "1px solid var(--border-1)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16, color: "var(--text-4)" }}>

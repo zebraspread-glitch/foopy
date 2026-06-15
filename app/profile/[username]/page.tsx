@@ -15,6 +15,7 @@ import { PlayerPassCard, TeamPassCard } from "@/app/components/PassCard";
 import playersData from "@/app/data/players.json";
 import { playerImgUrlFromFolder } from "@/app/lib/playerImage";
 import { nameColorStyle } from "@/app/lib/cosmetics";
+import { ReportBlockSheet } from "@/app/components/ReportBlockMenu";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import { foopyRating } from "@/app/match/[id]/utils";
 
@@ -500,6 +501,7 @@ export default function PublicProfilePage() {
   const [comments,  setComments]  = useState<Comment[]>([]);
   const [gamesMap,  setGamesMap]  = useState<Map<number, { hteam: string; ateam: string }>>(new Map());
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [optionsOpen, setOptionsOpen] = useState(false);
   const [friendStatus,  setFriendStatus]  = useState<"none" | "pending_sent" | "pending_received" | "accepted">("none");
   const [friendLoading, setFriendLoading] = useState(false);
   const [playerStatsMap, setPlayerStatsMap] = useState<Map<string, { rating: string; gb: string; d: string; k: string; h: string; m: string; t: string; ho: string }>>(new Map());
@@ -977,7 +979,7 @@ export default function PublicProfilePage() {
             <button type="button" onClick={() => router.back()} aria-label="Back" style={{ ...topControlBaseStyle, left: 12 }}>
               <ChevronLeft size={22} strokeWidth={2.6} />
             </button>
-            <button type="button" onClick={handleShareProfile} aria-label="Profile options" style={{ ...topControlBaseStyle, right: 12 }}>
+            <button type="button" onClick={() => isOwnProfile ? handleShareProfile() : setOptionsOpen(true)} aria-label="Profile options" style={{ ...topControlBaseStyle, right: 12 }}>
               <MoreHorizontal size={22} strokeWidth={2.6} />
             </button>
 
@@ -1467,8 +1469,22 @@ export default function PublicProfilePage() {
           </div>
         </div>
       )}
+
+      {profile && !isOwnProfile && (
+        <ReportBlockSheet
+          open={optionsOpen}
+          onClose={() => setOptionsOpen(false)}
+          target={{ userId: profile.id, username: profile.username, displayName: profile.display_name }}
+          extraActions={[{ label: "Share profile", icon: <ShareIcon />, onClick: handleShareProfile }]}
+          onChanged={() => { setFriendStatus("none"); }}
+        />
+      )}
     </main>
   );
+}
+
+function ShareIcon() {
+  return <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>;
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────────

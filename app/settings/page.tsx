@@ -2,817 +2,87 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/app/lib/supabase";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  FOOPY_THEME_KEY,
-  normalizeThemeMode,
-  themeColorForMode,
-  type FoopyThemeMode,
-} from "@/app/lib/theme";
+import { SettingsHeader, SettingsScreen, Body, Group, NavRow } from "./shared";
 
-// ── Data ──────────────────────────────────────────────────────────────────────
-
-const AFL_TEAMS = [
-  "Adelaide","Brisbane","Carlton","Collingwood","Essendon","Fremantle",
-  "Geelong","Gold Coast","GWS","Hawthorn","Melbourne","North Melbourne",
-  "Port Adelaide","Richmond","St Kilda","Sydney","West Coast","Western Bulldogs",
-];
-
-const TEAM_LOGO: Record<string, string> = {
-  Adelaide: "/team-logos/crows.png", Brisbane: "/team-logos/lions.png",
-  Carlton: "/team-logos/blues.png", Collingwood: "/team-logos/magpies.png",
-  Essendon: "/team-logos/bombers.png", Fremantle: "/team-logos/dockers.png",
-  Geelong: "/team-logos/cats.png", "Gold Coast": "/team-logos/suns.png",
-  GWS: "/team-logos/giants.png", Hawthorn: "/team-logos/hawks.png",
-  Melbourne: "/team-logos/demons.png", "North Melbourne": "/team-logos/kangaroos.png",
-  "Port Adelaide": "/team-logos/power.png", Richmond: "/team-logos/tigers.png",
-  "St Kilda": "/team-logos/saints.png", Sydney: "/team-logos/swans.png",
-  "West Coast": "/team-logos/eagles.png", "Western Bulldogs": "/team-logos/bulldogs.png",
+// Icons kept inline so each row stays self-contained.
+const Icon = {
+  team: <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+  stats: <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+  messaging: <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>,
+  appearance: <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18.37 2.63 14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3z"/><path d="M9 8c-2 2-3 4-3 6l-3 3 3 3 3-3c2 0 4-1 6-3"/></svg>,
+  account: <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+  about: <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>,
 };
-
-const TEAM_COLOR: Record<string, string> = {
-  Adelaide: "#c8102e", Brisbane: "#7a003c", Carlton: "#0b3b75",
-  Collingwood: "#777", Essendon: "#cc1020", Fremantle: "#4b1979",
-  Geelong: "#003b73", "Gold Coast": "#e8281a", GWS: "#f15a22",
-  Hawthorn: "#6b3310", Melbourne: "#031b4e", "North Melbourne": "#0055a4",
-  "Port Adelaide": "#007b8a", Richmond: "#c8a800",
-  "St Kilda": "#cc1122", Sydney: "#cc1122", "West Coast": "#003087",
-  "Western Bulldogs": "#1a5fd4",
-};
-
-const STAT_OPTIONS = [
-  { value: "disposals",   label: "Disposals" },
-  { value: "goals",       label: "Goals" },
-  { value: "kicks",       label: "Kicks" },
-  { value: "marks",       label: "Marks" },
-  { value: "tackles",     label: "Tackles" },
-  { value: "clearances",  label: "Clearances" },
-  { value: "hitouts",     label: "Hitouts" },
-  { value: "handballs",   label: "Handballs" },
-  { value: "goalAssists", label: "Assists" },
-];
-
-const THEME_OPTIONS: { value: FoopyThemeMode; label: string }[] = [
-  { value: "default", label: "Default" },
-  { value: "light", label: "Light" },
-  { value: "dark", label: "Dark" },
-];
-
-function applyThemeMode(mode: FoopyThemeMode) {
-  document.documentElement.dataset.foopyTheme = mode;
-  document.documentElement.style.colorScheme = mode === "light" ? "light" : "dark";
-
-  document
-    .querySelector<HTMLMetaElement>('meta[name="theme-color"]')
-    ?.setAttribute("content", themeColorForMode(mode));
-
-  document
-    .querySelector<HTMLMetaElement>('meta[name="color-scheme"]')
-    ?.setAttribute("content", mode === "light" ? "light" : "dark");
-}
-
-// ── Sub-components ────────────────────────────────────────────────────────────
-
-function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
-  return (
-    <button
-      onClick={onToggle}
-      style={{
-        width: 46, height: 26, borderRadius: 13, border: "none",
-        background: on ? "#3b82f6" : "var(--surface-3)",
-        cursor: "pointer", position: "relative", flexShrink: 0,
-        transition: "background 0.2s ease",
-        boxShadow: on ? "0 0 0 1px #3b82f666" : "none",
-      }}
-    >
-      <div style={{
-        position: "absolute", top: 3,
-        left: on ? 23 : 3,
-        width: 20, height: 20, borderRadius: "50%",
-        background: "var(--text-1)",
-        boxShadow: "0 1px 4px rgba(0,0,0,0.5)",
-        transition: "left 0.18s cubic-bezier(0.4,0,0.2,1)",
-      }} />
-    </button>
-  );
-}
-
-function Section({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-      <div style={{
-        fontSize: 10.5, fontWeight: 700, color: "var(--text-3)",
-        letterSpacing: "0.09em", textTransform: "uppercase", paddingLeft: 6,
-      }}>
-        {label}
-      </div>
-      <div style={{
-        background: "var(--surface-1)", borderRadius: 16,
-        border: "1px solid var(--border-1)",
-        overflow: "hidden",
-      }}>
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function Row({
-  icon, label, sub, children, onPress, destructive = false, last = false,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  sub?: string;
-  children?: React.ReactNode;
-  onPress?: () => void;
-  destructive?: boolean;
-  last?: boolean;
-}) {
-  return (
-    <div>
-      <div
-        onClick={onPress}
-        style={{
-          display: "flex", alignItems: "center", gap: 14,
-          padding: "14px 16px",
-          cursor: onPress ? "pointer" : "default",
-          WebkitTapHighlightColor: "transparent",
-        }}
-      >
-        {/* Icon */}
-        <div style={{
-          width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-          background: destructive ? "rgba(239,68,68,0.12)" : "var(--surface-3)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          color: destructive ? "#ef4444" : "var(--text-3)",
-        }}>
-          {icon}
-        </div>
-
-        {/* Text */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{
-            fontSize: 14.5, fontWeight: 600,
-            color: destructive ? "#ef4444" : "var(--text-1)",
-            letterSpacing: "-0.01em",
-          }}>
-            {label}
-          </div>
-          {sub && (
-            <div style={{ fontSize: 11.5, color: "var(--text-2)", fontWeight: 500, marginTop: 1 }}>
-              {sub}
-            </div>
-          )}
-        </div>
-
-        {/* Right control */}
-        {children && <div style={{ flexShrink: 0 }}>{children}</div>}
-
-        {/* Chevron for pressable rows with no child control */}
-        {onPress && !children && (
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2.5" strokeLinecap="round">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
-        )}
-      </div>
-      {!last && <div style={{ height: 1, background: "var(--border-1)", marginLeft: 62 }} />}
-    </div>
-  );
-}
-
-// ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
-  const router = useRouter();
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [username, setUsername]   = useState<string | null>(null);
+  const [email, setEmail]         = useState<string | null>(null);
+  const [initials, setInitials]   = useState("?");
 
-  // Account state
-  const [userId, setUserId]         = useState<string | null>(null);
-  const [avatarUrl, setAvatarUrl]   = useState<string | null>(null);
-  const [username, setUsername]     = useState<string | null>(null);
-  const [email, setEmail]           = useState<string | null>(null);
-  const [initials, setInitials]     = useState("?");
-
-  // Preferences (localStorage)
-  const [favTeam, setFavTeam]         = useState("");
-  const [defaultStat, setDefaultStat] = useState("disposals");
-  const [themeMode, setThemeMode]     = useState<FoopyThemeMode>("default");
-
-  // Messaging
-  const [chatBubbleColor, setChatBubbleColor] = useState("#22c55e");
-
-  // My Team features
-  const [teamFeaturedMatch, setTeamFeaturedMatch] = useState(true);
-  const [teamBorderColor, setTeamBorderColor]     = useState("#c9962a");
-
-  // Display
-  const [hapticsOn, setHapticsOn] = useState(true);
-  const [reactionAnim, setReactionAnim] = useState<"off" | "hover" | "ghostly">("hover");
-
-  // UI
-  const [showTeamPicker, setShowTeamPicker] = useState(false);
-  const [signOutConfirm, setSignOutConfirm] = useState(false);
-  const [signingOut, setSigningOut]         = useState(false);
-  const [deleting, setDeleting]             = useState(false);
-
-  // Load profile
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       const user = session?.user;
       if (!user) return;
-      setUserId(user.id);
       setEmail(user.email ?? null);
-      supabase.from("profiles").select("avatar_url, username, favourite_team").eq("id", user.id).single()
+      supabase.from("profiles").select("avatar_url, username").eq("id", user.id).single()
         .then(({ data }) => {
           if (!data) return;
           setAvatarUrl(data.avatar_url ?? null);
           setUsername(data.username ?? null);
           const label = data.username || user.email?.split("@")[0] || "?";
           setInitials(label[0].toUpperCase());
-          // DB is the source of truth; fall back to localStorage if DB has nothing yet
-          const dbTeam = data.favourite_team ?? "";
-          const localTeam = localStorage.getItem("foopy_fav_team") ?? "";
-          const resolved = dbTeam || localTeam;
-          setFavTeam(resolved);
-          if (resolved) localStorage.setItem("foopy_fav_team", resolved);
         });
     });
-
-    // Load prefs (team is loaded from DB above, other prefs are localStorage-only)
-    setFavTeam(localStorage.getItem("foopy_fav_team") ?? "");
-    setDefaultStat(localStorage.getItem("foopy_default_stat") ?? "disposals");
-
-    setChatBubbleColor(localStorage.getItem("foopy_dm_bubble_color") ?? "#22c55e");
-    setTeamFeaturedMatch(localStorage.getItem("foopy_team_featured") !== "false");
-    setTeamBorderColor(localStorage.getItem("foopy_team_border_color") ?? "#c9962a");
-    setHapticsOn(localStorage.getItem("foopy_haptics") !== "false");
-    const ra = localStorage.getItem("foopy_reaction_anim");
-    setReactionAnim(ra === "off" || ra === "ghostly" ? ra : "hover");
-
-    const storedThemeMode = normalizeThemeMode(localStorage.getItem(FOOPY_THEME_KEY));
-    setThemeMode(storedThemeMode);
-    applyThemeMode(storedThemeMode);
   }, []);
 
-  function savePref(key: string, value: string) {
-    localStorage.setItem(key, value);
-    window.dispatchEvent(new Event("foopy-settings-changed"));
-  }
-
-  function toggle(key: string, current: boolean, setter: (v: boolean) => void) {
-    const next = !current;
-    setter(next);
-    savePref(key, String(next));
-  }
-
-  function chooseReactionAnim(mode: "off" | "hover" | "ghostly") {
-    setReactionAnim(mode);
-    savePref("foopy_reaction_anim", mode);
-  }
-
-  function chooseThemeMode(mode: FoopyThemeMode) {
-    setThemeMode(mode);
-    localStorage.setItem(FOOPY_THEME_KEY, mode);
-    applyThemeMode(mode);
-    window.dispatchEvent(new Event("foopy-settings-changed"));
-  }
-
-  async function handleSignOut() {
-    if (!signOutConfirm) { setSignOutConfirm(true); return; }
-    setSigningOut(true);
-    await supabase.auth.signOut();
-    router.push("/");
-  }
-
-  async function handleDeleteAccount() {
-    if (deleting) return;
-    const ok = window.confirm(
-      "Permanently delete your account?\n\nThis removes your profile, cards, coins, passes and posts. This cannot be undone."
-    );
-    if (!ok) return;
-    setDeleting(true);
-    try {
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
-      if (!token) { setDeleting(false); return; }
-      const res = await fetch("/api/account", {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => null);
-        alert(j?.error ?? "Failed to delete account. Please try again.");
-        setDeleting(false);
-        return;
-      }
-      await supabase.auth.signOut();
-      router.push("/");
-    } catch {
-      alert("Something went wrong. Please try again.");
-      setDeleting(false);
-    }
-  }
-
-  const favTeamColor = favTeam ? (TEAM_COLOR[favTeam] ?? "#3b82f6") : "#3b82f6";
-
   return (
-    <>
-      <style>{`
-        .srow:active { background: var(--surface-2) !important; }
-        .steambtn:active { opacity: 0.7; }
-        ::-webkit-scrollbar { display: none; }
-      `}</style>
-
-      <main style={{
-        minHeight: "100dvh",
-        background: "var(--bg)",
-        color: "var(--text-1)",
-        paddingBottom: "calc(90px + env(safe-area-inset-bottom))",
-      }}>
-
-        {/* ── Header ── */}
-        <header style={{
-          position: "sticky", top: 0, zIndex: 50,
-          background: "var(--bottom-nav-bg)",
-          backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
-          borderBottom: "1px solid var(--border-1)",
-          padding: "env(safe-area-inset-top) 16px 0 58px",
-          height: "calc(52px + env(safe-area-inset-top))",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-        }}>
-          <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--text-1)" }}>
-            Settings
-          </span>
-        </header>
-
-        {/* ── Content ── */}
-        <div style={{ maxWidth: 640, margin: "0 auto", padding: "20px 14px", display: "flex", flexDirection: "column", gap: 22 }}>
-
-          {/* ── Profile card ── */}
-          <Link href="/profile" style={{ textDecoration: "none" }}>
-            <div style={{
-              background: "var(--surface-1)",
-              border: "1px solid var(--border-1)",
-              borderRadius: 18,
-              padding: "16px",
-              display: "flex", alignItems: "center", gap: 14,
-              WebkitTapHighlightColor: "transparent",
-            }}>
-              {/* Avatar */}
-              <div style={{
-                width: 56, height: 56, borderRadius: "50%", flexShrink: 0,
-                overflow: "hidden",
-                background: "linear-gradient(135deg, #1e3a5f, #0f172a)",
-                border: "2px solid var(--border-2)",
-              }}>
-                {avatarUrl
-                  ? <img src={avatarUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  : <div style={{
-                      width: "100%", height: "100%", display: "flex",
-                      alignItems: "center", justifyContent: "center",
-                      color: "var(--text-2)", fontSize: 22, fontWeight: 800,
-                    }}>
-                      {initials}
-                    </div>
-                }
-              </div>
-
-              {/* Text */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{
-                  fontSize: 16, fontWeight: 700, color: "var(--text-1)",
-                  letterSpacing: "-0.02em", marginBottom: 3,
-                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                }}>
-                  {username ? `@${username}` : "Set up your profile"}
-                </div>
-                <div style={{ fontSize: 12, color: "var(--text-2)", fontWeight: 500 }}>
-                  {email ?? "Not signed in"}
-                </div>
-              </div>
-
-              {/* Arrow */}
-              <div style={{
-                fontSize: 11, fontWeight: 600, color: "#3b82f6",
-                display: "flex", alignItems: "center", gap: 3, flexShrink: 0,
-              }}>
-                Edit
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
-              </div>
-            </div>
-          </Link>
-
-          {/* ── My Team ── */}
-          <Section label="My Team">
-            <Row
-              icon={
-                favTeam && TEAM_LOGO[favTeam]
-                  ? <img src={TEAM_LOGO[favTeam]} alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
-                  : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-              }
-              label="Favourite Team"
-              sub={favTeam || "Not selected — Required"}
-              onPress={() => setShowTeamPicker(true)}
-            >
-              {favTeam && (
-                <div style={{ width: 8, height: 8, borderRadius: "50%", background: favTeamColor, marginRight: 4 }} />
-              )}
-            </Row>
-
-            <Row
-              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>}
-              label="Featured Match Box"
-              sub="Gold outline on your team's game"
-            >
-              <Toggle on={teamFeaturedMatch} onToggle={() => toggle("foopy_team_featured", teamFeaturedMatch, setTeamFeaturedMatch)} />
-            </Row>
-
-            {teamFeaturedMatch && <Row
-              icon={
-                <div style={{
-                  width: 18, height: 18, borderRadius: "50%",
-                  background: teamBorderColor,
-                  border: "2px solid rgba(255,255,255,0.15)",
-                  flexShrink: 0,
-                }} />
-              }
-              label="Border Colour"
-              sub="Match card highlight colour"
-            >
-              <div style={{ display: "flex", gap: 7, alignItems: "center" }}>
-                {["#c9962a", "#ef4444", "#3b82f6", "#22c55e", "#a855f7", "#ffffff"].map(color => (
-                  <button
-                    key={color}
-                    onClick={() => { setTeamBorderColor(color); savePref("foopy_team_border_color", color); }}
-                    style={{
-                      width: 22, height: 22, borderRadius: "50%",
-                      background: color, cursor: "pointer", padding: 0,
-                      border: teamBorderColor === color
-                        ? "2.5px solid var(--text-1)"
-                        : "2px solid rgba(255,255,255,0.1)",
-                      outline: "none", flexShrink: 0,
-                    }}
-                  />
-                ))}
-                {/* Custom colour picker */}
-                <label style={{ cursor: "pointer", position: "relative", flexShrink: 0 }}>
-                  <input
-                    type="color"
-                    value={teamBorderColor}
-                    onChange={e => { setTeamBorderColor(e.target.value); savePref("foopy_team_border_color", e.target.value); }}
-                    style={{
-                      position: "absolute", opacity: 0,
-                      width: 22, height: 22, top: 0, left: 0,
-                      cursor: "pointer", padding: 0, border: "none",
-                    }}
-                  />
-                  <div style={{
-                    width: 22, height: 22, borderRadius: "50%",
-                    background: "var(--surface-3)",
-                    border: "2px solid var(--border-2)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    color: "var(--text-2)",
-                  }}>
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="13.5" cy="6.5" r="3.5"/><path d="M20 14c0 3.31-4 6-8 6s-8-2.69-8-6"/><path d="M2 20h20"/>
-                    </svg>
-                  </div>
-                </label>
-              </div>
-            </Row>}
-
-          </Section>
-
-          {/* ── Stats Preferences ── */}
-          <Section label="Stats">
-            <Row
-              icon={
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
-                </svg>
-              }
-              label="Default Category"
-              sub={STAT_OPTIONS.find(s => s.value === defaultStat)?.label ?? "Disposals"}
-              last
-            >
-              <select
-                value={defaultStat}
-                onChange={e => { setDefaultStat(e.target.value); savePref("foopy_default_stat", e.target.value); }}
-                style={{
-                  background: "var(--surface-3)", border: "1px solid var(--border-2)",
-                  borderRadius: 8, color: "var(--text-1)", fontSize: 12, fontWeight: 600,
-                  padding: "6px 8px", cursor: "pointer", outline: "none",
-                }}
-              >
-                {STAT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            </Row>
-          </Section>
-
-
-          {/* ── Messaging ── */}
-          <Section label="Messaging">
-            <Row
-              icon={
-                <div style={{
-                  width: 18, height: 18, borderRadius: 5,
-                  background: chatBubbleColor,
-                  border: "2px solid rgba(255,255,255,0.15)",
-                  flexShrink: 0,
-                }} />
-              }
-              label="Chat Bubble Colour"
-              sub="Your sent message colour in DMs"
-              last
-            >
-              <div style={{ display: "flex", gap: 7, alignItems: "center" }}>
-                {["#22c55e", "#3b82f6", "#a855f7", "#ef4444", "#f59e0b", "#ec4899"].map(color => (
-                  <button
-                    key={color}
-                    onClick={() => { setChatBubbleColor(color); savePref("foopy_dm_bubble_color", color); }}
-                    style={{
-                      width: 22, height: 22, borderRadius: "50%",
-                      background: color, cursor: "pointer", padding: 0,
-                      border: chatBubbleColor === color
-                        ? "2.5px solid var(--text-1)"
-                        : "2px solid rgba(255,255,255,0.1)",
-                      outline: "none", flexShrink: 0,
-                    }}
-                  />
-                ))}
-                {/* Custom colour picker */}
-                <label style={{ cursor: "pointer", position: "relative", flexShrink: 0 }}>
-                  <input
-                    type="color"
-                    value={chatBubbleColor}
-                    onChange={e => { setChatBubbleColor(e.target.value); savePref("foopy_dm_bubble_color", e.target.value); }}
-                    style={{
-                      position: "absolute", opacity: 0,
-                      width: 22, height: 22, top: 0, left: 0,
-                      cursor: "pointer", padding: 0, border: "none",
-                    }}
-                  />
-                  <div style={{
-                    width: 22, height: 22, borderRadius: "50%",
-                    background: "var(--surface-3)",
-                    border: "2px solid var(--border-2)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    color: "var(--text-2)",
-                  }}>
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="13.5" cy="6.5" r="3.5"/><path d="M20 14c0 3.31-4 6-8 6s-8-2.69-8-6"/><path d="M2 20h20"/>
-                    </svg>
-                  </div>
-                </label>
-              </div>
-            </Row>
-          </Section>
-
-          {/* ── Display ── */}
-          <Section label="Display">
-            <Row
-              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 3a9 9 0 1 0 9 9"/><path d="M12 3v18"/><path d="M12 8h7"/><path d="M12 16h7"/></svg>}
-              label="Theme Mode"
-              sub="Default grey, white, or black"
-            >
-              <div
-                role="radiogroup"
-                aria-label="Theme mode"
-                style={{
-                  width: "min(208px, 48vw)",
-                  display: "grid",
-                  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-                  gap: 3,
-                  padding: 3,
-                  borderRadius: 12,
-                  background: "var(--surface-3)",
-                  border: "1px solid var(--border-2)",
-                }}
-              >
-                {THEME_OPTIONS.map(option => {
-                  const active = themeMode === option.value;
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      role="radio"
-                      aria-checked={active}
-                      onClick={() => chooseThemeMode(option.value)}
-                      style={{
-                        border: "none",
-                        borderRadius: 9,
-                        background: active ? "var(--bg)" : "transparent",
-                        color: active ? "var(--text-1)" : "var(--text-2)",
-                        boxShadow: active ? "0 1px 8px rgba(0,0,0,0.18)" : "none",
-                        fontSize: 11,
-                        fontWeight: 800,
-                        lineHeight: 1,
-                        padding: "8px 4px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      {option.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </Row>
-            <Row
-              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.9 5.8-5.8 1.9 5.8 1.9L12 18.4l1.9-5.8 5.8-1.9-5.8-1.9z"/></svg>}
-              label="Reaction Animation"
-              sub="Top reactions on each event"
-            >
-              <div
-                role="radiogroup"
-                aria-label="Reaction animation"
-                style={{
-                  width: "min(208px, 48vw)",
-                  display: "grid",
-                  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-                  gap: 3,
-                  padding: 3,
-                  borderRadius: 12,
-                  background: "var(--surface-3)",
-                  border: "1px solid var(--border-2)",
-                }}
-              >
-                {([{ value: "off", label: "Off" }, { value: "hover", label: "Hover" }, { value: "ghostly", label: "Ghostly" }] as const).map(option => {
-                  const active = reactionAnim === option.value;
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      role="radio"
-                      aria-checked={active}
-                      onClick={() => chooseReactionAnim(option.value)}
-                      style={{
-                        border: "none",
-                        borderRadius: 9,
-                        background: active ? "var(--bg)" : "transparent",
-                        color: active ? "var(--text-1)" : "var(--text-2)",
-                        boxShadow: active ? "0 1px 8px rgba(0,0,0,0.18)" : "none",
-                        fontSize: 11,
-                        fontWeight: 800,
-                        lineHeight: 1,
-                        padding: "8px 4px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      {option.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </Row>
-            <Row
-              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 18h.01"/><path d="M8 6c0-2.2 1.8-4 4-4s4 1.8 4 4c0 3-4 5-4 5"/><path d="M12 22v.01"/></svg>}
-              label="Haptic Feedback"
-              sub="Vibrate on taps (iPhone)"
-              last
-            >
-              <Toggle on={hapticsOn} onToggle={() => toggle("foopy_haptics", hapticsOn, setHapticsOn)} />
-            </Row>
-          </Section>
-
-
-          {/* ── Account ── */}
-          <Section label="Account">
-            <Row
-              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>}
-              label={signOutConfirm ? "Tap again to confirm" : signingOut ? "Signing out…" : "Sign Out"}
-              sub={email ?? undefined}
-              onPress={handleSignOut}
-              destructive
-              last={!userId}
-            />
-            {userId && (
-              <Row
-                icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>}
-                label={deleting ? "Deleting…" : "Delete Account"}
-                sub="Permanently remove your account and data"
-                onPress={handleDeleteAccount}
-                destructive
-                last
-              />
-            )}
-          </Section>
-
-          {/* ── About ── */}
-          <Section label="About">
-            <Row
-              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
-              label="Version"
-              sub="Foopy"
-            >
-              <span style={{ fontSize: 12, color: "var(--text-2)", fontWeight: 600 }}>1.0.0</span>
-            </Row>
-            <Row
-              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>}
-              label="Season"
-              last
-            >
-              <span style={{ fontSize: 12, color: "var(--text-2)", fontWeight: 600 }}>AFL 2026</span>
-            </Row>
-          </Section>
-
-          {/* ── Disclaimer ── */}
-          <p style={{
-            fontSize: 11.5, lineHeight: 1.6, color: "var(--text-3)", fontWeight: 500,
-            textAlign: "center", padding: "0 14px", margin: 0,
+    <SettingsScreen>
+      <SettingsHeader title="Settings" backHref="/" />
+      <Body>
+        {/* Profile card */}
+        <Link href="/profile" className="snav" style={{ textDecoration: "none" }}>
+          <div style={{
+            display: "flex", alignItems: "center", gap: 14,
+            padding: "14px 6px", borderRadius: 14, marginBottom: 6,
+            WebkitTapHighlightColor: "transparent",
           }}>
-            Foopy is an unofficial fan-made app. It is not affiliated with,
-            endorsed by, or associated with the Australian Football League (AFL),
-            the AFL Players' Association, or any AFL club. All team names, logos,
-            player names and related marks are the property of their respective owners.
-          </p>
-
-        </div>
-
-        {/* ── Team Picker popup ── */}
-        {showTeamPicker && (
-          <>
-            <div
-              onClick={() => setShowTeamPicker(false)}
-              style={{
-                position: "fixed", inset: 0, zIndex: 100,
-                background: "rgba(0,0,0,0.7)",
-                backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
-              }}
-            />
             <div style={{
-              position: "fixed", top: "50%", left: "50%",
-              transform: "translate(-50%,-50%)",
-              zIndex: 101,
-              width: "min(340px, 88vw)", maxHeight: "78dvh",
-              background: "var(--surface-1)",
-              border: "1px solid var(--border-2)",
-              borderRadius: 20, overflow: "hidden",
-              display: "flex", flexDirection: "column",
-              boxShadow: "0 32px 80px rgba(0,0,0,0.8)",
+              width: 54, height: 54, borderRadius: "50%", flexShrink: 0, overflow: "hidden",
+              background: "linear-gradient(135deg, #1e3a5f, #0f172a)",
+              border: "2px solid var(--border-2)",
             }}>
-              {/* Header */}
-              <div style={{
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "15px 18px 13px",
-                borderBottom: "1px solid var(--border-1)", flexShrink: 0,
-              }}>
-                <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>Choose Your Team</span>
-                <button
-                  onClick={() => setShowTeamPicker(false)}
-                  style={{
-                    background: "var(--surface-3)", border: "none",
-                    borderRadius: "50%", width: 28, height: 28,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    cursor: "pointer", color: "var(--text-2)",
-                  }}
-                >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-                </button>
+              {avatarUrl
+                ? <img src={avatarUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-2)", fontSize: 21, fontWeight: 800 }}>{initials}</div>}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "var(--text-1)", letterSpacing: "-0.02em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {username ? `@${username}` : "Set up your profile"}
               </div>
-
-              {/* List */}
-              <div style={{ overflowY: "auto", flex: 1 }}>
-                {AFL_TEAMS.map(t => {
-                  const active = favTeam === t;
-                  const tc = TEAM_COLOR[t];
-                  return (
-                    <button
-                      key={t}
-                      className="steambtn"
-                      onClick={() => {
-                        setFavTeam(t);
-                        savePref("foopy_fav_team", t);
-                        setShowTeamPicker(false);
-                        if (userId) supabase.from("profiles").update({ favourite_team: t }).eq("id", userId).then(() => {});
-                      }}
-                      style={{
-                        display: "flex", alignItems: "center", gap: 12, width: "100%",
-                        padding: "12px 18px",
-                        background: active ? `${tc}15` : "none",
-                        border: "none", borderBottom: "1px solid var(--border-1)",
-                        color: active ? "var(--text-1)" : "var(--text-2)",
-                        fontSize: 14, fontWeight: active ? 700 : 400, cursor: "pointer", textAlign: "left",
-                      }}
-                    >
-                      <div style={{
-                        width: 30, height: 30, borderRadius: "50%", flexShrink: 0,
-                        overflow: "hidden", background: `${tc}18`,
-                        border: `1px solid ${tc}33`,
-                      }}>
-                        {TEAM_LOGO[t] && <img src={TEAM_LOGO[t]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
-                      </div>
-                      {t}
-                      {active && (
-                        <svg style={{ marginLeft: "auto" }} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={tc} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                      )}
-                    </button>
-                  );
-                })}
+              <div style={{ fontSize: 13, color: "var(--text-3)", fontWeight: 500, marginTop: 2 }}>
+                {email ?? "Not signed in"}
               </div>
             </div>
-          </>
-        )}
-      </main>
-    </>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          </div>
+        </Link>
+
+        <Group label="Options">
+          <NavRow icon={Icon.team}       label="My Team"   href="/settings/my-team" />
+          <NavRow icon={Icon.stats}      label="Stats"     href="/settings/stats" />
+          <NavRow icon={Icon.messaging}  label="Messaging" href="/settings/messaging" />
+          <NavRow icon={Icon.appearance} label="Appearance" href="/settings/appearance" />
+        </Group>
+
+        <Group label="General">
+          <NavRow icon={Icon.account} label="Account" href="/settings/account" />
+          <NavRow icon={Icon.about}   label="About"   href="/settings/about" />
+        </Group>
+      </Body>
+    </SettingsScreen>
   );
 }

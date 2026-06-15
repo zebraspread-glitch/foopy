@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { supabase } from "@/app/lib/supabase";
 import { type Cosmetic, type EquippedCosmetics, nameColorStyle, avatarFrameStyle } from "@/app/lib/cosmetics";
 import { patternBackground } from "@/app/components/PassCard";
+import { StoreItemSkeleton } from "@/app/components/Skeleton";
 import { getPassLevel, PLAYER_PASS_LEVELS } from "@/app/lib/passes";
 
 const PATTERN_PREVIEW_LEVEL = getPassLevel(375, PLAYER_PASS_LEVELS);
@@ -960,7 +961,7 @@ export default function StorePage() {
         {msg && <div className="store-message">{msg}</div>}
 
         {loading ? (
-          <div className="store-state">Loading...</div>
+          <StoreItemSkeleton count={8} />
         ) : !token ? (
           <div className="store-state">Sign in to shop cosmetics.</div>
         ) : catalog.length === 0 ? (

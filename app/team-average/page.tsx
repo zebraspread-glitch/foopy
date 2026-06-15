@@ -119,9 +119,11 @@ const backStyle: React.CSSProperties = {
 };
 
 const headerStyle: React.CSSProperties = {
+  position: "relative",
   display: "flex",
   alignItems: "center",
-  justifyContent: "space-between",
+  justifyContent: "center",
+  textAlign: "center",
   gap: 14,
   padding: "0 6px 14px",
 };
@@ -142,6 +144,9 @@ const subStyle: React.CSSProperties = {
 };
 
 const countStyle: React.CSSProperties = {
+  position: "absolute",
+  right: 6,
+  top: 0,
   flexShrink: 0,
   fontSize: 11,
   fontWeight: 850,

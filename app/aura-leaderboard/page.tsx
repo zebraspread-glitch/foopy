@@ -210,9 +210,10 @@ function AuraLeaderboardInner() {
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
-          <div style={{ fontSize: 17, fontWeight: 900, letterSpacing: "-0.03em", background: "linear-gradient(135deg, #c084fc, #818cf8, #fbbf24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+          <div style={{ flex: 1, textAlign: "center", fontSize: 17, fontWeight: 900, letterSpacing: "-0.03em", background: "linear-gradient(135deg, #c084fc, #818cf8, #fbbf24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
             ✦ Aura
           </div>
+          <div style={{ width: 22, flexShrink: 0 }} />
         </div>
 
         {/* Main tab switch */}

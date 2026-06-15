@@ -1,6 +1,7 @@
 "use client";
 
 import { formatAura, formatCoins } from "@/app/lib/format";
+import { ProfileSkeleton } from "@/app/components/Skeleton";
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
@@ -1734,9 +1735,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <main style={pageStyle} className="page-enter">
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
-          <div className="spinner" />
-        </div>
+        <ProfileSkeleton />
       </main>
     );
   }

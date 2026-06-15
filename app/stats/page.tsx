@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import rawStats from "@/app/data/player-season-stats.json";
 import { CARD_PLAYERS } from "@/app/data/cardPlayers";
 import { PLAYER_IMG_BASE } from "@/app/lib/playerImage";
+import { StatsTableSkeleton } from "@/app/components/Skeleton";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -270,11 +271,11 @@ export default function StatsPage() {
           background: "var(--bottom-nav-bg)", backdropFilter: "blur(24px)",
           WebkitBackdropFilter: "blur(24px)",
           borderBottom: "1px solid var(--border-1)",
-          padding: "env(safe-area-inset-top) 16px 0 58px",
+          padding: "env(safe-area-inset-top) 16px 0",
           height: "calc(52px + env(safe-area-inset-top))",
           display: "flex", alignItems: "center", justifyContent: "space-between",
         }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+          <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", display: "flex", alignItems: "baseline", gap: 8, pointerEvents: "none", whiteSpace: "nowrap" }}>
             <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--text-1)" }}>
               Player Stats
             </span>
@@ -283,7 +284,7 @@ export default function StatsPage() {
             </span>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "auto" }}>
             {/* Team filter */}
             <button
               className="s-btn"
@@ -347,7 +348,7 @@ export default function StatsPage() {
         <div style={{ maxWidth: 760, margin: "0 auto" }}>
           <>
             {!mounted && (
-                <div style={{ padding: "60px 24px", textAlign: "center", color: "var(--text-4)", fontSize: 13 }}>Loading…</div>
+                <StatsTableSkeleton rows={10} />
               )}
               {mounted && isEmpty && (
                 <div style={{ padding: "80px 24px", textAlign: "center" }}>

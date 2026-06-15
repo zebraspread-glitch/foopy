@@ -11,6 +11,9 @@ import CommentText from "@/app/components/CommentText";
 import StickerPicker from "@/app/components/StickerPicker";
 import MiniAvatar from "@/app/components/MiniAvatar";
 import SendArrowIcon from "@/app/components/SendArrowIcon";
+import { CommentSkeleton } from "@/app/components/Skeleton";
+import { ReportBlockSheet, type ReportBlockTarget } from "@/app/components/ReportBlockMenu";
+import { getHiddenUserIds, blocksChanged } from "@/app/lib/blocks";
 
 type Profile = {
   id: string;
@@ -105,12 +108,17 @@ export default function CommentSheet({ gameId, gameLabel, eventKey, onClose }: P
       likedIds = new Set((likes ?? []).map((l: { comment_id: string }) => l.comment_id));
     }
 
+    // Hide comments from blocked users (and users who blocked me).
+    const hidden = await getHiddenUserIds();
+
     // Build tree: top-level + replies
-    const all: Comment[] = (rows as unknown[]).map((r: unknown) => {
-      const row = r as Comment & { profile: Profile | Profile[] };
-      const profile = Array.isArray(row.profile) ? row.profile[0] : row.profile;
-      return { ...row, profile, liked: likedIds.has(row.id), replies: [] };
-    });
+    const all: Comment[] = (rows as unknown[])
+      .map((r: unknown) => {
+        const row = r as Comment & { profile: Profile | Profile[] };
+        const profile = Array.isArray(row.profile) ? row.profile[0] : row.profile;
+        return { ...row, profile, liked: likedIds.has(row.id), replies: [] };
+      })
+      .filter((c) => !hidden.has(c.user_id));
 
     const topLevel: Comment[] = [];
     const byId: Record<string, Comment> = {};
@@ -128,6 +136,11 @@ export default function CommentSheet({ gameId, gameLabel, eventKey, onClose }: P
   }, [gameId]);
 
   useEffect(() => { loadComments(); }, [loadComments]);
+
+  // Re-filter when the user blocks/unblocks someone.
+  useEffect(() => blocksChanged.subscribe(() => loadComments()), [loadComments]);
+
+  const [reportTarget, setReportTarget] = useState<ReportBlockTarget | null>(null);
 
   // Prevent body scroll while sheet open
   useEffect(() => {
@@ -216,6 +229,17 @@ export default function CommentSheet({ gameId, gameLabel, eventKey, onClose }: P
     setTimeout(() => inputRef.current?.focus(), 50);
   }
 
+  function openReport(comment: Comment) {
+    setReportTarget({
+      userId: comment.user_id,
+      username: comment.profile?.username,
+      displayName: comment.profile?.display_name,
+      targetType: "comment",
+      targetId: comment.id,
+      context: String(gameId),
+    });
+  }
+
   const replyThread = useMemo(
     () => (replyThreadId ? findFeedCommentById(comments, replyThreadId) : null),
     [comments, replyThreadId]
@@ -237,9 +261,7 @@ export default function CommentSheet({ gameId, gameLabel, eventKey, onClose }: P
         {/* Comments list */}
         <div style={listStyle}>
           {loading ? (
-            <div style={centreStyle}>
-              <div className="spinner" />
-            </div>
+            <CommentSkeleton count={5} />
           ) : comments.length === 0 ? (
             <div style={emptyStyle}>
               <div style={{ fontSize: 32, marginBottom: 10 }}>💬</div>
@@ -256,6 +278,7 @@ export default function CommentSheet({ gameId, gameLabel, eventKey, onClose }: P
                 onDelete={handleDelete}
                 onReply={startReply}
                 onViewReplies={(comment) => setReplyThreadId(comment.id)}
+                onReport={openReport}
                 liking={liking}
               />
             ))
@@ -271,9 +294,16 @@ export default function CommentSheet({ gameId, gameLabel, eventKey, onClose }: P
             onDelete={handleDelete}
             onReply={startReply}
             onViewReplies={(comment) => setReplyThreadId(comment.id)}
+            onReport={openReport}
             liking={liking}
           />
         )}
+
+        <ReportBlockSheet
+          open={!!reportTarget}
+          onClose={() => setReportTarget(null)}
+          target={reportTarget ?? { userId: "" }}
+        />
 
         {/* Input area */}
         <div style={inputAreaStyle}>
@@ -346,6 +376,7 @@ function CommentRow({
   onDelete,
   onReply,
   onViewReplies,
+  onReport,
   liking,
   isReply = false,
 }: {
@@ -355,6 +386,7 @@ function CommentRow({
   onDelete: (id: string) => void;
   onReply: (c: Comment) => void;
   onViewReplies: (c: Comment) => void;
+  onReport: (c: Comment) => void;
   liking: Set<string>;
   isReply?: boolean;
 }) {
@@ -397,6 +429,11 @@ function CommentRow({
                 Delete
               </button>
             )}
+            {userId && !isOwn && (
+              <button onClick={() => onReport(comment)} style={{ ...actionBtnStyle, color: "var(--text-3)" }}>
+                Report
+              </button>
+            )}
           </div>
           {/* Replies toggle */}
           {comment.replies && comment.replies.length > 0 && (
@@ -420,10 +457,10 @@ function CommentRow({
   );
 }
 
-function FeedRepliesPopup({ comment, userId, onClose, onLike, onDelete, onReply, onViewReplies, liking }: {
+function FeedRepliesPopup({ comment, userId, onClose, onLike, onDelete, onReply, onViewReplies, onReport, liking }: {
   comment: Comment; userId: string | null; onClose: () => void;
   onLike: (c: Comment) => void; onDelete: (id: string) => void; onReply: (c: Comment) => void;
-  onViewReplies: (c: Comment) => void; liking: Set<string>;
+  onViewReplies: (c: Comment) => void; onReport: (c: Comment) => void; liking: Set<string>;
 }) {
   const replyCount = comment.replies?.length ?? 0;
   return (
@@ -437,14 +474,14 @@ function FeedRepliesPopup({ comment, userId, onClose, onLike, onDelete, onReply,
           <button onClick={onClose} style={replyModalCloseStyle}>×</button>
         </div>
         <div style={replyModalParentStyle}>
-          <CommentRow comment={comment} userId={userId} onLike={onLike} onDelete={onDelete} onReply={onReply} onViewReplies={onViewReplies} liking={liking} />
+          <CommentRow comment={comment} userId={userId} onLike={onLike} onDelete={onDelete} onReply={onReply} onViewReplies={onViewReplies} onReport={onReport} liking={liking} />
         </div>
         <div style={replyModalRepliesStyle}>
           {replyCount === 0 ? (
             <div style={replyModalEmptyStyle}>No replies yet.</div>
           ) : (
             comment.replies!.map((reply) => (
-              <CommentRow key={reply.id} comment={reply} userId={userId} onLike={onLike} onDelete={onDelete} onReply={onReply} onViewReplies={onViewReplies} liking={liking} isReply />
+              <CommentRow key={reply.id} comment={reply} userId={userId} onLike={onLike} onDelete={onDelete} onReply={onReply} onViewReplies={onViewReplies} onReport={onReport} liking={liking} isReply />
             ))
           )}
         </div>

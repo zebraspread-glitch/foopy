@@ -8,6 +8,7 @@ import { Search } from "lucide-react";
 import { supabase } from "@/app/lib/supabase";
 import { VerifiedBadge } from "@/app/components/VerifiedBadge";
 import { nameColorStyle } from "@/app/lib/cosmetics";
+import { getMyBlockedIds } from "@/app/lib/blocks";
 import playersData from "@/app/data/players.json";
 import { playerImgUrl } from "@/app/lib/playerImage";
 
@@ -126,13 +127,14 @@ export default function SearchPage() {
         .slice(0, 20);
       setPlayers(matchedPlayers);
 
-      // User search — Supabase
+      // User search — Supabase (hide users you've blocked)
       const { data } = await supabase
         .from("profiles")
         .select("id, username, avatar_url, verified, name_color")
         .ilike("username", `%${q}%`)
         .limit(20);
-      setUsers((data ?? []) as Profile[]);
+      const blocked = await getMyBlockedIds();
+      setUsers(((data ?? []) as Profile[]).filter(u => !blocked.has(u.id)));
       setVisibleUsers(5);
       setSearched(true);
       setLoading(false);
@@ -277,7 +279,9 @@ const headerStyle: CSSProperties = {
   paddingTop: "env(safe-area-inset-top)",
   display: "flex",
   alignItems: "center",
-  padding: "env(safe-area-inset-top) 20px 0 58px",
+  justifyContent: "center",
+  textAlign: "center",
+  padding: "env(safe-area-inset-top) 16px 0",
   background: "var(--bottom-nav-bg)",
   backdropFilter: "blur(28px) saturate(200%)",
   WebkitBackdropFilter: "blur(28px) saturate(200%)",

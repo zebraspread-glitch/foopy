@@ -237,7 +237,8 @@
       "Bash(cmd /c \"ping -n 16 127.0.0.1 >nul\")",
       "Bash(git grep *)",
       "Bash(git ls-tree *)",
-      "mcp__visualize__read_me"
+      "mcp__visualize__read_me",
+      "Bash(echo \"EXIT: $?\")"
     ]
   }
 }
