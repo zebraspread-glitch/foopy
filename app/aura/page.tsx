@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import PageHeader from "@/app/components/PageHeader";
 import { formatAura } from "@/app/lib/format";
 import { supabase } from "@/app/lib/supabase";
 import { getLogo } from "@/app/match/[id]/utils";
@@ -119,8 +119,6 @@ export default function AuraPage() {
 }
 
 function AuraPageInner() {
-  const router = useRouter();
-
   const [mainTab, setMainTab] = useState<MainTab>("overall");
   const [period, setPeriod] = useState<Period>("overall");
 
@@ -263,32 +261,7 @@ function AuraPageInner() {
       <div style={{ minHeight: "100dvh", background: "var(--bg)", paddingBottom: 90 }}>
 
         {/* ── Sticky header ── */}
-        <div style={{
-          position: "sticky", top: 0, zIndex: 20,
-          background: "rgba(20,20,30,0.92)",
-          backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
-          borderBottom: "1px solid rgba(139,92,246,0.2)",
-          paddingTop: "env(safe-area-inset-top)",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 16px 11px" }}>
-            <button onClick={() => router.back()} style={{ background: "none", border: "none", color: "var(--text-3)", cursor: "pointer", padding: 4, display: "flex", flexShrink: 0 }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
-            </button>
-            <div style={{
-              flex: 1, textAlign: "center",
-              fontSize: 18, fontWeight: 900, letterSpacing: "-0.02em",
-              background: "linear-gradient(90deg, #c084fc 0%, #818cf8 40%, #fbbf24 70%, #c084fc 100%)",
-              backgroundSize: "200% auto",
-              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-              animation: "aura-shimmer 4s linear infinite",
-            }}>
-              ✦ Aura
-            </div>
-            <div style={{ width: 30, flexShrink: 0 }} />
-          </div>
-        </div>
+        <PageHeader title="Aura" />
 
         {/* ── Hero ── */}
         <div style={{

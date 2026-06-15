@@ -14,6 +14,7 @@ import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/app/lib/supabase";
 import { CARD_PLAYERS, canonicalCardPlayerIdForCard, resolveCardPlayerId } from "@/app/data/cardPlayers";
 import { PlayerCard as SharedPlayerCard } from "@/app/components/PlayerCard";
+import PageHeader from "@/app/components/PageHeader";
 
 type Rarity = "bronze" | "silver" | "gold" | "emerald" | "sapphire" | "ruby" | "amethyst" | "diamond" | "pinkdiamond" | "mythic";
 
@@ -229,43 +230,23 @@ export default function AlbumPage() {
       `}</style>
 
       {/* Sticky header */}
+      <PageHeader
+        title="Card Album"
+        subtitle={`${unlockedCount} of ${totalCount} unlocked · ${pct}%`}
+        onBack={() => router.back()}
+        right={
+          <div style={{ width: 52, height: 4, borderRadius: 99, background: "var(--surface-3)", overflow: "hidden", flexShrink: 0 }}>
+            <div style={{ height: "100%", width: `${pct}%`, borderRadius: 99, background: "linear-gradient(90deg,#60a5fa,#a78bfa)", transition: "width 0.4s ease" }} />
+          </div>
+        }
+      />
+
       <div style={{
-        position: "sticky", top: 0, zIndex: 20,
         background: "var(--bottom-nav-bg)",
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
         borderBottom: "1px solid var(--border-1)",
-        paddingTop: "env(safe-area-inset-top)",
       }}>
-        {/* Top row */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px 10px 58px" }}>
-          <button
-            onClick={() => router.back()}
-            style={{
-              appearance: "none", border: "none",
-              background: "var(--surface-3)",
-              borderRadius: "50%", width: 36, height: 36,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: "pointer", color: "var(--text-1)", fontSize: 17, flexShrink: 0,
-              transition: "background 0.15s ease",
-            }}
-          >
-            ←
-          </button>
-
-          <div style={{ flex: 1, textAlign: "center" }}>
-            <div style={{ fontSize: 18, fontWeight: 1000, letterSpacing: "-.02em", lineHeight: 1.2 }}>Card Album</div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,.4)", fontWeight: 600, marginTop: 1 }}>
-              {unlockedCount} of {totalCount} unlocked · {pct}%
-            </div>
-          </div>
-
-          {/* Progress bar */}
-          <div style={{ width: 52, height: 4, borderRadius: 99, background: "var(--surface-3)", overflow: "hidden", flexShrink: 0 }}>
-            <div style={{ height: "100%", width: `${pct}%`, borderRadius: 99, background: "linear-gradient(90deg,#60a5fa,#a78bfa)", transition: "width 0.4s ease" }} />
-          </div>
-        </div>
-
         {/* Team tabs */}
         <div style={{ display: "flex", overflowX: "auto", scrollbarWidth: "none", padding: "0 12px" }}>
           {TEAMS.map((team) => {

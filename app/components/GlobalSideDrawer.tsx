@@ -6,6 +6,7 @@ import { nameColorStyle, avatarFrameStyle } from "@/app/lib/cosmetics";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { showsDrawerButton } from "@/app/lib/navRoutes";
 
 type NavItem = {
   label: string;
@@ -151,18 +152,6 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
-// Every navigable href, flattening group children — used to decide
-// whether to show the avatar menu button.
-const NAV_HREFS = NAV_ITEMS.flatMap(i =>
-  i.children ? i.children.map(c => c.href) : i.href ? [i.href] : []
-);
-
-const AVATAR_BUTTON_PATHS = new Set([
-  "/", "/cards", "/dms", "/search",
-  // Settings has its own back-arrow header, so the avatar menu button is omitted there.
-  ...NAV_HREFS.filter(h => h !== "/settings"),
-]);
-
 const navRowStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
@@ -177,8 +166,9 @@ const navRowStyle: React.CSSProperties = {
 
 export default function GlobalSideDrawer() {
   const pathname = usePathname();
-  const avatarButtonPath = pathname === "/" ? "/" : pathname?.replace(/\/$/, "");
-  const showAvatarButton = AVATAR_BUTTON_PATHS.has(avatarButtonPath ?? "");
+  // Profile button (opens the drawer) lives on the root tab sections only.
+  // Pushed/detail screens get a back arrow from PageHeader instead.
+  const showAvatarButton = showsDrawerButton(pathname);
   const [open, setOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);

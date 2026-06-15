@@ -7,6 +7,7 @@ import { formatAura } from "@/app/lib/format";
 import { supabase } from "@/app/lib/supabase";
 import { nameColorStyle } from "@/app/lib/cosmetics";
 import { VerifiedBadge } from "@/app/components/VerifiedBadge";
+import PageHeader from "@/app/components/PageHeader";
 
 type Period  = "day" | "week" | "month" | "overall";
 type MainTab = "leaderboard" | "history";
@@ -202,20 +203,10 @@ function AuraLeaderboardInner() {
   return (
     <div style={{ minHeight: "100dvh", background: "var(--bg)", paddingBottom: 60 }}>
 
-      {/* ── Sticky header ── */}
-      <div style={{ position: "sticky", top: 0, zIndex: 10, background: "var(--bg)", borderBottom: "1px solid var(--border-1)", paddingTop: "env(safe-area-inset-top)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 18px 12px" }}>
-          <button onClick={() => router.back()} style={{ background: "none", border: "none", color: "var(--text-3)", cursor: "pointer", padding: 0, display: "flex" }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </button>
-          <div style={{ flex: 1, textAlign: "center", fontSize: 17, fontWeight: 900, letterSpacing: "-0.03em", background: "linear-gradient(135deg, #c084fc, #818cf8, #fbbf24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-            ✦ Aura
-          </div>
-          <div style={{ width: 22, flexShrink: 0 }} />
-        </div>
+      {/* ── Header ── */}
+      <PageHeader title="Aura Leaderboard" onBack={() => router.back()} />
 
+      <div style={{ background: "var(--bg)", borderBottom: "1px solid var(--border-1)" }}>
         {/* Main tab switch */}
         <div style={{ display: "flex", padding: "0 18px 12px", gap: 6 }}>
           {(["leaderboard", "history"] as MainTab[]).map(tab => (

@@ -6,6 +6,7 @@ import { supabase } from "@/app/lib/supabase";
 import { NOTIF_LAST_SEEN_KEY } from "@/app/components/TopBar";
 import { VerifiedBadge } from "@/app/components/VerifiedBadge";
 import { NotificationSkeleton } from "@/app/components/Skeleton";
+import PageHeader from "@/app/components/PageHeader";
 
 /* ── Types ── */
 type NotifType =
@@ -307,30 +308,19 @@ export default function NotificationsPage() {
       <div style={{ maxWidth: 600, margin: "0 auto", background: "var(--bg)", minHeight: "100dvh", borderLeft: "1px solid var(--border-1)", borderRight: "1px solid var(--border-1)" }}>
 
         {/* Header */}
-        <div style={{ position: "sticky", top: 0, zIndex: 20, background: "var(--bottom-nav-bg)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: "1px solid var(--border-1)", padding: "calc(16px + env(safe-area-inset-top)) 18px 12px 58px" }}>
-          <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", minHeight: 28 }}>
-            <button onClick={() => router.back()} style={{ background: "none", border: "none", color: "var(--text-2)", cursor: "pointer", padding: 0, display: "flex" }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
+        <PageHeader
+          title="Notifications"
+          onBack={() => router.back()}
+          right={notifs.length > 0 ? (
+            <button onClick={clearAll} style={{ background: "none", border: "none", color: "var(--text-3)", fontSize: 12, fontWeight: 700, cursor: "pointer", padding: "4px 8px" }}>
+              Clear all
             </button>
-            <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", display: "flex", alignItems: "center", gap: 8, pointerEvents: "none" }}>
-              <span style={{ fontSize: 20, fontWeight: 900, color: "var(--text-1)" }}>Notifications</span>
-              {unreadCount > 0 && (
-                <span style={{ fontSize: 11, fontWeight: 800, background: "#ef4444", color: "var(--text-1)", borderRadius: 999, padding: "2px 7px", minWidth: 20, textAlign: "center" }}>
-                  {unreadCount}
-                </span>
-              )}
-            </div>
-            {notifs.length > 0 && (
-              <button onClick={clearAll} style={{ background: "none", border: "none", color: "var(--text-3)", fontSize: 12, fontWeight: 700, cursor: "pointer", padding: "4px 8px" }}>
-                Clear all
-              </button>
-            )}
-          </div>
+          ) : undefined}
+        />
 
+        <div style={{ background: "var(--bg)", borderBottom: "1px solid var(--border-1)", padding: "12px 18px" }}>
           {/* Filter pills */}
-          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+          <div style={{ display: "flex", gap: 8 }}>
             {(["all", "unread"] as const).map(f => (
               <button
                 key={f}
