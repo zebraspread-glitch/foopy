@@ -1199,7 +1199,7 @@ function PlayerAvatar({ name, team, size = 48, rating, ratingColor, isBest }: { 
         )}
       </span>
       {logo && (
-        <img src={logo} alt="" style={{ position: "absolute", bottom: -2, right: -2, width: 16, height: 16, borderRadius: "50%", background: "var(--bg-1)", border: "1.5px solid var(--bg-1)", objectFit: "contain", pointerEvents: "none" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+        <img src={logo} alt="" style={{ position: "absolute", bottom: -2, right: -2, width: 16, height: 16, borderRadius: "50%", background: "var(--bg)", border: "1.5px solid var(--bg)", objectFit: "contain", pointerEvents: "none" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
       )}
       {rating !== undefined && rating !== null && (
         <span style={{
@@ -1207,7 +1207,7 @@ function PlayerAvatar({ name, team, size = 48, rating, ratingColor, isBest }: { 
           display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 2,
           minWidth: 22, padding: "1px 3px", borderRadius: 5,
           background: ratingColor ?? "var(--surface-3)",
-          border: "1.5px solid var(--bg-1)",
+          border: "1.5px solid var(--bg)",
           color: "var(--text-1)", fontWeight: 900, fontSize: 10,
           textAlign: "center", lineHeight: 1.4,
           pointerEvents: "none",
@@ -1978,7 +1978,7 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
   // while scrolling), so use a background-image overlay instead.
   function sortHeaderColStyle(key: SortKey): CSSProperties {
     return sortKey === key
-      ? { backgroundColor: "var(--bg-1, #0a0a0f)", backgroundImage: "linear-gradient(rgba(255,255,255,0.045), rgba(255,255,255,0.045))" }
+      ? { backgroundColor: "var(--bg)", backgroundImage: "linear-gradient(rgba(255,255,255,0.045), rgba(255,255,255,0.045))" }
       : {};
   }
 
@@ -7363,7 +7363,7 @@ const createFormStyle: CSSProperties = { margin: "0 16px 16px", padding: "16px",
 const pollTypeToggleStyle: CSSProperties = { flex: 1, padding: "8px 0", borderRadius: 8, border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer" };
 
 const pageStyle: CSSProperties = { minHeight: "100dvh", background: "var(--bg)", color: "var(--text-1)", paddingBottom: "calc(90px + env(safe-area-inset-bottom))" };
-const matchCentreStyle: CSSProperties = { width: "100%", maxWidth: 760, margin: "0 auto", background: "var(--surface-1)", minHeight: "100vh", borderLeft: "1px solid var(--border-2)", borderRight: "1px solid var(--border-2)" };
+const matchCentreStyle: CSSProperties = { width: "100%", maxWidth: 760, margin: "0 auto", background: "var(--surface-1)", minHeight: "100dvh", borderLeft: "1px solid var(--border-2)", borderRight: "1px solid var(--border-2)" };
 // (scoreboard + tab styles now inline in JSX)
 const sectionStyle: CSSProperties = { padding: "18px", borderBottom: "1px solid var(--border-2)" };
 const sectionHeadingStyle: CSSProperties = { margin: "0 0 14px", textAlign: "center", fontSize: 18, fontWeight: 950 };
@@ -7442,7 +7442,7 @@ const countdownLabelStyle: CSSProperties = { color: "#facc15", fontSize: 11, fon
 const countdownTimeStyle: CSSProperties = { marginTop: 8, color: "var(--text-1)", fontSize: 36, lineHeight: 1, fontWeight: 1000, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" };
 const tableWrapStyle: CSSProperties = { overflowX: "auto" };
 const tableStyle: CSSProperties = { width: "100%", borderCollapse: "separate", borderSpacing: 0 };
-const thStyle: CSSProperties = { position: "sticky", top: 0, zIndex: 2, backgroundColor: "var(--bg-1, #0a0a0f)", textAlign: "center", padding: "9px 10px", borderBottom: "1px solid var(--border-2)", whiteSpace: "nowrap", fontSize: 10, fontWeight: 900, textTransform: "uppercase" as const, letterSpacing: "0.08em", color: "var(--text-3)" };
+const thStyle: CSSProperties = { position: "sticky", top: 0, zIndex: 2, backgroundColor: "var(--bg)", textAlign: "center", padding: "9px 10px", borderBottom: "1px solid var(--border-2)", whiteSpace: "nowrap", fontSize: 10, fontWeight: 900, textTransform: "uppercase" as const, letterSpacing: "0.08em", color: "var(--text-3)" };
 const thPlayerStyle: CSSProperties = {
   ...thStyle,
   left: 0,
