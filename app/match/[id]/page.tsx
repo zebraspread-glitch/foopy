@@ -819,20 +819,24 @@ function fantasyPoints(p: PlayerStat): number {
 // ── Configurable player-stats columns ───────────────────────────────────────
 // The Player and (sticky) avatar columns are always shown; these are the stat
 // columns the user can choose between via "Edit stat columns".
+// Sticky leading column widths, tuned so the default 8 stat columns all fit on
+// a phone (avatar + name + 8 stats stay within ~360px, no horizontal scroll).
+const AVATAR_COL_W = 44;
+const NAME_COL_W = 70;
 type StatColumnDef = { id: SortKey; label: string; full: string; width: number; render: (p: PlayerStat) => React.ReactNode };
 const STAT_COLUMNS: StatColumnDef[] = [
-  { id: "goals",        label: "G.B", full: "Goals · Behinds", width: 46, render: (p) => `${statValue(p.goals)}.${statValue(p.behinds)}` },
-  { id: "disposals",    label: "D",   full: "Disposals",       width: 38, render: (p) => statValue(p.disposals) },
-  { id: "kicks",        label: "K",   full: "Kicks",           width: 38, render: (p) => statValue(p.kicks) },
-  { id: "handballs",    label: "H",   full: "Handballs",       width: 38, render: (p) => statValue(p.handballs) },
-  { id: "marks",        label: "M",   full: "Marks",           width: 38, render: (p) => statValue(p.marks) },
-  { id: "tackles",      label: "T",   full: "Tackles",         width: 38, render: (p) => statValue(p.tackles) },
-  { id: "hitouts",      label: "HO",  full: "Hit-outs",        width: 40, render: (p) => statValue(p.hitouts) },
-  { id: "goalAssists",  label: "GA",  full: "Goal assists",    width: 38, render: (p) => statValue((p as any).goalAssists ?? 0) },
-  { id: "fantasy",      label: "FP",  full: "Fantasy points",  width: 44, render: (p) => fantasyPoints(p) },
-  { id: "clearances",   label: "CLR", full: "Clearances",      width: 42, render: (p) => statValue(p.clearances) },
-  { id: "freesFor",     label: "FF",  full: "Frees for",       width: 38, render: (p) => statValue(p.freesFor) },
-  { id: "freesAgainst", label: "FA",  full: "Frees against",   width: 38, render: (p) => statValue(p.freesAgainst) },
+  { id: "goals",        label: "G.B", full: "Goals · Behinds", width: 38, render: (p) => `${statValue(p.goals)}.${statValue(p.behinds)}` },
+  { id: "disposals",    label: "D",   full: "Disposals",       width: 29, render: (p) => statValue(p.disposals) },
+  { id: "kicks",        label: "K",   full: "Kicks",           width: 29, render: (p) => statValue(p.kicks) },
+  { id: "handballs",    label: "H",   full: "Handballs",       width: 29, render: (p) => statValue(p.handballs) },
+  { id: "marks",        label: "M",   full: "Marks",           width: 29, render: (p) => statValue(p.marks) },
+  { id: "tackles",      label: "T",   full: "Tackles",         width: 29, render: (p) => statValue(p.tackles) },
+  { id: "hitouts",      label: "HO",  full: "Hit-outs",        width: 31, render: (p) => statValue(p.hitouts) },
+  { id: "goalAssists",  label: "GA",  full: "Goal assists",    width: 29, render: (p) => statValue((p as any).goalAssists ?? 0) },
+  { id: "fantasy",      label: "FP",  full: "Fantasy points",  width: 38, render: (p) => fantasyPoints(p) },
+  { id: "clearances",   label: "CLR", full: "Clearances",      width: 36, render: (p) => statValue(p.clearances) },
+  { id: "freesFor",     label: "FF",  full: "Frees for",       width: 30, render: (p) => statValue(p.freesFor) },
+  { id: "freesAgainst", label: "FA",  full: "Frees against",   width: 30, render: (p) => statValue(p.freesAgainst) },
 ];
 const DEFAULT_STAT_COLS: SortKey[] = ["goals", "disposals", "kicks", "handballs", "marks", "tackles", "hitouts", "goalAssists"];
 const STAT_COLS_KEY = "foopy_stat_columns";
@@ -1213,6 +1217,15 @@ function PlayerAvatar({ name, team, size = 48, rating, ratingColor, isBest }: { 
   }, [src]);
 
   const logo = getLogo(safeTeam);
+  // Badges scale down with the avatar so small table avatars stay clean.
+  const small = size <= 40;
+  const badgeFont = small ? 7.5 : 9.5;
+  const badgeMinW = small ? 14 : 19;
+  const badgePad = small ? "0 1.5px" : "1px 3px";
+  const badgeBorder = small ? 1 : 1.5;
+  const badgeOffset = small ? -1 : -2;
+  const logoSize = small ? 10 : 16;
+  const starSize = small ? 6 : 9;
   return (
     <span style={{ position: "relative", display: "inline-flex", flexShrink: 0, width: size, height: size, zIndex: 1 }}>
       <span
@@ -1238,21 +1251,21 @@ function PlayerAvatar({ name, team, size = 48, rating, ratingColor, isBest }: { 
         )}
       </span>
       {logo && (
-        <img src={logo} alt="" style={{ position: "absolute", bottom: -2, right: -2, width: 16, height: 16, borderRadius: "50%", background: "var(--bg)", border: "1.5px solid var(--bg)", objectFit: "contain", pointerEvents: "none" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+        <img src={logo} alt="" style={{ position: "absolute", bottom: badgeOffset, right: badgeOffset, width: logoSize, height: logoSize, borderRadius: "50%", background: "var(--bg)", border: `${badgeBorder}px solid var(--bg)`, objectFit: "contain", pointerEvents: "none" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
       )}
       {rating !== undefined && rating !== null && (
         <span style={{
-          position: "absolute", bottom: -2, left: -2, zIndex: 1,
+          position: "absolute", bottom: badgeOffset, left: badgeOffset, zIndex: 1,
           display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 2,
-          minWidth: 22, padding: "1px 3px", borderRadius: 5,
+          minWidth: badgeMinW, padding: badgePad, borderRadius: small ? 4 : 5,
           background: ratingColor ?? "var(--surface-3)",
-          border: "1.5px solid var(--bg)",
-          color: "var(--text-1)", fontWeight: 900, fontSize: 10,
-          textAlign: "center", lineHeight: 1.4,
+          border: `${badgeBorder}px solid var(--bg)`,
+          color: "var(--text-1)", fontWeight: 900, fontSize: badgeFont,
+          textAlign: "center", lineHeight: small ? 1.25 : 1.4,
           pointerEvents: "none",
         }}>
           {isBest && (
-            <svg width="9" height="9" viewBox="0 0 24 24" fill="#fff" style={{ flexShrink: 0 }}>
+            <svg width={starSize} height={starSize} viewBox="0 0 24 24" fill="#fff" style={{ flexShrink: 0 }}>
               <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
             </svg>
           )}
@@ -2040,10 +2053,10 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
     <div>
 
       <div ref={axisLockedScrollRef} style={{ ...tableWrapStyle, maxHeight: `calc(100dvh - ${stickyTop}px)`, overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}>
-        <table style={{ ...tableStyle, minWidth: 144 + activeCols.reduce((w, c) => w + c.width, 0), tableLayout: "fixed" }}>
+        <table style={{ ...tableStyle, minWidth: AVATAR_COL_W + NAME_COL_W + activeCols.reduce((w, c) => w + c.width, 0), tableLayout: "fixed" }}>
           <colgroup>
-            <col style={{ width: 52 }} />{/* avatar (sticky) */}
-            <col style={{ width: 92 }} />{/* surname (scrolls) */}
+            <col style={{ width: AVATAR_COL_W }} />{/* avatar (sticky) */}
+            <col style={{ width: NAME_COL_W }} />{/* surname (scrolls) */}
             {activeCols.map((c) => <col key={c.id} style={{ width: c.width }} />)}
           </colgroup>
           <thead>
@@ -2096,7 +2109,7 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
                     <PlayerAvatar
                       name={name}
                       team={rowTeam}
-                      size={38}
+                      size={36}
                       rating={ratingVisible ? rating : undefined}
                       ratingColor={rating !== null ? foopyColor(rating) : undefined}
                       isBest={isBest}
@@ -2105,15 +2118,13 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
                   {/* Surname + comment count — scrolls under the avatar. */}
                   <td style={tdNameStyle}>
                     <span style={tdNameInnerStyle}>
-                      <span style={{ ...playerNameTextStyle, minWidth: 0, flex: "0 1 auto" }} title={name}>{surname(name)}</span>
-                      {count > 0 && (
-                        <span style={statNameCommentStyle}>
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                          </svg>
-                          {count}
-                        </span>
-                      )}
+                      <span style={playerNameTextStyle} title={name}>{surname(name)}</span>
+                      <span style={statNameCommentStyle}>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                        </svg>
+                        {count > 0 && <span>{count}</span>}
+                      </span>
                     </span>
                   </td>
 
@@ -7601,11 +7612,11 @@ const thNameStyle: CSSProperties = { ...thStyle, left: 0, textAlign: "left", pad
 // NB: the <td> stays a real table-cell (no display:flex — that would break
 // table-layout:fixed column sizing); the flex lives on an inner wrapper.
 const tdNameStyle: CSSProperties = {
-  ...tdStyle, textAlign: "left", padding: "8px 6px 8px 4px",
-  fontWeight: 800, fontSize: 13.5, color: "var(--text-1)", overflow: "hidden",
+  ...tdStyle, textAlign: "left", padding: "8px 4px 8px 2px",
+  fontWeight: 800, fontSize: 13, color: "var(--text-1)", overflow: "hidden",
 };
-const tdNameInnerStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 6, minWidth: 0, maxWidth: "100%" };
-const statNameCommentStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 2, color: "var(--text-4)", fontSize: 10, fontWeight: 800, flexShrink: 0 };
+const tdNameInnerStyle: CSSProperties = { display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", gap: 2, minWidth: 0, maxWidth: "100%", lineHeight: 1.1 };
+const statNameCommentStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 2, minHeight: 12, color: "var(--text-4)", fontSize: 9.5, fontWeight: 800 };
 // "Edit stat columns" button + its bottom-sheet editor.
 const editStatColsBtnStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 18px", borderRadius: 999, background: "var(--surface-2)", border: "1px solid var(--border-2)", color: "var(--text-2)", fontSize: 13.5, fontWeight: 800, cursor: "pointer", WebkitTapHighlightColor: "transparent" };
 const statEditorBackdropStyle: CSSProperties = { position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "flex-end", justifyContent: "center", backdropFilter: "blur(2px)", WebkitBackdropFilter: "blur(2px)" };
@@ -7621,7 +7632,7 @@ const statEditorBadgeStyle: CSSProperties = { minWidth: 38, textAlign: "center",
 const playerNameCellStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 14, width: "100%", minWidth: 0, overflow: "hidden" };
 const playerInfoStyle: CSSProperties = { display: "flex", flexDirection: "column", minWidth: 0, flex: "1 1 auto", overflow: "hidden" };
 const playerNameTextStyle: CSSProperties = { display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" };
-const ratingPillStyle: CSSProperties = { display: "inline-block", minWidth: 48, padding: "5px 9px", borderRadius: 8, color: "var(--text-1)", fontWeight: 900, fontSize: 13, border: "1.5px solid rgba(0,0,0,0.3)", textAlign: "center" };
+const ratingPillStyle: CSSProperties = { display: "inline-block", minWidth: 40, padding: "3px 7px", borderRadius: 7, color: "var(--text-1)", fontWeight: 900, fontSize: 12, border: "1.5px solid rgba(0,0,0,0.3)", textAlign: "center" };
 const statSwitchWrapStyle: CSSProperties = { display: "flex", justifyContent: "center", gap: 6, marginBottom: 14 };
 const statSwitchStyle: CSSProperties = { appearance: "none", border: "1px solid var(--border-2)", background: "var(--surface-2)", color: "var(--text-2)", borderRadius: 999, padding: "3px 8px", fontSize: 10, fontWeight: 800, cursor: "pointer", letterSpacing: "0.01em" };
 const activeStatSwitchStyle: CSSProperties = { ...statSwitchStyle, background: "#3b82f6", color: "var(--text-1)", border: "1px solid #3b82f6" };
