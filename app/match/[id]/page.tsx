@@ -17,6 +17,7 @@ import WinnerPick from "./components/WinnerPick";
 import DuelsTab from "./components/DuelsTab";
 import { teamColors, matchupBarColors } from "./utils";
 import { supabase } from "@/app/lib/supabase";
+import { getGamesCached } from "@/app/lib/gameCache";
 import { createNotification, notifyMentions } from "@/app/lib/notifications";
 import MentionTextarea from "@/app/components/MentionTextarea";
 import CommentText from "@/app/components/CommentText";
@@ -3413,6 +3414,15 @@ function MatchPageInner() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const id = String(params?.id ?? "");
+
+  // Seed from the shared games cache the home page already populated, so a
+  // tap from the home page renders the match INSTANTLY (correct game, round
+  // strip, scores) instead of flashing a skeleton while /api/games refetches.
+  // The background refresh below still runs to pick up live score changes.
+  if (cachedAllGames.length === 0) {
+    const shared = getGamesCached() as MatchGame[] | null;
+    if (shared && shared.length) cachedAllGames = shared;
+  }
 
   const [mounted, setMounted] = useState(() => typeof window !== "undefined");
   const [activeTab, setActiveTab] = useState<TabKey>(() =>

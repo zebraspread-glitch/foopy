@@ -1370,7 +1370,7 @@ free_kicks?: {
                     <Link
                       key={game.id}
                       href={`/match/${game.id}?from=home`}
-                      prefetch={false}
+                      prefetch
                       className={`card${status === "LIVE" ? " card-live" : ""}`}
                       style={{
                         ...cardStyle,
@@ -1731,7 +1731,7 @@ function MobileRoundPanel({
               <Link
                 key={game.id}
                 href={`/match/${game.id}?from=home`}
-                prefetch={false}
+                prefetch
                 className={`card${status === "LIVE" ? " card-live" : ""}`}
                 style={{
                   ...mobileMatchStyle,
