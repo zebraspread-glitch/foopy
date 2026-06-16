@@ -83,9 +83,13 @@ export default function SplashScreen() {
       className={fading ? "splash-hidden" : undefined}
       suppressHydrationWarning
     >
+      {/* suppressHydrationWarning on every node: some iOS webviews / extensions
+          inject a class onto the served HTML before React hydrates, which
+          otherwise mismatches and makes React regenerate the tree (throwing the
+          dev error overlay that blocks taps). */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/footy-icon.png" alt="" className="splash-logo" />
-      <div className="splash-spinner" />
+      <img src="/footy-icon.png" alt="" className="splash-logo" suppressHydrationWarning />
+      <div className="splash-spinner" suppressHydrationWarning />
     </div>
   );
 }
