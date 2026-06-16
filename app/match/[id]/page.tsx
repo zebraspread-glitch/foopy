@@ -7443,9 +7443,28 @@ const countdownTimeStyle: CSSProperties = { marginTop: 8, color: "var(--text-1)"
 const tableWrapStyle: CSSProperties = { overflowX: "auto" };
 const tableStyle: CSSProperties = { width: "100%", borderCollapse: "separate", borderSpacing: 0 };
 const thStyle: CSSProperties = { position: "sticky", top: 0, zIndex: 2, backgroundColor: "var(--bg-1, #0a0a0f)", textAlign: "center", padding: "9px 10px", borderBottom: "1px solid var(--border-2)", whiteSpace: "nowrap", fontSize: 10, fontWeight: 900, textTransform: "uppercase" as const, letterSpacing: "0.08em", color: "var(--text-3)" };
-const thPlayerStyle: CSSProperties = { ...thStyle, minWidth: 180, textAlign: "left" };
+const thPlayerStyle: CSSProperties = {
+  ...thStyle,
+  left: 0,
+  zIndex: 5,
+  minWidth: 180,
+  textAlign: "left",
+  boxShadow: "10px 0 18px rgba(0,0,0,0.32)",
+};
 const tdStyle: CSSProperties = { padding: "13px 10px", borderBottom: "1px solid var(--border-1)", whiteSpace: "nowrap", fontSize: 14, fontWeight: 700, fontVariantNumeric: "tabular-nums", textAlign: "center" };
-const tdPlayerStyle: CSSProperties = { ...tdStyle, fontWeight: 800, fontSize: 14, color: "var(--text-1)", minWidth: 180, textAlign: "left" };
+const tdPlayerStyle: CSSProperties = {
+  ...tdStyle,
+  position: "sticky",
+  left: 0,
+  zIndex: 3,
+  backgroundColor: "var(--bg)",
+  fontWeight: 800,
+  fontSize: 14,
+  color: "var(--text-1)",
+  minWidth: 180,
+  textAlign: "left",
+  boxShadow: "10px 0 18px rgba(0,0,0,0.32)",
+};
 const playerNameCellStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 14, width: "100%", minWidth: 0, overflow: "hidden" };
 const playerInfoStyle: CSSProperties = { display: "flex", flexDirection: "column", minWidth: 0, flex: "1 1 auto", overflow: "hidden" };
 const playerNameTextStyle: CSSProperties = { display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" };
