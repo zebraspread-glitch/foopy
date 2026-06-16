@@ -1822,11 +1822,46 @@ function useAxisLockedScroll<T extends HTMLElement>() {
     const el = ref.current;
     if (!el) return;
 
-    // Touch is left to the browser's NATIVE scroll: iOS already does
-    // directional axis-locking AND inertial momentum. The old manual touch
-    // handler drove scrollLeft 1:1 with the finger and preventDefault'd every
-    // move, which killed momentum entirely (scroll stopped dead on lift). We
-    // now only intercept the desktop wheel to axis-lock trackpad gestures.
+    // Axis-lock WITHOUT killing momentum: once a touch gesture commits to a
+    // direction, hide overflow on the OTHER axis so it can't scroll, giving a
+    // clean horizontal-or-vertical scroll (never diagonal). Crucially these
+    // listeners are passive and never preventDefault / set scroll position, so
+    // the browser's native inertial momentum is fully preserved. (The old
+    // approach drove scrollLeft 1:1 with the finger, which had no inertia.)
+    let axis: null | "x" | "y" = null;
+    let startX = 0;
+    let startY = 0;
+    const LOCK_THRESHOLD = 6;
+
+    function unlock() {
+      el!.style.overflowX = "auto";
+      el!.style.overflowY = "auto";
+    }
+
+    function onTouchStart(event: TouchEvent) {
+      if (event.touches.length !== 1) return;
+      axis = null;
+      startX = event.touches[0].clientX;
+      startY = event.touches[0].clientY;
+      unlock(); // start every gesture with both axes free
+    }
+
+    function onTouchMove(event: TouchEvent) {
+      if (axis || event.touches.length !== 1) return;
+      const dx = Math.abs(event.touches[0].clientX - startX);
+      const dy = Math.abs(event.touches[0].clientY - startY);
+      if (dx < LOCK_THRESHOLD && dy < LOCK_THRESHOLD) return;
+      axis = dx > dy ? "x" : "y";
+      // Lock the cross-axis; the chosen axis keeps native momentum scrolling.
+      if (axis === "x") el!.style.overflowY = "hidden";
+      else el!.style.overflowX = "hidden";
+    }
+
+    function onTouchEnd() {
+      axis = null;
+      unlock();
+    }
+
     function onWheel(event: WheelEvent) {
       const absX = Math.abs(event.deltaX);
       const absY = Math.abs(event.deltaY);
@@ -1851,8 +1886,16 @@ function useAxisLockedScroll<T extends HTMLElement>() {
       el.scrollTop += event.deltaY;
     }
 
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: true });
+    el.addEventListener("touchend", onTouchEnd, { passive: true });
+    el.addEventListener("touchcancel", onTouchEnd, { passive: true });
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+      el.removeEventListener("touchcancel", onTouchEnd);
       el.removeEventListener("wheel", onWheel);
     };
   }, []);
