@@ -17,6 +17,7 @@ import WinnerPick from "./components/WinnerPick";
 import DuelsTab from "./components/DuelsTab";
 import { teamColors, matchupBarColors } from "./utils";
 import { supabase } from "@/app/lib/supabase";
+import { surname } from "@/app/lib/format";
 import { getGamesCached } from "@/app/lib/gameCache";
 import { createNotification, notifyMentions } from "@/app/lib/notifications";
 import MentionTextarea from "@/app/components/MentionTextarea";
@@ -1816,69 +1817,16 @@ function canScrollBy(el: HTMLElement, axis: "x" | "y", delta: number) {
 
 function useAxisLockedScroll<T extends HTMLElement>() {
   const ref = useRef<T | null>(null);
-  const touchStateRef = useRef({
-    axis: null as null | "x" | "y",
-    startX: 0,
-    startY: 0,
-    startScrollLeft: 0,
-    startScrollTop: 0,
-  });
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
 
-    const lockThreshold = 7;
-
-    function holdCrossAxis(axis: "x" | "y", value: number) {
-      if (axis === "x") el!.scrollLeft = value;
-      else el!.scrollTop = value;
-    }
-
-    function onTouchStart(event: TouchEvent) {
-      if (event.touches.length !== 1) return;
-      const touch = event.touches[0];
-      touchStateRef.current = {
-        axis: null,
-        startX: touch.clientX,
-        startY: touch.clientY,
-        startScrollLeft: el.scrollLeft,
-        startScrollTop: el.scrollTop,
-      };
-    }
-
-    function onTouchMove(event: TouchEvent) {
-      if (event.touches.length !== 1) return;
-      const touch = event.touches[0];
-      const state = touchStateRef.current;
-      const dx = touch.clientX - state.startX;
-      const dy = touch.clientY - state.startY;
-      const absX = Math.abs(dx);
-      const absY = Math.abs(dy);
-
-      if (!state.axis) {
-        if (absX < lockThreshold && absY < lockThreshold) return;
-        state.axis = absX > absY ? "x" : "y";
-      }
-
-      if (state.axis === "x") {
-        if (el.scrollWidth <= el.clientWidth) return;
-        event.preventDefault();
-        el.scrollLeft = state.startScrollLeft - dx;
-        holdCrossAxis("y", state.startScrollTop);
-        return;
-      }
-
-      holdCrossAxis("x", state.startScrollLeft);
-      if (!canScrollBy(el, "y", -dy)) return;
-      event.preventDefault();
-      el.scrollTop = state.startScrollTop - dy;
-    }
-
-    function onTouchEnd() {
-      touchStateRef.current.axis = null;
-    }
-
+    // Touch is left to the browser's NATIVE scroll: iOS already does
+    // directional axis-locking AND inertial momentum. The old manual touch
+    // handler drove scrollLeft 1:1 with the finger and preventDefault'd every
+    // move, which killed momentum entirely (scroll stopped dead on lift). We
+    // now only intercept the desktop wheel to axis-lock trackpad gestures.
     function onWheel(event: WheelEvent) {
       const absX = Math.abs(event.deltaX);
       const absY = Math.abs(event.deltaY);
@@ -1903,16 +1851,8 @@ function useAxisLockedScroll<T extends HTMLElement>() {
       el.scrollTop += event.deltaY;
     }
 
-    el.addEventListener("touchstart", onTouchStart, { passive: true });
-    el.addEventListener("touchmove", onTouchMove, { passive: false });
-    el.addEventListener("touchend", onTouchEnd);
-    el.addEventListener("touchcancel", onTouchEnd);
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => {
-      el.removeEventListener("touchstart", onTouchStart);
-      el.removeEventListener("touchmove", onTouchMove);
-      el.removeEventListener("touchend", onTouchEnd);
-      el.removeEventListener("touchcancel", onTouchEnd);
       el.removeEventListener("wheel", onWheel);
     };
   }, []);
@@ -1987,7 +1927,7 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
     const active = sortKey === key;
     return (
       <th
-        style={{ ...thStyle, top: 0, ...sortHeaderColStyle(key), ...extraStyle, color: active ? "#0ea5e9" : "#9ca3af", cursor: "pointer" }}
+        style={{ ...statHeadStyle, top: 0, ...sortHeaderColStyle(key), ...extraStyle, color: active ? "#0ea5e9" : "#9ca3af", cursor: "pointer" }}
         onClick={() => {
           if (onSort) { onSort(key); return; }
           if (sortKey === key) setSortDirLocal(sortDir === "desc" ? "asc" : "desc");
@@ -2015,21 +1955,48 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
   return (
     <div>
 
-      <div ref={axisLockedScrollRef} style={{ ...tableWrapStyle, maxHeight: `calc(100dvh - ${stickyTop}px)`, overflowY: "auto" }}>
-        <table style={{ ...tableStyle, minWidth: 1040, tableLayout: "fixed" }}>
+      <div ref={axisLockedScrollRef} style={{ ...tableWrapStyle, maxHeight: `calc(100dvh - ${stickyTop}px)`, overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}>
+        <table style={{ ...tableStyle, minWidth: 612, tableLayout: "fixed" }}>
+          <colgroup>
+            <col style={{ width: 52 }} />{/* avatar (sticky) */}
+            <col style={{ width: 92 }} />{/* surname (scrolls) */}
+            <col style={{ width: 46 }} />{/* G.B */}
+            <col style={{ width: 38 }} />{/* D */}
+            <col style={{ width: 38 }} />{/* K */}
+            <col style={{ width: 38 }} />{/* H */}
+            <col style={{ width: 38 }} />{/* M */}
+            <col style={{ width: 38 }} />{/* T */}
+            <col style={{ width: 40 }} />{/* HO */}
+            <col style={{ width: 42 }} />{/* FP */}
+            <col style={{ width: 40 }} />{/* CLR */}
+            <col style={{ width: 36 }} />{/* GA */}
+            <col style={{ width: 36 }} />{/* FF */}
+            <col style={{ width: 36 }} />{/* FA */}
+          </colgroup>
           <thead>
             <tr>
-              <th
-                style={{ ...thPlayerStyle, top: 0, ...sortHeaderColStyle("foopy"), width: 220, minWidth: 220, cursor: "pointer" }}
-                onClick={() => {
+              {(() => {
+                const sortFoopy = () => {
                   const key: SortKey = "foopy";
                   if (onSort) { onSort(key); return; }
                   if (sortKey === key) setSortDirLocal(sortDir === "desc" ? "asc" : "desc");
                   else { setSortKeyLocal(key); setSortDirLocal("desc"); }
-                }}
-              >
-                Player{sortKey === "foopy" ? (sortDir === "desc" ? " ↓" : " ↑") : ""}
-              </th>
+                };
+                const foopyArrow = sortKey === "foopy" ? (sortDir === "desc" ? " ↓" : " ↑") : "";
+                return (
+                  <>
+                    {/* Sticky avatar column — always visible while scrolling stats.
+                        Sorts by foopy (the rating lives on the avatar badge). */}
+                    <th style={{ ...thAvatarStyle, top: 0, ...sortHeaderColStyle("foopy"), cursor: "pointer" }} onClick={sortFoopy} aria-label="Sort by Foopy rating">
+                      <span style={{ color: sortKey === "foopy" ? "#0ea5e9" : "var(--text-4)" }}>✦{foopyArrow}</span>
+                    </th>
+                    {/* Surname — scrolls away under the avatar. */}
+                    <th style={{ ...thNameStyle, top: 0, ...sortHeaderColStyle("foopy"), cursor: "pointer" }} onClick={sortFoopy}>
+                      Player
+                    </th>
+                  </>
+                );
+              })()}
               {sortHeader("G.B", "goals")}
               {sortHeader("D", "disposals")}
               {sortHeader("K", "kicks")}
@@ -2062,39 +2029,44 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
                   style={{ cursor: "pointer" }}
                   onClick={() => router.push(`/match/${gameId}/${playerSlugUrl}`)}
                 >
-                  <td style={tdPlayerStyle}>
-                    <span style={playerNameCellStyle}>
-                      <PlayerAvatar
-                        name={name}
-                        team={rowTeam}
-                        rating={ratingVisible ? rating : undefined}
-                        ratingColor={rating !== null ? foopyColor(rating) : undefined}
-                        isBest={isBest}
-                      />
-                      <span style={playerInfoStyle}>
-                        <div style={playerNameTextStyle} title={name}>{name}</div>
-                        <span style={playerBubbleStyle}>
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  {/* Sticky avatar + foopy badge — stays pinned while scrolling. */}
+                  <td style={tdAvatarStyle}>
+                    <PlayerAvatar
+                      name={name}
+                      team={rowTeam}
+                      size={38}
+                      rating={ratingVisible ? rating : undefined}
+                      ratingColor={rating !== null ? foopyColor(rating) : undefined}
+                      isBest={isBest}
+                    />
+                  </td>
+                  {/* Surname + comment count — scrolls under the avatar. */}
+                  <td style={tdNameStyle}>
+                    <span style={tdNameInnerStyle}>
+                      <span style={{ ...playerNameTextStyle, minWidth: 0, flex: "0 1 auto" }} title={name}>{surname(name)}</span>
+                      {count > 0 && (
+                        <span style={statNameCommentStyle}>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                           </svg>
-                          {count > 0 && <span>{count}</span>}
+                          {count}
                         </span>
-                      </span>
+                      )}
                     </span>
                   </td>
 
-                  <td style={{ ...tdStyle, ...sortColStyle("goals") }}>{statValue(p.goals)}.{statValue(p.behinds)}</td>
-                  <td style={{ ...tdStyle, ...sortColStyle("disposals") }}>{statValue(p.disposals)}</td>
-                  <td style={{ ...tdStyle, ...sortColStyle("kicks") }}>{statValue(p.kicks)}</td>
-                  <td style={{ ...tdStyle, ...sortColStyle("handballs") }}>{statValue(p.handballs)}</td>
-                  <td style={{ ...tdStyle, ...sortColStyle("marks") }}>{statValue(p.marks)}</td>
-                  <td style={{ ...tdStyle, ...sortColStyle("tackles") }}>{statValue(p.tackles)}</td>
-                  <td style={{ ...tdStyle, ...sortColStyle("hitouts") }}>{statValue(p.hitouts)}</td>
-                  <td style={{ ...tdStyle, ...sortColStyle("fantasy") }}>{fantasyPoints(p)}</td>
-                  <td style={{ ...tdStyle, ...sortColStyle("clearances") }}>{statValue(p.clearances)}</td>
-                  <td style={{ ...tdStyle, ...sortColStyle("goalAssists") }}>{statValue((p as any).goalAssists ?? 0)}</td>
-                  <td style={{ ...tdStyle, ...sortColStyle("freesFor") }}>{statValue(p.freesFor)}</td>
-                  <td style={{ ...tdStyle, ...sortColStyle("freesAgainst") }}>{statValue(p.freesAgainst)}</td>
+                  <td style={{ ...statCellStyle, ...sortColStyle("goals") }}>{statValue(p.goals)}.{statValue(p.behinds)}</td>
+                  <td style={{ ...statCellStyle, ...sortColStyle("disposals") }}>{statValue(p.disposals)}</td>
+                  <td style={{ ...statCellStyle, ...sortColStyle("kicks") }}>{statValue(p.kicks)}</td>
+                  <td style={{ ...statCellStyle, ...sortColStyle("handballs") }}>{statValue(p.handballs)}</td>
+                  <td style={{ ...statCellStyle, ...sortColStyle("marks") }}>{statValue(p.marks)}</td>
+                  <td style={{ ...statCellStyle, ...sortColStyle("tackles") }}>{statValue(p.tackles)}</td>
+                  <td style={{ ...statCellStyle, ...sortColStyle("hitouts") }}>{statValue(p.hitouts)}</td>
+                  <td style={{ ...statCellStyle, ...sortColStyle("fantasy") }}>{fantasyPoints(p)}</td>
+                  <td style={{ ...statCellStyle, ...sortColStyle("clearances") }}>{statValue(p.clearances)}</td>
+                  <td style={{ ...statCellStyle, ...sortColStyle("goalAssists") }}>{statValue((p as any).goalAssists ?? 0)}</td>
+                  <td style={{ ...statCellStyle, ...sortColStyle("freesFor") }}>{statValue(p.freesFor)}</td>
+                  <td style={{ ...statCellStyle, ...sortColStyle("freesAgainst") }}>{statValue(p.freesAgainst)}</td>
                 </tr>
               );
             })}
@@ -7481,6 +7453,30 @@ const tdPlayerStyle: CSSProperties = {
   textAlign: "left",
   boxShadow: "10px 0 18px rgba(0,0,0,0.32)",
 };
+// ── Compact stats-table cells (match StatTable) ──────────────────────────────
+// Tighter than the shared td/th so more stat columns fit on a phone.
+const statHeadStyle: CSSProperties = { ...thStyle, padding: "9px 3px" };
+const statCellStyle: CSSProperties = { ...tdStyle, padding: "12px 3px", fontSize: 13 };
+// Sticky avatar column — narrow, always visible while scrolling the stats.
+const thAvatarStyle: CSSProperties = {
+  ...thStyle, left: 0, zIndex: 5, padding: "9px 0", textAlign: "center",
+  boxShadow: "8px 0 14px rgba(0,0,0,0.38)",
+};
+const tdAvatarStyle: CSSProperties = {
+  ...tdStyle, position: "sticky", left: 0, zIndex: 3, backgroundColor: "var(--bg)",
+  padding: "8px 0", textAlign: "center",
+  boxShadow: "8px 0 14px rgba(0,0,0,0.38)",
+};
+// Surname column — sits beside the avatar at rest, scrolls under it on scroll.
+const thNameStyle: CSSProperties = { ...thStyle, left: 0, textAlign: "left", padding: "9px 6px 9px 4px" };
+// NB: the <td> stays a real table-cell (no display:flex — that would break
+// table-layout:fixed column sizing); the flex lives on an inner wrapper.
+const tdNameStyle: CSSProperties = {
+  ...tdStyle, textAlign: "left", padding: "8px 6px 8px 4px",
+  fontWeight: 800, fontSize: 13.5, color: "var(--text-1)", overflow: "hidden",
+};
+const tdNameInnerStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 6, minWidth: 0, maxWidth: "100%" };
+const statNameCommentStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 2, color: "var(--text-4)", fontSize: 10, fontWeight: 800, flexShrink: 0 };
 const playerNameCellStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 14, width: "100%", minWidth: 0, overflow: "hidden" };
 const playerInfoStyle: CSSProperties = { display: "flex", flexDirection: "column", minWidth: 0, flex: "1 1 auto", overflow: "hidden" };
 const playerNameTextStyle: CSSProperties = { display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" };
