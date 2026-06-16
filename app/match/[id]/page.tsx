@@ -816,6 +816,43 @@ function fantasyPoints(p: PlayerStat): number {
   );
 }
 
+// ── Configurable player-stats columns ───────────────────────────────────────
+// The Player and (sticky) avatar columns are always shown; these are the stat
+// columns the user can choose between via "Edit stat columns".
+type StatColumnDef = { id: SortKey; label: string; full: string; width: number; render: (p: PlayerStat) => React.ReactNode };
+const STAT_COLUMNS: StatColumnDef[] = [
+  { id: "goals",        label: "G.B", full: "Goals · Behinds", width: 46, render: (p) => `${statValue(p.goals)}.${statValue(p.behinds)}` },
+  { id: "disposals",    label: "D",   full: "Disposals",       width: 38, render: (p) => statValue(p.disposals) },
+  { id: "kicks",        label: "K",   full: "Kicks",           width: 38, render: (p) => statValue(p.kicks) },
+  { id: "handballs",    label: "H",   full: "Handballs",       width: 38, render: (p) => statValue(p.handballs) },
+  { id: "marks",        label: "M",   full: "Marks",           width: 38, render: (p) => statValue(p.marks) },
+  { id: "tackles",      label: "T",   full: "Tackles",         width: 38, render: (p) => statValue(p.tackles) },
+  { id: "hitouts",      label: "HO",  full: "Hit-outs",        width: 40, render: (p) => statValue(p.hitouts) },
+  { id: "goalAssists",  label: "GA",  full: "Goal assists",    width: 38, render: (p) => statValue((p as any).goalAssists ?? 0) },
+  { id: "fantasy",      label: "FP",  full: "Fantasy points",  width: 44, render: (p) => fantasyPoints(p) },
+  { id: "clearances",   label: "CLR", full: "Clearances",      width: 42, render: (p) => statValue(p.clearances) },
+  { id: "freesFor",     label: "FF",  full: "Frees for",       width: 38, render: (p) => statValue(p.freesFor) },
+  { id: "freesAgainst", label: "FA",  full: "Frees against",   width: 38, render: (p) => statValue(p.freesAgainst) },
+];
+const DEFAULT_STAT_COLS: SortKey[] = ["goals", "disposals", "kicks", "handballs", "marks", "tackles", "hitouts", "goalAssists"];
+const STAT_COLS_KEY = "foopy_stat_columns";
+
+function loadStatCols(): SortKey[] {
+  try {
+    const raw = localStorage.getItem(STAT_COLS_KEY);
+    if (!raw) return DEFAULT_STAT_COLS;
+    const ids = JSON.parse(raw);
+    if (!Array.isArray(ids)) return DEFAULT_STAT_COLS;
+    const valid = ids.filter((id: any) => STAT_COLUMNS.some((c) => c.id === id));
+    return valid.length ? valid : DEFAULT_STAT_COLS;
+  } catch {
+    return DEFAULT_STAT_COLS;
+  }
+}
+function saveStatCols(ids: SortKey[]) {
+  try { localStorage.setItem(STAT_COLS_KEY, JSON.stringify(ids)); } catch { /* ignore */ }
+}
+
 function numericValue(value: unknown): number | null {
   if (value == null || value === "") return null;
   const n = Number(value);
@@ -1903,7 +1940,10 @@ function useAxisLockedScroll<T extends HTMLElement>() {
   return ref;
 }
 
-function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameId, bestRating, stickyTop = 0, statMode: statModeProp, sortKey: sortKeyProp, sortDir: sortDirProp, onSort }: { stats: PlayerStat[]; isLive?: boolean; isFinal?: boolean; currentPeriod?: number; team?: string; gameId: number; bestRating: number; stickyTop?: number; statMode?: StatMode; sortKey?: SortKey; sortDir?: "desc"|"asc"; onSort?: (k: SortKey) => void }) {
+function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameId, bestRating, stickyTop = 0, statMode: statModeProp, sortKey: sortKeyProp, sortDir: sortDirProp, onSort, columns }: { stats: PlayerStat[]; isLive?: boolean; isFinal?: boolean; currentPeriod?: number; team?: string; gameId: number; bestRating: number; stickyTop?: number; statMode?: StatMode; sortKey?: SortKey; sortDir?: "desc"|"asc"; onSort?: (k: SortKey) => void; columns?: SortKey[] }) {
+  // Resolve the chosen stat columns (defaults to the standard set), preserving
+  // the canonical STAT_COLUMNS order.
+  const activeCols = STAT_COLUMNS.filter((c) => (columns ?? DEFAULT_STAT_COLS).includes(c.id));
   // Early in a live game almost every player's rating sits just below 0
   // (near-empty stat lines), which reads as a wall of red "negative" pills.
   // Only start showing those once the game is past half time.
@@ -1970,6 +2010,7 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
     const active = sortKey === key;
     return (
       <th
+        key={key}
         style={{ ...statHeadStyle, top: 0, ...sortHeaderColStyle(key), ...extraStyle, color: active ? "#0ea5e9" : "#9ca3af", cursor: "pointer" }}
         onClick={() => {
           if (onSort) { onSort(key); return; }
@@ -1999,22 +2040,11 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
     <div>
 
       <div ref={axisLockedScrollRef} style={{ ...tableWrapStyle, maxHeight: `calc(100dvh - ${stickyTop}px)`, overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}>
-        <table style={{ ...tableStyle, minWidth: 612, tableLayout: "fixed" }}>
+        <table style={{ ...tableStyle, minWidth: 144 + activeCols.reduce((w, c) => w + c.width, 0), tableLayout: "fixed" }}>
           <colgroup>
             <col style={{ width: 52 }} />{/* avatar (sticky) */}
             <col style={{ width: 92 }} />{/* surname (scrolls) */}
-            <col style={{ width: 46 }} />{/* G.B */}
-            <col style={{ width: 38 }} />{/* D */}
-            <col style={{ width: 38 }} />{/* K */}
-            <col style={{ width: 38 }} />{/* H */}
-            <col style={{ width: 38 }} />{/* M */}
-            <col style={{ width: 38 }} />{/* T */}
-            <col style={{ width: 40 }} />{/* HO */}
-            <col style={{ width: 42 }} />{/* FP */}
-            <col style={{ width: 40 }} />{/* CLR */}
-            <col style={{ width: 36 }} />{/* GA */}
-            <col style={{ width: 36 }} />{/* FF */}
-            <col style={{ width: 36 }} />{/* FA */}
+            {activeCols.map((c) => <col key={c.id} style={{ width: c.width }} />)}
           </colgroup>
           <thead>
             <tr>
@@ -2040,18 +2070,7 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
                   </>
                 );
               })()}
-              {sortHeader("G.B", "goals")}
-              {sortHeader("D", "disposals")}
-              {sortHeader("K", "kicks")}
-              {sortHeader("H", "handballs")}
-              {sortHeader("M", "marks")}
-              {sortHeader("T", "tackles")}
-              {sortHeader("HO", "hitouts")}
-              {sortHeader("FP", "fantasy")}
-              {sortHeader("CLR", "clearances")}
-              {sortHeader("GA", "goalAssists")}
-              {sortHeader("FF", "freesFor")}
-              {sortHeader("FA", "freesAgainst")}
+              {activeCols.map((c) => sortHeader(c.label, c.id))}
             </tr>
           </thead>
           <tbody>
@@ -2098,23 +2117,57 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
                     </span>
                   </td>
 
-                  <td style={{ ...statCellStyle, ...sortColStyle("goals") }}>{statValue(p.goals)}.{statValue(p.behinds)}</td>
-                  <td style={{ ...statCellStyle, ...sortColStyle("disposals") }}>{statValue(p.disposals)}</td>
-                  <td style={{ ...statCellStyle, ...sortColStyle("kicks") }}>{statValue(p.kicks)}</td>
-                  <td style={{ ...statCellStyle, ...sortColStyle("handballs") }}>{statValue(p.handballs)}</td>
-                  <td style={{ ...statCellStyle, ...sortColStyle("marks") }}>{statValue(p.marks)}</td>
-                  <td style={{ ...statCellStyle, ...sortColStyle("tackles") }}>{statValue(p.tackles)}</td>
-                  <td style={{ ...statCellStyle, ...sortColStyle("hitouts") }}>{statValue(p.hitouts)}</td>
-                  <td style={{ ...statCellStyle, ...sortColStyle("fantasy") }}>{fantasyPoints(p)}</td>
-                  <td style={{ ...statCellStyle, ...sortColStyle("clearances") }}>{statValue(p.clearances)}</td>
-                  <td style={{ ...statCellStyle, ...sortColStyle("goalAssists") }}>{statValue((p as any).goalAssists ?? 0)}</td>
-                  <td style={{ ...statCellStyle, ...sortColStyle("freesFor") }}>{statValue(p.freesFor)}</td>
-                  <td style={{ ...statCellStyle, ...sortColStyle("freesAgainst") }}>{statValue(p.freesAgainst)}</td>
+                  {activeCols.map((c) => (
+                    <td key={c.id} style={{ ...statCellStyle, ...sortColStyle(c.id) }}>{c.render(p)}</td>
+                  ))}
                 </tr>
               );
             })}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+// Bottom-sheet editor for choosing which stat columns the player tables show.
+function StatColumnsEditor({ selected, onChange, onClose }: { selected: SortKey[]; onChange: (next: SortKey[]) => void; onClose: () => void }) {
+  const set = new Set(selected);
+  const toggle = (id: SortKey) => {
+    const next = new Set(set);
+    if (next.has(id)) {
+      if (next.size <= 1) return; // always keep at least one column
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    onChange(Array.from(next));
+  };
+  return (
+    <div onClick={onClose} style={statEditorBackdropStyle}>
+      <div onClick={(e) => e.stopPropagation()} style={statEditorPanelStyle}>
+        <div style={statEditorHandleStyle} />
+        <div style={statEditorTitleRowStyle}>
+          <span style={{ fontSize: 18, fontWeight: 900, color: "var(--text-1)" }}>Stat columns</span>
+          <button type="button" onClick={onClose} style={statEditorDoneStyle}>Done</button>
+        </div>
+        <p style={statEditorHintStyle}>Choose which stats appear in the player tables. The player and rating columns always stay.</p>
+        <div style={statEditorListStyle}>
+          {STAT_COLUMNS.map((c) => {
+            const on = set.has(c.id);
+            return (
+              <button key={c.id} type="button" onClick={() => toggle(c.id)} style={{ ...statEditorRowStyle, ...(on ? statEditorRowOnStyle : null) }}>
+                <span style={{ ...statEditorBadgeStyle, ...(on ? { background: "#0ea5e9", color: "#fff" } : null) }}>{c.label}</span>
+                <span style={{ flex: 1, textAlign: "left", fontWeight: 700, color: on ? "var(--text-1)" : "var(--text-2)" }}>{c.full}</span>
+                <span style={{ width: 22, height: 22, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", border: on ? "none" : "2px solid var(--border-3)", background: on ? "#0ea5e9" : "transparent" }}>
+                  {on && (
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                  )}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -3447,6 +3500,17 @@ function MatchPageInner() {
   const [playerStatMode, setPlayerStatMode] = useState<StatMode>("basic");
   const [playerSortKey, setPlayerSortKey] = useState<SortKey>("foopy");
   const [playerSortDir, setPlayerSortDir] = useState<"desc" | "asc">("desc");
+  // User-chosen stat columns for the player tables (persisted). Start with the
+  // default set on the server/first render to avoid a hydration mismatch, then
+  // load the saved preference after mount.
+  const [statCols, setStatCols] = useState<SortKey[]>(DEFAULT_STAT_COLS);
+  const [statColsEditorOpen, setStatColsEditorOpen] = useState(false);
+  useEffect(() => { setStatCols(loadStatCols()); }, []);
+  const applyStatCols = useCallback((next: SortKey[]) => {
+    const ordered = STAT_COLUMNS.filter((c) => next.includes(c.id)).map((c) => c.id);
+    setStatCols(ordered);
+    saveStatCols(ordered);
+  }, []);
   const [seasonStats, setSeasonStats] = useState<any[]>([]);
   const [squadPlayers, setSquadPlayers] = useState<{ home: number[]; away: number[] } | null>(null);
   const [unansweredPollCount, setUnansweredPollCount] = useState(0);
@@ -5325,24 +5389,46 @@ function MatchPageInner() {
 
               {activeTab === "players" && status !== "UPCOMING" && playerSubTab === "all" && (
                 <section style={{ borderBottom: "1px solid var(--border-2)" }}>
-                  <StatTable stats={allMatchPlayers} isLive={isLiveGame} isFinal={status === "FINAL"} currentPeriod={currentPeriod} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} statMode={playerStatMode} sortKey={playerSortKey} sortDir={playerSortDir} onSort={(k) => { if(playerSortKey===k) setPlayerSortDir(d=>d==="desc"?"asc":"desc"); else{setPlayerSortKey(k);setPlayerSortDir("desc");} }} />
+                  <StatTable stats={allMatchPlayers} isLive={isLiveGame} isFinal={status === "FINAL"} currentPeriod={currentPeriod} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} statMode={playerStatMode} sortKey={playerSortKey} sortDir={playerSortDir} onSort={(k) => { if(playerSortKey===k) setPlayerSortDir(d=>d==="desc"?"asc":"desc"); else{setPlayerSortKey(k);setPlayerSortDir("desc");} }} columns={statCols} />
                 </section>
               )}
 
               {activeTab === "players" && status !== "UPCOMING" && playerSubTab === "home" && (
                 <section style={{ borderBottom: "1px solid var(--border-2)" }}>
-                  <StatTable stats={displayHomeStats} isLive={isLiveGame} isFinal={status === "FINAL"} currentPeriod={currentPeriod} team={game.hteam} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} statMode={playerStatMode} sortKey={playerSortKey} sortDir={playerSortDir} onSort={(k) => { if(playerSortKey===k) setPlayerSortDir(d=>d==="desc"?"asc":"desc"); else{setPlayerSortKey(k);setPlayerSortDir("desc");} }} />
+                  <StatTable stats={displayHomeStats} isLive={isLiveGame} isFinal={status === "FINAL"} currentPeriod={currentPeriod} team={game.hteam} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} statMode={playerStatMode} sortKey={playerSortKey} sortDir={playerSortDir} onSort={(k) => { if(playerSortKey===k) setPlayerSortDir(d=>d==="desc"?"asc":"desc"); else{setPlayerSortKey(k);setPlayerSortDir("desc");} }} columns={statCols} />
                 </section>
               )}
 
               {activeTab === "players" && status !== "UPCOMING" && playerSubTab === "away" && (
                 <section style={{ borderBottom: "1px solid var(--border-2)" }}>
-                  <StatTable stats={displayAwayStats} isLive={isLiveGame} isFinal={status === "FINAL"} currentPeriod={currentPeriod} team={game.ateam} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} statMode={playerStatMode} sortKey={playerSortKey} sortDir={playerSortDir} onSort={(k) => { if(playerSortKey===k) setPlayerSortDir(d=>d==="desc"?"asc":"desc"); else{setPlayerSortKey(k);setPlayerSortDir("desc");} }} />
+                  <StatTable stats={displayAwayStats} isLive={isLiveGame} isFinal={status === "FINAL"} currentPeriod={currentPeriod} team={game.ateam} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} statMode={playerStatMode} sortKey={playerSortKey} sortDir={playerSortDir} onSort={(k) => { if(playerSortKey===k) setPlayerSortDir(d=>d==="desc"?"asc":"desc"); else{setPlayerSortKey(k);setPlayerSortDir("desc");} }} columns={statCols} />
                 </section>
+              )}
+
+              {activeTab === "players" && status !== "UPCOMING" && (
+                <div style={{ display: "flex", justifyContent: "center", padding: "18px 16px calc(28px + env(safe-area-inset-bottom))" }}>
+                  <button type="button" onClick={() => setStatColsEditorOpen(true)} style={editStatColsBtnStyle}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" />
+                      <line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" />
+                      <line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" />
+                      <line x1="1" y1="14" x2="7" y2="14" /><line x1="9" y1="8" x2="15" y2="8" /><line x1="17" y1="16" x2="23" y2="16" />
+                    </svg>
+                    Edit stat columns
+                  </button>
+                </div>
               )}
             </>
           );
         })()}
+
+        {statColsEditorOpen && (
+          <StatColumnsEditor
+            selected={statCols}
+            onChange={applyStatCols}
+            onClose={() => setStatColsEditorOpen(false)}
+          />
+        )}
 
         {activeTab === "chat" && (
           <section style={{ ...sectionStyle, padding: 0 }}>
@@ -7520,6 +7606,18 @@ const tdNameStyle: CSSProperties = {
 };
 const tdNameInnerStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 6, minWidth: 0, maxWidth: "100%" };
 const statNameCommentStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 2, color: "var(--text-4)", fontSize: 10, fontWeight: 800, flexShrink: 0 };
+// "Edit stat columns" button + its bottom-sheet editor.
+const editStatColsBtnStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 18px", borderRadius: 999, background: "var(--surface-2)", border: "1px solid var(--border-2)", color: "var(--text-2)", fontSize: 13.5, fontWeight: 800, cursor: "pointer", WebkitTapHighlightColor: "transparent" };
+const statEditorBackdropStyle: CSSProperties = { position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "flex-end", justifyContent: "center", backdropFilter: "blur(2px)", WebkitBackdropFilter: "blur(2px)" };
+const statEditorPanelStyle: CSSProperties = { width: "min(560px, 100vw)", maxHeight: "82dvh", display: "flex", flexDirection: "column", background: "var(--surface-1)", border: "1px solid var(--border-2)", borderBottom: "none", borderRadius: "22px 22px 0 0", padding: "0 16px calc(16px + env(safe-area-inset-bottom))", boxShadow: "0 -10px 50px rgba(0,0,0,0.5)", animation: "rb-up 0.26s cubic-bezier(0.22,1,0.36,1)" };
+const statEditorHandleStyle: CSSProperties = { width: 38, height: 4, borderRadius: 999, background: "var(--border-3)", margin: "10px auto 4px" };
+const statEditorTitleRowStyle: CSSProperties = { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 2px 2px" };
+const statEditorDoneStyle: CSSProperties = { appearance: "none", border: "none", background: "none", color: "#0ea5e9", fontSize: 16, fontWeight: 800, cursor: "pointer", padding: "4px 2px" };
+const statEditorHintStyle: CSSProperties = { margin: "0 0 10px", fontSize: 12.5, color: "var(--text-3)", fontWeight: 500, lineHeight: 1.5 };
+const statEditorListStyle: CSSProperties = { display: "flex", flexDirection: "column", gap: 6, overflowY: "auto", overscrollBehavior: "contain", paddingBottom: 6 };
+const statEditorRowStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "11px 12px", borderRadius: 14, background: "var(--surface-2)", border: "1px solid transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 15, WebkitTapHighlightColor: "transparent" };
+const statEditorRowOnStyle: CSSProperties = { background: "var(--surface-3)", border: "1px solid var(--border-2)" };
+const statEditorBadgeStyle: CSSProperties = { minWidth: 38, textAlign: "center", padding: "4px 7px", borderRadius: 8, background: "var(--surface-4)", color: "var(--text-3)", fontSize: 11, fontWeight: 900, letterSpacing: "0.04em", flexShrink: 0 };
 const playerNameCellStyle: CSSProperties = { display: "flex", alignItems: "center", gap: 14, width: "100%", minWidth: 0, overflow: "hidden" };
 const playerInfoStyle: CSSProperties = { display: "flex", flexDirection: "column", minWidth: 0, flex: "1 1 auto", overflow: "hidden" };
 const playerNameTextStyle: CSSProperties = { display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" };
