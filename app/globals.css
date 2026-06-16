@@ -144,6 +144,59 @@
    UTILITY ANIMATIONS
    ============================================================ */
 
+/* ============================================================
+   STARTUP SPLASH — black screen shown until the app finishes
+   loading on first paint, then faded out by SplashScreen.tsx.
+   ============================================================ */
+
+#foopy-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  /* Pure black regardless of theme so it matches the native launch screen
+     and there is no flash of partially-rendered content underneath. */
+  background: #000;
+  opacity: 1;
+  transition: opacity 0.45s ease;
+  /* Avoid covering anything once we start removing it. */
+  will-change: opacity;
+}
+
+#foopy-splash.splash-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#foopy-splash .splash-logo {
+  width: 84px;
+  height: 84px;
+  object-fit: contain;
+  animation: splash-pulse 1.8s ease-in-out infinite;
+}
+
+#foopy-splash .splash-spinner {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(255, 255, 255, 0.15);
+  border-top-color: rgba(255, 255, 255, 0.9);
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes splash-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.06); opacity: 0.85; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #foopy-splash .splash-logo { animation: none; }
+}
+
 @keyframes skeleton-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }

@@ -8,6 +8,7 @@ import ThemeModeBootstrap from "./components/ThemeModeBootstrap";
 import AuraToast from "./components/AuraToast";
 import HapticsProvider from "./components/HapticsProvider";
 import PassRewardCollector from "./components/PassRewardCollector";
+import SplashScreen from "./components/SplashScreen";
 import { SessionProvider } from "./context/SessionProvider";
 
 export const metadata: Metadata = {
@@ -51,6 +52,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://footywire.com" />
       </head>
       <body suppressHydrationWarning>
+        {/* Static black splash — painted on first frame, before hydration, so
+            the screen stays black until SplashScreen fades it out once loaded. */}
+        <div id="foopy-splash" aria-hidden="true">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/footy-icon.png" alt="" className="splash-logo" />
+          <div className="splash-spinner" />
+        </div>
+        <SplashScreen />
         <ThemeModeBootstrap />
         <HapticsProvider />
         <NavigationEvents />
