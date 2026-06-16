@@ -235,7 +235,37 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
-    const oldIds = (existing ?? []).map((r: any) => r.id).filter((id: any) => id != null);
+    // Real rows are always replaced by the freshly-inserted apiRows. Inferred
+    // rows are placeholders created instantly from Squiggle score changes:
+    // delete only the ones now COVERED by a real event (the first realCount per
+    // team+type, oldest first) and keep the rest, so not-yet-synced goals and
+    // rushed behinds (which never get a real event) survive. This mirrors the
+    // count-based matching the client uses to display the feed.
+    const realCountByKey = new Map<string, number>();
+    for (const r of apiRows) {
+      const k = `${r.team_id}|${String(r.type ?? "").toUpperCase()}`;
+      realCountByKey.set(k, (realCountByKey.get(k) ?? 0) + 1);
+    }
+
+    const inferredByKey = new Map<string, any[]>();
+    const oldRealIds: any[] = [];
+    for (const r of existing ?? []) {
+      if (r.id == null) continue;
+      if (!r.inferred) { oldRealIds.push(r.id); continue; }
+      const k = `${r.team_id}|${String(r.type ?? "").toUpperCase()}`;
+      const list = inferredByKey.get(k) ?? [];
+      list.push(r);
+      inferredByKey.set(k, list);
+    }
+
+    const coveredInferredIds: any[] = [];
+    for (const [k, list] of inferredByKey) {
+      list.sort((a: any, b: any) => Number(a.id ?? 0) - Number(b.id ?? 0));
+      const cover = Math.min(realCountByKey.get(k) ?? 0, list.length);
+      for (let i = 0; i < cover; i++) coveredInferredIds.push(list[i].id);
+    }
+
+    const oldIds = [...oldRealIds, ...coveredInferredIds];
     if (oldIds.length) {
       const { error: deleteError } = await supabase.from("live_game_feed").delete().in("id", oldIds);
       if (deleteError) console.error("[sync-events] delete error:", deleteError.message);

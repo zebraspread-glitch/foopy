@@ -3331,7 +3331,7 @@ function MatchPageInner() {
   // events whose live_game_feed row doesn't have a stored snapshot yet.
   const eventStatSnapshots = useRef<Record<string, { foopy: number; disposals: number; goals: number; tackles: number; marks: number; hitouts: number }>>({});
   const initialFeedLoaded = useRef(false);
-  const lastScoreRef = useRef<{ home: number; away: number } | null>(null);
+  const lastScoreRef = useRef<{ hg: number; hb: number; ag: number; ab: number } | null>(null);
   const [freshEventKeys, setFreshEventKeys] = useState(new Set<string>());
   const [loading, setLoading] = useState(() =>
     !cachedAllGames.some((g) => String(g.id) === id)
@@ -3677,14 +3677,50 @@ function MatchPageInner() {
   })();
   const currentPeriod = Math.max(periodFromEvents, periodFromTimestr);
 
-  // Detect score changes client-side and send the specific event to the server
-  // score-check (inferred events) disabled — real API Sports events only
+  // Detect Squiggle score changes and instantly create a placeholder ("inferred")
+  // event server-side — Squiggle updates the score ~1 minute before the
+  // API-Sports events feed has the play, so this is what makes "MAGPIES GOAL"
+  // show up live. The placeholder carries team + type only; sync-events later
+  // swaps it for the real, player-attributed event (matched by count, see the
+  // feed-normalise effect below). We watch goals/behinds separately so a GOAL
+  // is never mistaken for a BEHIND (and rushed behinds still show as a behind).
   useEffect(() => {
     if (!game) return;
+    const hg = Number(game.hgoals ?? 0);
+    const hb = Number(game.hbehinds ?? 0);
+    const ag = Number(game.agoals ?? 0);
+    const ab = Number(game.abehinds ?? 0);
+
+    const prev = lastScoreRef.current;
+    lastScoreRef.current = { hg, hb, ag, ab };
+
+    // Only emit for live games we can map to API-Sports, and only on a CHANGE
+    // (prev !== null) — never on first load, so we don't replay the whole game.
+    if (!isLiveGame || !apiSportsGameId || !prev) return;
+
     const hscore = Number(game.hscore ?? 0);
     const ascore = Number(game.ascore ?? 0);
-    lastScoreRef.current = { home: hscore, away: ascore };
-  }, [game?.hscore, game?.ascore]);
+    const homeTeamId = getApiTeamId(game.hteam);
+    const awayTeamId = getApiTeamId(game.ateam);
+    const period = currentPeriod > 0 ? currentPeriod : 0;
+
+    // We store the CURRENT full Squiggle totals as the event's score: identical
+    // across all clients at a given total, so the table's unique constraint
+    // dedupes concurrent inserts from many viewers into one row.
+    const post = (teamId: number, type: "GOAL" | "BEHIND") => {
+      if (!teamId) return;
+      fetch("/api/afl/score-check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gameId: apiSportsGameId, teamId, type, hscore, ascore, period, minute: 0 }),
+      }).catch(() => {});
+    };
+
+    if (hg > prev.hg) post(homeTeamId, "GOAL");
+    if (hb > prev.hb) post(homeTeamId, "BEHIND");
+    if (ag > prev.ag) post(awayTeamId, "GOAL");
+    if (ab > prev.ab) post(awayTeamId, "BEHIND");
+  }, [game?.hgoals, game?.hbehinds, game?.agoals, game?.abehinds, game?.hscore, game?.ascore, isLiveGame, apiSportsGameId, currentPeriod, game?.hteam, game?.ateam]);
 
   useEffect(() => { gameRef.current = game; }, [game]);
 
@@ -4032,25 +4068,36 @@ function MatchPageInner() {
       return p === 1 ? "1/4 TIME" : p === 2 ? "HALF TIME" : p === 3 ? "3/4 TIME" : p === 4 ? "FULL TIME" : `Q${p} TIME`;
     }
 
-    // For scoring events, prefer the real (non-inferred) event when both exist at the same score.
-    // Sort real events first so they win the dedup check.
-    const sortedRows = [...rows].sort((a, b) => {
-      if (a.inferred === b.inferred) return 0;
-      return a.inferred ? 1 : -1;
-    });
+    // Inferred events (created instantly from Squiggle score changes) are
+    // placeholders shown until the matching real API-Sports event syncs in.
+    // For each team+type we hide the first `realCount` inferred events — those
+    // have been superseded by real, player-attributed events — and keep the
+    // rest: goals API-Sports hasn't published yet, and rushed behinds (which
+    // never produce a real event, so stay as a team-only "BEHIND" forever).
+    //
+    // Matching by COUNT — not score or minute — is deliberate: API-Sports
+    // events frequently arrive without per-event scores, and the placeholder's
+    // clock is unknown, so any score/time-based match would silently fail and
+    // leave duplicates. Counts always line up: N real goals cover N placeholders.
+    const realCountByKey = new Map<string, number>();
+    for (const e of rows as any[]) {
+      if (e.inferred) continue;
+      const k = `${e.team_id}|${String(e.type ?? "").toUpperCase()}`;
+      realCountByKey.set(k, (realCountByKey.get(k) ?? 0) + 1);
+    }
 
-    const seen = new Set<string>();
-
-    const normalised = sortedRows
+    const inferredUsedByKey = new Map<string, number>();
+    const normalised = [...(rows as any[])]
+      // Oldest first so the EARLIEST placeholders are the ones marked covered.
+      .sort((a, b) => Number(a.id ?? 0) - Number(b.id ?? 0))
       .filter((e: any) => {
-        const k = `${e.period}|${e.minute}|${e.type}|${e.team_id}|${e.player_id}|${e.home_score}|${e.away_score}`;
-        if (seen.has(k)) return false;
-        seen.add(k);
-
-        // Drop inferred events — feed is APISports only
-        if (e.inferred) return false;
-
-        return true;
+        if (!e.inferred) return true;
+        const k = `${e.team_id}|${String(e.type ?? "").toUpperCase()}`;
+        const used = inferredUsedByKey.get(k) ?? 0;
+        inferredUsedByKey.set(k, used + 1);
+        // Covered by a real event → hide. Otherwise → show (rushed behind or
+        // not-yet-synced goal).
+        return used >= (realCountByKey.get(k) ?? 0);
       })
       .map((e: any) => ({
         rowKey: e.id ? `feed_${e.id}` : undefined,
