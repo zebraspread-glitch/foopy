@@ -622,7 +622,7 @@ export default function CardsPage() {
       for (let i = 0; i < copies; i++) expanded.push({ key: `${c.id}-${i}`, card: c });
     }
     return expanded;
-  }, [cards, rarityFilter, teamFilter, sortBy]);
+  }, [cards, searchQuery, rarityFilter, teamFilter, sortBy]);
 
   // True total — sum of every individual card across all rows.
   const totalCardCount = useMemo(
@@ -843,7 +843,8 @@ export default function CardsPage() {
                   <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
                 </svg>
                 <input
-                  type="search"
+                  type="text"
+                  inputMode="search"
                   placeholder="Search players…"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
