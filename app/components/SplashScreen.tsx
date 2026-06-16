@@ -1,39 +1,62 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 
-// SplashScreen — keeps the initial black splash overlay (rendered statically in
-// layout.tsx, so it paints instantly before hydration) on screen until the app
-// has finished loading, then fades it out and removes it from the DOM.
+// SplashScreen — full-screen black overlay shown only on the FIRST load of the
+// app in a browsing session. It's rendered as part of the React tree (so it's
+// in the server HTML and paints black before hydration) and is removed purely
+// by React state — never by manual DOM removal, which would corrupt React's
+// tree and crash navigation.
 //
-// "Loaded" = the document has reached `readyState === "complete"` (all initial
-// resources fetched) AND a short minimum display time has elapsed so the splash
-// never flickers on fast loads. A failsafe guarantees it always dismisses.
+// "Loaded" = document `readyState === "complete"` AND a short minimum display
+// time has elapsed (no flicker). A failsafe guarantees it always dismisses.
 
-const MIN_VISIBLE_MS = 600;   // never flash; show at least this long
-const FADE_MS = 450;          // matches the CSS opacity transition
-const FAILSAFE_MS = 6000;     // hard cap — never trap the user behind the splash
+const MIN_VISIBLE_MS = 600;
+const FADE_MS = 450;
+const FAILSAFE_MS = 6000;
+const SESSION_KEY = "foopy_splash_shown";
+
+// useLayoutEffect runs before paint (lets us skip the splash with no flash on
+// repeat loads); falls back to useEffect during SSR where it's a no-op.
+const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 export default function SplashScreen() {
+  const [visible, setVisible] = useState(true);
+  const [fading, setFading] = useState(false);
+
+  // Already shown this session? Hide before the browser paints — no flash.
+  useIsomorphicLayoutEffect(() => {
+    try {
+      if (sessionStorage.getItem(SESSION_KEY)) setVisible(false);
+    } catch {
+      /* sessionStorage may be unavailable (private mode) — just show it. */
+    }
+  }, []);
+
   useEffect(() => {
-    const splash = document.getElementById("foopy-splash");
-    if (!splash) return;
+    try {
+      if (sessionStorage.getItem(SESSION_KEY)) return;
+    } catch {
+      /* ignore */
+    }
 
     const start = Date.now();
-    let dismissed = false;
-
-    const remove = () => {
-      // Fully detach once the fade-out finishes so it can't intercept taps.
-      splash.parentNode?.removeChild(splash);
-    };
+    let done = false;
 
     const dismiss = () => {
-      if (dismissed) return;
-      dismissed = true;
+      if (done) return;
+      done = true;
       const wait = Math.max(0, MIN_VISIBLE_MS - (Date.now() - start));
       window.setTimeout(() => {
-        splash.classList.add("splash-hidden");
-        window.setTimeout(remove, FADE_MS);
+        setFading(true); // CSS fades opacity to 0
+        window.setTimeout(() => {
+          try {
+            sessionStorage.setItem(SESSION_KEY, "1");
+          } catch {
+            /* ignore */
+          }
+          setVisible(false); // React unmounts the node — no manual DOM removal
+        }, FADE_MS);
       }, wait);
     };
 
@@ -51,5 +74,18 @@ export default function SplashScreen() {
     };
   }, []);
 
-  return null;
+  if (!visible) return null;
+
+  return (
+    <div
+      id="foopy-splash"
+      aria-hidden="true"
+      className={fading ? "splash-hidden" : undefined}
+      suppressHydrationWarning
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/footy-icon.png" alt="" className="splash-logo" />
+      <div className="splash-spinner" />
+    </div>
+  );
 }

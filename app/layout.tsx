@@ -52,13 +52,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://footywire.com" />
       </head>
       <body suppressHydrationWarning>
-        {/* Static black splash — painted on first frame, before hydration, so
-            the screen stays black until SplashScreen fades it out once loaded. */}
-        <div id="foopy-splash" aria-hidden="true">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/footy-icon.png" alt="" className="splash-logo" />
-          <div className="splash-spinner" />
-        </div>
+        {/* First-load black splash — rendered in the server HTML (paints before
+            hydration) and removed via React state, only on the first load. */}
         <SplashScreen />
         <ThemeModeBootstrap />
         <HapticsProvider />
