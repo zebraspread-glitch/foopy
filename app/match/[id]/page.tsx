@@ -2144,6 +2144,12 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
 // Bottom-sheet editor for choosing which stat columns the player tables show.
 function StatColumnsEditor({ selected, onChange, onClose }: { selected: SortKey[]; onChange: (next: SortKey[]) => void; onClose: () => void }) {
   const set = new Set(selected);
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setPortalTarget(document.body);
+  }, []);
+
   const toggle = (id: SortKey) => {
     const next = new Set(set);
     if (next.has(id)) {
@@ -2154,7 +2160,8 @@ function StatColumnsEditor({ selected, onChange, onClose }: { selected: SortKey[
     }
     onChange(Array.from(next));
   };
-  return (
+
+  const sheet = (
     <div onClick={onClose} style={statEditorBackdropStyle}>
       <div onClick={(e) => e.stopPropagation()} style={statEditorPanelStyle}>
         <div style={statEditorHandleStyle} />
@@ -2182,6 +2189,8 @@ function StatColumnsEditor({ selected, onChange, onClose }: { selected: SortKey[
       </div>
     </div>
   );
+
+  return portalTarget ? createPortal(sheet, portalTarget) : null;
 }
 
 function teamTotal(stats: PlayerStat[], key: string) {
@@ -7619,8 +7628,8 @@ const tdNameInnerStyle: CSSProperties = { display: "flex", flexDirection: "colum
 const statNameCommentStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 2, minHeight: 12, color: "var(--text-4)", fontSize: 9.5, fontWeight: 800 };
 // "Edit stat columns" button + its bottom-sheet editor.
 const editStatColsBtnStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 18px", borderRadius: 999, background: "var(--surface-2)", border: "1px solid var(--border-2)", color: "var(--text-2)", fontSize: 13.5, fontWeight: 800, cursor: "pointer", WebkitTapHighlightColor: "transparent" };
-const statEditorBackdropStyle: CSSProperties = { position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "flex-end", justifyContent: "center", backdropFilter: "blur(2px)", WebkitBackdropFilter: "blur(2px)" };
-const statEditorPanelStyle: CSSProperties = { width: "min(560px, 100vw)", maxHeight: "82dvh", display: "flex", flexDirection: "column", background: "var(--surface-1)", border: "1px solid var(--border-2)", borderBottom: "none", borderRadius: "22px 22px 0 0", padding: "0 16px calc(16px + env(safe-area-inset-bottom))", boxShadow: "0 -10px 50px rgba(0,0,0,0.5)", animation: "rb-up 0.26s cubic-bezier(0.22,1,0.36,1)" };
+const statEditorBackdropStyle: CSSProperties = { position: "fixed", inset: 0, zIndex: 20000, background: "rgba(0,0,0,0.68)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: "0 10px", boxSizing: "border-box", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" };
+const statEditorPanelStyle: CSSProperties = { width: "min(560px, 100%)", maxHeight: "calc(86dvh - env(safe-area-inset-top))", display: "flex", flexDirection: "column", background: "var(--surface-1)", border: "1px solid var(--border-2)", borderBottom: "none", borderRadius: "22px 22px 0 0", padding: "0 16px calc(16px + env(safe-area-inset-bottom))", boxSizing: "border-box", boxShadow: "0 -10px 50px rgba(0,0,0,0.65)", animation: "rb-up 0.26s cubic-bezier(0.22,1,0.36,1)" };
 const statEditorHandleStyle: CSSProperties = { width: 38, height: 4, borderRadius: 999, background: "var(--border-3)", margin: "10px auto 4px" };
 const statEditorTitleRowStyle: CSSProperties = { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 2px 2px" };
 const statEditorDoneStyle: CSSProperties = { appearance: "none", border: "none", background: "none", color: "#0ea5e9", fontSize: 16, fontWeight: 800, cursor: "pointer", padding: "4px 2px" };
