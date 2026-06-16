@@ -3540,6 +3540,12 @@ function MatchPageInner() {
   useEffect(() => {
     setMounted(true);
     window.scrollTo(0, 0); // always start match page at top, prevents scroll-restoration glitch
+    // Restore iOS rubber-band/momentum scrolling on this page. The global
+    // body rule sets overscroll-behavior-y:none (so the home page's custom
+    // pull-to-refresh works), but that also kills the native momentum feel.
+    // The match page has no pull-to-refresh, so re-enable it here only.
+    document.body.classList.add("momentum-scroll");
+    return () => document.body.classList.remove("momentum-scroll");
   }, []);
 
   // Per-frame work is intentionally tiny: write ONE eased CSS variable.

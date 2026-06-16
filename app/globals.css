@@ -305,6 +305,13 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
+/* Pages with no custom pull-to-refresh opt back into the native iOS
+   rubber-band/momentum scroll. `contain` keeps the bounce but still blocks
+   chaining to the browser's native pull-to-refresh. Toggled per-page. */
+body.momentum-scroll {
+  overscroll-behavior-y: contain;
+}
+
 /* Selective text selection */
 p, span, h1, h2, h3, h4, h5, h6, label, li {
   -webkit-user-select: text;
