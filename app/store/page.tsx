@@ -958,7 +958,14 @@ export default function StorePage() {
         {loading ? (
           <StoreItemSkeleton count={8} />
         ) : !token ? (
-          <div className="store-state">Sign in to shop cosmetics.</div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: "64px 24px", textAlign: "center" }}>
+            <div style={{ width: 64, height: 64, borderRadius: "50%", background: "linear-gradient(135deg,rgba(37,99,235,0.25),rgba(236,72,153,0.18))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>🛍️</div>
+            <div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: "var(--text-1)", marginBottom: 6 }}>Sign in to browse the store</div>
+              <div style={{ fontSize: 14, color: "var(--text-2)", maxWidth: 260, lineHeight: 1.5 }}>Unlock profile frames, name colours, banners and more.</div>
+            </div>
+            <a href="/login" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 28px", borderRadius: "var(--r-full)", background: "var(--blue)", color: "#fff", fontWeight: 700, fontSize: 15, textDecoration: "none" }}>Sign in</a>
+          </div>
         ) : catalog.length === 0 ? (
           <div className="store-state">No cosmetics available yet.</div>
         ) : (

@@ -759,10 +759,18 @@ export default function HomePage() {
         if (dy >= PULL_THRESHOLD && window.scrollY === 0 && !refreshing) {
           haptic("medium");
           setRefreshing(true);
+          const refreshStart = Date.now();
           invalidateGames();
           getGames()
             .then((data) => setGames(data as Game[]))
-            .finally(() => setRefreshing(false));
+            .finally(() => {
+              // Keep the spinner visible for at least 600ms so it doesn't
+              // flash away before the user notices it appeared.
+              const elapsed = Date.now() - refreshStart;
+              const delay = Math.max(0, 600 - elapsed);
+              if (delay > 0) setTimeout(() => setRefreshing(false), delay);
+              else setRefreshing(false);
+            });
         }
       } else if (gesture === "h" && swipeTargetRef.current !== null) {
         const W = slideContainerRef.current?.offsetWidth ?? window.innerWidth;

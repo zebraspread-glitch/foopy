@@ -421,6 +421,7 @@ export default function CardsPage() {
   const [lastDailyPackAt, setLastDailyPackAt] = useState<string | null>(null);
 
   // filters
+  const [searchQuery, setSearchQuery] = useState("");
   const [rarityFilter, setRarityFilter] = useState<Rarity | "all">("all");
   const [teamFilter, setTeamFilter] = useState<string>("all");
   const [teamMenuOpen, setTeamMenuOpen] = useState(false);
@@ -597,6 +598,10 @@ export default function CardsPage() {
 
   const displayCards = useMemo(() => {
     let result = [...cards];
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter((c) => c.player_name.toLowerCase().includes(q));
+    }
     if (rarityFilter !== "all") result = result.filter((c) => c.rarity === rarityFilter);
     if (teamFilter !== "all") result = result.filter((c) => c.team === teamFilter);
 
@@ -633,7 +638,7 @@ export default function CardsPage() {
 
   useEffect(() => {
     setVisibleCount(CARDS_LAZY_BATCH);
-  }, [rarityFilter, teamFilter, sortBy, cards]);
+  }, [searchQuery, rarityFilter, teamFilter, sortBy, cards]);
 
   useEffect(() => {
     const el = gridSentinelRef.current;
@@ -828,6 +833,38 @@ export default function CardsPage() {
 
             {/* Filters */}
             <div style={filtersWrapStyle}>
+              {/* Player search */}
+              <div style={{ position: "relative", marginBottom: 2 }}>
+                <svg
+                  width="15" height="15" viewBox="0 0 24 24" fill="none"
+                  stroke="var(--text-3)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+                  style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
+                >
+                  <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <input
+                  type="search"
+                  placeholder="Search players…"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{
+                    width: "100%", boxSizing: "border-box",
+                    padding: "10px 36px 10px 36px",
+                    background: "var(--surface-2)", border: "1px solid var(--border-1)",
+                    borderRadius: "var(--r-md)", color: "var(--text-1)",
+                    fontSize: 14, fontFamily: "inherit", outline: "none",
+                    WebkitAppearance: "none",
+                  }}
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--text-3)", cursor: "pointer", padding: 2, lineHeight: 1, fontSize: 16 }}
+                    aria-label="Clear search"
+                  >×</button>
+                )}
+              </div>
+
               {/* Rarity filter */}
               <div style={filterRowStyle}>
                 <span style={filterLabelStyle}>Rarity</span>

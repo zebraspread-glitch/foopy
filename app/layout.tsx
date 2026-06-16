@@ -9,6 +9,7 @@ import AuraToast from "./components/AuraToast";
 import HapticsProvider from "./components/HapticsProvider";
 import PassRewardCollector from "./components/PassRewardCollector";
 import SplashScreen from "./components/SplashScreen";
+import OfflineBanner from "./components/OfflineBanner";
 import { SessionProvider } from "./context/SessionProvider";
 
 export const metadata: Metadata = {
@@ -55,6 +56,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* First-load black splash — rendered in the server HTML (paints before
             hydration) and removed via React state, only on the first load. */}
         <SplashScreen />
+        <OfflineBanner />
         <ThemeModeBootstrap />
         <HapticsProvider />
         <NavigationEvents />
