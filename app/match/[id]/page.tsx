@@ -1799,6 +1799,126 @@ function SeasonAvgTable({ stats }: { stats: any[] }) {
   );
 }
 
+function canScrollBy(el: HTMLElement, axis: "x" | "y", delta: number) {
+  if (axis === "x") {
+    if (el.scrollWidth <= el.clientWidth) return false;
+    if (delta < 0) return el.scrollLeft > 0;
+    if (delta > 0) return el.scrollLeft < el.scrollWidth - el.clientWidth - 1;
+    return false;
+  }
+
+  if (el.scrollHeight <= el.clientHeight) return false;
+  if (delta < 0) return el.scrollTop > 0;
+  if (delta > 0) return el.scrollTop < el.scrollHeight - el.clientHeight - 1;
+  return false;
+}
+
+function useAxisLockedScroll<T extends HTMLElement>() {
+  const ref = useRef<T | null>(null);
+  const touchStateRef = useRef({
+    axis: null as null | "x" | "y",
+    startX: 0,
+    startY: 0,
+    startScrollLeft: 0,
+    startScrollTop: 0,
+  });
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const lockThreshold = 7;
+
+    function holdCrossAxis(axis: "x" | "y", value: number) {
+      if (axis === "x") el!.scrollLeft = value;
+      else el!.scrollTop = value;
+    }
+
+    function onTouchStart(event: TouchEvent) {
+      if (event.touches.length !== 1) return;
+      const touch = event.touches[0];
+      touchStateRef.current = {
+        axis: null,
+        startX: touch.clientX,
+        startY: touch.clientY,
+        startScrollLeft: el.scrollLeft,
+        startScrollTop: el.scrollTop,
+      };
+    }
+
+    function onTouchMove(event: TouchEvent) {
+      if (event.touches.length !== 1) return;
+      const touch = event.touches[0];
+      const state = touchStateRef.current;
+      const dx = touch.clientX - state.startX;
+      const dy = touch.clientY - state.startY;
+      const absX = Math.abs(dx);
+      const absY = Math.abs(dy);
+
+      if (!state.axis) {
+        if (absX < lockThreshold && absY < lockThreshold) return;
+        state.axis = absX > absY ? "x" : "y";
+      }
+
+      if (state.axis === "x") {
+        if (el.scrollWidth <= el.clientWidth) return;
+        event.preventDefault();
+        el.scrollLeft = state.startScrollLeft - dx;
+        holdCrossAxis("y", state.startScrollTop);
+        return;
+      }
+
+      holdCrossAxis("x", state.startScrollLeft);
+      if (!canScrollBy(el, "y", -dy)) return;
+      event.preventDefault();
+      el.scrollTop = state.startScrollTop - dy;
+    }
+
+    function onTouchEnd() {
+      touchStateRef.current.axis = null;
+    }
+
+    function onWheel(event: WheelEvent) {
+      const absX = Math.abs(event.deltaX);
+      const absY = Math.abs(event.deltaY);
+      if (absX < 0.5 && absY < 0.5) return;
+
+      const lockAxis = event.shiftKey && absY > absX ? "x" : absX > absY ? "x" : "y";
+      if (lockAxis === "x") {
+        const delta = event.deltaX || event.deltaY;
+        if (el.scrollWidth <= el.clientWidth) return;
+        event.preventDefault();
+        if (canScrollBy(el, "x", delta)) el.scrollLeft += delta;
+        return;
+      }
+
+      if (!canScrollBy(el, "y", event.deltaY)) {
+        const fixedLeft = el.scrollLeft;
+        window.requestAnimationFrame(() => { el.scrollLeft = fixedLeft; });
+        return;
+      }
+
+      event.preventDefault();
+      el.scrollTop += event.deltaY;
+    }
+
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    el.addEventListener("touchend", onTouchEnd);
+    el.addEventListener("touchcancel", onTouchEnd);
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+      el.removeEventListener("touchcancel", onTouchEnd);
+      el.removeEventListener("wheel", onWheel);
+    };
+  }, []);
+
+  return ref;
+}
+
 function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameId, bestRating, stickyTop = 0, statMode: statModeProp, sortKey: sortKeyProp, sortDir: sortDirProp, onSort }: { stats: PlayerStat[]; isLive?: boolean; isFinal?: boolean; currentPeriod?: number; team?: string; gameId: number; bestRating: number; stickyTop?: number; statMode?: StatMode; sortKey?: SortKey; sortDir?: "desc"|"asc"; onSort?: (k: SortKey) => void }) {
   // Early in a live game almost every player's rating sits just below 0
   // (near-empty stat lines), which reads as a wall of red "negative" pills.
@@ -1812,6 +1932,7 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
   const statMode = statModeProp ?? statModeLocal;
   const [playerCommentCounts, setPlayerCommentCounts] = useState<Record<string, number>>({});
   const router = useRouter();
+  const axisLockedScrollRef = useAxisLockedScroll<HTMLDivElement>();
 
   useEffect(() => {
     if (!gameId) return;
@@ -1893,7 +2014,7 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
   return (
     <div>
 
-      <div style={{ ...tableWrapStyle, maxHeight: `calc(100dvh - ${stickyTop}px)`, overflowY: "auto" }}>
+      <div ref={axisLockedScrollRef} style={{ ...tableWrapStyle, maxHeight: `calc(100dvh - ${stickyTop}px)`, overflowY: "auto" }}>
         <table style={{ ...tableStyle, minWidth: 1040, tableLayout: "fixed" }}>
           <thead>
             <tr>

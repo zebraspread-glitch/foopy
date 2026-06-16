@@ -96,7 +96,7 @@ function lerp(from: number, to: number, progress: number) {
   return from + (to - from) * progress;
 }
 
-function useProfileHeaderProgress(distance = 188) {
+function useProfileHeaderProgress(distance = 240) {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -106,8 +106,8 @@ function useProfileHeaderProgress(distance = 188) {
       if (frame) return;
       frame = window.requestAnimationFrame(() => {
         frame = 0;
-        const next = clamp01(window.scrollY / distance);
-        setProgress((current) => (Math.abs(current - next) < 0.003 ? current : next));
+        const next = clamp01((document.scrollingElement?.scrollTop ?? window.scrollY) / distance);
+        setProgress((current) => (Math.abs(current - next) < 0.001 ? current : next));
       });
     };
 
@@ -857,7 +857,7 @@ export default function ProfilePage() {
   // the shared session (drawer avatar, coin/aura displays) in sync after edits.
   const { refreshProfile } = useSession();
   const compactProfileHeader = useMediaQuery("(max-width: 430px)");
-  const headerProgress = useProfileHeaderProgress(compactProfileHeader ? 172 : 204);
+  const headerProgress = useProfileHeaderProgress(compactProfileHeader ? 224 : 268);
   const headerEase = easeProfile(headerProgress);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -1789,10 +1789,15 @@ export default function ProfilePage() {
   const expandedBannerHeight = compactProfileHeader ? 246 : 286;
   const collapsedBannerHeight = compactProfileHeader ? 72 : 82;
   const bannerHeight = lerp(expandedBannerHeight, collapsedBannerHeight, headerEase);
-  const bannerLift = lerp(0, 22, headerEase);
-  const bannerScale = lerp(1.02, 1.08, headerEase);
-  const bannerOverlayOpacity = lerp(0.22, 0.76, headerEase);
-  const bannerBlur = lerp(0, 7, headerEase);
+  const bannerMediaTop = compactProfileHeader ? -30 : -32;
+  const bannerMediaHeight = expandedBannerHeight + (compactProfileHeader ? 70 : 78);
+  const bannerLift = lerp(0, compactProfileHeader ? -34 : -42, headerEase);
+  const bannerScale = lerp(1.015, 1.045, headerEase);
+  const bannerTopShade = lerp(0.16, 0.4, headerEase);
+  const bannerMiddleShade = lerp(0.18, 0.48, headerEase);
+  const bannerBottomShade = lerp(0.48, 0.9, headerEase);
+  const bannerSaturation = lerp(1.06, 0.96, headerEase);
+  const bannerContrast = lerp(1.03, 0.98, headerEase);
   const avatarBaseSize = compactProfileHeader ? 106 : 118;
   const avatarScale = lerp(1, compactProfileHeader ? 0.46 : 0.5, headerEase);
   const avatarStartLeft = compactProfileHeader ? 18 : 22;
@@ -1818,6 +1823,7 @@ export default function ProfilePage() {
     borderRadius: compactProfileHeader ? "0 0 22px 22px" : "0 0 24px 24px",
     overflow: "visible",
     background: "#020617",
+    boxShadow: `0 ${lerp(8, 18, headerEase)}px ${lerp(18, 38, headerEase)}px rgba(0,0,0,${lerp(0.18, 0.42, headerEase)})`,
   };
   const bannerFrameStyle: CSSProperties = {
     position: "absolute",
@@ -1830,21 +1836,22 @@ export default function ProfilePage() {
     position: "absolute",
     left: 0,
     right: 0,
-    top: -26,
-    bottom: -34,
+    top: bannerMediaTop,
+    bottom: "auto",
     width: "100%",
-    height: "calc(100% + 60px)",
+    height: `calc(${bannerMediaHeight}px + env(safe-area-inset-top))`,
     objectFit: "cover",
-    objectPosition: "center",
-    transform: `translate3d(0, -${bannerLift}px, 0) scale(${bannerScale})`,
-    filter: `blur(${bannerBlur}px)`,
-    transition: "transform 80ms linear, filter 80ms linear",
-    willChange: "transform, filter",
+    objectPosition: "center top",
+    transform: `translate3d(0, ${bannerLift}px, 0) scale(${bannerScale})`,
+    transformOrigin: "center top",
+    filter: `saturate(${bannerSaturation}) contrast(${bannerContrast})`,
+    transition: "none",
+    willChange: "transform",
   };
   const headerOverlayStyle: CSSProperties = {
     position: "absolute",
     inset: 0,
-    background: `linear-gradient(180deg, rgba(0,0,0,${bannerOverlayOpacity + 0.08}) 0%, rgba(0,0,0,${bannerOverlayOpacity}) 58%, rgba(0,0,0,0.9) 100%)`,
+    background: `linear-gradient(180deg, rgba(2,6,23,${bannerTopShade}) 0%, rgba(2,6,23,${bannerMiddleShade}) 52%, rgba(2,6,23,${bannerBottomShade}) 100%), linear-gradient(90deg, rgba(2,6,23,0.28) 0%, rgba(2,6,23,0) 36%, rgba(2,6,23,0.22) 100%)`,
     pointerEvents: "none",
   };
   const topControlBaseStyle: CSSProperties = {
@@ -1855,7 +1862,7 @@ export default function ProfilePage() {
     height: 38,
     borderRadius: "50%",
     border: "1px solid rgba(255,255,255,0.14)",
-    background: "rgba(2,6,23,0.52)",
+    background: `rgba(2,6,23,${lerp(0.52, 0.74, headerEase)})`,
     color: "var(--text-1)",
     display: "flex",
     alignItems: "center",
