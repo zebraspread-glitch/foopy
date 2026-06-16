@@ -1,6 +1,6 @@
 "use client";
 
-import { SettingsHeader, SettingsScreen, Body, Group, ControlRow } from "../shared";
+import { SettingsHeader, SettingsScreen, Body, Group, ControlRow, NavRow } from "../shared";
 
 export default function AboutSettings() {
   return (
@@ -21,6 +21,19 @@ export default function AboutSettings() {
           >
             <span style={{ fontSize: 13, color: "var(--text-3)", fontWeight: 600 }}>AFL 2026</span>
           </ControlRow>
+        </Group>
+
+        <Group label="Legal">
+          <NavRow
+            icon={<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>}
+            label="Privacy Policy"
+            href="/privacy"
+          />
+          <NavRow
+            icon={<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></svg>}
+            label="Terms of Service"
+            href="/terms"
+          />
         </Group>
 
         <p style={{ fontSize: 11.5, lineHeight: 1.6, color: "var(--text-3)", fontWeight: 500, textAlign: "center", padding: "24px 14px 0", margin: 0 }}>
