@@ -145,56 +145,59 @@
    ============================================================ */
 
 /* ============================================================
-   STARTUP SPLASH — black screen shown until the app finishes
-   loading on first paint, then faded out by SplashScreen.tsx.
+   STARTUP SPLASH — black screen shown on first load, faded out
+   once the app is ready.
+
+   Rendered as ::before/::after pseudo-elements on <body>, NOT as a
+   real DOM node. This is deliberate: some iOS webviews / extensions
+   inject a floating widget element into the page before React
+   hydrates, and if that landed inside a real splash <div> it caused a
+   hydration mismatch that regenerated the tree and threw the dev error
+   overlay (which blocked taps). A pseudo-element can't be injected into
+   and isn't hydrated, so it's immune. pointer-events:none guarantees it
+   can never intercept a tap even if it lingers.
+
+   SplashScreen.tsx sets data-foopy-loaded on <html> when ready, which
+   fades both layers out.
    ============================================================ */
 
-#foopy-splash {
+body::before {
+  content: "";
   position: fixed;
   inset: 0;
   z-index: 99999;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 22px;
-  /* Pure black regardless of theme so it matches the native launch screen
-     and there is no flash of partially-rendered content underneath. */
-  background: #000;
+  /* Pure black + centred logo, regardless of theme — matches the native
+     launch screen, no flash of partially-rendered content underneath. */
+  background: #000 url("/footy-icon.png") center center / 84px 84px no-repeat;
+  pointer-events: none;
   opacity: 1;
   transition: opacity 0.45s ease;
-  /* Avoid covering anything once we start removing it. */
-  will-change: opacity;
 }
 
-#foopy-splash.splash-hidden {
-  opacity: 0;
-  pointer-events: none;
-}
-
-#foopy-splash .splash-logo {
-  width: 84px;
-  height: 84px;
-  object-fit: contain;
-  animation: splash-pulse 1.8s ease-in-out infinite;
-}
-
-#foopy-splash .splash-spinner {
+body::after {
+  content: "";
+  position: fixed;
+  left: 50%;
+  top: calc(50% + 72px);
   width: 26px;
   height: 26px;
+  margin-left: -13px;
+  z-index: 99999;
   border-radius: 50%;
   border: 2.5px solid rgba(255, 255, 255, 0.15);
   border-top-color: rgba(255, 255, 255, 0.9);
   animation: spin 0.7s linear infinite;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.45s ease;
 }
 
-@keyframes splash-pulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50%      { transform: scale(1.06); opacity: 0.85; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  #foopy-splash .splash-logo { animation: none; }
+/* Set once the app is ready (or immediately on repeat loads in a session). */
+html[data-foopy-loaded] body::before,
+html[data-foopy-loaded] body::after {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.45s ease, visibility 0s linear 0.45s;
 }
 
 @keyframes skeleton-pulse {

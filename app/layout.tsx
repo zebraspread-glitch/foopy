@@ -51,10 +51,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://api.squiggle.com.au" />
         <link rel="dns-prefetch" href="https://api.squiggle.com.au" />
         <link rel="preconnect" href="https://footywire.com" />
+        {/* Pre-paint: skip the splash instantly on repeat loads within a session
+            so it only flashes on the very first load. Runs before <body> paints. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{if(sessionStorage.getItem('foopy_splash_shown'))document.documentElement.setAttribute('data-foopy-loaded','1')}catch(e){}",
+          }}
+        />
       </head>
       <body suppressHydrationWarning>
-        {/* First-load black splash — rendered in the server HTML (paints before
-            hydration) and removed via React state, only on the first load. */}
+        {/* First-load black splash is pure CSS (body::before/::after in
+            globals.css); SplashScreen just toggles data-foopy-loaded when ready. */}
         <SplashScreen />
         <OfflineBanner />
         <ThemeModeBootstrap />
