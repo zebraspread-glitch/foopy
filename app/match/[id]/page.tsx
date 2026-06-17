@@ -3116,34 +3116,24 @@ function VenueCard({ venue, date, gameId }: { venue: string; date?: string; game
     const day = date.slice(0, 10);
     let cancelled = false;
 
-    const fetchWeather = (lat: number, lon: number) =>
-      fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
-        `&daily=temperature_2m_max,weathercode&timezone=auto&start_date=${day}&end_date=${day}`
-      )
-        .then(r => r.json())
-        .then(d => {
-          if (cancelled) return;
-          const temp = d?.daily?.temperature_2m_max?.[0];
-          const code = d?.daily?.weathercode?.[0];
-          if (temp != null && code != null) setWeather({ temp: Math.round(temp), code });
-        })
-        .catch(() => {});
-
+    // Go through our own server proxy so the browser never touches Open-Meteo
+    // directly. Known venues pass coordinates; unknown ones pass the name for
+    // the server to geocode.
+    const params = new URLSearchParams({ date: day });
     if (info) {
-      // Known venue → use its exact coordinates.
-      fetchWeather(info.lat, info.lon);
+      params.set("lat", String(info.lat));
+      params.set("lon", String(info.lon));
+    } else if (venue) {
+      params.set("venue", venue);
     } else {
-      // Unknown venue → geocode the venue name to get coordinates, then fetch.
-      fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(venue)}&count=1&country=AU`)
-        .then(r => r.json())
-        .then(g => {
-          if (cancelled) return;
-          const hit = g?.results?.[0];
-          if (hit?.latitude != null && hit?.longitude != null) fetchWeather(hit.latitude, hit.longitude);
-        })
-        .catch(() => {});
+      return;
     }
+
+    fetch(`/api/weather?${params.toString()}`)
+      .then(r => r.json())
+      .then(d => { if (!cancelled && d?.weather) setWeather(d.weather); })
+      .catch(() => {});
+
     return () => { cancelled = true; };
   }, [info, date, venue]);
 

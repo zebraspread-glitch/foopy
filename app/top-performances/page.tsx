@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { flushSync } from "react-dom";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
 import Link from "next/link";
@@ -84,12 +83,11 @@ function TopPerformancesInner() {
 
   useEffect(() => {
     const controller = new AbortController();
-    // Force a synchronous paint of the loading state before the fetch starts,
-    // so the spinner is visible even for fast (sub-frame) responses.
-    flushSync(() => {
-      setLoading(true);
-      setEntries([]);
-    });
+    // Reset to the loading state before fetching. The fetch is async, so React
+    // paints this before the response resolves — no flushSync needed (and
+    // flushSync inside an effect throws "called from inside a lifecycle method").
+    setLoading(true);
+    setEntries([]);
     const params = new URLSearchParams({ filter });
     if (filter === "round" && round > 0) params.set("round", String(round));
     fetch(`/api/top-performances?${params}`, { signal: controller.signal, cache: "no-store" })

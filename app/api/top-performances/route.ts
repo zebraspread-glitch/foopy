@@ -237,6 +237,18 @@ export async function GET(req: Request) {
         const disposals = n(s.disposals) || kicks + handballs;
         const marks     = n(s.marks);
         const tackles   = n(s.tackles);
+        const hitouts   = n(s.hitouts);
+        const behinds   = n(s.behinds);
+
+        // An all-zero stat line means the player didn't take the field (the API
+        // still lists them on the squad). They didn't play, so they have no
+        // performance to rate — exclude them entirely rather than handing out a
+        // floor rating that would dominate "Season Worst".
+        const didNotPlay =
+          goals === 0 && behinds === 0 && kicks === 0 && handballs === 0 &&
+          disposals === 0 && marks === 0 && tackles === 0 && hitouts === 0;
+        if (didNotPlay) continue;
+
         const rating = foopyRating({
           goals,
           goalAssists:  s.goals?.assists ?? s.goalAssists ?? s.goal_assists,
