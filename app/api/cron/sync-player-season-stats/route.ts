@@ -22,17 +22,6 @@ export const maxDuration = 300;
 const API_BASE = "https://v1.afl.api-sports.io";
 const SEASON      = new Date().getFullYear().toString();
 
-// API-Sports team IDs 1-18 cover all AFL teams
-const TEAM_IDS = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18];
-
-const TEAM_NAMES: Record<number, string> = {
-  1:"Adelaide",2:"Brisbane",3:"Carlton",4:"Collingwood",
-  5:"Essendon",6:"Fremantle",7:"Geelong",8:"Hawthorn",
-  9:"Melbourne",10:"North Melbourne",11:"Port Adelaide",12:"Richmond",
-  13:"St Kilda",14:"Sydney",15:"West Coast",16:"Western Bulldogs",
-  17:"Gold Coast",18:"GWS",
-};
-
 function adminSupabase() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -56,74 +45,78 @@ export async function GET(req: Request) {
   const apiKey = process.env.API_SPORTS_AFL_KEY;
   if (!apiKey) return NextResponse.json({ error: "Missing API key" }, { status: 500 });
 
+  // Source list of players to fetch (apiSportsId + canonical name/team/id) from players.json.
+  // The /players/statistics endpoint only accepts an `id` param — the previous
+  // `team` param is rejected by API-Sports, so we fan out per player.
+  const sourcePlayers: any[] = JSON.parse(
+    fs.readFileSync(path.join(process.cwd(), "app", "data", "players.json"), "utf8")
+  );
+  const targets = sourcePlayers.filter((p) => p.apiSportsId);
+
   const players: any[] = [];
   const errors: string[] = [];
 
-  for (const teamId of TEAM_IDS) {
+  async function fetchOne(src: any) {
+    const apiSportsId = Number(src.apiSportsId);
     try {
       const res = await fetch(
-        `${API_BASE}/players/statistics?team=${teamId}&season=${SEASON}`,
+        `${API_BASE}/players/statistics?id=${apiSportsId}&season=${SEASON}`,
         { headers: { "x-apisports-key": apiKey }, cache: "no-store" }
       );
       if (!res.ok) {
-        errors.push(`team ${teamId}: HTTP ${res.status}`);
-        continue;
+        errors.push(`player ${apiSportsId}: HTTP ${res.status}`);
+        return;
       }
       const data = await res.json();
-      const entries: any[] = data?.response ?? [];
+      const entry = data?.response?.[0];
+      const stat  = entry?.statistics?.[0] ?? entry?.statistics;
+      if (!stat) return; // player hasn't played this season
 
-      for (const entry of entries) {
-        const p    = entry.player ?? {};
-        const stat = entry.statistics?.[0] ?? entry.statistics ?? {};
+      const games = n(stat.games?.played);
+      if (games <= 0) return;
 
-        const apiSportsId = Number(p.id);
-        if (!apiSportsId) continue;
-
-        const name = String(p.name ?? p.firstname ? `${p.firstname} ${p.lastname}` : "").trim();
-        if (!name) continue;
-
-        // Build a slug ID matching the format in player-season-stats.json
-        const slugId = name.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
-        const team   = TEAM_NAMES[teamId] ?? "";
-        const games  = n(stat.games?.played);
-
-        players.push({
-          id:            slugId,
-          name,
-          team,
-          apiSportsId,
-          photoUrl:      null,
-          jerseyNumber:  n(p.number) || null,
-          position:      null,
-          games,
-          goals:         n(stat.goals?.total?.total),
-          totalGoals:    n(stat.goals?.total?.total), // explicit alias for per-game calculation
-          goalAssists:   n(stat.goals?.assists?.total),
-          behinds:       n(stat.behinds?.total),
-          totalDisposals:  n(stat.disposals?.total),
-          totalKicks:      n(stat.kicks?.total),
-          totalHandballs:  n(stat.handballs?.total),
-          totalMarks:      n(stat.marks?.total),
-          totalTackles:    n(stat.tackles?.total),
-          totalHitouts:    n(stat.hitouts?.total),
-          totalClearances: n(stat.clearances?.total),
-          freesFor:        n(stat.free_kicks?.for?.total),
-          freesAgainst:    n(stat.free_kicks?.against?.total),
-          disposals:       n(stat.disposals?.average),
-          kicks:           n(stat.kicks?.average),
-          handballs:       n(stat.handballs?.average),
-          marks:           n(stat.marks?.average),
-          tackles:         n(stat.tackles?.average),
-          hitouts:         n(stat.hitouts?.average),
-          clearances:      n(stat.clearances?.average),
-          goalAvg:         n(stat.goals?.total?.average),
-          freesForAvg:     n(stat.free_kicks?.for?.average),
-          fetchedAt:       new Date().toISOString(),
-        });
-      }
+      players.push({
+        id:            src.id,
+        name:          src.name,
+        team:          src.team,
+        apiSportsId,
+        photoUrl:      entry?.player?.photo ?? null,
+        jerseyNumber:  n(entry?.player?.number) || null,
+        position:      null,
+        games,
+        goals:         n(stat.goals?.total?.total),
+        totalGoals:    n(stat.goals?.total?.total), // explicit alias for per-game calculation
+        goalAssists:   n(stat.goals?.assists?.total),
+        behinds:       n(stat.behinds?.total),
+        totalDisposals:  n(stat.disposals?.total),
+        totalKicks:      n(stat.kicks?.total),
+        totalHandballs:  n(stat.handballs?.total),
+        totalMarks:      n(stat.marks?.total),
+        totalTackles:    n(stat.tackles?.total),
+        totalHitouts:    n(stat.hitouts?.total),
+        totalClearances: n(stat.clearances?.total),
+        freesFor:        n(stat.free_kicks?.for?.total),
+        freesAgainst:    n(stat.free_kicks?.against?.total),
+        disposals:       n(stat.disposals?.average),
+        kicks:           n(stat.kicks?.average),
+        handballs:       n(stat.handballs?.average),
+        marks:           n(stat.marks?.average),
+        tackles:         n(stat.tackles?.average),
+        hitouts:         n(stat.hitouts?.average),
+        clearances:      n(stat.clearances?.average),
+        goalAvg:         n(stat.goals?.total?.average),
+        freesForAvg:     n(stat.free_kicks?.for?.average),
+        fetchedAt:       new Date().toISOString(),
+      });
     } catch (err: any) {
-      errors.push(`team ${teamId}: ${err.message}`);
+      errors.push(`player ${apiSportsId}: ${err.message}`);
     }
+  }
+
+  // Fan out in parallel batches to stay within maxDuration while respecting limits.
+  const BATCH = 25;
+  for (let i = 0; i < targets.length; i += BATCH) {
+    await Promise.all(targets.slice(i, i + BATCH).map(fetchOne));
   }
 
   if (players.length === 0) {
