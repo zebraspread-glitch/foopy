@@ -233,6 +233,16 @@ export async function POST(req: NextRequest) {
   const { error: insertError } = await supabaseAdmin.from("user_cards").insert(rows);
   if (insertError) {
     console.error("[cards/open-pack] card insert failed:", insertError.message);
+    // Coins were already deducted (step 3). If the grant fails, refund them so
+    // the user isn't charged for cards they never received. Mirror the refund
+    // pattern used by cosmetics/purchase.
+    const { error: refundError } = await supabaseAdmin
+      .from("profiles")
+      .update({ coins: currentCoins })
+      .eq("id", user.id);
+    if (refundError) {
+      console.error("[cards/open-pack] refund after failed insert ALSO failed:", refundError.message, "user:", user.id, "amount:", config.cost);
+    }
     return NextResponse.json({ error: "Failed to grant cards" }, { status: 500 });
   }
 

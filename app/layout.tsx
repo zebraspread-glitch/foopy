@@ -48,8 +48,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <meta name="color-scheme" content="dark" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <link rel="preconnect" href="https://api.squiggle.com.au" />
-        <link rel="dns-prefetch" href="https://api.squiggle.com.au" />
         <link rel="preconnect" href="https://footywire.com" />
         {/* Pre-paint: skip the splash instantly on repeat loads within a session
             so it only flashes on the very first load. Runs before <body> paints. */}

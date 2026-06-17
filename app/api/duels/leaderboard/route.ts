@@ -25,12 +25,16 @@ export async function GET(req: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  // Same leaderboard for every viewer — cache at the edge so a traffic spike
+  // doesn't run the aggregation RPC once per request.
+  const cacheHeaders = { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120" };
+
   const rows = data ?? [];
   if (rows.length > 0) {
     const ids = rows.map((r: any) => r.user_id).filter(Boolean);
     const { data: profiles } = await db.from("profiles").select("id, verified").in("id", ids);
     const verifiedMap = Object.fromEntries((profiles ?? []).map((p: any) => [p.id, p.verified ?? false]));
-    return NextResponse.json({ leaderboard: rows.map((r: any) => ({ ...r, verified: verifiedMap[r.user_id] ?? false })) });
+    return NextResponse.json({ leaderboard: rows.map((r: any) => ({ ...r, verified: verifiedMap[r.user_id] ?? false })) }, { headers: cacheHeaders });
   }
-  return NextResponse.json({ leaderboard: rows });
+  return NextResponse.json({ leaderboard: rows }, { headers: cacheHeaders });
 }

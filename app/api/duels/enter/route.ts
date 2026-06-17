@@ -53,27 +53,34 @@ export async function POST(req: Request) {
     return NextResponse.json({ duel: existing, alreadyEntered: true });
   }
 
-  // Look for a waiting duel (someone else already in the pool)
-  const { data: waitingDuel } = await db
-    .from("duels")
-    .select("id, challenger_id")
-    .eq("duel_game_id", duel_game_id)
-    .eq("status", "waiting")
-    .neq("challenger_id", user.id)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+  // Try to match against a waiting duel. Under load, many users can read the
+  // same waiting row at once, so we CLAIM it atomically: the update only
+  // succeeds if the row is still `waiting` (guarding against another entrant
+  // grabbing it first). If we lose that race, loop and look for the next one.
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const { data: waitingDuel } = await db
+      .from("duels")
+      .select("id, challenger_id")
+      .eq("duel_game_id", duel_game_id)
+      .eq("status", "waiting")
+      .neq("challenger_id", user.id)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
 
-  if (waitingDuel) {
-    // Match found — activate the duel
+    if (!waitingDuel) break; // no one waiting — fall through to create our own
+
+    // Atomic claim: status guard ensures only ONE entrant can win this row.
     const { data: matched, error: matchErr } = await db
       .from("duels")
       .update({ opponent_id: user.id, status: "active" })
       .eq("id", waitingDuel.id)
+      .eq("status", "waiting")
       .select()
-      .single();
+      .maybeSingle();
 
     if (matchErr) return NextResponse.json({ error: matchErr.message }, { status: 500 });
+    if (!matched) continue; // someone else claimed it first — try the next waiting duel
 
     // Notify both players they've been matched
     try {
@@ -86,7 +93,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ duel: matched, matched: true });
   }
 
-  // No one waiting — create a new waiting duel
+  // No one waiting (or we kept losing the claim) — create a new waiting duel.
   const { data: newDuel, error: insertErr } = await db
     .from("duels")
     .insert({

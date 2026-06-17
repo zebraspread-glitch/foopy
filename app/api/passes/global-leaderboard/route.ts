@@ -3,6 +3,14 @@ import { supabaseServer } from "@/app/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
 
+// Leaderboards are identical for every viewer, so cache them at the edge for a
+// short window. This collapses thousands of concurrent views into ~one DB query
+// per minute instead of one per request — the difference between surviving a
+// traffic spike and pinning Postgres.
+const CACHE_HEADERS = {
+  "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
+};
+
 // GET /api/passes/global-leaderboard?type=player|team&limit=50
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -18,7 +26,7 @@ export async function GET(req: NextRequest) {
       .limit(limit);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    if (!passes?.length) return NextResponse.json([]);
+    if (!passes?.length) return NextResponse.json([], { headers: CACHE_HEADERS });
 
     const userIds = [...new Set(passes.map((p) => p.user_id))];
     const { data: profiles } = await supabaseServer
@@ -37,7 +45,7 @@ export async function GET(req: NextRequest) {
       username:      pm.get(p.user_id)?.username   ?? null,
       avatar_url:    pm.get(p.user_id)?.avatar_url ?? null,
       verified:      pm.get(p.user_id)?.verified   ?? false,
-    })));
+    })), { headers: CACHE_HEADERS });
   } else {
     const { data: passes, error } = await supabaseServer
       .from("user_team_passes")
@@ -47,7 +55,7 @@ export async function GET(req: NextRequest) {
       .limit(limit);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    if (!passes?.length) return NextResponse.json([]);
+    if (!passes?.length) return NextResponse.json([], { headers: CACHE_HEADERS });
 
     const userIds = [...new Set(passes.map((p) => p.user_id))];
     const { data: profiles } = await supabaseServer
@@ -65,6 +73,6 @@ export async function GET(req: NextRequest) {
       username:      pm.get(p.user_id)?.username   ?? null,
       avatar_url:    pm.get(p.user_id)?.avatar_url ?? null,
       verified:      pm.get(p.user_id)?.verified   ?? false,
-    })));
+    })), { headers: CACHE_HEADERS });
   }
 }

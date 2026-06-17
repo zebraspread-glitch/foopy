@@ -5,8 +5,10 @@ export const runtime = "nodejs";
 export const revalidate = 10;
 
 export async function GET(request: Request) {
-  const year = new Date().getFullYear();
-  const fresh = new URL(request.url).searchParams.get("fresh") === "1";
+  const params = new URL(request.url).searchParams;
+  // Optional ?year= override; defaults to the current season.
+  const year = params.get("year") ?? String(new Date().getFullYear());
+  const fresh = params.get("fresh") === "1";
 
   const res = await fetch(
     `https://api.squiggle.com.au/?q=games;year=${year}`,

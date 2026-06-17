@@ -3029,13 +3029,6 @@ function buildLadder(games: MatchGame[]): (LadderTeam & { rank: number })[] {
   return sorted.map((t, i) => ({ ...t, rank: i + 1 }));
 }
 
-const WEATHER_ICONS: Record<number, string> = {
-  0:"☀️", 1:"🌤️", 2:"⛅", 3:"☁️", 45:"🌫️", 48:"🌫️",
-  51:"🌦️", 53:"🌦️", 55:"🌧️", 61:"🌧️", 63:"🌧️", 65:"🌧️",
-  71:"🌨️", 73:"🌨️", 75:"❄️", 77:"❄️",
-  80:"🌦️", 81:"🌧️", 82:"⛈️",
-  95:"⛈️", 96:"⛈️", 99:"⛈️",
-};
 const WEATHER_DESC: Record<number, string> = {
   0:"Sunny", 1:"Mostly sunny", 2:"Partly cloudy", 3:"Overcast",
   45:"Foggy", 48:"Icy fog", 51:"Light drizzle", 53:"Drizzle", 55:"Heavy drizzle",
@@ -3044,6 +3037,63 @@ const WEATHER_DESC: Record<number, string> = {
   80:"Showers", 81:"Heavy showers", 82:"Violent showers",
   95:"Thunderstorms", 96:"Thunderstorms", 99:"Severe thunderstorms",
 };
+
+// Coloured SVG weather icons keyed by Open-Meteo weather code. Used instead of
+// emoji so the icon renders the same — and in colour — on every platform
+// (emoji clouds in particular show as a flat white glyph on mobile).
+function WeatherIcon({ code, size = 30 }: { code: number; size?: number }) {
+  const sun = "#fbbf24";
+  const cloud = "#cbd5e1";
+  const cloudDark = "#94a3b8";
+  const rain = "#38bdf8";
+  const snow = "#e0f2fe";
+  const bolt = "#facc15";
+
+  // Reusable shapes
+  const Sun = ({ cx = 12, cy = 12, r = 5 }: { cx?: number; cy?: number; r?: number }) => (
+    <>
+      <circle cx={cx} cy={cy} r={r} fill={sun} />
+      {[0, 45, 90, 135, 180, 225, 270, 315].map((a) => {
+        const rad = (a * Math.PI) / 180;
+        const x1 = cx + Math.cos(rad) * (r + 2.5), y1 = cy + Math.sin(rad) * (r + 2.5);
+        const x2 = cx + Math.cos(rad) * (r + 5),   y2 = cy + Math.sin(rad) * (r + 5);
+        return <line key={a} x1={x1} y1={y1} x2={x2} y2={y2} stroke={sun} strokeWidth={2} strokeLinecap="round" />;
+      })}
+    </>
+  );
+  const Cloud = ({ fill = cloud, x = 0, y = 0 }: { fill?: string; x?: number; y?: number }) => (
+    <path
+      transform={`translate(${x} ${y})`}
+      d="M7 18a4 4 0 0 1-.5-7.97A5.5 5.5 0 0 1 17 9.2 3.9 3.9 0 0 1 16.5 18Z"
+      fill={fill}
+    />
+  );
+  const drop = (x: number) => <line x1={x} y1={19} x2={x - 1.5} y2={22.5} stroke={rain} strokeWidth={2} strokeLinecap="round" />;
+  const flake = (x: number) => <circle cx={x} cy={20.5} r={1.3} fill={snow} />;
+
+  let body: React.ReactNode;
+  if (code === 0) {
+    body = <Sun cx={12} cy={12} r={6} />;
+  } else if (code === 1 || code === 2) {
+    body = (<><Sun cx={9} cy={8} r={4} /><Cloud fill={cloud} y={2} /></>);
+  } else if (code === 3 || code === 45 || code === 48) {
+    body = <Cloud fill={code === 3 ? cloud : cloudDark} y={1} />;
+  } else if ([51, 53, 55, 61, 63, 65, 80, 81].includes(code)) {
+    body = (<><Cloud fill={cloud} y={-1} />{drop(8)}{drop(12)}{drop(16)}</>);
+  } else if ([71, 73, 75, 77].includes(code)) {
+    body = (<><Cloud fill={cloud} y={-1} />{flake(8)}{flake(12)}{flake(16)}</>);
+  } else if ([82, 95, 96, 99].includes(code)) {
+    body = (<><Cloud fill={cloudDark} y={-1} /><path d="M12 18l-3 4h2.2l-1.2 3 4-4.5h-2.3L13 18Z" fill={bolt} /></>);
+  } else {
+    body = <Cloud fill={cloud} y={1} />;
+  }
+
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 26" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
+      {body}
+    </svg>
+  );
+}
 
 function VenueCard({ venue, date, gameId }: { venue: string; date?: string; gameId?: string | number }) {
   const info = lookupVenue(venue);
@@ -3178,7 +3228,7 @@ function VenueCard({ venue, date, gameId }: { venue: string; date?: string; game
           {divider}
           <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 18px 17px" }}>
             <span style={{ fontSize: 16, fontWeight: 800, color: "var(--text-1)" }}>Weather forecast</span>
-            <span style={{ fontSize: 30, lineHeight: 1 }}>{WEATHER_ICONS[weather.code] ?? "🌡️"}</span>
+            <WeatherIcon code={weather.code} size={30} />
             <span style={{ fontSize: 20, fontWeight: 800, color: "var(--text-1)" }}>{weather.temp}°C</span>
             <span style={{ width: 1, height: 20, background: "rgba(255,255,255,0.15)", flexShrink: 0 }} />
             <span style={{ fontSize: 16, fontWeight: 600, color: "var(--text-1)" }}>{WEATHER_DESC[weather.code] ?? "—"}</span>
@@ -7696,7 +7746,10 @@ const tdPlayerStyle: CSSProperties = {
   position: "sticky",
   left: 0,
   zIndex: 3,
-  backgroundColor: "var(--bg)",
+  // Match the match-centre container (matchCentreStyle = --surface-1) so the
+  // opaque sticky column blends with the transparent stat rows beside it,
+  // rather than showing the darker page --bg.
+  backgroundColor: "var(--surface-1)",
   fontWeight: 800,
   fontSize: 14,
   color: "var(--text-1)",
@@ -7714,7 +7767,7 @@ const thAvatarStyle: CSSProperties = {
   boxShadow: "8px 0 14px rgba(0,0,0,0.38)",
 };
 const tdAvatarStyle: CSSProperties = {
-  ...tdStyle, position: "sticky", left: 0, zIndex: 3, backgroundColor: "var(--bg)",
+  ...tdStyle, position: "sticky", left: 0, zIndex: 3, backgroundColor: "var(--surface-1)",
   padding: "8px 0", textAlign: "center",
   boxShadow: "8px 0 14px rgba(0,0,0,0.38)",
 };

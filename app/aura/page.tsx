@@ -9,7 +9,7 @@ import { getLogo } from "@/app/match/[id]/utils";
 import { AFL_TEAMS } from "@/app/lib/passes";
 
 type Period = "day" | "week" | "month" | "overall";
-type MainTab = "overall" | "teams" | "games";
+type MainTab = "overall" | "teams";
 
 type Entry = {
   user_id: string;
@@ -17,17 +17,6 @@ type Entry = {
   display_name: string | null;
   avatar_url: string | null;
   aura_total: number;
-};
-
-type Game = {
-  id: number;
-  hteam: string;
-  ateam: string;
-  hscore: number | null;
-  ascore: number | null;
-  date: string;
-  round: number;
-  roundname?: string;
 };
 
 type Particle = { left: number; delay: number; dur: number; size: number; sym: string };
@@ -135,13 +124,6 @@ function AuraPageInner() {
   const [teamEntries, setTeamEntries] = useState<Entry[]>([]);
   const [teamLoading, setTeamLoading] = useState(false);
 
-  // Game tab
-  const [games, setGames] = useState<Game[]>([]);
-  const [gamesLoading, setGamesLoading] = useState(false);
-  const [selectedGame, setSelectedGame] = useState<Game | null>(null);
-  const [gameEntries, setGameEntries] = useState<Entry[]>([]);
-  const [gameLoading, setGameLoading] = useState(false);
-
   // Particles (client-only)
   const [particles, setParticles] = useState<Particle[]>([]);
   const SYMS = ["✦", "✧", "⋆", "✦", "✧"];
@@ -199,36 +181,6 @@ function AuraPageInner() {
         setTeamLoading(false);
       });
   }, [selectedTeam]);
-
-  // Recent games
-  useEffect(() => {
-    if (mainTab !== "games" || games.length > 0) return;
-    setGamesLoading(true);
-    fetch("https://api.squiggle.com.au/?q=games;complete=100;year=2025", {
-      headers: { "User-Agent": "foopy/1.0" },
-    })
-      .then(r => r.json())
-      .then(d => {
-        const sorted = [...(d.games ?? [])]
-          .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
-          .slice(0, 40);
-        setGames(sorted as Game[]);
-        setGamesLoading(false);
-      })
-      .catch(() => setGamesLoading(false));
-  }, [mainTab]);
-
-  // Per-game leaderboard
-  useEffect(() => {
-    if (!selectedGame) return;
-    setGameLoading(true);
-    setGameEntries([]);
-    supabase.rpc("get_game_aura_leaderboard", { p_game_id: selectedGame.id, limit_n: 20 })
-      .then(({ data, error }) => {
-        if (!error && data) setGameEntries(data as Entry[]);
-        setGameLoading(false);
-      });
-  }, [selectedGame]);
 
   return (
     <>
@@ -358,7 +310,7 @@ function AuraPageInner() {
 
           {/* Main tab bar */}
           <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
-            {(["overall", "teams", "games"] as MainTab[]).map(tab => (
+            {(["overall", "teams"] as MainTab[]).map(tab => (
               <button key={tab} onClick={() => setMainTab(tab)} style={{
                 flex: 1, padding: "9px 4px",
                 borderRadius: 12,
@@ -369,7 +321,7 @@ function AuraPageInner() {
                 textTransform: "capitalize", transition: "all 0.15s",
                 letterSpacing: "0.02em",
               }}>
-                {tab === "overall" ? "Overall" : tab === "teams" ? "By Team" : "By Game"}
+                {tab === "overall" ? "Overall" : "By Team"}
               </button>
             ))}
           </div>
@@ -446,80 +398,6 @@ function AuraPageInner() {
                       </div>
                     </button>
                   ))}
-                </div>
-              )}
-            </>
-          )}
-
-          {/* ── Games tab ── */}
-          {mainTab === "games" && (
-            <>
-              {selectedGame ? (
-                <>
-                  <button onClick={() => { setSelectedGame(null); setGameEntries([]); }} style={{
-                    display: "flex", alignItems: "center", gap: 6, marginBottom: 14,
-                    background: "none", border: "none", cursor: "pointer", color: "var(--text-3)",
-                    fontSize: 13, fontWeight: 700, padding: 0,
-                  }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-                    All games
-                  </button>
-                  <div style={{ marginBottom: 16, padding: "12px 14px", borderRadius: 14, background: "var(--surface-2)", border: "1px solid var(--border-1)" }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, justifyContent: "flex-end" }}>
-                        <span style={{ fontSize: 13, fontWeight: 800, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{selectedGame.hteam}</span>
-                        <img src={getLogo(selectedGame.hteam)} alt="" style={{ width: 30, height: 30, objectFit: "contain", flexShrink: 0 }} />
-                      </div>
-                      <div style={{ textAlign: "center", flexShrink: 0, padding: "0 8px" }}>
-                        <div style={{ fontSize: 14, fontWeight: 900, color: "var(--text-1)", letterSpacing: "-0.02em" }}>
-                          {selectedGame.hscore ?? "?"} – {selectedGame.ascore ?? "?"}
-                        </div>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-3)" }}>FINAL</div>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, justifyContent: "flex-start" }}>
-                        <img src={getLogo(selectedGame.ateam)} alt="" style={{ width: 30, height: 30, objectFit: "contain", flexShrink: 0 }} />
-                        <span style={{ fontSize: 13, fontWeight: 800, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{selectedGame.ateam}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <LeaderboardBox
-                    entries={gameEntries} loading={gameLoading} myUserId={myUserId}
-                    emptyMsg="No aura earned for this game yet"
-                  />
-                </>
-              ) : gamesLoading ? (
-                Array.from({ length: 8 }).map((_, i) => (
-                  <div key={i} className="skeleton" style={{ height: 66, borderRadius: 14, marginBottom: 8 }} />
-                ))
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {games.map(g => (
-                    <button key={g.id} onClick={() => setSelectedGame(g)} style={{
-                      display: "flex", alignItems: "center", gap: 10,
-                      padding: "12px 14px", borderRadius: 14,
-                      background: "var(--surface-2)", border: "1px solid var(--border-1)",
-                      cursor: "pointer", textAlign: "left", width: "100%", transition: "all 0.12s",
-                    }}>
-                      <img src={getLogo(g.hteam)} alt="" style={{ width: 32, height: 32, objectFit: "contain", flexShrink: 0 }} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {g.hteam} vs {g.ateam}
-                        </div>
-                        <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-3)", marginTop: 1 }}>
-                          Round {g.round} · {g.hscore} – {g.ascore}
-                        </div>
-                      </div>
-                      <img src={getLogo(g.ateam)} alt="" style={{ width: 32, height: 32, objectFit: "contain", flexShrink: 0 }} />
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#52525b" strokeWidth="2.5" strokeLinecap="round" style={{ flexShrink: 0 }}>
-                        <polyline points="9 18 15 12 9 6" />
-                      </svg>
-                    </button>
-                  ))}
-                  {games.length === 0 && (
-                    <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--text-3)", fontSize: 14, fontWeight: 700 }}>
-                      No completed games found
-                    </div>
-                  )}
                 </div>
               )}
             </>
