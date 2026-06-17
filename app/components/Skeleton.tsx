@@ -213,6 +213,140 @@ export function ProfileSkeleton() {
   );
 }
 
+/** Player profile page — hero, foopy card, pass, season block, performances.
+    Mirrors app/player/[slug]/page.tsx so the loading state matches the layout. */
+export function PlayerProfileSkeleton() {
+  const wrap: CSSProperties = {
+    maxWidth: 680, margin: "0 auto", padding: "0 12px",
+    display: "flex", flexDirection: "column", gap: 12,
+  };
+  const card: CSSProperties = {
+    background: "var(--bg)", border: "1px solid var(--border-2)",
+    borderRadius: 18, padding: "18px 16px 20px",
+  };
+  return (
+    <main style={{ minHeight: "100dvh", background: "var(--bg)", paddingBottom: "calc(95px + env(safe-area-inset-bottom))" }} aria-hidden="true">
+      {/* Top bar (back button) */}
+      <div style={{ maxWidth: 680, margin: "0 auto", padding: "calc(env(safe-area-inset-top) + 12px) 20px 10px" }}>
+        <Skeleton width={28} height={28} radius={8} />
+      </div>
+
+      <div style={wrap}>
+        {/* Hero */}
+        <section style={{ borderRadius: 20, overflow: "hidden", border: "1px solid var(--border-2)" }}>
+          <Skeleton height={90} radius={0} />
+          <div style={{ padding: "0 20px 24px", marginTop: -56, position: "relative" }}>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 16 }}>
+              <Skeleton width={92} height={92} radius="50%" style={{ border: "4px solid var(--bg)" }} />
+              <div style={{ paddingBottom: 8, display: "flex", flexDirection: "column", gap: 8 }}>
+                <Skeleton width={150} height={20} radius={6} />
+                <Skeleton width={90} height={13} radius={5} />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Foopy rating card */}
+        <section style={{ ...card, display: "flex", gap: 0, padding: 0, overflow: "hidden" }}>
+          <div style={{ flexShrink: 0, width: 90, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, padding: "20px 0", borderRight: "1px solid var(--border-2)" }}>
+            <Skeleton width={50} height={10} radius={4} />
+            <Skeleton width={48} height={34} radius={6} />
+            <Skeleton width={56} height={10} radius={4} />
+          </div>
+          <div style={{ flex: 1, padding: "16px 14px 12px" }}>
+            <Skeleton width={80} height={10} radius={4} style={{ marginBottom: 14 }} />
+            <div style={{ display: "flex", gap: 5, alignItems: "flex-end" }}>
+              {Array.from({ length: 10 }).map((_, i) => (
+                <Skeleton key={i} style={{ flex: 1 }} height={20 + ((i * 7) % 34)} radius={4} />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Pass section */}
+        <Skeleton height={52} radius={14} />
+
+        {/* Season block */}
+        <section style={card}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 14, paddingBottom: 10, borderBottom: "1px solid var(--border-1)" }}>
+            <Skeleton width={90} height={14} radius={5} />
+            <Skeleton width={50} height={12} radius={5} />
+          </div>
+          <div style={{ display: "flex", gap: 18 }}>
+            {Array.from({ length: 7 }).map((_, i) => (
+              <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                <Skeleton width={28} height={9} radius={4} />
+                <Skeleton width={30} height={16} radius={5} />
+                <Skeleton width={22} height={9} radius={4} />
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Performances list */}
+        <section style={card}>
+          <Skeleton width={150} height={13} radius={5} style={{ marginBottom: 16 }} />
+          <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <Skeleton width={36} height={36} radius="50%" style={{ flexShrink: 0 }} />
+                <div style={{ flex: 1, display: "flex", gap: 18 }}>
+                  {Array.from({ length: 4 }).map((_, j) => <Skeleton key={j} width={24} height={20} radius={5} />)}
+                </div>
+                <Skeleton width={34} height={20} radius={5} />
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+}
+
+/** Team profile page — hero, foopy summary, fixtures, squad list. */
+export function TeamProfileSkeleton() {
+  const wrap: CSSProperties = {
+    maxWidth: 680, margin: "0 auto", padding: "0 12px",
+    display: "flex", flexDirection: "column", gap: 12,
+  };
+  const card: CSSProperties = {
+    background: "var(--bg)", border: "1px solid var(--border-2)",
+    borderRadius: 18, padding: "18px 16px 20px",
+  };
+  return (
+    <main style={{ minHeight: "100dvh", background: "var(--bg)", paddingBottom: "calc(95px + env(safe-area-inset-bottom))" }} aria-hidden="true">
+      <div style={{ maxWidth: 680, margin: "0 auto", padding: "calc(env(safe-area-inset-top) + 12px) 20px 10px" }}>
+        <Skeleton width={28} height={28} radius={8} />
+      </div>
+      <div style={wrap}>
+        {/* Hero */}
+        <section style={{ borderRadius: 20, overflow: "hidden", border: "1px solid var(--border-2)" }}>
+          <Skeleton height={90} radius={0} />
+          <div style={{ padding: "0 20px 24px", marginTop: -56, position: "relative" }}>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 16 }}>
+              <Skeleton width={92} height={92} radius="50%" style={{ border: "4px solid var(--bg)" }} />
+              <Skeleton width={170} height={22} radius={6} style={{ marginBottom: 10 }} />
+            </div>
+          </div>
+        </section>
+        {/* Squad list */}
+        <section style={card}>
+          <Skeleton width={120} height={13} radius={5} style={{ marginBottom: 16 }} />
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <Skeleton width={40} height={40} radius="50%" style={{ flexShrink: 0 }} />
+                <Skeleton width="45%" height={14} radius={5} />
+                <Skeleton width={34} height={18} radius={5} style={{ marginLeft: "auto" }} />
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+}
+
 /** Card collection grid — matches `.cards-grid` tiles. */
 export function CardGridSkeleton({ count = 6 }: { count?: number }) {
   return (
