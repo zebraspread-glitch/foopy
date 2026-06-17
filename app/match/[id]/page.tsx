@@ -2609,6 +2609,103 @@ function TeamFormBox({ homeTeam, awayTeam, allGames, currentGame }: {
   );
 }
 
+// ── Ins/Outs + named lineups (sourced from FootyWire via sync-lineups cron) ───
+type LineupPlayer = { name: string; team: string; id: string | null; apiSportsId: number | null; pos?: string };
+type TeamLineup = { team: string; onfield: LineupPlayer[]; interchange: LineupPlayer[]; emergencies: LineupPlayer[]; ins: LineupPlayer[]; outs: LineupPlayer[] };
+type LineupPayload = { home: string; away: string; venue: string; round?: number; scrapedAt?: string; teams: Record<string, TeamLineup> };
+
+function LineupPlayerChip({ p, kind }: { p: LineupPlayer; kind: "in" | "out" }) {
+  const [failed, setFailed] = useState(false);
+  const src = playerImagePath(p.name, p.team);
+  const color = kind === "in" ? "#22c55e" : "#ef4444";
+  const arrow = kind === "in" ? "▲" : "▼";
+  const inner = (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0" }}>
+      <div style={{ width: 26, height: 26, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.08)" }}>
+        {!failed && src
+          ? <img src={src} alt={p.name} onError={() => setFailed(true)} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} />
+          : null}
+      </div>
+      <span style={{ fontSize: 9, fontWeight: 900, color, flexShrink: 0, width: 9 }}>{arrow}</span>
+      <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text-1)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
+    </div>
+  );
+  return p.id
+    ? <Link href={`/player/${p.id}`} style={{ textDecoration: "none", color: "inherit", display: "block" }}>{inner}</Link>
+    : inner;
+}
+
+function InsOutsColumn({ tl }: { tl: TeamLineup }) {
+  return (
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 8 }}>
+        <img src={getLogo(tl.team)} alt="" style={{ width: 20, height: 20, borderRadius: "50%", objectFit: "cover" }} />
+        <span style={{ fontSize: 12, fontWeight: 800, color: "var(--text-1)" }}>{getAbbr(tl.team)}</span>
+      </div>
+      {tl.ins.length > 0 && (
+        <div style={{ marginBottom: 10 }}>
+          <div style={{ fontSize: 9, fontWeight: 800, color: "#22c55e", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 2 }}>In</div>
+          {tl.ins.map((p, i) => <LineupPlayerChip key={`in-${p.id ?? p.name}-${i}`} p={p} kind="in" />)}
+        </div>
+      )}
+      {tl.outs.length > 0 && (
+        <div>
+          <div style={{ fontSize: 9, fontWeight: 800, color: "#ef4444", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 2 }}>Out</div>
+          {tl.outs.map((p, i) => <LineupPlayerChip key={`out-${p.id ?? p.name}-${i}`} p={p} kind="out" />)}
+        </div>
+      )}
+      {tl.ins.length === 0 && tl.outs.length === 0 && (
+        <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-3)" }}>Unchanged</div>
+      )}
+    </div>
+  );
+}
+
+function InsOutsBox({ homeTeam, awayTeam, gameId }: { homeTeam: string; awayTeam: string; gameId: string }) {
+  const [lineup, setLineup] = useState<LineupPayload | null>(null);
+  const compact = useCompactViewport();
+
+  useEffect(() => {
+    let active = true;
+    fetch(`/api/lineups?gameId=${encodeURIComponent(gameId)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (active && d?.lineup) setLineup(d.lineup); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [gameId]);
+
+  if (!lineup?.teams) return null;
+  const findTeam = (name: string) =>
+    Object.values(lineup.teams).find(t => normaliseTeamKey(t.team) === normaliseTeamKey(name))
+    ?? lineup.teams[name];
+  const home = findTeam(homeTeam);
+  const away = findTeam(awayTeam);
+  if (!home && !away) return null;
+
+  const anyChanges =
+    (home?.ins.length ?? 0) + (home?.outs.length ?? 0) + (away?.ins.length ?? 0) + (away?.outs.length ?? 0) > 0;
+  if (!anyChanges) return null;
+
+  return (
+    <div style={{
+      margin: "0 0 14px", borderRadius: 18, overflow: "hidden",
+      background: "linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
+    }}>
+      <div style={{ padding: "18px 18px 0", display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+        <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em", color: "var(--text-1)" }}>Ins &amp; Outs</span>
+        {lineup.round != null && (
+          <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)" }}>Round {lineup.round} teams</span>
+        )}
+      </div>
+      <div style={{ display: "flex", gap: 0, padding: compact ? "14px 12px 16px" : "16px 16px 18px" }}>
+        {home && <InsOutsColumn tl={home} />}
+        <div style={{ width: 1, background: "rgba(255,255,255,0.08)", flexShrink: 0, margin: "0 10px" }} />
+        {away && <InsOutsColumn tl={away} />}
+      </div>
+    </div>
+  );
+}
+
 type PreviewPlayerLeader = {
   team: string;
   name: string;
@@ -5166,6 +5263,11 @@ function MatchPageInner() {
             {!feedLoading && !feedError && displayLiveEvents.length === 0 && status === "UPCOMING" && (
               <>
                 {game.venue && <VenueCard venue={game.venue} date={game.date} gameId={id} />}
+                <InsOutsBox
+                  homeTeam={safeText(game.hteam, "")}
+                  awayTeam={safeText(game.ateam, "")}
+                  gameId={id}
+                />
                 <TeamFormBox
                   homeTeam={safeText(game.hteam, "")}
                   awayTeam={safeText(game.ateam, "")}
