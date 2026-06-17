@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import teamStatsData from "@/app/data/team-stats.json";
 import PageHeader from "@/app/components/PageHeader";
@@ -164,35 +164,23 @@ function formatValue(value: number, mode: "avg" | "total") {
   return mode === "avg" ? value.toFixed(1) : Math.round(value).toString();
 }
 
-function aggregateTeamStats(): TeamTotals[] {
-  const totals: Record<number, TeamTotals> = {};
 
-  for (const game of Object.values(teamStatsData as Record<string, TeamStatGame>)) {
+function getStatValue(team: TeamTotals, key: StatKey, mode: "avg" | "total") {
+  const total = team[key];
+  return mode === "avg" ? total / Math.max(1, team.games) : total;
+}
+
+function aggregateTeamStatsFromData(data: Record<string, TeamStatGame>): TeamTotals[] {
+  const totals: Record<number, TeamTotals> = {};
+  for (const game of Object.values(data)) {
     for (const block of game.teams ?? []) {
       const id = num(block.team?.id);
       const name = TEAM_NAMES[id];
       if (!id || !name) continue;
-
       const stats = block.statistics ?? {};
       if (!totals[id]) {
-        totals[id] = {
-          id,
-          name,
-          games: 0,
-          disposals: 0,
-          kicks: 0,
-          handballs: 0,
-          marks: 0,
-          tackles: 0,
-          clearances: 0,
-          hitouts: 0,
-          goals: 0,
-          behinds: 0,
-          assists: 0,
-          freeKicks: 0,
-        };
+        totals[id] = { id, name, games: 0, disposals: 0, kicks: 0, handballs: 0, marks: 0, tackles: 0, clearances: 0, hitouts: 0, goals: 0, behinds: 0, assists: 0, freeKicks: 0 };
       }
-
       totals[id].games += 1;
       totals[id].disposals += num(stats.disposals?.disposals);
       totals[id].kicks += num(stats.disposals?.kicks);
@@ -207,21 +195,26 @@ function aggregateTeamStats(): TeamTotals[] {
       totals[id].assists += num(stats.scoring?.assists);
     }
   }
-
   return Object.values(totals);
-}
-
-function getStatValue(team: TeamTotals, key: StatKey, mode: "avg" | "total") {
-  const total = team[key];
-  return mode === "avg" ? total / Math.max(1, team.games) : total;
 }
 
 export default function TeamStatsPage() {
   const router = useRouter();
   const [cat, setCat] = useState<StatKey>("disposals");
   const [mode, setMode] = useState<"avg" | "total">("avg");
+  const [liveData, setLiveData] = useState<Record<string, TeamStatGame> | null>(null);
 
-  const teams = useMemo(() => aggregateTeamStats(), []);
+  useEffect(() => {
+    fetch("/api/team-season-stats")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setLiveData(data); })
+      .catch(() => {});
+  }, []);
+
+  const teams = useMemo(() => {
+    const data = liveData ?? (teamStatsData as Record<string, TeamStatGame>);
+    return aggregateTeamStatsFromData(data);
+  }, [liveData]);
   const sorted = useMemo(() => {
     return [...teams].sort((a, b) => getStatValue(b, cat, mode) - getStatValue(a, cat, mode));
   }, [teams, cat, mode]);
