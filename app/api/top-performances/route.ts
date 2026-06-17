@@ -72,10 +72,13 @@ export async function GET(req: Request) {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
+    const isSeasonView = filter === "season" || filter === "season_worst";
     const [{ data: finalRows }, { data: recentRows }] = await Promise.all([
       supabase.from("match_cache").select("game_id, payload").eq("data_type", "player_stats").eq("is_final", true),
-      supabase.from("match_cache").select("game_id, payload").eq("data_type", "player_stats").eq("is_final", false)
-        .gte("fetched_at", new Date(Date.now() - 86400000).toISOString().slice(0, 10)),
+      isSeasonView
+        ? supabase.from("match_cache").select("game_id, payload").eq("data_type", "player_stats").eq("is_final", false)
+        : supabase.from("match_cache").select("game_id, payload").eq("data_type", "player_stats").eq("is_final", false)
+            .gte("fetched_at", new Date(Date.now() - 86400000).toISOString().slice(0, 10)),
     ]);
     const rows = [
       ...(finalRows ?? []),
@@ -249,7 +252,7 @@ export async function GET(req: Request) {
           freesAgainst: s.free_kicks?.against ?? s.freesAgainst ?? s.frees_against,
         });
 
-        if (rating <= 0) continue;
+        if (rating <= 0 && filter !== "season_worst") continue;
 
         entries.push({
           name,
@@ -289,7 +292,8 @@ export async function GET(req: Request) {
     deduped.push(e);
   }
 
-  const top100 = deduped.slice(0, 100).map((e, i) => ({ ...e, rank: i + 1 }));
+  const limit = (filter === "season" || filter === "season_worst") ? 1000 : 100;
+  const top100 = deduped.slice(0, limit).map((e, i) => ({ ...e, rank: i + 1 }));
 
   return NextResponse.json({ entries: top100 }, {
     headers: { "Cache-Control": "public, max-age=120, stale-while-revalidate=300" },
