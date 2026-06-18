@@ -2109,27 +2109,32 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
                   style={{ cursor: "pointer" }}
                   onClick={() => router.push(`/match/${gameId}/${playerSlugUrl}`)}
                 >
-                  {/* Sticky avatar + foopy badge — stays pinned while scrolling. */}
+                  {/* Sticky avatar + comment badge — stays pinned while scrolling. */}
                   <td style={tdAvatarStyle}>
-                    <PlayerAvatar
-                      name={name}
-                      team={rowTeam}
-                      size={36}
-                      rating={ratingVisible ? rating : undefined}
-                      ratingColor={rating !== null ? foopyColor(rating) : undefined}
-                      isBest={isBest}
-                    />
-                  </td>
-                  {/* Surname + comment count — scrolls under the avatar. */}
-                  <td style={tdNameStyle}>
-                    <span style={tdNameInnerStyle}>
-                      <span style={playerNameTextStyle} title={name}>{surname(name)}</span>
-                      <span style={statNameCommentStyle}>
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                    <span style={{ position: "relative", display: "inline-flex", flexShrink: 0 }}>
+                      <PlayerAvatar name={name} team={rowTeam} size={36} />
+                      <span style={statAvatarCommentStyle}>
+                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                         </svg>
                         {count > 0 && <span>{count}</span>}
                       </span>
+                    </span>
+                  </td>
+                  {/* Surname + foopy rating — scrolls under the avatar. */}
+                  <td style={tdNameStyle}>
+                    <span style={tdNameInnerStyle}>
+                      <span style={playerNameTextStyle} title={name}>{surname(name)}</span>
+                      {ratingVisible && rating !== null && (
+                        <span style={{ ...statNameRatingStyle, background: foopyColor(rating) }}>
+                          {isBest && (
+                            <svg width="7" height="7" viewBox="0 0 24 24" fill="#fff" style={{ flexShrink: 0 }}>
+                              <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+                            </svg>
+                          )}
+                          {rating}
+                        </span>
+                      )}
                     </span>
                   </td>
 
@@ -7834,6 +7839,10 @@ const tdNameStyle: CSSProperties = {
 };
 const tdNameInnerStyle: CSSProperties = { display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", gap: 2, minWidth: 0, maxWidth: "100%", lineHeight: 1.1 };
 const statNameCommentStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 2, minHeight: 12, color: "var(--text-4)", fontSize: 9.5, fontWeight: 800 };
+// Comment badge overlaid bottom-left of the avatar (swapped with the rating).
+const statAvatarCommentStyle: CSSProperties = { position: "absolute", bottom: -1, left: -1, zIndex: 2, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 1, minWidth: 14, padding: "0 2px", borderRadius: 4, background: "var(--surface-3)", border: "1px solid var(--bg)", color: "var(--text-2)", fontSize: 8, fontWeight: 800, lineHeight: 1.35, pointerEvents: "none" };
+// Foopy rating badge shown next to the surname (swapped with the comment icon).
+const statNameRatingStyle: CSSProperties = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 2, minWidth: 14, padding: "0 3px", borderRadius: 4, border: "1px solid var(--bg)", color: "var(--text-1)", fontWeight: 900, fontSize: 9, lineHeight: 1.4 };
 // "Edit stat columns" button + its bottom-sheet editor.
 const editStatColsBtnStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 18px", borderRadius: 999, background: "var(--surface-2)", border: "1px solid var(--border-2)", color: "var(--text-2)", fontSize: 13.5, fontWeight: 800, cursor: "pointer", WebkitTapHighlightColor: "transparent" };
 const statEditorBackdropStyle: CSSProperties = { position: "fixed", inset: 0, zIndex: 20000, background: "rgba(0,0,0,0.68)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: "0 10px", boxSizing: "border-box", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" };
