@@ -4542,16 +4542,28 @@ function MatchPageInner() {
       return Number(a.minute ?? 0) - Number(b.minute ?? 0);
     });
 
+    const homeApiId = getApiTeamId(game.hteam);
+    const awayApiId = getApiTeamId(game.ateam);
     let prevHome = 0, prevAway = 0;
     const inferred = chronological.map((e: any) => {
       const curHome = e.homeScore == null ? prevHome : Number(e.homeScore);
       const curAway = e.awayScore == null ? prevAway : Number(e.awayScore);
-      const homeDelta = curHome - prevHome;
-      const awayDelta = curAway - prevAway;
+      // Trust the recorded team_id — score-check stamps the exact scoring team,
+      // and the API stamps real events. Only fall back to the score-delta guess
+      // when team_id doesn't resolve to either side of THIS match (legacy rows).
+      // The old delta-only logic misattributed because inferred events share
+      // minute 0, so they sort in an arbitrary order and the running deltas blur.
+      const tid = Number(e.teamId);
       let teamName = "";
-      if (homeDelta > awayDelta && homeDelta > 0) teamName = game.hteam;
-      else if (awayDelta > homeDelta && awayDelta > 0) teamName = game.ateam;
-      else teamName = teamNameFromEvent(e);
+      if (tid === homeApiId) teamName = game.hteam;
+      else if (tid === awayApiId) teamName = game.ateam;
+      else {
+        const homeDelta = curHome - prevHome;
+        const awayDelta = curAway - prevAway;
+        if (homeDelta > awayDelta && homeDelta > 0) teamName = game.hteam;
+        else if (awayDelta > homeDelta && awayDelta > 0) teamName = game.ateam;
+        else teamName = teamNameFromEvent(e);
+      }
       prevHome = curHome; prevAway = curAway;
       return { ...e, teamName };
     }).filter((e: any) => eventBelongsToMatch(e, game.hteam, game.ateam));
