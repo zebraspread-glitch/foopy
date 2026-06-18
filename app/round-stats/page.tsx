@@ -198,12 +198,19 @@ function RoundStatsInner() {
           const apiPlayerId = (rawPlayer.player as { id?: number } | undefined)?.id;
           if (!apiPlayerId) continue;
 
-          const found = playerData.find(
-            (p) =>
-              p.apiSportsId === apiPlayerId ||
-              idListIncludes(p.eventIds, apiPlayerId) ||
-              idListIncludes(p.statsIds, apiPlayerId)
-          );
+          // This page reads the STATS feed, so the authoritative match is
+          // apiSportsId. Match on it FIRST — only fall back to eventIds/statsIds
+          // (a different ID space) when there's no exact apiSportsId hit. Without
+          // this, an eventId that happens to equal another player's apiSportsId
+          // wins by array order and mislabels the stat (e.g. Murphy Reid's
+          // apiSportsId 1903 also appears in Hussien El Achkar's eventIds).
+          const found =
+            playerData.find((p) => p.apiSportsId === apiPlayerId) ??
+            playerData.find(
+              (p) =>
+                idListIncludes(p.eventIds, apiPlayerId) ||
+                idListIncludes(p.statsIds, apiPlayerId)
+            );
           if (!found) continue;
 
           const name = String(found.name || "").trim();

@@ -4458,25 +4458,43 @@ function MatchPageInner() {
     // events frequently arrive without per-event scores, and the placeholder's
     // clock is unknown, so any score/time-based match would silently fail and
     // leave duplicates. Counts always line up: N real goals cover N placeholders.
-    const realCountByKey = new Map<string, number>();
+    // Match each placeholder to a real event by running SCORE first — both rows
+    // are stamped with the same total when the goal lands — falling back to a
+    // per-team+type count only for real events that synced without a score.
+    // Score-matching is per-event, so a single missed placeholder (e.g. two
+    // goals in one Squiggle poll, or goals that happened before the page was
+    // open) can never permanently suppress later ones. The old count-only logic
+    // desynced for the rest of the game the moment real events outran inferred.
+    const scoreStr = (e: any) => {
+      const h = Number(e.home_score), a = Number(e.away_score);
+      return Number.isFinite(h) && Number.isFinite(a) ? `${h}_${a}` : null;
+    };
+    const realPools = new Map<string, { scores: Map<string, number>; noScore: number }>();
     for (const e of rows as any[]) {
       if (e.inferred) continue;
       const k = `${e.team_id}|${String(e.type ?? "").toUpperCase()}`;
-      realCountByKey.set(k, (realCountByKey.get(k) ?? 0) + 1);
+      const pool = realPools.get(k) ?? { scores: new Map<string, number>(), noScore: 0 };
+      const s = scoreStr(e);
+      if (s) pool.scores.set(s, (pool.scores.get(s) ?? 0) + 1);
+      else pool.noScore += 1;
+      realPools.set(k, pool);
     }
 
-    const inferredUsedByKey = new Map<string, number>();
     const normalised = [...(rows as any[])]
       // Oldest first so the EARLIEST placeholders are the ones marked covered.
       .sort((a, b) => Number(a.id ?? 0) - Number(b.id ?? 0))
       .filter((e: any) => {
         if (!e.inferred) return true;
         const k = `${e.team_id}|${String(e.type ?? "").toUpperCase()}`;
-        const used = inferredUsedByKey.get(k) ?? 0;
-        inferredUsedByKey.set(k, used + 1);
-        // Covered by a real event → hide. Otherwise → show (rushed behind or
-        // not-yet-synced goal).
-        return used >= (realCountByKey.get(k) ?? 0);
+        const pool = realPools.get(k);
+        if (!pool) return true; // no real events yet → show the placeholder
+        const s = scoreStr(e);
+        if (s) {
+          const c = pool.scores.get(s) ?? 0;
+          if (c > 0) { pool.scores.set(s, c - 1); return false; } // exact score match → covered
+        }
+        if (pool.noScore > 0) { pool.noScore -= 1; return false; } // scoreless real → covered
+        return true; // uncovered → show (rushed behind / not-yet-synced goal)
       })
       .map((e: any) => ({
         rowKey: e.id ? `feed_${e.id}` : undefined,
@@ -4550,9 +4568,18 @@ function MatchPageInner() {
       });
     }
 
+    // Inferred placeholders carry no clock (minute 0), so without this they'd
+    // sink to the bottom of their period. They're the freshest thing that just
+    // happened, so pin them to the top of their period — just below a quarter
+    // break (minute 999), above the real, timestamped events.
+    const sortMinute = (e: any) => {
+      if (e.type === "QUARTER_BREAK") return Number(e.minute ?? 0);
+      if (e.inferred) return 998;
+      return Number(e.minute ?? 0);
+    };
     const sorted = [...inferred, ...derivedBreaks].sort((a, b) => {
       if (Number(a.period) !== Number(b.period)) return Number(b.period) - Number(a.period);
-      return Number(b.minute ?? 0) - Number(a.minute ?? 0);
+      return sortMinute(b) - sortMinute(a);
     });
 
     setLiveEvents(sorted);
