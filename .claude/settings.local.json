@@ -296,7 +296,9 @@
       "Bash(curl -s --max-time 40 \"http://localhost:3000/api/weather?date=2026-06-17&venue=Geelong\")",
       "Bash(curl -s --max-time 40 \"http://localhost:3000/api/weather?date=2026-06-17&lat=-37.8166&lon=144.9476\")",
       "Bash(rm -f /tmp/wtest.mjs *)",
-      "Bash(curl -s --max-time 60 \"http://localhost:3000/api/top-performances?filter=season_worst\")"
+      "Bash(curl -s --max-time 60 \"http://localhost:3000/api/top-performances?filter=season_worst\")",
+      "Bash(git checkout *)",
+      "Bash(cd /c/Users/User/Downloads/foopy; grep -nE \"function scoreBasedEventKey|function scoreBasedEventKeyAliases|homeScore|awayScore\" \"app/match/[id]/page.tsx\" | head -20; echo \"=== scoreBasedEventKey body ===\"; sed -n '/function scoreBasedEventKey/,/^}/p' \"app/match/[id]/page.tsx\" | head -40)"
     ]
   }
 }
