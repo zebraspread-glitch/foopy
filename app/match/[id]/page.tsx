@@ -2019,7 +2019,7 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
       ? { backgroundColor: "var(--bg)", backgroundImage: "linear-gradient(rgba(255,255,255,0.045), rgba(255,255,255,0.045))" }
       : {};
   }
-  const tableHeaderTop = stickyTop > 0 ? `calc(var(--round-strip-h, 0px) + ${stickyTop}px)` : 0;
+  const tableHeaderTop = 0;
 
   function sortHeader(label: string, key: SortKey, extraStyle?: CSSProperties) {
     const active = sortKey === key;
