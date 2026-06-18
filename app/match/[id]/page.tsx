@@ -413,6 +413,7 @@ function saveSeenEventKeys(gameId: string, keys: Set<string>) {
 function eventKeyAliases(event: LiveEvent, index = 0) {
   const team = safeText((event as any).teamName || teamNameFromEvent(event), "");
   const aliases = [
+    (event as any).commentAnchor,
     (event as any).displayEventKey,
     (event as any).optimisticKey,
     eventScoreBasedKey(event),
@@ -434,14 +435,12 @@ function eventKeyAliases(event: LiveEvent, index = 0) {
 function canonicalKeyForEvent(event: LiveEvent, index = 0): string {
   const keys = eventKeyAliases(event, index);
   return (
-    // Prefer the score-based identity (score_{team}_{home}_{away}_{TYPE}) for
-    // scoring events. An inferred placeholder ("Fremantle GOAL", no player yet)
-    // and the real player event ("Jack Martin GOAL") that later covers it are
-    // SEPARATE rows, but both are stamped with the same running score — so this
-    // is the only key that's identical across the transition. Keying on it means
-    // comments/reactions made before a player is assigned stay attached once the
-    // real event arrives. Falls back to the player key when no score is present
-    // (e.g. non-scoring events, which always already have a player).
+    // Prefer the ordinal anchor (anch_{teamId}_{TYPE}_{n}) — it's identical for
+    // an inferred placeholder and the real player event that covers it, even
+    // when the real event has no score, so comments/reactions made before a
+    // player is assigned stay attached. Then the score-based identity, then the
+    // player key for non-scoring events (which always already have a player).
+    keys.find((key) => key.startsWith("anch_")) ??
     keys.find((key) => key.startsWith("score_") && !key.endsWith("_SCORE")) ??
     keys.find((key) => key.startsWith("score_")) ??
     keys.find((key) => /^qQ?\d.*_p\d+$/.test(key)) ??
@@ -4480,6 +4479,26 @@ function MatchPageInner() {
       realPools.set(k, pool);
     }
 
+    // Stable comment/reaction anchor: pair the Nth inferred event of a team+type
+    // with its Nth real event (the same ordinal pairing the covering uses). Real
+    // events frequently arrive WITHOUT a per-event score, so a score key can't
+    // link a placeholder to its real event — but this anchor is identical for
+    // both, so comments/reactions made on a placeholder stay attached once the
+    // real, player-attributed event loads in and the placeholder is hidden.
+    const anchorById = new Map<any, string>();
+    {
+      const seqInferred = new Map<string, number>();
+      const seqReal = new Map<string, number>();
+      for (const e of [...(rows as any[])].sort((a, b) => Number(a.id ?? 0) - Number(b.id ?? 0))) {
+        const type = String(e.type ?? "").toUpperCase();
+        const k = `${e.team_id}|${type}`;
+        const seq = e.inferred ? seqInferred : seqReal;
+        const n = (seq.get(k) ?? 0) + 1;
+        seq.set(k, n);
+        anchorById.set(e.id, `anch_${e.team_id}_${type}_${n}`);
+      }
+    }
+
     const normalised = [...(rows as any[])]
       // Oldest first so the EARLIEST placeholders are the ones marked covered.
       .sort((a, b) => Number(a.id ?? 0) - Number(b.id ?? 0))
@@ -4498,6 +4517,7 @@ function MatchPageInner() {
       })
       .map((e: any) => ({
         rowKey: e.id ? `feed_${e.id}` : undefined,
+        commentAnchor: anchorById.get(e.id),
         quarter: `Q${e.period ?? "-"}`,
         period: e.period,
         minute: e.minute,

@@ -100,11 +100,11 @@ function eventKeyAliasesFromParams(eventKey: string, rawAliases: string | null) 
 
 function stableEventKey(keys: string[], fallback: string) {
   return (
-    // Mirror canonicalKeyForEvent() on the match feed: prefer the score-based
-    // identity so an inferred placeholder and the real player event that covers
-    // it (separate rows, same running score) resolve to the SAME key — keeping
-    // comments/reactions attached when a player is assigned. Falls back to the
-    // player key for non-scoring events.
+    // Mirror canonicalKeyForEvent() on the match feed: prefer the ordinal anchor
+    // (anch_…) so an inferred placeholder and the real player event that covers
+    // it resolve to the SAME key — keeping comments/reactions attached when the
+    // real event loads. Then score-based, then the player key.
+    keys.find((key) => key.startsWith("anch_")) ??
     keys.find((key) => key.startsWith("score_") && !key.endsWith("_SCORE")) ??
     keys.find((key) => key.startsWith("score_")) ??
     keys.find((key) => /^qQ?\d.*_p\d+$/.test(key)) ??

@@ -99,6 +99,17 @@ export default function StickerPicker({ onPick }: { onPick: (name: string) => vo
     setPortalTarget(document.body);
   }, []);
 
+  // Lock background (match page) scrolling while the sticker sheet is open —
+  // only the sheet itself should scroll.
+  useEffect(() => {
+    if (!showAll) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [showAll]);
+
   // Which paid packs the signed-in user owns (drives send-gating).
   useEffect(() => {
     if (!user) { setOwnedPackKeys(new Set()); return; }
