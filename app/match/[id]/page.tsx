@@ -1971,6 +1971,8 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
   const [playerCommentCounts, setPlayerCommentCounts] = useState<Record<string, number>>({});
   const router = useRouter();
   const axisLockedScrollRef = useAxisLockedScroll<HTMLDivElement>();
+  const statsHeaderScrollerRef = useRef<HTMLDivElement | null>(null);
+  const statsHeaderTouchRef = useRef<{ x: number; y: number; left: number; axis: "x" | "y" | null } | null>(null);
 
   useEffect(() => {
     if (!gameId) return;
@@ -2011,30 +2013,61 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
     return sortKey === key ? { boxShadow: "inset 0 0 0 1000px rgba(255,255,255,0.045)" } : {};
   }
 
-  // Sticky <th> cells need an opaque background layered with the highlight
-  // (box-shadow on sticky cells causes the row underneath to peek through
-  // while scrolling), so use a background-image overlay instead.
-  function sortHeaderColStyle(key: SortKey): CSSProperties {
-    return sortKey === key
-      ? { backgroundColor: "var(--bg)", backgroundImage: "linear-gradient(rgba(255,255,255,0.045), rgba(255,255,255,0.045))" }
-      : {};
+  function handleSort(key: SortKey) {
+    if (onSort) {
+      onSort(key);
+      return;
+    }
+    if (sortKey === key) setSortDirLocal(sortDir === "desc" ? "asc" : "desc");
+    else {
+      setSortKeyLocal(key);
+      setSortDirLocal("desc");
+    }
   }
-  const tableHeaderTop = 0;
 
-  function sortHeader(label: string, key: SortKey, extraStyle?: CSSProperties) {
+  const identityColsWidth = AVATAR_COL_W + NAME_COL_W;
+  const statsWidth = activeCols.reduce((w, c) => w + c.width, 0);
+  const tableMinWidth = identityColsWidth + statsWidth;
+  const statsHeaderTop = `calc(var(--round-strip-h, 0px) + ${stickyTop}px)`;
+  const foopyArrow = sortKey === "foopy" ? (sortDir === "desc" ? "↓" : "↑") : "";
+
+  const syncStatsHeaderScroll = useCallback((left: number) => {
+    const el = statsHeaderScrollerRef.current;
+    if (el) el.style.transform = `translate3d(${-left}px, 0, 0)`;
+  }, []);
+
+  useLayoutEffect(() => {
+    syncStatsHeaderScroll(axisLockedScrollRef.current?.scrollLeft ?? 0);
+  }, [activeCols.length, axisLockedScrollRef, syncStatsHeaderScroll]);
+
+  function scrollStatsBy(delta: number) {
+    const el = axisLockedScrollRef.current;
+    if (!el || el.scrollWidth <= el.clientWidth) return false;
+    el.scrollLeft += delta;
+    syncStatsHeaderScroll(el.scrollLeft);
+    return true;
+  }
+
+  function sortHeaderButton(label: string, key: SortKey, width: number, fullLabel = label) {
     const active = sortKey === key;
     return (
-      <th
+      <button
         key={key}
-        style={{ ...statHeadStyle, top: tableHeaderTop, ...sortHeaderColStyle(key), ...extraStyle, color: active ? "#0ea5e9" : "#9ca3af", cursor: "pointer" }}
-        onClick={() => {
-          if (onSort) { onSort(key); return; }
-          if (sortKey === key) setSortDirLocal(sortDir === "desc" ? "asc" : "desc");
-          else { setSortKeyLocal(key); setSortDirLocal("desc"); }
+        type="button"
+        title={fullLabel}
+        aria-label={`Sort by ${fullLabel}`}
+        aria-pressed={active}
+        style={{
+          ...statsHeaderCellStyle,
+          width,
+          color: active ? "#38bdf8" : "var(--text-3)",
+          background: active ? "rgba(56,189,248,0.08)" : "transparent",
         }}
+        onClick={() => handleSort(key)}
       >
-        {label}{active ? (sortDir === "desc" ? " ↓" : " ↑") : ""}
-      </th>
+        <span>{label}</span>
+        {active && <span style={statsHeaderArrowStyle}>{sortDir === "desc" ? "↓" : "↑"}</span>}
+      </button>
     );
   }
 
@@ -2052,42 +2085,108 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
   }
 
   return (
-    <div>
+    <div style={statsTableShellStyle}>
+      <div
+        style={{ ...statsStickyHeaderStyle, top: statsHeaderTop }}
+        onWheel={(e) => {
+          const absX = Math.abs(e.deltaX);
+          const absY = Math.abs(e.deltaY);
+          if (!e.shiftKey && absX <= absY) return;
+          const delta = e.shiftKey && absY > absX ? e.deltaY : e.deltaX || e.deltaY;
+          if (scrollStatsBy(delta)) e.preventDefault();
+        }}
+        onTouchStart={(e) => {
+          const t = e.touches[0];
+          statsHeaderTouchRef.current = {
+            x: t.clientX,
+            y: t.clientY,
+            left: axisLockedScrollRef.current?.scrollLeft ?? 0,
+            axis: null,
+          };
+        }}
+        onTouchMove={(e) => {
+          const start = statsHeaderTouchRef.current;
+          const el = axisLockedScrollRef.current;
+          if (!start || !el || e.touches.length !== 1) return;
+          const t = e.touches[0];
+          const dx = t.clientX - start.x;
+          const dy = t.clientY - start.y;
+          if (!start.axis && Math.max(Math.abs(dx), Math.abs(dy)) > 6) {
+            start.axis = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+          }
+          if (start.axis !== "x") return;
+          e.preventDefault();
+          el.scrollLeft = start.left - dx;
+          syncStatsHeaderScroll(el.scrollLeft);
+        }}
+        onTouchEnd={() => {
+          statsHeaderTouchRef.current = null;
+        }}
+        onTouchCancel={() => {
+          statsHeaderTouchRef.current = null;
+        }}
+      >
+        <div style={statsHeaderViewportStyle}>
+          <div style={{ ...statsHeaderFrozenStyle, width: identityColsWidth }}>
+            <button
+              type="button"
+              onClick={() => handleSort("foopy")}
+              title="Sort by Foopy rating"
+              aria-label="Sort by Foopy rating"
+              aria-pressed={sortKey === "foopy"}
+              style={{
+                ...statsHeaderCellStyle,
+                width: AVATAR_COL_W,
+                color: sortKey === "foopy" ? "#38bdf8" : "var(--text-3)",
+                background: sortKey === "foopy" ? "rgba(56,189,248,0.08)" : "transparent",
+              }}
+            >
+              <span>✦</span>
+              {foopyArrow && <span style={statsHeaderArrowStyle}>{foopyArrow}</span>}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSort("foopy")}
+              title="Sort by Foopy rating"
+              aria-label="Sort by Foopy rating"
+              aria-pressed={sortKey === "foopy"}
+              style={{
+                ...statsHeaderCellStyle,
+                width: NAME_COL_W,
+                justifyContent: "flex-start",
+                color: sortKey === "foopy" ? "#38bdf8" : "var(--text-3)",
+                background: sortKey === "foopy" ? "rgba(56,189,248,0.08)" : "transparent",
+              }}
+            >
+              Player
+            </button>
+          </div>
+          <div
+            ref={statsHeaderScrollerRef}
+            style={{
+              ...statsHeaderScrollerStyle,
+              gridTemplateColumns: `${AVATAR_COL_W}px ${NAME_COL_W}px ${activeCols.map((c) => `${c.width}px`).join(" ")}`,
+              width: tableMinWidth,
+            }}
+          >
+            <div />
+            <div />
+            {activeCols.map((c) => sortHeaderButton(c.label, c.id, c.width, c.full))}
+          </div>
+        </div>
+      </div>
 
-      <div ref={axisLockedScrollRef} style={{ ...tableWrapStyle, WebkitOverflowScrolling: "touch", overscrollBehaviorX: "contain" }}>
-        <table style={{ ...tableStyle, minWidth: AVATAR_COL_W + NAME_COL_W + activeCols.reduce((w, c) => w + c.width, 0), tableLayout: "fixed" }}>
+      <div
+        ref={axisLockedScrollRef}
+        style={{ ...tableWrapStyle, WebkitOverflowScrolling: "touch", overscrollBehaviorX: "contain" }}
+        onScroll={(e) => syncStatsHeaderScroll(e.currentTarget.scrollLeft)}
+      >
+        <table style={{ ...tableStyle, minWidth: tableMinWidth, tableLayout: "fixed" }}>
           <colgroup>
             <col style={{ width: AVATAR_COL_W }} />{/* avatar (sticky) */}
-            <col style={{ width: NAME_COL_W }} />{/* surname (scrolls) */}
+            <col style={{ width: NAME_COL_W }} />{/* surname (sticky) */}
             {activeCols.map((c) => <col key={c.id} style={{ width: c.width }} />)}
           </colgroup>
-          <thead>
-            <tr>
-              {(() => {
-                const sortFoopy = () => {
-                  const key: SortKey = "foopy";
-                  if (onSort) { onSort(key); return; }
-                  if (sortKey === key) setSortDirLocal(sortDir === "desc" ? "asc" : "desc");
-                  else { setSortKeyLocal(key); setSortDirLocal("desc"); }
-                };
-                const foopyArrow = sortKey === "foopy" ? (sortDir === "desc" ? " ↓" : " ↑") : "";
-                return (
-                  <>
-                    {/* Sticky avatar column — always visible while scrolling stats.
-                        Sorts by foopy (the rating lives on the avatar badge). */}
-                    <th style={{ ...thAvatarStyle, top: tableHeaderTop, ...sortHeaderColStyle("foopy"), cursor: "pointer" }} onClick={sortFoopy} aria-label="Sort by Foopy rating">
-                      <span style={{ color: sortKey === "foopy" ? "#0ea5e9" : "var(--text-4)" }}>✦{foopyArrow}</span>
-                    </th>
-                    {/* Surname — scrolls away under the avatar. */}
-                    <th style={{ ...thNameStyle, top: tableHeaderTop, ...sortHeaderColStyle("foopy"), cursor: "pointer" }} onClick={sortFoopy}>
-                      Player
-                    </th>
-                  </>
-                );
-              })()}
-              {activeCols.map((c) => sortHeader(c.label, c.id))}
-            </tr>
-          </thead>
           <tbody>
             {sortedStats.map((p, index) => {
               const name = safePlayerName(p.name ?? p.player, index + 1);
@@ -7648,6 +7747,61 @@ const countdownLabelStyle: CSSProperties = { color: "#facc15", fontSize: 11, fon
 const countdownTimeStyle: CSSProperties = { marginTop: 8, color: "var(--text-1)", fontSize: 36, lineHeight: 1, fontWeight: 1000, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" };
 const tableWrapStyle: CSSProperties = { overflowX: "auto" };
 const tableStyle: CSSProperties = { width: "100%", borderCollapse: "separate", borderSpacing: 0 };
+const statsTableShellStyle: CSSProperties = { position: "relative", background: "var(--surface-1)" };
+const statsStickyHeaderStyle: CSSProperties = {
+  position: "sticky",
+  zIndex: 60,
+  height: 36,
+  background: "rgba(9,10,14,0.96)",
+  borderTop: "1px solid var(--border-2)",
+  borderBottom: "1px solid var(--border-2)",
+  boxShadow: "0 8px 22px rgba(0,0,0,0.36)",
+  backdropFilter: "blur(18px) saturate(160%)",
+  WebkitBackdropFilter: "blur(18px) saturate(160%)",
+  touchAction: "pan-y",
+  userSelect: "none",
+};
+const statsHeaderViewportStyle: CSSProperties = { position: "relative", height: "100%", overflow: "hidden" };
+const statsHeaderFrozenStyle: CSSProperties = {
+  position: "absolute",
+  left: 0,
+  top: 0,
+  bottom: 0,
+  zIndex: 2,
+  display: "flex",
+  background: "rgba(9,10,14,0.98)",
+};
+const statsHeaderScrollerStyle: CSSProperties = {
+  position: "absolute",
+  left: 0,
+  top: 0,
+  height: "100%",
+  display: "grid",
+  willChange: "transform",
+};
+const statsHeaderCellStyle: CSSProperties = {
+  appearance: "none",
+  border: "none",
+  borderRight: "1px solid rgba(255,255,255,0.035)",
+  borderRadius: 0,
+  height: 36,
+  minWidth: 0,
+  padding: "0 6px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 3,
+  background: "transparent",
+  fontFamily: "inherit",
+  fontSize: 10,
+  fontWeight: 900,
+  textTransform: "uppercase",
+  letterSpacing: "0.08em",
+  whiteSpace: "nowrap",
+  cursor: "pointer",
+  WebkitTapHighlightColor: "transparent",
+};
+const statsHeaderArrowStyle: CSSProperties = { fontSize: 10, lineHeight: 1, color: "inherit" };
 const thStyle: CSSProperties = { position: "sticky", top: 0, zIndex: 2, backgroundColor: "var(--bg)", textAlign: "center", padding: "9px 10px", borderBottom: "1px solid var(--border-2)", whiteSpace: "nowrap", fontSize: 10, fontWeight: 900, textTransform: "uppercase" as const, letterSpacing: "0.08em", color: "var(--text-3)" };
 const thPlayerStyle: CSSProperties = {
   ...thStyle,
@@ -7672,25 +7826,28 @@ const tdPlayerStyle: CSSProperties = {
   minWidth: 180,
   textAlign: "left",
 };
-// ── Compact stats-table cells (match StatTable) ──────────────────────────────
+// ── Compact stats-table body cells (match StatTable) ─────────────────────────
 // Tighter than the shared td/th so more stat columns fit on a phone.
-const statHeadStyle: CSSProperties = { ...thStyle, padding: "9px 3px" };
 const statCellStyle: CSSProperties = { ...tdStyle, padding: "12px 3px", fontSize: 13 };
-// Sticky avatar column — narrow, always visible while scrolling the stats.
-const thAvatarStyle: CSSProperties = {
-  ...thStyle, left: 0, zIndex: 5, padding: "9px 0", textAlign: "center",
-};
 const tdAvatarStyle: CSSProperties = {
-  ...tdStyle, position: "sticky", left: 0, zIndex: 3, backgroundColor: "var(--surface-1)",
+  ...tdStyle, position: "sticky", left: 0, zIndex: 4, backgroundColor: "var(--surface-1)",
   padding: "8px 0", textAlign: "center",
 };
-// Surname column — sits beside the avatar at rest, scrolls under it on scroll.
-const thNameStyle: CSSProperties = { ...thStyle, left: 0, textAlign: "left", padding: "9px 6px 9px 4px" };
+// Surname column — stays beside the avatar while the stats move underneath.
 // NB: the <td> stays a real table-cell (no display:flex — that would break
 // table-layout:fixed column sizing); the flex lives on an inner wrapper.
 const tdNameStyle: CSSProperties = {
-  ...tdStyle, textAlign: "left", padding: "8px 4px 8px 2px",
-  fontWeight: 800, fontSize: 13, color: "var(--text-1)", overflow: "hidden",
+  ...tdStyle,
+  position: "sticky",
+  left: AVATAR_COL_W,
+  zIndex: 3,
+  backgroundColor: "var(--surface-1)",
+  textAlign: "left",
+  padding: "8px 4px 8px 2px",
+  fontWeight: 800,
+  fontSize: 13,
+  color: "var(--text-1)",
+  overflow: "hidden",
 };
 const tdNameInnerStyle: CSSProperties = { display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", gap: 2, minWidth: 0, maxWidth: "100%", lineHeight: 1.1 };
 const statNameCommentStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 2, minHeight: 12, color: "var(--text-4)", fontSize: 9.5, fontWeight: 800 };
