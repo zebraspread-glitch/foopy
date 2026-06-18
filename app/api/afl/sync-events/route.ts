@@ -147,49 +147,23 @@ export async function GET(req: Request) {
 
     const statsMap = await statsMapPromise;
 
-    // Score-independent identity for a player-attributed (real) event. We KEEP
-    // each placeholder's Squiggle scores rather than overwrite them, so the
-    // per-event scores can't be used for matching across syncs — but period /
-    // minute / type / team / player are stable.
+    // Stable identity for an event across syncs — per-event scores are flaky, so
+    // they're excluded. Rows already stored are frozen and left untouched.
     const matchKey = (r: any) =>
       `${r.period}|${r.minute}|${r.type}|${r.team_id}|${r.player_id}`;
 
-    // Rows already attributed to a player. Everything on these is frozen at
-    // first write, so we leave them completely untouched on later syncs.
-    const realByKey = new Map<string, any>();
-    for (const r of existing ?? []) {
-      if (r.player_id != null) realByKey.set(matchKey(r), r);
-    }
+    const existingByKey = new Map<string, any>();
+    for (const r of existing ?? []) existingByKey.set(matchKey(r), r);
 
-    // Squiggle-created placeholders still awaiting a player, grouped by
-    // team+type, oldest first. API-Sports UPDATES one of these in place (keeping
-    // its row id) when the matching play arrives, instead of inserting a
-    // parallel row — so comments/reactions made on the placeholder ride along
-    // onto the now player-attributed event.
-    const placeholdersByTeamType = new Map<string, any[]>();
-    for (const r of existing ?? []) {
-      if (r.player_id != null) continue;
-      const k = `${r.team_id}|${String(r.type ?? "").toUpperCase()}`;
-      const list = placeholdersByTeamType.get(k) ?? [];
-      list.push(r);
-      placeholdersByTeamType.set(k, list);
-    }
-    for (const list of placeholdersByTeamType.values()) {
-      list.sort((a: any, b: any) => Number(a.id ?? 0) - Number(b.id ?? 0));
-    }
-    const placeholderCursor = new Map<string, number>();
-
-    // Nothing new to attribute → done.
-    if (rawRows.every((row) => realByKey.has(matchKey(row)))) {
+    // Nothing new → done.
+    if (rawRows.every((row) => existingByKey.has(matchKey(row)))) {
       if (isFinal) await markSyncFinal(gameId);
-      return NextResponse.json({ synced: true, updated: 0, inserted: 0 });
+      return NextResponse.json({ synced: true, inserted: 0 });
     }
 
-    // The goal count on an event box reflects the moment it happened, then stays
-    // frozen. We derive each event's tally purely from event ORDER (events arrive
-    // chronologically), counted over ALL events every sync so it never drifts.
+    // Goal tally per player, frozen at first write. Counted over ALL events in
+    // chronological order so the box never drifts as the player scores more.
     const goalCounter = new Map<number, number>();
-    const toUpdate: { id: any; patch: Record<string, unknown> }[] = [];
     const toInsert: Record<string, unknown>[] = [];
 
     for (const row of rawRows) {
@@ -204,17 +178,12 @@ export async function GET(req: Request) {
         runningGoals = next;
       }
 
-      // Already attributed in a prior sync → frozen, leave it alone.
-      if (realByKey.has(matchKey(row))) continue;
+      if (existingByKey.has(matchKey(row))) continue; // already stored → frozen
 
-      // Snapshot the player's stat line once, the moment they're attributed.
+      // Snapshot the player's stat line once, the moment the event is written.
       const snapshot = row.player_id != null ? statsMap.get(Number(row.player_id)) : undefined;
-      const playerFields: Record<string, unknown> = {
-        player_id: row.player_id,
-        player_name: row.player_name,
-        period: row.period,
-        minute: row.minute,
-        inferred: false,
+      toInsert.push({
+        ...row,
         player_fp: snapshot?.fp ?? null,
         player_foopy: snapshot?.foopy ?? null,
         player_disposals: snapshot?.disposals ?? null,
@@ -222,41 +191,19 @@ export async function GET(req: Request) {
         player_marks: snapshot?.marks ?? null,
         player_hitouts: snapshot?.hitouts ?? null,
         player_goals: runningGoals,
-      };
+      });
+    }
 
-      // Attach to a waiting Squiggle placeholder (UPDATE in place — keeps the
-      // row id and its comments/reactions). If none is waiting (e.g. the goal
-      // happened before anyone opened the match, so no placeholder was ever
-      // created), INSERT a fresh row.
-      const ttKey = `${row.team_id}|${String(row.type ?? "").toUpperCase()}`;
-      const list = placeholdersByTeamType.get(ttKey) ?? [];
-      const cursor = placeholderCursor.get(ttKey) ?? 0;
-      if (cursor < list.length) {
-        placeholderCursor.set(ttKey, cursor + 1);
-        toUpdate.push({ id: list[cursor].id, patch: playerFields });
-      } else {
-        toInsert.push({
-          api_game_id: gameId,
-          type: row.type,
-          team_id: row.team_id,
-          home_score: row.home_score,
-          away_score: row.away_score,
-          ...playerFields,
-        });
+    if (toInsert.length) {
+      const { error: insertError } = await supabase.from("live_game_feed").insert(toInsert);
+      if (insertError) {
+        console.error("[sync-events] insert error:", insertError.message);
+        return NextResponse.json({ error: insertError.message }, { status: 500 });
       }
     }
 
-    for (const u of toUpdate) {
-      const { error } = await supabase.from("live_game_feed").update(u.patch).eq("id", u.id);
-      if (error) console.error("[sync-events] update error:", error.message);
-    }
-    if (toInsert.length) {
-      const { error: insertError } = await supabase.from("live_game_feed").insert(toInsert);
-      if (insertError) console.error("[sync-events] insert error:", insertError.message);
-    }
-
     if (isFinal) await markSyncFinal(gameId);
-    return NextResponse.json({ synced: true, updated: toUpdate.length, inserted: toInsert.length });
+    return NextResponse.json({ synced: true, inserted: toInsert.length });
 
   } finally {
     inFlightSync.delete(gameId);

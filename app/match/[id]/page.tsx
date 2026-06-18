@@ -413,7 +413,6 @@ function saveSeenEventKeys(gameId: string, keys: Set<string>) {
 function eventKeyAliases(event: LiveEvent, index = 0) {
   const team = safeText((event as any).teamName || teamNameFromEvent(event), "");
   const aliases = [
-    (event as any).commentAnchor,
     (event as any).displayEventKey,
     (event as any).optimisticKey,
     eventScoreBasedKey(event),
@@ -435,17 +434,14 @@ function eventKeyAliases(event: LiveEvent, index = 0) {
 function canonicalKeyForEvent(event: LiveEvent, index = 0): string {
   const keys = eventKeyAliases(event, index);
   return (
-    // Prefer the row key (feed_{id}). sync-events now UPDATES the Squiggle
-    // placeholder in place when a player is attributed, so the row id is stable
-    // across the placeholder → real-event transition — making it the single
-    // most reliable identity for a comment/reaction. Fall back to the ordinal
-    // anchor, then score/player keys for legacy rows without a stable id.
-    keys.find((key) => key.startsWith("feed_")) ??
-    keys.find((key) => key.startsWith("anch_")) ??
-    keys.find((key) => key.startsWith("score_") && !key.endsWith("_SCORE")) ??
-    keys.find((key) => key.startsWith("score_")) ??
+    // Prefer the player-identity key (q{quarter}_m{min}_t{type}_p{playerId}) —
+    // it's stable across live→final, unlike score-based keys which only appear
+    // once the game finishes.
     keys.find((key) => /^qQ?\d.*_p\d+$/.test(key)) ??
     keys.find((key) => key.startsWith("player_")) ??
+    keys.find((key) => key.startsWith("score_") && key.endsWith("_SCORE")) ??
+    keys.find((key) => key.startsWith("score_")) ??
+    keys.find((key) => !key.startsWith("feed_")) ??
     keys[0] ?? ""
   );
 }
@@ -3708,7 +3704,6 @@ function MatchPageInner() {
   // events whose live_game_feed row doesn't have a stored snapshot yet.
   const eventStatSnapshots = useRef<Record<string, { foopy: number; disposals: number; goals: number; tackles: number; marks: number; hitouts: number }>>({});
   const initialFeedLoaded = useRef(false);
-  const lastScoreRef = useRef<{ hg: number; hb: number; ag: number; ab: number } | null>(null);
   const [freshEventKeys, setFreshEventKeys] = useState(new Set<string>());
   const [loading, setLoading] = useState(() =>
     !cachedAllGames.some((g) => String(g.id) === id)
@@ -4060,50 +4055,6 @@ function MatchPageInner() {
   })();
   const currentPeriod = Math.max(periodFromEvents, periodFromTimestr);
 
-  // Detect Squiggle score changes and instantly create a placeholder ("inferred")
-  // event server-side — Squiggle updates the score ~1 minute before the
-  // API-Sports events feed has the play, so this is what makes "MAGPIES GOAL"
-  // show up live. The placeholder carries team + type only; sync-events later
-  // swaps it for the real, player-attributed event (matched by count, see the
-  // feed-normalise effect below). We watch goals/behinds separately so a GOAL
-  // is never mistaken for a BEHIND (and rushed behinds still show as a behind).
-  useEffect(() => {
-    if (!game) return;
-    const hg = Number(game.hgoals ?? 0);
-    const hb = Number(game.hbehinds ?? 0);
-    const ag = Number(game.agoals ?? 0);
-    const ab = Number(game.abehinds ?? 0);
-
-    const prev = lastScoreRef.current;
-    lastScoreRef.current = { hg, hb, ag, ab };
-
-    // Only emit for live games we can map to API-Sports, and only on a CHANGE
-    // (prev !== null) — never on first load, so we don't replay the whole game.
-    if (!isLiveGame || !apiSportsGameId || !prev) return;
-
-    const hscore = Number(game.hscore ?? 0);
-    const ascore = Number(game.ascore ?? 0);
-    const homeTeamId = getApiTeamId(game.hteam);
-    const awayTeamId = getApiTeamId(game.ateam);
-    const period = currentPeriod > 0 ? currentPeriod : 0;
-
-    // We store the CURRENT full Squiggle totals as the event's score: identical
-    // across all clients at a given total, so the table's unique constraint
-    // dedupes concurrent inserts from many viewers into one row.
-    const post = (teamId: number, type: "GOAL" | "BEHIND") => {
-      if (!teamId) return;
-      fetch("/api/afl/score-check", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gameId: apiSportsGameId, teamId, type, hscore, ascore, period, minute: 0 }),
-      }).catch(() => {});
-    };
-
-    if (hg > prev.hg) post(homeTeamId, "GOAL");
-    if (hb > prev.hb) post(homeTeamId, "BEHIND");
-    if (ag > prev.ag) post(awayTeamId, "GOAL");
-    if (ab > prev.ab) post(awayTeamId, "BEHIND");
-  }, [game?.hgoals, game?.hbehinds, game?.agoals, game?.abehinds, game?.hscore, game?.ascore, isLiveGame, apiSportsGameId, currentPeriod, game?.hteam, game?.ateam]);
 
   useEffect(() => { gameRef.current = game; }, [game]);
 
@@ -4451,78 +4402,15 @@ function MatchPageInner() {
       return p === 1 ? "1/4 TIME" : p === 2 ? "HALF TIME" : p === 3 ? "3/4 TIME" : p === 4 ? "FULL TIME" : `Q${p} TIME`;
     }
 
-    // Inferred events (created instantly from Squiggle score changes) are
-    // placeholders shown until the matching real API-Sports event syncs in.
-    // For each team+type we hide the first `realCount` inferred events — those
-    // have been superseded by real, player-attributed events — and keep the
-    // rest: goals API-Sports hasn't published yet, and rushed behinds (which
-    // never produce a real event, so stay as a team-only "BEHIND" forever).
-    //
-    // Matching by COUNT — not score or minute — is deliberate: API-Sports
-    // events frequently arrive without per-event scores, and the placeholder's
-    // clock is unknown, so any score/time-based match would silently fail and
-    // leave duplicates. Counts always line up: N real goals cover N placeholders.
-    // Match each placeholder to a real event by running SCORE first — both rows
-    // are stamped with the same total when the goal lands — falling back to a
-    // per-team+type count only for real events that synced without a score.
-    // Score-matching is per-event, so a single missed placeholder (e.g. two
-    // goals in one Squiggle poll, or goals that happened before the page was
-    // open) can never permanently suppress later ones. The old count-only logic
-    // desynced for the rest of the game the moment real events outran inferred.
-    const scoreStr = (e: any) => {
-      const h = Number(e.home_score), a = Number(e.away_score);
-      return Number.isFinite(h) && Number.isFinite(a) ? `${h}_${a}` : null;
-    };
-    const realPools = new Map<string, { scores: Map<string, number>; noScore: number }>();
-    for (const e of rows as any[]) {
-      if (e.inferred) continue;
-      const k = `${e.team_id}|${String(e.type ?? "").toUpperCase()}`;
-      const pool = realPools.get(k) ?? { scores: new Map<string, number>(), noScore: 0 };
-      const s = scoreStr(e);
-      if (s) pool.scores.set(s, (pool.scores.get(s) ?? 0) + 1);
-      else pool.noScore += 1;
-      realPools.set(k, pool);
-    }
-
-    // Stable comment/reaction anchor: pair the Nth inferred event of a team+type
-    // with its Nth real event (the same ordinal pairing the covering uses). Real
-    // events frequently arrive WITHOUT a per-event score, so a score key can't
-    // link a placeholder to its real event — but this anchor is identical for
-    // both, so comments/reactions made on a placeholder stay attached once the
-    // real, player-attributed event loads in and the placeholder is hidden.
-    const anchorById = new Map<any, string>();
-    {
-      const seqInferred = new Map<string, number>();
-      const seqReal = new Map<string, number>();
-      for (const e of [...(rows as any[])].sort((a, b) => Number(a.id ?? 0) - Number(b.id ?? 0))) {
-        const type = String(e.type ?? "").toUpperCase();
-        const k = `${e.team_id}|${type}`;
-        const seq = e.inferred ? seqInferred : seqReal;
-        const n = (seq.get(k) ?? 0) + 1;
-        seq.set(k, n);
-        anchorById.set(e.id, `anch_${e.team_id}_${type}_${n}`);
-      }
-    }
+    const homeApiId = getApiTeamId(game.hteam);
+    const awayApiId = getApiTeamId(game.ateam);
 
     const normalised = [...(rows as any[])]
-      // Oldest first so the EARLIEST placeholders are the ones marked covered.
+      // Inferred placeholders are no longer created; ignore any legacy rows.
+      .filter((e: any) => !e.inferred)
       .sort((a, b) => Number(a.id ?? 0) - Number(b.id ?? 0))
-      .filter((e: any) => {
-        if (!e.inferred) return true;
-        const k = `${e.team_id}|${String(e.type ?? "").toUpperCase()}`;
-        const pool = realPools.get(k);
-        if (!pool) return true; // no real events yet → show the placeholder
-        const s = scoreStr(e);
-        if (s) {
-          const c = pool.scores.get(s) ?? 0;
-          if (c > 0) { pool.scores.set(s, c - 1); return false; } // exact score match → covered
-        }
-        if (pool.noScore > 0) { pool.noScore -= 1; return false; } // scoreless real → covered
-        return true; // uncovered → show (rushed behind / not-yet-synced goal)
-      })
       .map((e: any) => ({
         rowKey: e.id ? `feed_${e.id}` : undefined,
-        commentAnchor: anchorById.get(e.id),
         quarter: `Q${e.period ?? "-"}`,
         period: e.period,
         minute: e.minute,
@@ -4532,7 +4420,6 @@ function MatchPageInner() {
         playerName: e.player_name ?? null,
         homeScore: e.home_score,
         awayScore: e.away_score,
-        inferred: e.inferred ?? false,
         playerFP: e.player_fp ?? null,
         playerFoopy: e.player_foopy ?? null,
         playerDisposals: e.player_disposals ?? null,
@@ -4547,29 +4434,9 @@ function MatchPageInner() {
       return Number(a.minute ?? 0) - Number(b.minute ?? 0);
     });
 
-    const homeApiId = getApiTeamId(game.hteam);
-    const awayApiId = getApiTeamId(game.ateam);
-    let prevHome = 0, prevAway = 0;
-    const inferred = chronological.map((e: any) => {
-      const curHome = e.homeScore == null ? prevHome : Number(e.homeScore);
-      const curAway = e.awayScore == null ? prevAway : Number(e.awayScore);
-      // Trust the recorded team_id — score-check stamps the exact scoring team,
-      // and the API stamps real events. Only fall back to the score-delta guess
-      // when team_id doesn't resolve to either side of THIS match (legacy rows).
-      // The old delta-only logic misattributed because inferred events share
-      // minute 0, so they sort in an arbitrary order and the running deltas blur.
+    const withTeam = chronological.map((e: any) => {
       const tid = Number(e.teamId);
-      let teamName = "";
-      if (tid === homeApiId) teamName = game.hteam;
-      else if (tid === awayApiId) teamName = game.ateam;
-      else {
-        const homeDelta = curHome - prevHome;
-        const awayDelta = curAway - prevAway;
-        if (homeDelta > awayDelta && homeDelta > 0) teamName = game.hteam;
-        else if (awayDelta > homeDelta && awayDelta > 0) teamName = game.ateam;
-        else teamName = teamNameFromEvent(e);
-      }
-      prevHome = curHome; prevAway = curAway;
+      const teamName = tid === homeApiId ? game.hteam : tid === awayApiId ? game.ateam : teamNameFromEvent(e);
       return { ...e, teamName };
     }).filter((e: any) => eventBelongsToMatch(e, game.hteam, game.ateam));
 
@@ -4578,11 +4445,11 @@ function MatchPageInner() {
       const prev = Number(chronological[i - 1].period ?? 0);
       const curr = Number(chronological[i].period ?? 0);
       if (curr > prev && prev > 0) {
-        const lastOfPrev = [...inferred].reverse().find((event: any) => Number(event.period ?? 0) === prev);
+        const lastOfPrev = [...withTeam].reverse().find((event: any) => Number(event.period ?? 0) === prev);
         derivedBreaks.push({
           type: "QUARTER_BREAK", quarter: `Q${prev}`, period: prev, minute: 999,
           label: periodLabel(prev),
-          homeScore: lastOfPrev.homeScore ?? 0, awayScore: lastOfPrev.awayScore ?? 0,
+          homeScore: lastOfPrev?.homeScore ?? 0, awayScore: lastOfPrev?.awayScore ?? 0,
         });
       }
     }
@@ -4595,7 +4462,7 @@ function MatchPageInner() {
       : status === "FINAL" ? 4 : 0;
 
     if (breakPeriod > 0 && !derivedBreaks.some(b => b.period === breakPeriod)) {
-      const ofPeriod = inferred.filter(e => Number(e.period ?? 0) === breakPeriod);
+      const ofPeriod = withTeam.filter(e => Number(e.period ?? 0) === breakPeriod);
       const last = ofPeriod[ofPeriod.length - 1];
       derivedBreaks.push({
         type: "QUARTER_BREAK", quarter: `Q${breakPeriod}`, period: breakPeriod, minute: 999,
@@ -4605,18 +4472,9 @@ function MatchPageInner() {
       });
     }
 
-    // Inferred placeholders carry no clock (minute 0), so without this they'd
-    // sink to the bottom of their period. They're the freshest thing that just
-    // happened, so pin them to the top of their period — just below a quarter
-    // break (minute 999), above the real, timestamped events.
-    const sortMinute = (e: any) => {
-      if (e.type === "QUARTER_BREAK") return Number(e.minute ?? 0);
-      if (e.inferred) return 998;
-      return Number(e.minute ?? 0);
-    };
-    const sorted = [...inferred, ...derivedBreaks].sort((a, b) => {
+    const sorted = [...withTeam, ...derivedBreaks].sort((a, b) => {
       if (Number(a.period) !== Number(b.period)) return Number(b.period) - Number(a.period);
-      return sortMinute(b) - sortMinute(a);
+      return Number(b.minute ?? 0) - Number(a.minute ?? 0);
     });
 
     setLiveEvents(sorted);

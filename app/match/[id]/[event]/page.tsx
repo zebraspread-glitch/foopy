@@ -100,16 +100,12 @@ function eventKeyAliasesFromParams(eventKey: string, rawAliases: string | null) 
 
 function stableEventKey(keys: string[], fallback: string) {
   return (
-    // Mirror canonicalKeyForEvent() on the match feed: prefer the row key
-    // (feed_{id}) — sync-events updates the placeholder in place, so the id is
-    // stable across the placeholder → real-event transition. Then the ordinal
-    // anchor, then score-based, then the player key.
-    keys.find((key) => key.startsWith("feed_")) ??
-    keys.find((key) => key.startsWith("anch_")) ??
-    keys.find((key) => key.startsWith("score_") && !key.endsWith("_SCORE")) ??
-    keys.find((key) => key.startsWith("score_")) ??
+    // Mirror canonicalKeyForEvent() on the match feed: prefer the player key
+    // (q{quarter}_m{min}_t{type}_p{playerId}), stable across live→final.
     keys.find((key) => /^qQ?\d.*_p\d+$/.test(key)) ??
     keys.find((key) => key.startsWith("player_")) ??
+    keys.find((key) => key.startsWith("score_") && key.endsWith("_SCORE")) ??
+    keys.find((key) => key.startsWith("score_")) ??
     keys.find((key) => !key.startsWith("feed_")) ??
     fallback
   );
@@ -156,8 +152,6 @@ function EventCommentsPageInner() {
     !rawEvent.startsWith("score_") &&
     !rawEvent.startsWith("poll_") &&
     !rawEvent.startsWith("player_") &&
-    !rawEvent.startsWith("feed_") &&  // row-id key (feed_{id}) — not a player slug
-    !rawEvent.startsWith("anch_") &&  // ordinal anchor — not a player slug
     !/^qQ?\d/.test(rawEvent) // quarter events: q1_m12_t... or qQ1_m12_t...
   ) ? `player_${rawEvent}` : rawEvent;
   const aliasParam = searchParams.get("aliases");
