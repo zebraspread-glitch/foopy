@@ -2072,13 +2072,13 @@ export default function ProfilePage() {
               <span style={profileHeaderLabelStyle}>Aura</span>
             </a>
             {/* Coins */}
-            <div style={profileHeaderStatStyle}>
+            <a href="/coins" style={profileHeaderStatStyle}>
               <div style={profileHeaderIconRowStyle}>
                 <img src="/coin/coin.png" alt="" style={{ width: profileHeaderIconSize, height: profileHeaderIconSize, objectFit: "contain", flexShrink: 0 }} />
                 <span style={profileHeaderValueStyle}>{formatCoins(profile?.coins ?? 0)}</span>
               </div>
               <span style={profileHeaderLabelStyle}>Coins</span>
-            </div>
+            </a>
             {/* Foopy Tokens */}
             <a href="/tokens" style={profileHeaderStatStyle}>
               <div style={profileHeaderIconRowStyle}>

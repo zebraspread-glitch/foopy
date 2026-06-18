@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseServer } from "@/app/lib/supabase-server";
 import { AFL_TEAMS, teamsMatch, TEAM_PASS_COST, MAX_TEAM_PASSES } from "@/app/lib/passes";
 import { syncPassXpFromCards } from "@/app/lib/passCardXp";
+import { logCoinEvent } from "@/app/lib/coins";
 
 function auth(req: Request) {
   const h = req.headers.get("authorization");
@@ -86,6 +87,9 @@ export async function POST(req: Request) {
       if (deductErr) console.error("[passes/team deduct]", deductErr.message);
       return NextResponse.json({ error: "Failed to deduct coins — try again" }, { status: 500 });
     }
+
+    // Ledger entry for the coins-history page (spend; balance already deducted).
+    await logCoinEvent(user.id, "team_pass", `team_pass:${canonical}:${Date.now()}`, -TEAM_PASS_COST);
   }
 
   // Reactivate existing (inactive) pass or insert fresh one

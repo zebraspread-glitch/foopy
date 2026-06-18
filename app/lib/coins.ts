@@ -39,6 +39,29 @@ export async function awardCoins(
 }
 
 /**
+ * Record a coin movement in the ledger WITHOUT changing the balance.
+ * Use for spends (negative amount) and for gains already applied through
+ * another path (e.g. pass rewards), so the coins-history page can show
+ * both sides. `relatedId` must be unique per movement — callers append a
+ * timestamp. Failures are non-fatal: a missing ledger row must never break
+ * a purchase.
+ */
+export async function logCoinEvent(
+  userId: string,
+  eventType: string,
+  relatedId: string,
+  amount: number
+): Promise<void> {
+  if (!amount) return;
+  const { error } = await supabaseServer
+    .from("coin_events")
+    .insert({ user_id: userId, event_type: eventType, related_id: relatedId, amount });
+  if (error && error.code !== "23505") {
+    console.error("[logCoinEvent]", error.code, error.message);
+  }
+}
+
+/**
  * Credit coin rewards for aura milestones the user has newly crossed.
  * Each 1,000 aura → COINS_PER_1K; each 10,000 → an extra COINS_PER_10K_BONUS.
  * Only counts aura earned since `coin_milestone_aura` (seeded to each

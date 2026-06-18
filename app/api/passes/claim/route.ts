@@ -5,6 +5,7 @@ import { dedupePlayerPasses } from "@/app/lib/passes";
 import type { TeamPass, PlayerPass, PassReward } from "@/app/lib/passes";
 import { incrementProfileCurrency } from "@/app/lib/passRewardCredits";
 import { awardAura } from "@/app/lib/aura";
+import { logCoinEvent } from "@/app/lib/coins";
 import { syncPassXpFromCards } from "@/app/lib/passCardXp";
 
 export const dynamic = "force-dynamic";
@@ -90,6 +91,10 @@ export async function POST(req: Request) {
     const passName = (reward as any).player_name || (reward as any).team_name || reward.pass_id;
     const relatedId = `pass_reward:${reward.pass_type}:${passName}:${reward.match_id}`;
     await awardAura(user.id, "pass_reward", relatedId, reward.aura_reward);
+    // Ledger entry so the coin gain shows in coins history (balance credited below).
+    if (reward.coin_reward > 0) {
+      await logCoinEvent(user.id, "pass_reward", relatedId, reward.coin_reward);
+    }
   }
 
   // Award coins directly

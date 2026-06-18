@@ -8,6 +8,7 @@ import {
   type PlayerPass,
 } from "@/app/lib/passes";
 import { syncPassXpFromCards } from "@/app/lib/passCardXp";
+import { logCoinEvent } from "@/app/lib/coins";
 import playersRaw from "@/app/data/players.json";
 
 function auth(req: Request) {
@@ -155,6 +156,9 @@ export async function POST(req: Request) {
     console.error("[passes/player insert]", insErr.code, insErr.message);
     return NextResponse.json({ error: insErr.message }, { status: 500 });
   }
+
+  // Ledger entry for the coins-history page (spend; balance already deducted).
+  await logCoinEvent(user.id, "player_pass", `player_pass:${(data as any)?.id ?? Date.now()}`, -PLAYER_PASS_COST);
 
   try {
     await syncPassXpFromCards(user.id);

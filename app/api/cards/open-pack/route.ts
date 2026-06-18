@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { after } from "next/server";
 import { CARD_PLAYERS, getPlayerImage, pickRandom } from "@/app/data/cardPlayers";
 import { syncPassXpFromCards } from "@/app/lib/passCardXp";
+import { logCoinEvent } from "@/app/lib/coins";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -285,6 +286,8 @@ export async function POST(req: NextRequest) {
         .single();
 
       if (opening) {
+        // Ledger entry for the coins-history page (spend; balance already deducted).
+        await logCoinEvent(user.id, "pack_open", `pack:${opening.id}`, -config.cost);
         await supabaseAdmin.from("pack_opening_cards").insert(
           results.map(r => ({
             pack_opening_id: opening.id,
