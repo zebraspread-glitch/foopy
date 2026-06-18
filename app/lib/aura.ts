@@ -1,6 +1,7 @@
 // Server-only — import ONLY from API routes
 import { createClient } from "@supabase/supabase-js";
 import { supabaseServer } from "./supabase-server";
+import { creditAuraMilestones } from "./coins";
 
 const AURA_AMOUNTS: Record<string, number> = {
   comment_post:    5,
@@ -52,5 +53,16 @@ export async function awardAura(
 
   // data is true if inserted, false if deduped
   const awarded = data === true;
+
+  // Crossing a 1k/10k aura threshold pays out coins. Runs on the user
+  // whose aura just changed; non-fatal so a coin hiccup never blocks aura.
+  if (awarded) {
+    try {
+      await creditAuraMilestones(userId);
+    } catch (e) {
+      console.error("[awardAura] milestone credit failed", e instanceof Error ? e.message : e);
+    }
+  }
+
   return { awarded, amount: awarded ? amount : 0, reason: awarded ? "ok" : "dedup" };
 }

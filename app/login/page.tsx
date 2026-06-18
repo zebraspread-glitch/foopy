@@ -68,6 +68,8 @@ function LoginPageInner() {
   const [checkEmail, setCheckEmail]     = useState(false);
   const [favouriteTeam, setFavouriteTeam] = useState("");
   const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>("idle");
+  // Optional referral code at signup — it's simply the referrer's username.
+  const [referralCode, setReferralCode] = useState(() => searchParams.get("ref") ?? "");
 
   // Live username availability check (debounced) while typing in signup mode.
   useEffect(() => {
@@ -113,14 +115,25 @@ function LoginPageInner() {
     const { data: existing } = await supabase.from("profiles").select("id").eq("username", cleanUsername).maybeSingle();
     if (existing) { setError("That username is already taken — try another."); setLoading(false); return; }
 
+    // Resolve an optional referral code (= a referrer's username) to their id.
+    // A bad/empty/self code is silently ignored rather than blocking signup.
+    let referrerId: string | null = null;
+    const cleanRef = referralCode.toLowerCase().replace(/[^a-z0-9._]/g, "");
+    if (cleanRef && cleanRef !== cleanUsername) {
+      const { data: refProfile } = await supabase
+        .from("profiles").select("id").eq("username", cleanRef).maybeSingle();
+      referrerId = refProfile?.id ?? null;
+      if (!refProfile) { setError("That referral code doesn't match any user."); setLoading(false); return; }
+    }
+
     const { data, error: err } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/welcome`,
-        // Stored on the auth user so the username + team survive even when the
-        // confirmation email is opened on a different device than signup.
-        data: { pending_username: cleanUsername, pending_team: favouriteTeam },
+        // Stored on the auth user so the username + team (+ referrer) survive
+        // even when the confirmation email is opened on a different device.
+        data: { pending_username: cleanUsername, pending_team: favouriteTeam, pending_referrer: referrerId },
       },
     });
     if (err) { setError(err.message); setLoading(false); return; }
@@ -144,6 +157,9 @@ function LoginPageInner() {
         display_name: cleanUsername,
         username_updated_at: new Date().toISOString(),
         favourite_team: favouriteTeam,
+        // Write-once (enforced by the lock_referred_by trigger); pays out the
+        // referrer after this user views their first live game.
+        ...(referrerId ? { referred_by: referrerId } : {}),
       }, { onConflict: "id" });
       if (upsertErr) {
         if (upsertErr.code === "23505") {
@@ -153,11 +169,13 @@ function LoginPageInner() {
         }
         localStorage.setItem("foopy_pending_username", cleanUsername);
         if (favouriteTeam) localStorage.setItem("foopy_pending_team", favouriteTeam);
+        if (referrerId) localStorage.setItem("foopy_pending_referrer", referrerId);
       }
       router.push("/profile");
     } else {
       localStorage.setItem("foopy_pending_username", cleanUsername);
       if (favouriteTeam) localStorage.setItem("foopy_pending_team", favouriteTeam);
+      if (referrerId) localStorage.setItem("foopy_pending_referrer", referrerId);
       setCheckEmail(true);
     }
     setLoading(false);
@@ -301,6 +319,20 @@ function LoginPageInner() {
                   {favouriteTeam}
                 </div>
               )}
+            </div>
+          )}
+
+          {mode === "signup" && (
+            <div style={fieldGroup}>
+              <label style={label}>Referral code <span style={{ color: "rgba(255,255,255,0.4)", fontWeight: 500 }}>(optional)</span></label>
+              <input
+                type="text" value={referralCode} onChange={e => setReferralCode(e.target.value)}
+                placeholder="a friend's username" maxLength={20} autoComplete="off"
+                style={input}
+              />
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontWeight: 500, marginTop: 2 }}>
+                Enter the username of whoever invited you — they earn coins once you watch your first live game.
+              </div>
             </div>
           )}
 

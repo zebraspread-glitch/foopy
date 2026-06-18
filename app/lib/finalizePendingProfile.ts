@@ -18,19 +18,23 @@ type PendingUser = { id: string; user_metadata?: Record<string, unknown> | null 
 export async function finalizePendingProfile(user: PendingUser): Promise<Record<string, unknown> | null> {
   const metaUsername = (user.user_metadata?.pending_username as string) || "";
   const metaTeam     = (user.user_metadata?.pending_team as string) || "";
+  const metaReferrer = (user.user_metadata?.pending_referrer as string) || "";
 
   let lsUsername = "";
   let lsTeam = "";
+  let lsReferrer = "";
   try {
     lsUsername = localStorage.getItem("foopy_pending_username") || "";
     lsTeam     = localStorage.getItem("foopy_pending_team") || "";
+    lsReferrer = localStorage.getItem("foopy_pending_referrer") || "";
   } catch {
     /* localStorage unavailable (SSR / privacy mode) — fall back to metadata */
   }
 
   const pendingUsername = lsUsername || metaUsername;
   const pendingTeam     = lsTeam || metaTeam;
-  if (!pendingUsername && !pendingTeam) return null;
+  const pendingReferrer = lsReferrer || metaReferrer;
+  if (!pendingUsername && !pendingTeam && !pendingReferrer) return null;
 
   const { data: existing } = await supabase
     .from("profiles")
@@ -46,6 +50,11 @@ export async function finalizePendingProfile(user: PendingUser): Promise<Record<
   }
   if (pendingTeam && !existing?.favourite_team) {
     patch.favourite_team = pendingTeam;
+  }
+  // Write referrer only once, and never to self. The lock_referred_by trigger
+  // also enforces write-once server-side.
+  if (pendingReferrer && !existing?.referred_by && pendingReferrer !== user.id) {
+    patch.referred_by = pendingReferrer;
   }
 
   let row: Record<string, unknown> | null = (existing as Record<string, unknown>) ?? null;
@@ -64,11 +73,12 @@ export async function finalizePendingProfile(user: PendingUser): Promise<Record<
   try {
     localStorage.removeItem("foopy_pending_username");
     localStorage.removeItem("foopy_pending_team");
+    localStorage.removeItem("foopy_pending_referrer");
   } catch {
     /* ignore */
   }
-  if (metaUsername || metaTeam) {
-    await supabase.auth.updateUser({ data: { pending_username: null, pending_team: null } }).catch(() => {});
+  if (metaUsername || metaTeam || metaReferrer) {
+    await supabase.auth.updateUser({ data: { pending_username: null, pending_team: null, pending_referrer: null } }).catch(() => {});
   }
 
   return row;

@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import { awardAura } from "@/app/lib/aura";
+import { awardCoins } from "@/app/lib/coins";
 import { foopyRating } from "@/app/lib/foopyRating";
+
+// Coins paid to the top finishers on a match's poll leaderboard (rank 1→10),
+// ranked by total aura earned across that match's polls.
+const POLL_LEADERBOARD_TIERS = [100, 75, 50, 40, 30, 25, 20, 15, 10, 10];
 
 export const dynamic = "force-dynamic";
 
@@ -247,6 +252,8 @@ async function finalize(squiggleGameId: number | undefined) {
 
   // 5. For each poll resolve winner and award aura to all correct voters
   let totalAwarded = 0;
+  // Aura earned per user across THIS match's polls → drives the coin leaderboard.
+  const matchAuraByUser = new Map<string, number>();
 
   for (const poll of polls as PollRow[]) {
     const winner = resolveWinner(
@@ -277,6 +284,10 @@ async function finalize(squiggleGameId: number | undefined) {
       const result = await awardAura(voter.user_id, "poll_correct", `poll_${poll.id}`, auraAmount);
       if (result.awarded) {
         totalAwarded++;
+        matchAuraByUser.set(
+          voter.user_id,
+          (matchAuraByUser.get(voter.user_id) ?? 0) + auraAmount
+        );
         // Send poll_win notification (non-fatal)
         try {
           await admin.from("notifications").insert({
@@ -288,6 +299,30 @@ async function finalize(squiggleGameId: number | undefined) {
           });
         } catch { /* non-fatal */ }
       }
+    }
+  }
+
+  // 5b. Coin leaderboard: top finishers by aura earned across this match's
+  // polls get tiered coins. Deduped per match, so re-running finalize is safe.
+  const ranked = [...matchAuraByUser.entries()]
+    .filter(([, total]) => total > 0)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, POLL_LEADERBOARD_TIERS.length);
+
+  for (let i = 0; i < ranked.length; i++) {
+    const [userId] = ranked[i];
+    const coins = POLL_LEADERBOARD_TIERS[i];
+    const res = await awardCoins(userId, "poll_leaderboard", `match_${squiggleGameId}`, coins);
+    if (res.awarded) {
+      try {
+        await admin.from("notifications").insert({
+          user_id: userId,
+          type: "poll_win",
+          actor_id: null,
+          data: { poll_title: `${homeTeam} vs ${awayTeam} — poll leaderboard #${i + 1}`, coins },
+          read: false,
+        });
+      } catch { /* non-fatal */ }
     }
   }
 
@@ -316,6 +351,14 @@ async function finalize(squiggleGameId: number | undefined) {
           `winner_pick_correct:${squiggleGameId}`,
           bonusAura
         );
+        // Mirror the boldness-scaled bonus as coins (underdog pays more).
+        const bonusCoins = bonusAura; // 20 / 10 / 5
+        await awardCoins(
+          pick.voter_id,
+          "winner_pick_correct",
+          `winner_pick_correct:${squiggleGameId}`,
+          bonusCoins
+        );
         if (result.awarded) {
           totalAwarded++;
           try {
@@ -323,7 +366,7 @@ async function finalize(squiggleGameId: number | undefined) {
               user_id: pick.voter_id,
               type: "poll_win",
               actor_id: null,
-              data: { poll_title: `${homeTeam} vs ${awayTeam} — correct winner pick`, aura: bonusAura },
+              data: { poll_title: `${homeTeam} vs ${awayTeam} — correct winner pick`, aura: bonusAura, coins: bonusCoins },
               read: false,
             });
           } catch {}
