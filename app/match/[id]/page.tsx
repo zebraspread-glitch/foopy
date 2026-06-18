@@ -7655,7 +7655,6 @@ const thPlayerStyle: CSSProperties = {
   zIndex: 5,
   minWidth: 180,
   textAlign: "left",
-  boxShadow: "10px 0 18px rgba(0,0,0,0.32)",
 };
 const tdStyle: CSSProperties = { padding: "13px 10px", borderBottom: "1px solid var(--border-1)", whiteSpace: "nowrap", fontSize: 14, fontWeight: 700, fontVariantNumeric: "tabular-nums", textAlign: "center" };
 const tdPlayerStyle: CSSProperties = {
@@ -7672,7 +7671,6 @@ const tdPlayerStyle: CSSProperties = {
   color: "var(--text-1)",
   minWidth: 180,
   textAlign: "left",
-  boxShadow: "10px 0 18px rgba(0,0,0,0.32)",
 };
 // ── Compact stats-table cells (match StatTable) ──────────────────────────────
 // Tighter than the shared td/th so more stat columns fit on a phone.
@@ -7681,12 +7679,10 @@ const statCellStyle: CSSProperties = { ...tdStyle, padding: "12px 3px", fontSize
 // Sticky avatar column — narrow, always visible while scrolling the stats.
 const thAvatarStyle: CSSProperties = {
   ...thStyle, left: 0, zIndex: 5, padding: "9px 0", textAlign: "center",
-  boxShadow: "8px 0 14px rgba(0,0,0,0.38)",
 };
 const tdAvatarStyle: CSSProperties = {
   ...tdStyle, position: "sticky", left: 0, zIndex: 3, backgroundColor: "var(--surface-1)",
   padding: "8px 0", textAlign: "center",
-  boxShadow: "8px 0 14px rgba(0,0,0,0.38)",
 };
 // Surname column — sits beside the avatar at rest, scrolls under it on scroll.
 const thNameStyle: CSSProperties = { ...thStyle, left: 0, textAlign: "left", padding: "9px 6px 9px 4px" };
