@@ -5,6 +5,7 @@ import { supabase } from "@/app/lib/supabase";
 import { useSession } from "@/app/context/SessionProvider";
 import { type Cosmetic, type EquippedCosmetics, nameColorStyle, avatarFrameStyle } from "@/app/lib/cosmetics";
 import { patternBackground } from "@/app/components/PassCard";
+import { PAID_STICKERS, stickerUrl } from "@/app/lib/stickers";
 import { StoreItemSkeleton } from "@/app/components/Skeleton";
 import { getPassLevel, PLAYER_PASS_LEVELS } from "@/app/lib/passes";
 import PageHeader from "@/app/components/PageHeader";
@@ -36,6 +37,7 @@ const SECTION_TITLE: Record<string, string> = {
   chat_bubble: "Chat Bubbles",
   reaction_effect: "Reactions",
   feed_flair: "Feed Flair",
+  sticker: "Sticker Packs",
 };
 
 const SECTION_ORDER = [
@@ -44,6 +46,7 @@ const SECTION_ORDER = [
   "profile_background",
   "name_color",
   "card_back",
+  "sticker",
   "badge",
   "name_effect",
   "chat_bubble",
@@ -69,6 +72,7 @@ export default function StorePage() {
   const [activeSlot, setActiveSlot] = useState<string | null>(null);
   const [expandedSlots, setExpandedSlots] = useState<Set<string>>(new Set());
   const [mounted, setMounted] = useState(false);
+  const [confirmItem, setConfirmItem] = useState<Cosmetic | null>(null);
 
   // Cosmetics-specific data (equipped + catalog + owned). Identity, tokens and
   // auth come from the shared session provider.
@@ -90,6 +94,13 @@ export default function StorePage() {
     if (!user) { setLoading(false); return; }
     load(user.id);
   }, [sessionLoading, user, load]);
+
+  async function confirmBuy() {
+    if (!confirmItem) return;
+    const c = confirmItem;
+    await buy(c);
+    setConfirmItem(null);
+  }
 
   async function buy(c: Cosmetic) {
     if (!token || busyKey) return;
@@ -196,6 +207,14 @@ export default function StorePage() {
     const r = rarityOf(c);
     const asset = c.asset ?? "linear-gradient(135deg,#334155,#111827)";
 
+    if (c.category === "sticker") {
+      const paid = PAID_STICKERS.find(s => s.key === c.key);
+      const thumb = Math.round(size * (isFeatured ? 1.4 : 1.3));
+      return paid
+        ? <img src={stickerUrl(paid.sticker)} alt="" style={{ width: thumb, height: thumb, objectFit: "contain" }} />
+        : <div style={{ width: thumb, height: thumb, borderRadius: 12, background: asset, border: "1px solid rgba(255,255,255,0.14)" }} />;
+    }
+
     if (c.slot === "profile_frame") {
       return (
         <div
@@ -282,7 +301,7 @@ export default function StorePage() {
     const busy = busyKey === c.key;
 
     if (isOwned) {
-      if (c.slot === "card_back") return <button className="store-buy featured-owned" disabled>Owned</button>;
+      if (c.slot === "card_back" || c.category === "sticker") return <button className="store-buy featured-owned" disabled>Owned</button>;
       return (
         <button className="store-buy featured-owned" onClick={() => toggleEquip(c)} disabled={busy || !c.slot}>
           {busy ? "..." : isEquipped ? "Equipped" : "Equip"}
@@ -291,7 +310,7 @@ export default function StorePage() {
     }
 
     return (
-      <button className="store-buy" onClick={() => buy(c)} disabled={busy || !canAfford}>
+      <button className="store-buy" onClick={() => setConfirmItem(c)} disabled={busy || !canAfford}>
         {busy ? "..." : <>Buy <TokenPrice c={c} size={16} /></>}
       </button>
     );
@@ -304,7 +323,7 @@ export default function StorePage() {
     const busy = busyKey === c.key;
 
     if (isOwned) {
-      if (c.slot === "card_back") return <button className="store-card-action owned" disabled>Owned</button>;
+      if (c.slot === "card_back" || c.category === "sticker") return <button className="store-card-action owned" disabled>Owned</button>;
       return (
         <button className={`store-card-action${isEquipped ? " equipped" : ""}`} onClick={() => toggleEquip(c)} disabled={busy || !c.slot}>
           {busy ? "..." : isEquipped ? "Equipped" : "Equip"}
@@ -313,7 +332,7 @@ export default function StorePage() {
     }
 
     return (
-      <button className="store-card-action" onClick={() => buy(c)} disabled={busy || !canAfford}>
+      <button className="store-card-action" onClick={() => setConfirmItem(c)} disabled={busy || !canAfford}>
         {busy ? "..." : <TokenPrice c={c} size={15} />}
       </button>
     );
@@ -804,6 +823,102 @@ export default function StorePage() {
           text-align: center;
         }
 
+        .store-confirm-backdrop {
+          position: fixed;
+          inset: 0;
+          z-index: 400;
+          background: rgba(0,0,0,0.72);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 24px;
+        }
+
+        .store-confirm {
+          width: 100%;
+          max-width: 320px;
+          background: #0b0b0f;
+          border: 1px solid rgba(255,255,255,0.14);
+          border-radius: 20px;
+          padding: 22px 22px 18px;
+          text-align: center;
+          box-shadow: 0 30px 80px -30px rgba(0,0,0,0.9);
+        }
+
+        .store-confirm-preview {
+          min-height: 96px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 14px;
+        }
+
+        .store-confirm-name {
+          font-size: 20px;
+          font-weight: 1000;
+          letter-spacing: -0.03em;
+          color: #fff;
+        }
+
+        .store-confirm-rarity {
+          margin-top: 4px;
+          font-size: 11px;
+          font-weight: 1000;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+        }
+
+        .store-confirm-q {
+          margin-top: 16px;
+          font-size: 13px;
+          font-weight: 700;
+          color: rgba(203,213,225,0.7);
+        }
+
+        .store-confirm-price {
+          margin-top: 4px;
+          display: flex;
+          justify-content: center;
+          font-size: 22px;
+          font-weight: 1000;
+          color: #38bdf8;
+        }
+
+        .store-confirm-actions {
+          display: flex;
+          gap: 10px;
+          margin-top: 20px;
+        }
+
+        .store-confirm-cancel,
+        .store-confirm-buy {
+          flex: 1;
+          height: 46px;
+          border-radius: 13px;
+          font-size: 15px;
+          font-weight: 1000;
+          cursor: pointer;
+        }
+
+        .store-confirm-cancel {
+          border: 1px solid rgba(255,255,255,0.16);
+          background: transparent;
+          color: rgba(203,213,225,0.85);
+        }
+
+        .store-confirm-buy {
+          border: none;
+          background: linear-gradient(135deg,#fbbf24,#f59e0b);
+          color: #050506;
+          box-shadow: 0 14px 36px -22px rgba(251,191,36,0.9);
+        }
+
+        .store-confirm-buy:disabled,
+        .store-confirm-cancel:disabled {
+          opacity: 0.55;
+          cursor: not-allowed;
+        }
+
         @media (max-width: 860px) {
           .store-wrap {
             padding: 16px;
@@ -1031,6 +1146,26 @@ export default function StorePage() {
           </>
         )}
       </div>
+
+      {confirmItem && (
+        <div className="store-confirm-backdrop" onClick={() => busyKey ? null : setConfirmItem(null)}>
+          <div className="store-confirm" onClick={e => e.stopPropagation()}>
+            <div className="store-confirm-preview">
+              <Sample c={confirmItem} size={confirmItem.slot === "profile_frame" ? 88 : 54} boxWidth={150} />
+            </div>
+            <div className="store-confirm-name">{confirmItem.name}</div>
+            <div className="store-confirm-rarity" style={{ color: rarityOf(confirmItem).color }}>{rarityOf(confirmItem).label}</div>
+            <div className="store-confirm-q">Buy this for</div>
+            <div className="store-confirm-price"><TokenPrice c={confirmItem} size={20} /></div>
+            <div className="store-confirm-actions">
+              <button className="store-confirm-cancel" onClick={() => setConfirmItem(null)} disabled={!!busyKey}>Cancel</button>
+              <button className="store-confirm-buy" onClick={confirmBuy} disabled={!!busyKey || tokens < confirmItem.token_price}>
+                {busyKey ? "..." : tokens < confirmItem.token_price ? "Not enough" : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

@@ -1,9 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { createPortal } from "react-dom";
-import { STICKER_NAMES, stickerUrl, getRecentStickers, addRecentSticker } from "@/app/lib/stickers";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/app/lib/supabase";
+import { useSession } from "@/app/context/SessionProvider";
+import {
+  FREE_STICKER_NAMES,
+  PAID_STICKERS,
+  stickerUrl,
+  getRecentStickers,
+  addRecentSticker,
+  usableStickerNames,
+} from "@/app/lib/stickers";
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(true);
@@ -73,9 +83,12 @@ const emptyHintStyle: CSSProperties = {
 };
 
 export default function StickerPicker({ onPick }: { onPick: (name: string) => void }) {
+  const router = useRouter();
+  const { user } = useSession();
   const [showAll, setShowAll] = useState(false);
   const [recent, setRecent] = useState<string[]>([]);
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+  const [ownedPackKeys, setOwnedPackKeys] = useState<Set<string>>(new Set());
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -86,11 +99,53 @@ export default function StickerPicker({ onPick }: { onPick: (name: string) => vo
     setPortalTarget(document.body);
   }, []);
 
+  // Which paid packs the signed-in user owns (drives send-gating).
+  useEffect(() => {
+    if (!user) { setOwnedPackKeys(new Set()); return; }
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("user_cosmetics")
+        .select("cosmetics(key, category)")
+        .eq("user_id", user.id);
+      if (cancelled) return;
+      const keys = new Set<string>();
+      for (const row of (data ?? []) as { cosmetics: { key: string; category: string } | { key: string; category: string }[] | null }[]) {
+        // Supabase types the joined relation as an array; it's really one row.
+        const cos = Array.isArray(row.cosmetics) ? row.cosmetics[0] : row.cosmetics;
+        if (cos?.category === "sticker") keys.add(cos.key);
+      }
+      setOwnedPackKeys(keys);
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
+  const usable = useMemo(() => usableStickerNames(ownedPackKeys), [ownedPackKeys]);
+
   function pick(name: string) {
+    if (!usable.has(name)) {
+      // Locked paid sticker — send the user to the store instead of inserting.
+      setShowAll(false);
+      router.push("/store");
+      return;
+    }
     onPick(name);
     setRecent(addRecentSticker(name));
     setShowAll(false);
   }
+
+  const StickerButton = ({ name, locked }: { name: string; locked: boolean }) => (
+    <button
+      key={name}
+      type="button"
+      onClick={() => pick(name)}
+      style={{ ...gridBtnStyle, position: "relative", opacity: locked ? 0.55 : 1 }}
+      aria-label={locked ? `Buy to use sticker ${name}` : `Insert sticker ${name}`}
+    >
+      <img src={stickerUrl(name)} alt="" style={imgStyle} />
+      {locked && <span style={lockBadgeStyle}><LockIcon /></span>}
+    </button>
+  );
 
   const popup = (
     <div style={isMobile ? backdropStyleMobile : backdropStyleDesktop} onClick={() => setShowAll(false)}>
@@ -100,31 +155,42 @@ export default function StickerPicker({ onPick }: { onPick: (name: string) => vo
           <span style={{ fontSize: 15, fontWeight: 900, color: "var(--text-1)" }}>Stickers</span>
           <button onClick={() => setShowAll(false)} style={closeBtnStyle} aria-label="Close">✕</button>
         </div>
-        <div style={gridStyle}>
-          {STICKER_NAMES.map(name => (
-            <button
-              key={name}
-              type="button"
-              onClick={() => pick(name)}
-              style={gridBtnStyle}
-              aria-label={`Insert sticker ${name}`}
-            >
-              <img src={stickerUrl(name)} alt="" style={imgStyle} />
-            </button>
-          ))}
+        <div style={scrollAreaStyle}>
+          <div style={gridStyle}>
+            {FREE_STICKER_NAMES.map(name => <StickerButton key={name} name={name} locked={false} />)}
+          </div>
+
+          {PAID_STICKERS.length > 0 && (
+            <div>
+              <div style={packHeaderStyle}>
+                <span>Premium</span>
+                <button type="button" onClick={() => { setShowAll(false); router.push("/store"); }} style={packBuyBtnStyle}>
+                  Get in store
+                </button>
+              </div>
+              <div style={gridStyle}>
+                {PAID_STICKERS.map(s => (
+                  <StickerButton key={s.sticker} name={s.sticker} locked={!ownedPackKeys.has(s.key)} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 
+  // Only surface recents the user can actually send.
+  const usableRecent = recent.filter(n => usable.has(n));
+
   return (
     <>
       <div style={rowStyle}>
         <div style={scrollRowStyle}>
-          {recent.length === 0 ? (
+          {usableRecent.length === 0 ? (
             <span style={emptyHintStyle}>Tap to browse stickers →</span>
           ) : (
-            recent.map(name => (
+            usableRecent.map(name => (
               <button key={name} type="button" onClick={() => pick(name)} style={btnStyle} aria-label={`Insert sticker ${name}`}>
                 <img src={stickerUrl(name)} alt="" style={imgStyle} />
               </button>
@@ -148,6 +214,15 @@ function GridIcon() {
       <rect x="14" y="3" width="7" height="7" rx="1.5" />
       <rect x="3" y="14" width="7" height="7" rx="1.5" />
       <rect x="14" y="14" width="7" height="7" rx="1.5" />
+    </svg>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4" y="11" width="16" height="10" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
     </svg>
   );
 }
@@ -221,12 +296,40 @@ const closeBtnStyle: CSSProperties = {
   lineHeight: 1,
 };
 
+const scrollAreaStyle: CSSProperties = {
+  overflowY: "auto",
+  padding: "0 0 calc(8px + env(safe-area-inset-bottom))",
+};
+
 const gridStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fill, minmax(56px, 1fr))",
   gap: 10,
-  padding: "14px 16px calc(16px + env(safe-area-inset-bottom))",
-  overflowY: "auto",
+  padding: "14px 16px",
+};
+
+const packHeaderStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 10,
+  padding: "8px 16px 0",
+  fontSize: 13,
+  fontWeight: 900,
+  color: "var(--text-2)",
+  borderTop: "1px solid var(--border-1)",
+  marginTop: 6,
+};
+
+const packBuyBtnStyle: CSSProperties = {
+  border: "none",
+  borderRadius: 999,
+  background: "var(--blue)",
+  color: "#fff",
+  fontSize: 12,
+  fontWeight: 800,
+  padding: "5px 12px",
+  cursor: "pointer",
 };
 
 const gridBtnStyle: CSSProperties = {
@@ -238,4 +341,18 @@ const gridBtnStyle: CSSProperties = {
   background: "var(--surface-2)",
   cursor: "pointer",
   overflow: "hidden",
+};
+
+const lockBadgeStyle: CSSProperties = {
+  position: "absolute",
+  right: 3,
+  bottom: 3,
+  width: 20,
+  height: 20,
+  borderRadius: "50%",
+  background: "rgba(0,0,0,0.72)",
+  color: "#fff",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
 };

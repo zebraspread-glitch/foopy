@@ -4,7 +4,7 @@
 
 import type { CSSProperties } from "react";
 
-export type CosmeticCategory = "profile" | "card" | "app" | "social";
+export type CosmeticCategory = "profile" | "card" | "app" | "social" | "sticker";
 export type CosmeticRarity = "common" | "rare" | "epic" | "legendary";
 
 // Equip slots — one active cosmetic per slot at a time. A catalog item with a
