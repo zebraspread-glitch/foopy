@@ -34,6 +34,11 @@ import {
   isValidReactionEmoji,
 } from "@/app/lib/eventReactions";
 import { loadEmojiCategories, isEmojiRenderable, type EmojiCategory } from "@/app/lib/emojiCategories";
+import {
+  QUARTER_SCORE_DISPLAY_KEY,
+  normalizeQuarterScoreDisplay,
+  type QuarterScoreDisplayMode,
+} from "@/app/lib/quarterScoreDisplay";
 
 import type {
   TabKey,
@@ -1060,21 +1065,45 @@ function toTeamSlug(name: string): string {
   return overrides[name] ?? name.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
+type QuarterScore = { goals: number; behinds: number; total: number };
+type QuarterScoreSet = { home: (QuarterScore | null)[]; away: (QuarterScore | null)[] };
+
+function quarterScoreDelta(current: QuarterScore, previous: QuarterScore | null | undefined): QuarterScore {
+  const prev = previous ?? { goals: 0, behinds: 0, total: 0 };
+  return {
+    goals: Math.max(0, current.goals - prev.goals),
+    behinds: Math.max(0, current.behinds - prev.behinds),
+    total: Math.max(0, current.total - prev.total),
+  };
+}
+
+function formatQuarterScore(
+  current: QuarterScore,
+  previous: QuarterScore | null | undefined,
+  displayMode: QuarterScoreDisplayMode,
+) {
+  const score = displayMode === "total" ? current : quarterScoreDelta(current, previous);
+  return displayMode === "quarterGb" ? `${score.goals}.${score.behinds}` : String(score.total);
+}
+
 function QuarterScoresTable({
-  quarterScores, hteam, ateam, currentPeriod, isLoading,
+  quarterScores, hteam, ateam, currentPeriod, isLoading, displayMode = "total",
 }: {
-  quarterScores: { home: ({ goals: number; behinds: number; total: number } | null)[]; away: ({ goals: number; behinds: number; total: number } | null)[] } | null;
+  quarterScores: QuarterScoreSet | null;
   hteam: string;
   ateam: string;
   currentPeriod: number;
   isLoading?: boolean;
+  displayMode?: QuarterScoreDisplayMode;
 }) {
   const labels = ["Q1", "Q2", "Q3", "Q4"];
 
   const cols = labels.map((lbl, i) => ({
     lbl,
     home: quarterScores?.home[i] ?? null,
+    homePrev: i > 0 ? quarterScores?.home[i - 1] ?? null : null,
     away: quarterScores?.away[i] ?? null,
+    awayPrev: i > 0 ? quarterScores?.away[i - 1] ?? null : null,
   }));
 
   const placeholder = (
@@ -1114,7 +1143,7 @@ function QuarterScoresTable({
           <div key={i} style={{ textAlign: "center", padding: "12px 6px", borderBottom: sep, borderLeft: sep }}>
             {c.home
               ? <span style={{ fontWeight: 800, fontSize: 17, color: "var(--text-1)", letterSpacing: "-0.02em" }}>
-                  {c.home.total}
+                  {formatQuarterScore(c.home, c.homePrev, displayMode)}
                 </span>
               : isLoading
                 ? placeholder
@@ -1133,7 +1162,7 @@ function QuarterScoresTable({
           <div key={i} style={{ textAlign: "center", padding: "12px 6px", borderLeft: sep }}>
             {c.away
               ? <span style={{ fontWeight: 800, fontSize: 17, color: "var(--text-1)", letterSpacing: "-0.02em" }}>
-                  {c.away.total}
+                  {formatQuarterScore(c.away, c.awayPrev, displayMode)}
                 </span>
               : isLoading
                 ? placeholder
@@ -3841,11 +3870,29 @@ function MatchPageInner() {
     away: ({ goals: number; behinds: number; total: number } | null)[];
   } | null>(null);
   const [quarterScoresLoading, setQuarterScoresLoading] = useState(true);
+  const [quarterScoreDisplayMode, setQuarterScoreDisplayMode] = useState<QuarterScoreDisplayMode>("total");
 
   const apiSportsGameId = useMemo(() => {
     const mapped = (API_SPORTS_MATCH_IDS as Record<string, any>)[id];
     return String(mapped || getApiSportsGameId(savedMatch, id));
   }, [savedMatch, id]);
+
+  useEffect(() => {
+    const read = () => {
+      try {
+        setQuarterScoreDisplayMode(normalizeQuarterScoreDisplay(localStorage.getItem(QUARTER_SCORE_DISPLAY_KEY)));
+      } catch {
+        setQuarterScoreDisplayMode("total");
+      }
+    };
+    read();
+    window.addEventListener("foopy-settings-changed", read);
+    window.addEventListener("storage", read);
+    return () => {
+      window.removeEventListener("foopy-settings-changed", read);
+      window.removeEventListener("storage", read);
+    };
+  }, []);
 
   useEffect(() => {
     if (activeTab !== "game") return;
@@ -5456,6 +5503,7 @@ function MatchPageInner() {
               hteam={game.hteam}
               ateam={game.ateam}
               currentPeriod={currentPeriod}
+              displayMode={quarterScoreDisplayMode}
             />
 
             <div style={gameHeaderStyle}>
