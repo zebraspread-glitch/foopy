@@ -145,134 +145,118 @@ export async function GET(req: Request) {
       .select("id, period, minute, type, team_id, player_id, home_score, away_score, inferred, player_fp, player_foopy, player_disposals, player_goals, player_tackles, player_marks, player_hitouts")
       .eq("api_game_id", gameId);
 
-    const realExisting = (existing ?? []).filter((r: any) => !r.inferred);
-    const existingSnapshotMap = new Map<string, Partial<PlayerSnapshot>>(
-      realExisting.map((r: any) => [key(r), {
-        // Everything on an event box is frozen at first write and read back here
-        // on later syncs so the stored values are reused verbatim, never changed.
-        fp: r.player_fp ?? null,
-        foopy: r.player_foopy ?? null,
-        disposals: r.player_disposals ?? null,
-        goals: r.player_goals ?? null,
-        tackles: r.player_tackles ?? null,
-        marks: r.player_marks ?? null,
-        hitouts: r.player_hitouts ?? null,
-      }])
-    );
-
-    const apiKeys = new Set(rawRows.map(key));
-    if (
-      realExisting.length === rawRows.length &&
-      realExisting.every((r: any) => apiKeys.has(key(r)))
-    ) {
-      if (isFinal) await markSyncFinal(gameId);
-      return NextResponse.json({ synced: true, inserted: 0 });
-    }
-
     const statsMap = await statsMapPromise;
 
-    // The goal count on an event box must reflect the moment the event happened
-    // and then stay frozen: Jasper's FIRST goal box must always read "1 GOAL",
-    // even after he kicks his second. So we derive each event's goal tally
-    // purely from event ORDER — events arrive chronologically, so the Nth GOAL
-    // event for a player is that player's Nth goal. This count is identical on
-    // every sync, so the box never drifts.
-    //
-    // We deliberately do NOT fold in the player's cumulative goal total from the
-    // games/statistics/players snapshot. That total reflects *now*: if the first
-    // goal's row is first synced after the second goal is already on the board
-    // (the events feed and the stats snapshot can both lag), the cumulative total
-    // is 2 and the first goal box would wrongly read "2 GOALS".
+    // Score-independent identity for a player-attributed (real) event. We KEEP
+    // each placeholder's Squiggle scores rather than overwrite them, so the
+    // per-event scores can't be used for matching across syncs — but period /
+    // minute / type / team / player are stable.
+    const matchKey = (r: any) =>
+      `${r.period}|${r.minute}|${r.type}|${r.team_id}|${r.player_id}`;
+
+    // Rows already attributed to a player. Everything on these is frozen at
+    // first write, so we leave them completely untouched on later syncs.
+    const realByKey = new Map<string, any>();
+    for (const r of existing ?? []) {
+      if (r.player_id != null) realByKey.set(matchKey(r), r);
+    }
+
+    // Squiggle-created placeholders still awaiting a player, grouped by
+    // team+type, oldest first. API-Sports UPDATES one of these in place (keeping
+    // its row id) when the matching play arrives, instead of inserting a
+    // parallel row — so comments/reactions made on the placeholder ride along
+    // onto the now player-attributed event.
+    const placeholdersByTeamType = new Map<string, any[]>();
+    for (const r of existing ?? []) {
+      if (r.player_id != null) continue;
+      const k = `${r.team_id}|${String(r.type ?? "").toUpperCase()}`;
+      const list = placeholdersByTeamType.get(k) ?? [];
+      list.push(r);
+      placeholdersByTeamType.set(k, list);
+    }
+    for (const list of placeholdersByTeamType.values()) {
+      list.sort((a: any, b: any) => Number(a.id ?? 0) - Number(b.id ?? 0));
+    }
+    const placeholderCursor = new Map<string, number>();
+
+    // Nothing new to attribute → done.
+    if (rawRows.every((row) => realByKey.has(matchKey(row)))) {
+      if (isFinal) await markSyncFinal(gameId);
+      return NextResponse.json({ synced: true, updated: 0, inserted: 0 });
+    }
+
+    // The goal count on an event box reflects the moment it happened, then stays
+    // frozen. We derive each event's tally purely from event ORDER (events arrive
+    // chronologically), counted over ALL events every sync so it never drifts.
     const goalCounter = new Map<number, number>();
+    const toUpdate: { id: any; patch: Record<string, unknown> }[] = [];
+    const toInsert: Record<string, unknown>[] = [];
 
-    const apiRows = rawRows.map((row) => {
-      const k = key(row);
-      const stored = existingSnapshotMap.get(k);
-      const isNew = !existingSnapshotMap.has(k);
-      const snapshot = row.player_id != null ? statsMap.get(Number(row.player_id)) : undefined;
-
+    for (const row of rawRows) {
       let runningGoals: number | null = null;
       if (row.player_id != null) {
         const pid = Number(row.player_id);
         const prev = goalCounter.get(pid) ?? 0;
-        // The events API reports types lower-case ("goal"/"behind"), so we must
-        // normalise before counting — a raw === "GOAL" never matches and the
-        // tally would stay stuck at 0, showing every goal box as "0 GOALS".
+        // The events API reports types lower-case ("goal"/"behind").
         const isGoal = String(row.type ?? "").toUpperCase() === "GOAL";
         const next = isGoal ? prev + 1 : prev;
         goalCounter.set(pid, next);
         runningGoals = next;
       }
 
-      return {
-        ...row,
-        // FP / foopy / disposals are snapshotted once, when the event is first
-        // seen, then frozen (existing rows keep their stored value) so the box
-        // never changes as the player accumulates more during the game.
-        player_fp: isNew ? (snapshot?.fp ?? null) : (stored?.fp ?? null),
-        player_foopy: isNew ? (snapshot?.foopy ?? null) : (stored?.foopy ?? null),
-        player_disposals: isNew ? (snapshot?.disposals ?? null) : (stored?.disposals ?? null),
-        // Tackles / marks / hitouts are snapshotted and frozen the same way, so
-        // the box can show whichever the player had most of at the time (T/M/HO).
-        player_tackles: isNew ? (snapshot?.tackles ?? null) : (stored?.tackles ?? null),
-        player_marks: isNew ? (snapshot?.marks ?? null) : (stored?.marks ?? null),
-        player_hitouts: isNew ? (snapshot?.hitouts ?? null) : (stored?.hitouts ?? null),
-        // A new row records the event-order tally at the moment it's scored;
-        // existing rows keep their stored value untouched, so the count is frozen
-        // for good and the box can never change. (A legacy row with no stored
-        // count falls back to the deterministic tally to backfill it once.)
-        player_goals: isNew ? runningGoals : (stored?.goals ?? runningGoals),
+      // Already attributed in a prior sync → frozen, leave it alone.
+      if (realByKey.has(matchKey(row))) continue;
+
+      // Snapshot the player's stat line once, the moment they're attributed.
+      const snapshot = row.player_id != null ? statsMap.get(Number(row.player_id)) : undefined;
+      const playerFields: Record<string, unknown> = {
+        player_id: row.player_id,
+        player_name: row.player_name,
+        period: row.period,
+        minute: row.minute,
+        inferred: false,
+        player_fp: snapshot?.fp ?? null,
+        player_foopy: snapshot?.foopy ?? null,
+        player_disposals: snapshot?.disposals ?? null,
+        player_tackles: snapshot?.tackles ?? null,
+        player_marks: snapshot?.marks ?? null,
+        player_hitouts: snapshot?.hitouts ?? null,
+        player_goals: runningGoals,
       };
-    });
 
-    // Insert the fresh rows first, then delete the old ones — if the insert
-    // fails (e.g. schema mismatch), the existing rows are left intact instead
-    // of being wiped out.
-    const { error: insertError } = await supabase.from("live_game_feed").insert(apiRows);
-
-    if (insertError) {
-      console.error("[sync-events] insert error:", insertError.message);
-      return NextResponse.json({ error: insertError.message }, { status: 500 });
+      // Attach to a waiting Squiggle placeholder (UPDATE in place — keeps the
+      // row id and its comments/reactions). If none is waiting (e.g. the goal
+      // happened before anyone opened the match, so no placeholder was ever
+      // created), INSERT a fresh row.
+      const ttKey = `${row.team_id}|${String(row.type ?? "").toUpperCase()}`;
+      const list = placeholdersByTeamType.get(ttKey) ?? [];
+      const cursor = placeholderCursor.get(ttKey) ?? 0;
+      if (cursor < list.length) {
+        placeholderCursor.set(ttKey, cursor + 1);
+        toUpdate.push({ id: list[cursor].id, patch: playerFields });
+      } else {
+        toInsert.push({
+          api_game_id: gameId,
+          type: row.type,
+          team_id: row.team_id,
+          home_score: row.home_score,
+          away_score: row.away_score,
+          ...playerFields,
+        });
+      }
     }
 
-    // Real rows are always replaced by the freshly-inserted apiRows. Inferred
-    // rows are placeholders created instantly from Squiggle score changes:
-    // delete only the ones now COVERED by a real event (the first realCount per
-    // team+type, oldest first) and keep the rest, so not-yet-synced goals and
-    // rushed behinds (which never get a real event) survive. This mirrors the
-    // count-based matching the client uses to display the feed.
-    const realCountByKey = new Map<string, number>();
-    for (const r of apiRows) {
-      const k = `${r.team_id}|${String(r.type ?? "").toUpperCase()}`;
-      realCountByKey.set(k, (realCountByKey.get(k) ?? 0) + 1);
+    for (const u of toUpdate) {
+      const { error } = await supabase.from("live_game_feed").update(u.patch).eq("id", u.id);
+      if (error) console.error("[sync-events] update error:", error.message);
     }
-
-    const inferredByKey = new Map<string, any[]>();
-    const oldRealIds: any[] = [];
-    for (const r of existing ?? []) {
-      if (r.id == null) continue;
-      if (!r.inferred) { oldRealIds.push(r.id); continue; }
-      const k = `${r.team_id}|${String(r.type ?? "").toUpperCase()}`;
-      const list = inferredByKey.get(k) ?? [];
-      list.push(r);
-      inferredByKey.set(k, list);
-    }
-
-    const coveredInferredIds: any[] = [];
-    for (const [k, list] of inferredByKey) {
-      list.sort((a: any, b: any) => Number(a.id ?? 0) - Number(b.id ?? 0));
-      const cover = Math.min(realCountByKey.get(k) ?? 0, list.length);
-      for (let i = 0; i < cover; i++) coveredInferredIds.push(list[i].id);
-    }
-
-    const oldIds = [...oldRealIds, ...coveredInferredIds];
-    if (oldIds.length) {
-      const { error: deleteError } = await supabase.from("live_game_feed").delete().in("id", oldIds);
-      if (deleteError) console.error("[sync-events] delete error:", deleteError.message);
+    if (toInsert.length) {
+      const { error: insertError } = await supabase.from("live_game_feed").insert(toInsert);
+      if (insertError) console.error("[sync-events] insert error:", insertError.message);
     }
 
     if (isFinal) await markSyncFinal(gameId);
-    return NextResponse.json({ synced: true, replaced: true, total: apiRows.length });
+    return NextResponse.json({ synced: true, updated: toUpdate.length, inserted: toInsert.length });
 
   } finally {
     inFlightSync.delete(gameId);

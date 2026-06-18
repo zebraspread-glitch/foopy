@@ -435,17 +435,17 @@ function eventKeyAliases(event: LiveEvent, index = 0) {
 function canonicalKeyForEvent(event: LiveEvent, index = 0): string {
   const keys = eventKeyAliases(event, index);
   return (
-    // Prefer the ordinal anchor (anch_{teamId}_{TYPE}_{n}) — it's identical for
-    // an inferred placeholder and the real player event that covers it, even
-    // when the real event has no score, so comments/reactions made before a
-    // player is assigned stay attached. Then the score-based identity, then the
-    // player key for non-scoring events (which always already have a player).
+    // Prefer the row key (feed_{id}). sync-events now UPDATES the Squiggle
+    // placeholder in place when a player is attributed, so the row id is stable
+    // across the placeholder → real-event transition — making it the single
+    // most reliable identity for a comment/reaction. Fall back to the ordinal
+    // anchor, then score/player keys for legacy rows without a stable id.
+    keys.find((key) => key.startsWith("feed_")) ??
     keys.find((key) => key.startsWith("anch_")) ??
     keys.find((key) => key.startsWith("score_") && !key.endsWith("_SCORE")) ??
     keys.find((key) => key.startsWith("score_")) ??
     keys.find((key) => /^qQ?\d.*_p\d+$/.test(key)) ??
     keys.find((key) => key.startsWith("player_")) ??
-    keys.find((key) => !key.startsWith("feed_")) ??
     keys[0] ?? ""
   );
 }
