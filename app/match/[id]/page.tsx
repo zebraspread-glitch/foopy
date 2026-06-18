@@ -2019,13 +2019,14 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
       ? { backgroundColor: "var(--bg)", backgroundImage: "linear-gradient(rgba(255,255,255,0.045), rgba(255,255,255,0.045))" }
       : {};
   }
+  const tableHeaderTop = stickyTop > 0 ? `calc(var(--round-strip-h, 0px) + ${stickyTop}px)` : 0;
 
   function sortHeader(label: string, key: SortKey, extraStyle?: CSSProperties) {
     const active = sortKey === key;
     return (
       <th
         key={key}
-        style={{ ...statHeadStyle, top: 0, ...sortHeaderColStyle(key), ...extraStyle, color: active ? "#0ea5e9" : "#9ca3af", cursor: "pointer" }}
+        style={{ ...statHeadStyle, top: tableHeaderTop, ...sortHeaderColStyle(key), ...extraStyle, color: active ? "#0ea5e9" : "#9ca3af", cursor: "pointer" }}
         onClick={() => {
           if (onSort) { onSort(key); return; }
           if (sortKey === key) setSortDirLocal(sortDir === "desc" ? "asc" : "desc");
@@ -2053,7 +2054,7 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
   return (
     <div>
 
-      <div ref={axisLockedScrollRef} style={{ ...tableWrapStyle, maxHeight: `calc(100dvh - ${stickyTop}px)`, overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}>
+      <div ref={axisLockedScrollRef} style={{ ...tableWrapStyle, WebkitOverflowScrolling: "touch", overscrollBehaviorX: "contain" }}>
         <table style={{ ...tableStyle, minWidth: AVATAR_COL_W + NAME_COL_W + activeCols.reduce((w, c) => w + c.width, 0), tableLayout: "fixed" }}>
           <colgroup>
             <col style={{ width: AVATAR_COL_W }} />{/* avatar (sticky) */}
@@ -2074,11 +2075,11 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
                   <>
                     {/* Sticky avatar column — always visible while scrolling stats.
                         Sorts by foopy (the rating lives on the avatar badge). */}
-                    <th style={{ ...thAvatarStyle, top: 0, ...sortHeaderColStyle("foopy"), cursor: "pointer" }} onClick={sortFoopy} aria-label="Sort by Foopy rating">
+                    <th style={{ ...thAvatarStyle, top: tableHeaderTop, ...sortHeaderColStyle("foopy"), cursor: "pointer" }} onClick={sortFoopy} aria-label="Sort by Foopy rating">
                       <span style={{ color: sortKey === "foopy" ? "#0ea5e9" : "var(--text-4)" }}>✦{foopyArrow}</span>
                     </th>
                     {/* Surname — scrolls away under the avatar. */}
-                    <th style={{ ...thNameStyle, top: 0, ...sortHeaderColStyle("foopy"), cursor: "pointer" }} onClick={sortFoopy}>
+                    <th style={{ ...thNameStyle, top: tableHeaderTop, ...sortHeaderColStyle("foopy"), cursor: "pointer" }} onClick={sortFoopy}>
                       Player
                     </th>
                   </>
