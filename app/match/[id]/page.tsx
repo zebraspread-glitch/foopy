@@ -1082,8 +1082,12 @@ function formatQuarterScore(
   previous: QuarterScore | null | undefined,
   displayMode: QuarterScoreDisplayMode,
 ) {
-  const score = displayMode === "total" ? current : quarterScoreDelta(current, previous);
-  return displayMode === "quarterGb" ? `${score.goals}.${score.behinds}` : String(score.total);
+  const score = displayMode === "total" || displayMode === "totalGb"
+    ? current
+    : quarterScoreDelta(current, previous);
+  return displayMode === "totalGb" || displayMode === "quarterGb"
+    ? `${score.goals}.${score.behinds}`
+    : String(score.total);
 }
 
 function QuarterScoresTable({

@@ -1,4 +1,4 @@
-export type QuarterScoreDisplayMode = "total" | "quarterPoints" | "quarterGb";
+export type QuarterScoreDisplayMode = "total" | "totalGb" | "quarterPoints" | "quarterGb";
 
 export const QUARTER_SCORE_DISPLAY_KEY = "foopy_quarter_score_display";
 
@@ -8,6 +8,7 @@ export const QUARTER_SCORE_DISPLAY_OPTIONS: ReadonlyArray<{
   summary: string;
 }> = [
   { value: "total", label: "Total score", summary: "Score at end of quarter" },
+  { value: "totalGb", label: "Total G.B", summary: "Goals.behinds at end of quarter" },
   { value: "quarterPoints", label: "Quarter points", summary: "Points scored that quarter" },
   { value: "quarterGb", label: "Quarter G.B", summary: "Goals.behinds scored that quarter" },
 ];
