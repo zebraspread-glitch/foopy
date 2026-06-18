@@ -434,10 +434,18 @@ function eventKeyAliases(event: LiveEvent, index = 0) {
 function canonicalKeyForEvent(event: LiveEvent, index = 0): string {
   const keys = eventKeyAliases(event, index);
   return (
+    // Prefer the score-based identity (score_{team}_{home}_{away}_{TYPE}) for
+    // scoring events. An inferred placeholder ("Fremantle GOAL", no player yet)
+    // and the real player event ("Jack Martin GOAL") that later covers it are
+    // SEPARATE rows, but both are stamped with the same running score — so this
+    // is the only key that's identical across the transition. Keying on it means
+    // comments/reactions made before a player is assigned stay attached once the
+    // real event arrives. Falls back to the player key when no score is present
+    // (e.g. non-scoring events, which always already have a player).
+    keys.find((key) => key.startsWith("score_") && !key.endsWith("_SCORE")) ??
+    keys.find((key) => key.startsWith("score_")) ??
     keys.find((key) => /^qQ?\d.*_p\d+$/.test(key)) ??
     keys.find((key) => key.startsWith("player_")) ??
-    keys.find((key) => key.startsWith("score_") && key.endsWith("_SCORE")) ??
-    keys.find((key) => key.startsWith("score_")) ??
     keys.find((key) => !key.startsWith("feed_")) ??
     keys[0] ?? ""
   );
@@ -1437,8 +1445,6 @@ function LiveFeedPlayer({
               name={playerName}
               team={team}
               size={56}
-              rating={playerFoopy}
-              ratingColor={playerFoopy != null ? foopyColor(playerFoopy) : undefined}
             />
           )}
 

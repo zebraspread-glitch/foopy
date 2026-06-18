@@ -100,12 +100,15 @@ function eventKeyAliasesFromParams(eventKey: string, rawAliases: string | null) 
 
 function stableEventKey(keys: string[], fallback: string) {
   return (
-    // Prefer the stable player-identity key (q{quarter}_m{min}_t{type}_p{id}) —
-    // it doesn't change when the game goes final, unlike score-based keys.
+    // Mirror canonicalKeyForEvent() on the match feed: prefer the score-based
+    // identity so an inferred placeholder and the real player event that covers
+    // it (separate rows, same running score) resolve to the SAME key — keeping
+    // comments/reactions attached when a player is assigned. Falls back to the
+    // player key for non-scoring events.
+    keys.find((key) => key.startsWith("score_") && !key.endsWith("_SCORE")) ??
+    keys.find((key) => key.startsWith("score_")) ??
     keys.find((key) => /^qQ?\d.*_p\d+$/.test(key)) ??
     keys.find((key) => key.startsWith("player_")) ??
-    keys.find((key) => key.startsWith("score_") && key.endsWith("_SCORE")) ??
-    keys.find((key) => key.startsWith("score_")) ??
     keys.find((key) => !key.startsWith("feed_")) ??
     fallback
   );
