@@ -23,8 +23,6 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "No valid fields" }, { status: 400 });
   }
 
-  console.log(`[profile PATCH] user=${user.id} fields=${Object.keys(updates).join(",")}`);
-
   const { error } = await supabaseServer
     .from("profiles")
     .update(updates)
@@ -35,6 +33,5 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  console.log(`[profile PATCH] saved ok`);
   return NextResponse.json({ ok: true });
 }

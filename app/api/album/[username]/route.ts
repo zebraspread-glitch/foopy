@@ -48,7 +48,6 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ use
   }
 
   if (!profile) {
-    console.log("No profile found for username:", username);
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 

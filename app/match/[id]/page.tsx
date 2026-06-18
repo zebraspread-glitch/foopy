@@ -4694,10 +4694,9 @@ function MatchPageInner() {
     // Fire when Squiggle marks LIVE, OR when the game is clearly in progress
     // (currentPeriod > 0 means timestr shows a quarter/half) but complete=0 hasn't updated yet
     const isGameLive = status === "LIVE" || (status !== "FINAL" && currentPeriod > 0);
-    if (!isGameLive) { console.log("[aura] skipped — status:", status, "period:", currentPeriod); return; }
+    if (!isGameLive) return;
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session) { console.log("[aura] skipped — no session"); return; }
-      console.log("[aura] calling award for live_game_view, matchId:", id);
+      if (!session) return;
       const res = await fetch("/api/aura/award", {
         method: "POST",
         headers: {
@@ -4707,7 +4706,6 @@ function MatchPageInner() {
         body: JSON.stringify({ event_type: "live_game_view", related_id: String(id) }),
       });
       const data = await res.json();
-      console.log("[aura] response:", res.status, data);
       if (res.ok && data.awarded) auraToastEmitter.emit(10, "viewing a live game");
     });
   }, [id, mounted, status, currentPeriod]);

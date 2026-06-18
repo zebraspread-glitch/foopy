@@ -68,6 +68,8 @@ function LoginPageInner() {
   const [checkEmail, setCheckEmail]     = useState(false);
   const [favouriteTeam, setFavouriteTeam] = useState("");
   const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>("idle");
+  // Required EULA acceptance at signup (App Store Guideline 1.2 for UGC apps).
+  const [agreed, setAgreed] = useState(false);
   // Optional referral code at signup — it's simply the referrer's username.
   const [referralCode, setReferralCode] = useState(() => searchParams.get("ref") ?? "");
 
@@ -110,6 +112,10 @@ function LoginPageInner() {
     }
     if (!favouriteTeam) {
       setError("Please pick your team.");
+      setLoading(false); return;
+    }
+    if (!agreed) {
+      setError("Please agree to the Terms of Service and Privacy Policy to continue.");
       setLoading(false); return;
     }
     const { data: existing } = await supabase.from("profiles").select("id").eq("username", cleanUsername).maybeSingle();
@@ -181,10 +187,10 @@ function LoginPageInner() {
     setLoading(false);
   }
 
-  function switchMode(m: Mode) { setMode(m); setError(""); setUsername(""); setFavouriteTeam(""); }
+  function switchMode(m: Mode) { setMode(m); setError(""); setUsername(""); setFavouriteTeam(""); setAgreed(false); }
 
   const signupBlocked = mode === "signup" &&
-    (usernameStatus === "taken" || usernameStatus === "checking" || usernameStatus === "short");
+    (usernameStatus === "taken" || usernameStatus === "checking" || usernameStatus === "short" || !agreed);
 
   if (checkEmail) {
     return (
@@ -334,6 +340,24 @@ function LoginPageInner() {
                 Enter the username of whoever invited you — they earn coins once you watch your first live game.
               </div>
             </div>
+          )}
+
+          {mode === "signup" && (
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer", marginTop: 2 }}>
+              <input
+                type="checkbox"
+                checked={agreed}
+                onChange={e => setAgreed(e.target.checked)}
+                style={{ width: 18, height: 18, marginTop: 1, flexShrink: 0, accentColor: "#5865f2", cursor: "pointer" }}
+              />
+              <span style={{ fontSize: 12.5, color: "rgba(255,255,255,0.55)", fontWeight: 500, lineHeight: 1.5 }}>
+                I agree to the{" "}
+                <a href="/terms" target="_blank" style={{ color: "#5865f2", fontWeight: 600 }}>Terms of Service</a>{" "}
+                and{" "}
+                <a href="/privacy" target="_blank" style={{ color: "#5865f2", fontWeight: 600 }}>Privacy Policy</a>,
+                and understand Foopy has zero tolerance for objectionable content or abusive behaviour.
+              </span>
+            </label>
           )}
 
           {error && (

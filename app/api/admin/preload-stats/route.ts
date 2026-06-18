@@ -6,13 +6,18 @@ const FOOTYWIRE_MATCH_IDS: Record<string, string> = {};
 
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(req: Request) {
+  // ── Auth — admin only ──────────────────────────────────────────────────────
+  const secret = process.env.ADMIN_SECRET;
+  const auth   = req.headers.get("x-admin-secret");
+  if (!secret || auth !== secret) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const results: any[] = [];
 
     for (const [squiggleId, fwId] of Object.entries(FOOTYWIRE_MATCH_IDS)) {
-      console.log(`Checking game ${squiggleId}`);
-
       // 1. check if already saved
       const { data: existing } = await supabase
         .from("match_stats")

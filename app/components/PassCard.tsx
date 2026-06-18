@@ -84,7 +84,7 @@ const PASS_PATTERNS: Record<string, (level: PassLevelInfo) => string> = {
   grid: (level) =>
     `repeating-linear-gradient(0deg, ${level.color}26 0px, ${level.color}26 1px, transparent 1px, transparent 18px), repeating-linear-gradient(90deg, ${level.color}26 0px, ${level.color}26 1px, transparent 1px, transparent 18px), ${level.gradient}`,
   waves: (level) =>
-    `radial-gradient(ellipse 60% 40% at 20% 25%, ${level.color}3a, transparent 60%), radial-gradient(ellipse 70% 50% at 80% 75%, ${level.darkColor}80, transparent 60%), ${level.gradient}`,
+    `radial-gradient(circle at 50% 120%, transparent 36%, ${level.color}40 37%, ${level.color}40 41%, transparent 42%) 0 0/30px 15px, radial-gradient(ellipse 70% 50% at 80% 75%, ${level.darkColor}66, transparent 60%), ${level.gradient}`,
   checker: (level) =>
     `repeating-conic-gradient(${level.color}26 0% 25%, transparent 0% 50%) 0 0 / 24px 24px, ${level.gradient}`,
   rings: (level) =>
@@ -98,6 +98,20 @@ const PASS_PATTERNS: Record<string, (level: PassLevelInfo) => string> = {
     const c = `linear-gradient(60deg, ${level.color}1a 25%, transparent 25.5%, transparent 75%, ${level.color}1a 75%, ${level.color}1a) ${size}`;
     return `${a}, ${b}, ${a}, ${b}, ${c}, ${c}, ${level.gradient}`;
   },
+  vstripes: (level) =>
+    `repeating-linear-gradient(90deg, transparent 0px, transparent 8px, ${level.color}3a 8px, ${level.color}3a 16px), ${level.gradient}`,
+  crosshatch: (level) =>
+    `repeating-linear-gradient(45deg, ${level.color}33 0 8px, transparent 8px 16px), repeating-linear-gradient(-45deg, ${level.color}33 0 8px, transparent 8px 16px), ${level.gradient}`,
+  diamond: (level) =>
+    `repeating-linear-gradient(45deg, ${level.color}40 0 2px, transparent 2px 15px), repeating-linear-gradient(-45deg, ${level.color}40 0 2px, transparent 2px 15px), ${level.gradient}`,
+  chevron: (level) =>
+    `linear-gradient(135deg, ${level.color}40 25%, transparent 25%) -11px 0/22px 22px, linear-gradient(225deg, ${level.color}40 25%, transparent 25%) -11px 0/22px 22px, linear-gradient(315deg, ${level.color}40 25%, transparent 25%) 0 0/22px 22px, linear-gradient(45deg, ${level.color}40 25%, transparent 25%) 0 0/22px 22px, ${level.gradient}`,
+  weave: (level) =>
+    `linear-gradient(45deg, ${level.color}40 25%, transparent 25%, transparent 75%, ${level.color}40 75%) 0 0/22px 22px, linear-gradient(45deg, ${level.color}40 25%, transparent 25%, transparent 75%, ${level.color}40 75%) 11px 11px/22px 22px, ${level.gradient}`,
+  confetti: (level) =>
+    `radial-gradient(circle at 25% 25%, ${level.color}80 0 3.5px, transparent 4.5px) 0 0/26px 26px, radial-gradient(circle at 70% 55%, ${level.darkColor}99 0 3px, transparent 4px) 0 0/32px 32px, radial-gradient(circle at 45% 85%, ${level.color}66 0 2.5px, transparent 3.5px) 0 0/28px 28px, ${level.gradient}`,
+  pyramids: (level) =>
+    `linear-gradient(60deg, ${level.color}33 25%, transparent 25.5%) 0 0/22px 38px, linear-gradient(-60deg, ${level.color}33 25%, transparent 25.5%) 0 0/22px 38px, ${level.gradient}`,
 };
 
 /** Resolves an equipped pattern key (e.g. "dots") into a CSS background for the given pass level. Falls back to the level's own gradient when no pattern is equipped. */
