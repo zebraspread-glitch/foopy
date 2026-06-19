@@ -2880,7 +2880,7 @@ function h2hRoundLabel(m: H2HMeeting) {
   return rn || (m.isFinal ? "Final" : "");
 }
 
-function H2HMeetingRow({ m, compact, onOpen }: { m: H2HMeeting; compact: boolean; onOpen: () => void }) {
+function H2HMeetingRow({ m, compact, viewable, onOpen }: { m: H2HMeeting; compact: boolean; viewable: boolean; onOpen: () => void }) {
   const logoSize = compact ? 22 : 26;
   const hWon = m.winner != null && flexMatchTeam(m.winner, m.hteam) && m.hscore !== m.ascore;
   const aWon = m.winner != null && flexMatchTeam(m.winner, m.ateam) && m.hscore !== m.ascore;
@@ -2891,11 +2891,12 @@ function H2HMeetingRow({ m, compact, onOpen }: { m: H2HMeeting; compact: boolean
   return (
     <button
       type="button"
-      onClick={onOpen}
+      onClick={viewable ? onOpen : undefined}
+      disabled={!viewable}
       style={{
         width: "100%", display: "flex", alignItems: "center", gap: compact ? 8 : 11,
         padding: compact ? "10px 0" : "11px 0", background: "transparent", border: "none",
-        cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+        cursor: viewable ? "pointer" : "default", fontFamily: "inherit", textAlign: "left",
       }}
     >
       {/* Date + round/final tag */}
@@ -2921,14 +2922,21 @@ function H2HMeetingRow({ m, compact, onOpen }: { m: H2HMeeting; compact: boolean
         </div>
       </div>
 
-      {/* Venue + winner tag */}
+      {/* Venue + result tag */}
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
-        <span style={{
-          fontSize: 10, fontWeight: 800, letterSpacing: "0.02em", textTransform: "uppercase",
-          color: draw ? "var(--text-3)" : "#34d058", whiteSpace: "nowrap",
-        }}>
-          {draw ? "Draw" : `${getAbbr(safeText(m.winner, ""))} won`}
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+          <span style={{
+            fontSize: 10, fontWeight: 800, letterSpacing: "0.02em", textTransform: "uppercase",
+            color: draw ? "var(--text-3)" : "#34d058", whiteSpace: "nowrap",
+          }}>
+            {draw ? "Draw" : `${getAbbr(safeText(m.winner, ""))} by ${Math.abs(m.hscore - m.ascore)}`}
+          </span>
+          {!draw && m.winner && (
+            <div style={{ width: 16, height: 16, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)" }}>
+              <img src={getLogo(safeText(m.winner, ""))} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+            </div>
+          )}
+        </div>
         {m.venue && (
           <span style={{ fontSize: 11, fontWeight: 500, color: "var(--text-3)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>
             {venueDisplayName(m.venue)}
@@ -2936,9 +2944,13 @@ function H2HMeetingRow({ m, compact, onOpen }: { m: H2HMeeting; compact: boolean
         )}
       </div>
 
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.6 }}>
-        <polyline points="9 18 15 12 9 6" />
-      </svg>
+      {viewable ? (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.6 }}>
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      ) : (
+        <span style={{ width: 14, flexShrink: 0 }} />
+      )}
     </button>
   );
 }
@@ -2997,6 +3009,8 @@ function HeadToHeadBox({ homeTeam, awayTeam }: { homeTeam: string; awayTeam: str
   const { summary, meetings } = data;
   const shown = meetings.slice(0, 5);
   const pad = compact ? "14px" : "18px";
+  // Only current-season games have an individual match page to open.
+  const currentYear = new Date().getFullYear();
 
   return (
     <div style={{
@@ -3023,7 +3037,7 @@ function HeadToHeadBox({ homeTeam, awayTeam }: { homeTeam: string; awayTeam: str
       <div style={{ padding: `2px ${pad} 6px`, display: "flex", flexDirection: "column" }}>
         {shown.map((m, i) => (
           <div key={m.id} style={{ borderTop: i === 0 ? "none" : "1px solid rgba(255,255,255,0.06)" }}>
-            <H2HMeetingRow m={m} compact={compact} onOpen={() => router.push(`/seasons/${m.year}`)} />
+            <H2HMeetingRow m={m} compact={compact} viewable={m.year === currentYear} onOpen={() => router.push(`/match/${m.id}`)} />
           </div>
         ))}
       </div>

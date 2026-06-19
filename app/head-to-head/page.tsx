@@ -51,7 +51,7 @@ function roundLabel(m: Meeting) {
   return rn || (m.isFinal ? "Final" : "");
 }
 
-function MeetingRow({ m, onOpen }: { m: Meeting; onOpen: () => void }) {
+function MeetingRow({ m, viewable, onOpen }: { m: Meeting; viewable: boolean; onOpen: () => void }) {
   const draw = m.hscore === m.ascore;
   const hWon = !draw && m.winner != null && sameTeam(m.winner, m.hteam);
   const aWon = !draw && m.winner != null && sameTeam(m.winner, m.ateam);
@@ -59,7 +59,7 @@ function MeetingRow({ m, onOpen }: { m: Meeting; onOpen: () => void }) {
   const label = roundLabel(m);
 
   return (
-    <button type="button" onClick={onOpen} style={rowStyle} className="h2h-row">
+    <button type="button" onClick={viewable ? onOpen : undefined} disabled={!viewable} style={{ ...rowStyle, cursor: viewable ? "pointer" : "default" }} className={viewable ? "h2h-row" : undefined}>
       <div style={{ width: 70, flexShrink: 0 }}>
         <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>{m.year}</div>
         {label && (
@@ -78,9 +78,16 @@ function MeetingRow({ m, onOpen }: { m: Meeting; onOpen: () => void }) {
       </div>
 
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
-        <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.02em", textTransform: "uppercase", whiteSpace: "nowrap", color: draw ? "var(--text-3)" : "#34d058" }}>
-          {draw ? "Draw" : `${getAbbr(m.winner ?? "")} won`}
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.02em", textTransform: "uppercase", whiteSpace: "nowrap", color: draw ? "var(--text-3)" : "#34d058" }}>
+            {draw ? "Draw" : `${getAbbr(m.winner ?? "")} by ${Math.abs(m.hscore - m.ascore)}`}
+          </span>
+          {!draw && m.winner && (
+            <div style={{ width: 16, height: 16, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)" }}>
+              <img src={getLogo(m.winner)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+            </div>
+          )}
+        </div>
         {m.venue && (
           <span style={{ fontSize: 11, fontWeight: 500, color: "var(--text-3)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>
             {venueDisplayName(m.venue)}
@@ -88,9 +95,13 @@ function MeetingRow({ m, onOpen }: { m: Meeting; onOpen: () => void }) {
         )}
       </div>
 
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.6 }}>
-        <polyline points="9 18 15 12 9 6" />
-      </svg>
+      {viewable ? (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.6 }}>
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      ) : (
+        <span style={{ width: 14, flexShrink: 0 }} />
+      )}
     </button>
   );
 }
@@ -123,6 +134,8 @@ function HeadToHeadContent() {
   }, [home, away]);
 
   const summary = data?.summary;
+  // Only current-season games have an individual match page to open.
+  const currentYear = new Date().getFullYear();
 
   return (
     <main style={pageStyle} className="page-enter">
@@ -155,7 +168,7 @@ function HeadToHeadContent() {
           <div style={listCardStyle}>
             {data.meetings.map((m, i) => (
               <div key={m.id} style={{ borderTop: i === 0 ? "none" : "1px solid rgba(255,255,255,0.06)" }}>
-                <MeetingRow m={m} onOpen={() => router.push(`/seasons/${m.year}`)} />
+                <MeetingRow m={m} viewable={m.year === currentYear} onOpen={() => router.push(`/match/${m.id}`)} />
               </div>
             ))}
           </div>
