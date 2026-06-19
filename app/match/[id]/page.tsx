@@ -2845,6 +2845,146 @@ function InsOutsBox({ homeTeam, awayTeam, gameId }: { homeTeam: string; awayTeam
   );
 }
 
+type H2HMeeting = {
+  id: number;
+  year: number;
+  roundname: string;
+  hteam: string;
+  ateam: string;
+  hscore: number;
+  ascore: number;
+  venue: string;
+  date: string;
+  winner: string | null;
+  isFinal: boolean;
+  isGrandFinal: boolean;
+};
+
+type H2HPayload = {
+  meetings: H2HMeeting[];
+  summary: {
+    total: number;
+    home: { name: string; key: string; wins: number };
+    away: { name: string; key: string; wins: number };
+    draws: number;
+  } | null;
+};
+
+function H2HMeetingRow({ m, compact }: { m: H2HMeeting; compact: boolean }) {
+  const logoSize = compact ? 22 : 26;
+  const hWon = m.winner != null && flexMatchTeam(m.winner, m.hteam) && m.hscore !== m.ascore;
+  const aWon = m.winner != null && flexMatchTeam(m.winner, m.ateam) && m.hscore !== m.ascore;
+  const dim = "rgba(255,255,255,0.4)";
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0" }}>
+      <div style={{ width: 52, flexShrink: 0, fontSize: 11, fontWeight: 700, color: "var(--text-3)" }}>
+        {m.year}
+        {m.isFinal && (
+          <div style={{ fontSize: 9, fontWeight: 800, color: m.isGrandFinal ? "#fbbf24" : "#60a5fa", letterSpacing: "0.04em" }}>
+            {m.isGrandFinal ? "GF" : "FINAL"}
+          </div>
+        )}
+      </div>
+      <div style={{ width: logoSize, height: logoSize, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)" }}>
+        <img src={getLogo(safeText(m.hteam, ""))} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+      </div>
+      <span style={{ flex: 1, textAlign: "right", fontSize: 14, fontWeight: hWon ? 900 : 600, color: hWon ? "var(--text-1)" : dim, fontVariantNumeric: "tabular-nums" }}>{m.hscore}</span>
+      <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.25)" }}>–</span>
+      <span style={{ flex: 1, textAlign: "left", fontSize: 14, fontWeight: aWon ? 900 : 600, color: aWon ? "var(--text-1)" : dim, fontVariantNumeric: "tabular-nums" }}>{m.ascore}</span>
+      <div style={{ width: logoSize, height: logoSize, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)" }}>
+        <img src={getLogo(safeText(m.ateam, ""))} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+      </div>
+    </div>
+  );
+}
+
+function HeadToHeadBox({ homeTeam, awayTeam }: { homeTeam: string; awayTeam: string }) {
+  const [data, setData] = useState<H2HPayload | null>(null);
+  const [showAll, setShowAll] = useState(false);
+  const compact = useCompactViewport();
+
+  useEffect(() => {
+    if (!homeTeam || !awayTeam) return;
+    let active = true;
+    setData(null);
+    setShowAll(false);
+    fetch(`/api/head-to-head?home=${encodeURIComponent(homeTeam)}&away=${encodeURIComponent(awayTeam)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (active && d?.meetings) setData(d); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [homeTeam, awayTeam]);
+
+  if (!data || data.meetings.length === 0 || !data.summary) return null;
+
+  const { summary, meetings } = data;
+  const shown = showAll ? meetings : meetings.slice(0, 5);
+  const total = summary.home.wins + summary.away.wins + summary.draws;
+  const homePct = total ? (summary.home.wins / total) * 100 : 50;
+  const drawPct = total ? (summary.draws / total) * 100 : 0;
+
+  return (
+    <div style={{
+      margin: "0 0 14px", borderRadius: 18, overflow: "hidden",
+      background: "linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
+    }}>
+      <div style={{ padding: "18px 18px 0", display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+        <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em", color: "var(--text-1)" }}>Head to head</span>
+        <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)" }}>{summary.total} meeting{summary.total === 1 ? "" : "s"}</span>
+      </div>
+
+      {/* Win tally */}
+      <div style={{ padding: compact ? "14px 14px 4px" : "16px 18px 4px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 26, height: 26, borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.06)" }}>
+              <img src={getLogo(homeTeam)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            </div>
+            <span style={{ fontSize: 18, fontWeight: 900, color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>{summary.home.wins}</span>
+          </div>
+          {summary.draws > 0 && (
+            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-3)" }}>{summary.draws} draw{summary.draws === 1 ? "" : "s"}</span>
+          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 18, fontWeight: 900, color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>{summary.away.wins}</span>
+            <div style={{ width: 26, height: 26, borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.06)" }}>
+              <img src={getLogo(awayTeam)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            </div>
+          </div>
+        </div>
+        <div style={{ display: "flex", height: 8, borderRadius: 999, overflow: "hidden", background: "rgba(255,255,255,0.08)" }}>
+          <div style={{ width: `${homePct}%`, background: "#3b82f6" }} />
+          <div style={{ width: `${drawPct}%`, background: "#475569" }} />
+          <div style={{ flex: 1, background: "#ef4444" }} />
+        </div>
+      </div>
+
+      {/* Recent meetings */}
+      <div style={{ padding: compact ? "8px 14px 8px" : "10px 18px 8px", display: "flex", flexDirection: "column", maxHeight: showAll ? 360 : undefined, overflowY: showAll ? "auto" : undefined }}>
+        {shown.map((m, i) => (
+          <div key={m.id} style={{ borderTop: i === 0 ? "none" : "1px solid rgba(255,255,255,0.06)" }}>
+            <H2HMeetingRow m={m} compact={compact} />
+          </div>
+        ))}
+      </div>
+
+      {meetings.length > 5 && (
+        <button
+          type="button"
+          onClick={() => setShowAll((v) => !v)}
+          style={{
+            width: "100%", padding: "13px 18px", background: "rgba(255,255,255,0.03)",
+            border: "none", borderTop: "1px solid rgba(255,255,255,0.06)", color: "#60a5fa",
+            fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", letterSpacing: "-0.01em",
+          }}
+        >
+          {showAll ? "Show less" : `Show all ${meetings.length} meetings`}
+        </button>
+      )}
+    </div>
+  );
+}
+
 type PreviewPlayerLeader = {
   team: string;
   name: string;
@@ -5384,6 +5524,10 @@ function MatchPageInner() {
                   homeTeam={safeText(game.hteam, "")}
                   awayTeam={safeText(game.ateam, "")}
                   gameId={id}
+                />
+                <HeadToHeadBox
+                  homeTeam={safeText(game.hteam, "")}
+                  awayTeam={safeText(game.ateam, "")}
                 />
                 <TeamFormBox
                   homeTeam={safeText(game.hteam, "")}
