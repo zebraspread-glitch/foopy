@@ -92,6 +92,10 @@ type Meeting = {
   winner: string | null;
   isFinal: boolean;
   isGrandFinal: boolean;
+  // Which of the two *requested* teams won: "home" = requested home, "away" =
+  // requested away, null = draw. Lets the client attribute streaks reliably
+  // even when a club's historical name differs (Footscray, South Melbourne…).
+  winnerSide: "home" | "away" | null;
 };
 
 export async function GET(req: Request) {
@@ -119,6 +123,10 @@ export async function GET(req: Request) {
       if (!isMatch) continue;
       if (seenIds.has(g.id)) continue;
       seenIds.add(g.id);
+      const draw = Number(g.hscore) === Number(g.ascore);
+      const wk = g.winner ? canonicalTeamKey(g.winner) : null;
+      const winnerSide: "home" | "away" | null =
+        draw || wk == null ? null : wk === keyA ? "home" : wk === keyB ? "away" : null;
       meetings.push({
         id: g.id,
         year: g.year,
@@ -132,6 +140,7 @@ export async function GET(req: Request) {
         winner: g.winner,
         isFinal: Boolean(g.is_final) || Boolean(g.is_grand_final),
         isGrandFinal: Boolean(g.is_grand_final),
+        winnerSide,
       });
     }
   };

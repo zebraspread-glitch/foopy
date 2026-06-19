@@ -1,11 +1,13 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { CSSProperties } from "react";
 import PageHeader from "@/app/components/PageHeader";
 import { getLogo, getAbbr } from "@/app/match/[id]/utils";
 import { venueDisplayName } from "@/app/data/venues";
+
+type WinnerSide = "home" | "away" | null;
 
 type Meeting = {
   id: number;
@@ -20,6 +22,7 @@ type Meeting = {
   winner: string | null;
   isFinal: boolean;
   isGrandFinal: boolean;
+  winnerSide: WinnerSide;
 };
 
 type Payload = {
@@ -32,61 +35,205 @@ type Payload = {
   } | null;
 };
 
-function teamKey(team: string) {
-  return String(team || "").toLowerCase().replace(/[^a-z]/g, "");
-}
+type LeagueRecords = {
+  longestCurrent: { team: string; opponent: string; len: number; since: number } | null;
+  longestEver: { team: string; opponent: string; len: number; fromYear: number; toYear: number } | null;
+  highestWinPct: { team: string; opponent: string; pct: number; wins: number; losses: number; total: number } | null;
+  mostWins: { team: string; opponent: string; wins: number; losses: number } | null;
+  mostDraws: { teamA: string; teamB: string; draws: number } | null;
+  closest: { teamA: string; teamB: string; winsA: number; winsB: number; total: number } | null;
+  mostPlayed: { teamA: string; teamB: string; total: number } | null;
+  minMeetings: number;
+};
 
-function sameTeam(a: string, b: string) {
-  // Loose match good enough for winner ↔ home/away comparison within one game.
-  const ka = teamKey(a);
-  const kb = teamKey(b);
-  return ka === kb || ka.includes(kb) || kb.includes(ka);
-}
+// Current AFL clubs (names getLogo/getAbbr and the API all understand).
+const TEAMS = [
+  "Adelaide", "Brisbane Lions", "Carlton", "Collingwood", "Essendon",
+  "Fremantle", "Geelong", "Gold Coast", "Greater Western Sydney", "Hawthorn",
+  "Melbourne", "North Melbourne", "Port Adelaide", "Richmond", "St Kilda",
+  "Sydney", "West Coast", "Western Bulldogs",
+];
 
 function roundLabel(m: Meeting) {
   if (m.isGrandFinal) return "Grand Final";
   const rn = m.roundname ?? "";
+  if (/^opening round$/i.test(rn)) return "OR";
   const rm = rn.match(/^Round\s+(\d+)$/i);
   if (rm) return `R${rm[1]}`;
-  return rn || (m.isFinal ? "Final" : "");
+  // Squiggle names finals in the plural ("Preliminary Finals"); show singular.
+  return rn.replace(/\bFinals\b/i, "Final") || (m.isFinal ? "Final" : "");
+}
+
+// ── Derived stats ───────────────────────────────────────────────────────────
+type Streak = { side: Exclude<WinnerSide, null>; len: number; fromYear: number; toYear: number };
+
+function computeStats(meetings: Meeting[]) {
+  // API returns newest-first; walk oldest-first for the all-time streak.
+  const chrono = [...meetings].reverse();
+
+  let best: Streak | null = null;
+  let runSide: WinnerSide = null;
+  let runLen = 0;
+  let runFrom = 0;
+  for (const m of chrono) {
+    if (m.winnerSide == null) { runSide = null; runLen = 0; continue; }
+    if (m.winnerSide === runSide) { runLen++; } else { runSide = m.winnerSide; runLen = 1; runFrom = m.year; }
+    if (!best || runLen > best.len) best = { side: m.winnerSide, len: runLen, fromYear: runFrom, toYear: m.year };
+  }
+
+  // Current streak — from the most recent meeting backwards.
+  let curSide: WinnerSide = null;
+  let curLen = 0;
+  let curFrom = 0;
+  for (const m of meetings) {
+    if (m.winnerSide == null) break;
+    if (curLen === 0) { curSide = m.winnerSide; curLen = 1; curFrom = m.year; }
+    else if (m.winnerSide === curSide) { curLen++; curFrom = m.year; }
+    else break;
+  }
+  const current: Streak | null = curSide ? { side: curSide, len: curLen, fromYear: curFrom, toYear: meetings[0].year } : null;
+
+  let biggest: { side: Exclude<WinnerSide, null>; margin: number; year: number; m: Meeting } | null = null;
+  let highest: { total: number; year: number; m: Meeting } | null = null;
+  let marginSum = 0;
+  for (const m of meetings) {
+    const margin = Math.abs(m.hscore - m.ascore);
+    marginSum += margin;
+    if (m.winnerSide && (!biggest || margin > biggest.margin)) biggest = { side: m.winnerSide, margin, year: m.year, m };
+    const total = m.hscore + m.ascore;
+    if (!highest || total > highest.total) highest = { total, year: m.year, m };
+  }
+
+  const years = meetings.map((m) => m.year);
+  const firstYear = years.length ? Math.min(...years) : 0;
+  const lastYear = years.length ? Math.max(...years) : 0;
+  const avgMargin = meetings.length ? Math.round(marginSum / meetings.length) : 0;
+
+  return { best, current, biggest, highest, firstYear, lastYear, avgMargin };
+}
+
+// ── Components ───────────────────────────────────────────────────────────────
+function Logo({ team, size = 26, dim }: { team: string; size?: number; dim?: boolean }) {
+  return (
+    <div style={{ width: size, height: size, borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.06)", opacity: dim ? 0.55 : 1, flexShrink: 0 }}>
+      <img src={getLogo(team)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+    </div>
+  );
+}
+
+function TeamSlot({ team, placeholder, active, onClick }: { team: string; placeholder: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+        padding: "16px 8px", borderRadius: 16, cursor: "pointer", fontFamily: "inherit",
+        background: active ? "rgba(96,165,250,0.12)" : "rgba(255,255,255,0.04)",
+        border: active ? "1px solid rgba(96,165,250,0.5)" : "1px solid rgba(255,255,255,0.08)",
+        transition: "background 0.12s, border-color 0.12s",
+      }}
+    >
+      {team ? (
+        <>
+          <Logo team={team} size={48} />
+          <span style={{ fontSize: 13, fontWeight: 800, color: "var(--text-1)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{getAbbr(team)}</span>
+        </>
+      ) : (
+        <>
+          <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, fontWeight: 800, color: "var(--text-3)" }}>+</div>
+          <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-3)" }}>{placeholder}</span>
+        </>
+      )}
+    </button>
+  );
+}
+
+function TeamPicker({ home, away, onPick }: { home: string; away: string; onPick: (slot: "home" | "away", team: string) => void }) {
+  const [editing, setEditing] = useState<"home" | "away" | null>(home ? (away ? null : "away") : "home");
+
+  return (
+    <div style={cardStyle}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: 12 }}>
+        <TeamSlot team={home} placeholder="Team A" active={editing === "home"} onClick={() => setEditing(editing === "home" ? null : "home")} />
+        <span style={{ fontSize: 13, fontWeight: 900, color: "var(--text-3)", letterSpacing: "0.04em" }}>VS</span>
+        <TeamSlot team={away} placeholder="Team B" active={editing === "away"} onClick={() => setEditing(editing === "away" ? null : "away")} />
+      </div>
+
+      {editing && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 6, padding: "0 12px 14px" }}>
+          {TEAMS.map((t) => {
+            const taken = (editing === "home" ? away : home) === t;
+            const selected = (editing === "home" ? home : away) === t;
+            return (
+              <button
+                key={t}
+                type="button"
+                disabled={taken}
+                onClick={() => { onPick(editing, t); setEditing(editing === "home" ? "away" : null); }}
+                title={t}
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center", padding: 6, borderRadius: 10,
+                  background: selected ? "rgba(96,165,250,0.15)" : "transparent",
+                  border: selected ? "1px solid rgba(96,165,250,0.4)" : "1px solid transparent",
+                  cursor: taken ? "not-allowed" : "pointer", opacity: taken ? 0.25 : 1,
+                }}
+              >
+                <Logo team={t} size={32} />
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StatTile({ label, value, sub, team }: { label: string; value: string; sub?: string; team?: string }) {
+  return (
+    <div style={tileStyle}>
+      <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--text-3)" }}>{label}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 6 }}>
+        {team && <Logo team={team} size={22} />}
+        <span style={{ fontSize: 18, fontWeight: 900, color: "var(--text-1)", letterSpacing: "-0.02em", lineHeight: 1.1 }}>{value}</span>
+      </div>
+      {sub && <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-3)", marginTop: 3 }}>{sub}</span>}
+    </div>
+  );
 }
 
 function MeetingRow({ m, viewable, onOpen }: { m: Meeting; viewable: boolean; onOpen: () => void }) {
-  const draw = m.hscore === m.ascore;
-  const hWon = !draw && m.winner != null && sameTeam(m.winner, m.hteam);
-  const aWon = !draw && m.winner != null && sameTeam(m.winner, m.ateam);
+  const draw = m.winnerSide == null && m.hscore === m.ascore;
+  const hWon = m.winnerSide != null && m.hscore > m.ascore;
+  const aWon = m.winnerSide != null && m.ascore > m.hscore;
   const dim = "rgba(255,255,255,0.38)";
   const label = roundLabel(m);
 
   return (
-    <button type="button" onClick={viewable ? onOpen : undefined} disabled={!viewable} style={{ ...rowStyle, cursor: viewable ? "pointer" : "default" }} className={viewable ? "h2h-row" : undefined}>
-      <div style={{ width: 70, flexShrink: 0 }}>
+    <button type="button" onClick={viewable ? onOpen : undefined} style={{ ...rowStyle, cursor: viewable ? "pointer" : "default" }} className={viewable ? "h2h-row" : undefined}>
+      <div style={{ width: 72, flexShrink: 0 }}>
         <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>{m.year}</div>
         {label && (
-          <div style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.03em", textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: m.isGrandFinal ? "#fbbf24" : m.isFinal ? "#60a5fa" : "var(--text-3)" }}>
+          <div style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.03em", lineHeight: 1.15, textTransform: "uppercase", color: m.isGrandFinal ? "#fbbf24" : m.isFinal ? "#60a5fa" : "var(--text-3)" }}>
             {label}
           </div>
         )}
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 7, flexShrink: 0 }}>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 7, minWidth: 0 }}>
         <Logo team={m.hteam} dim={!hWon && !draw} />
-        <span style={{ width: 26, textAlign: "right", fontSize: 14, fontWeight: hWon ? 900 : 600, color: hWon ? "var(--text-1)" : dim, fontVariantNumeric: "tabular-nums" }}>{m.hscore}</span>
+        <span style={{ width: 30, textAlign: "right", fontSize: 14, fontWeight: hWon ? 900 : 600, color: hWon ? "var(--text-1)" : dim, fontVariantNumeric: "tabular-nums" }}>{m.hscore}</span>
         <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.25)" }}>–</span>
-        <span style={{ width: 26, textAlign: "left", fontSize: 14, fontWeight: aWon ? 900 : 600, color: aWon ? "var(--text-1)" : dim, fontVariantNumeric: "tabular-nums" }}>{m.ascore}</span>
+        <span style={{ width: 30, textAlign: "left", fontSize: 14, fontWeight: aWon ? 900 : 600, color: aWon ? "var(--text-1)" : dim, fontVariantNumeric: "tabular-nums" }}>{m.ascore}</span>
         <Logo team={m.ateam} dim={!aWon && !draw} />
       </div>
 
-      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
+      <div style={{ width: 96, flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.02em", textTransform: "uppercase", whiteSpace: "nowrap", color: draw ? "var(--text-3)" : "#34d058" }}>
+          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.02em", textTransform: "uppercase", whiteSpace: "nowrap", color: draw ? "var(--text-3)" : "var(--text-1)" }}>
             {draw ? "Draw" : `${getAbbr(m.winner ?? "")} by ${Math.abs(m.hscore - m.ascore)}`}
           </span>
-          {!draw && m.winner && (
-            <div style={{ width: 16, height: 16, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)" }}>
-              <img src={getLogo(m.winner)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-            </div>
-          )}
+          {!draw && m.winner && <Logo team={m.winner} size={16} />}
         </div>
         {m.venue && (
           <span style={{ fontSize: 11, fontWeight: 500, color: "var(--text-3)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>
@@ -106,24 +253,58 @@ function MeetingRow({ m, viewable, onOpen }: { m: Meeting; viewable: boolean; on
   );
 }
 
-function Logo({ team, dim }: { team: string; dim?: boolean }) {
+function SummaryTeam({ team, wins, alignEnd }: { team: string; wins: number; alignEnd?: boolean }) {
   return (
-    <div style={{ width: 26, height: 26, borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.06)", opacity: dim ? 0.55 : 1 }}>
-      <img src={getLogo(team)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+    <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, justifyContent: alignEnd ? "flex-end" : "flex-start" }}>
+      {alignEnd && <span style={winNumStyle}>{wins}</span>}
+      <Logo team={team} size={36} />
+      {!alignEnd && <span style={winNumStyle}>{wins}</span>}
     </div>
   );
 }
 
+function RecordCard({ label, value, sub, team, opponent, onClick }: { label: string; value: string; sub: string; team: string; opponent: string; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} style={recordCardStyle} className="h2h-row">
+      <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <div style={{ position: "relative", zIndex: 2 }}><Logo team={team} size={34} /></div>
+          <div style={{ marginLeft: -8, position: "relative", zIndex: 1 }}><Logo team={opponent} size={34} dim /></div>
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--text-3)" }}>{label}</div>
+          <div style={{ fontSize: 17, fontWeight: 900, color: "var(--text-1)", letterSpacing: "-0.02em", marginTop: 2 }}>{value}</div>
+          <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-3)", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</div>
+        </div>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.6 }}>
+        <polyline points="9 18 15 12 9 6" />
+      </svg>
+    </button>
+  );
+}
+
+// ── Page ─────────────────────────────────────────────────────────────────────
 function HeadToHeadContent() {
   const router = useRouter();
   const params = useSearchParams();
   const home = params.get("home") ?? "";
   const away = params.get("away") ?? "";
   const [data, setData] = useState<Payload | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [records, setRecords] = useState<LeagueRecords | null>(null);
 
   useEffect(() => {
-    if (!home || !away) { setLoading(false); return; }
+    let active = true;
+    fetch("/api/head-to-head/records", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (active && d) setRecords(d); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!home || !away) { setData(null); return; }
     let active = true;
     setLoading(true);
     fetch(`/api/head-to-head?home=${encodeURIComponent(home)}&away=${encodeURIComponent(away)}`, { cache: "no-store" })
@@ -133,9 +314,23 @@ function HeadToHeadContent() {
     return () => { active = false; };
   }, [home, away]);
 
+  const setTeams = (h: string, a: string) => {
+    const q = new URLSearchParams();
+    if (h) q.set("home", h);
+    if (a) q.set("away", a);
+    router.replace(`/head-to-head${q.toString() ? `?${q}` : ""}`);
+  };
+  const onPick = (slot: "home" | "away", team: string) => {
+    if (slot === "home") setTeams(team, away === team ? "" : away);
+    else setTeams(home === team ? "" : home, team);
+  };
+
+  const meetings = data?.meetings ?? [];
   const summary = data?.summary;
-  // Only current-season games have an individual match page to open.
+  const stats = useMemo(() => computeStats(meetings), [meetings]);
   const currentYear = new Date().getFullYear();
+  const resolve = (side: Exclude<WinnerSide, null>) => (side === "home" ? home : away);
+  const bothChosen = Boolean(home && away);
 
   return (
     <main style={pageStyle} className="page-enter">
@@ -145,48 +340,168 @@ function HeadToHeadContent() {
         @media (hover: hover) { .h2h-row:hover { background: rgba(255,255,255,0.03); } }
       `}</style>
 
-      <PageHeader title="Head to head" subtitle={home && away ? `${getAbbr(home)} v ${getAbbr(away)}` : undefined} />
+      <PageHeader title="Head to Head" subtitle={bothChosen ? `${getAbbr(home)} v ${getAbbr(away)}` : undefined} />
 
       <div style={listStyle}>
-        {summary && (
-          <div style={summaryCardStyle}>
-            <SummaryTeam team={home} wins={summary.home.wins} />
-            <div style={{ textAlign: "center", flexShrink: 0 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)" }}>{summary.total} meeting{summary.total === 1 ? "" : "s"}</div>
-              {summary.draws > 0 && <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)" }}>{summary.draws} draw{summary.draws === 1 ? "" : "s"}</div>}
-            </div>
-            <SummaryTeam team={away} wins={summary.away.wins} alignEnd />
-          </div>
+        <TeamPicker home={home} away={away} onPick={onPick} />
+
+        {!bothChosen && (
+          <>
+            <div style={{ ...emptyStyle, padding: "16px 16px 6px" }}>Pick two teams to see their all-time head-to-head.</div>
+            {records && (
+              <>
+                <div style={sectionLabelStyle}>League records</div>
+                {records.longestEver && (
+                  <RecordCard
+                    label="Longest ever streak"
+                    value={`${records.longestEver.len} wins in a row`}
+                    sub={`${records.longestEver.team} over ${records.longestEver.opponent} · ${records.longestEver.fromYear}–${records.longestEver.toYear}`}
+                    team={records.longestEver.team}
+                    opponent={records.longestEver.opponent}
+                    onClick={() => setTeams(records.longestEver!.team, records.longestEver!.opponent)}
+                  />
+                )}
+                {records.longestCurrent && (
+                  <RecordCard
+                    label="Longest active streak"
+                    value={`${records.longestCurrent.len} wins in a row`}
+                    sub={`${records.longestCurrent.team} over ${records.longestCurrent.opponent} · since ${records.longestCurrent.since}`}
+                    team={records.longestCurrent.team}
+                    opponent={records.longestCurrent.opponent}
+                    onClick={() => setTeams(records.longestCurrent!.team, records.longestCurrent!.opponent)}
+                  />
+                )}
+                {records.highestWinPct && (
+                  <RecordCard
+                    label={`Best win rate (min ${records.minMeetings})`}
+                    value={`${records.highestWinPct.pct}%`}
+                    sub={`${records.highestWinPct.team} vs ${records.highestWinPct.opponent} · ${records.highestWinPct.wins}–${records.highestWinPct.losses}`}
+                    team={records.highestWinPct.team}
+                    opponent={records.highestWinPct.opponent}
+                    onClick={() => setTeams(records.highestWinPct!.team, records.highestWinPct!.opponent)}
+                  />
+                )}
+                {records.mostWins && (
+                  <RecordCard
+                    label="Most wins over one team"
+                    value={`${records.mostWins.wins} wins`}
+                    sub={`${records.mostWins.team} over ${records.mostWins.opponent} · ${records.mostWins.wins}–${records.mostWins.losses}`}
+                    team={records.mostWins.team}
+                    opponent={records.mostWins.opponent}
+                    onClick={() => setTeams(records.mostWins!.team, records.mostWins!.opponent)}
+                  />
+                )}
+                {records.closest && (
+                  <RecordCard
+                    label="Closest rivalry"
+                    value={`${records.closest.winsA}–${records.closest.winsB}`}
+                    sub={`${records.closest.teamA} v ${records.closest.teamB} · ${records.closest.total} meetings`}
+                    team={records.closest.teamA}
+                    opponent={records.closest.teamB}
+                    onClick={() => setTeams(records.closest!.teamA, records.closest!.teamB)}
+                  />
+                )}
+                {records.mostDraws && (
+                  <RecordCard
+                    label="Most draws"
+                    value={`${records.mostDraws.draws} draws`}
+                    sub={`${records.mostDraws.teamA} v ${records.mostDraws.teamB}`}
+                    team={records.mostDraws.teamA}
+                    opponent={records.mostDraws.teamB}
+                    onClick={() => setTeams(records.mostDraws!.teamA, records.mostDraws!.teamB)}
+                  />
+                )}
+                {records.mostPlayed && (
+                  <RecordCard
+                    label="Most played rivalry"
+                    value={`${records.mostPlayed.total} meetings`}
+                    sub={`${records.mostPlayed.teamA} v ${records.mostPlayed.teamB}`}
+                    team={records.mostPlayed.teamA}
+                    opponent={records.mostPlayed.teamB}
+                    onClick={() => setTeams(records.mostPlayed!.teamA, records.mostPlayed!.teamB)}
+                  />
+                )}
+              </>
+            )}
+          </>
         )}
 
-        {loading && <div style={emptyStyle}>Loading…</div>}
-        {!loading && (!data || data.meetings.length === 0) && (
+        {bothChosen && loading && !data && <div style={emptyStyle}>Loading…</div>}
+
+        {bothChosen && data && meetings.length === 0 && (
           <div style={emptyStyle}>No recorded meetings between these teams.</div>
         )}
 
-        {data && data.meetings.length > 0 && (
-          <div style={listCardStyle}>
-            {data.meetings.map((m, i) => (
-              <div key={m.id} style={{ borderTop: i === 0 ? "none" : "1px solid rgba(255,255,255,0.06)" }}>
-                <MeetingRow m={m} viewable={m.year === currentYear} onOpen={() => router.push(`/match/${m.id}`)} />
+        {bothChosen && summary && meetings.length > 0 && (
+          <>
+            <div style={summaryCardStyle}>
+              <SummaryTeam team={home} wins={summary.home.wins} />
+              <div style={{ textAlign: "center", flexShrink: 0 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)" }}>{summary.total} meeting{summary.total === 1 ? "" : "s"}</div>
+                {summary.draws > 0 && <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)" }}>{summary.draws} draw{summary.draws === 1 ? "" : "s"}</div>}
               </div>
-            ))}
-          </div>
+              <SummaryTeam team={away} wins={summary.away.wins} alignEnd />
+            </div>
+
+            {/* Cool stats */}
+            <div style={statsGridStyle}>
+              {stats.current ? (
+                <StatTile
+                  label="Current streak"
+                  value={`${stats.current.len} in a row`}
+                  team={resolve(stats.current.side)}
+                  sub={`${getAbbr(resolve(stats.current.side))} — since ${stats.current.fromYear}`}
+                />
+              ) : (
+                <StatTile label="Current streak" value="None" sub="Last result was a draw" />
+              )}
+
+              {stats.best && (
+                <StatTile
+                  label="Longest ever streak"
+                  value={`${stats.best.len} in a row`}
+                  team={resolve(stats.best.side)}
+                  sub={`${getAbbr(resolve(stats.best.side))} · ${stats.best.fromYear}–${stats.best.toYear}`}
+                />
+              )}
+
+              {stats.biggest && (
+                <StatTile
+                  label="Biggest win"
+                  value={`by ${stats.biggest.margin}`}
+                  team={resolve(stats.biggest.side)}
+                  sub={`${getAbbr(resolve(stats.biggest.side))} · ${stats.biggest.year}`}
+                />
+              )}
+
+              {stats.highest && (
+                <StatTile
+                  label="Highest scoring"
+                  value={`${stats.highest.total} pts`}
+                  sub={`${getAbbr(stats.highest.m.hteam)} ${stats.highest.m.hscore} – ${stats.highest.m.ascore} ${getAbbr(stats.highest.m.ateam)} · ${stats.highest.year}`}
+                />
+              )}
+
+              <StatTile label="Average margin" value={`${stats.avgMargin} pts`} />
+
+              <StatTile label="First meeting" value={`${stats.firstYear}`} sub={`${stats.lastYear - stats.firstYear + 1} seasons of rivalry`} />
+            </div>
+
+            {/* Full meetings list */}
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-3)", padding: "4px 4px 0" }}>
+              Every meeting
+            </div>
+            <div style={listCardStyle}>
+              {meetings.map((m, i) => (
+                <div key={m.id} style={{ borderTop: i === 0 ? "none" : "1px solid rgba(255,255,255,0.06)" }}>
+                  <MeetingRow m={m} viewable={m.year === currentYear} onOpen={() => router.push(`/match/${m.id}`)} />
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </main>
-  );
-}
-
-function SummaryTeam({ team, wins, alignEnd }: { team: string; wins: number; alignEnd?: boolean }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, justifyContent: alignEnd ? "flex-end" : "flex-start" }}>
-      {alignEnd && <span style={winNumStyle}>{wins}</span>}
-      <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.06)", flexShrink: 0 }}>
-        <img src={getLogo(team)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-      </div>
-      {!alignEnd && <span style={winNumStyle}>{wins}</span>}
-    </div>
   );
 }
 
@@ -214,6 +529,12 @@ const listStyle: CSSProperties = {
   margin: "0 auto",
 };
 
+const cardStyle: CSSProperties = {
+  background: "linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
+  borderRadius: 18,
+  overflow: "hidden",
+};
+
 const summaryCardStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
@@ -221,6 +542,21 @@ const summaryCardStyle: CSSProperties = {
   background: "linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
   borderRadius: 18,
   padding: "16px 18px",
+};
+
+const statsGridStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(2, 1fr)",
+  gap: 10,
+};
+
+const tileStyle: CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  background: "linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
+  borderRadius: 16,
+  padding: "13px 14px",
+  minHeight: 78,
 };
 
 const listCardStyle: CSSProperties = {
@@ -256,4 +592,27 @@ const emptyStyle: CSSProperties = {
   color: "var(--text-3)",
   fontSize: 14,
   fontWeight: 600,
+};
+
+const sectionLabelStyle: CSSProperties = {
+  fontSize: 11,
+  fontWeight: 800,
+  letterSpacing: "0.06em",
+  textTransform: "uppercase",
+  color: "var(--text-3)",
+  padding: "4px 4px 0",
+};
+
+const recordCardStyle: CSSProperties = {
+  width: "100%",
+  display: "flex",
+  alignItems: "center",
+  gap: 10,
+  padding: "14px 16px",
+  background: "linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
+  borderRadius: 16,
+  border: "none",
+  cursor: "pointer",
+  fontFamily: "inherit",
+  textAlign: "left",
 };
