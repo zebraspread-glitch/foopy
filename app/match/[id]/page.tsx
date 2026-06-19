@@ -65,6 +65,7 @@ import {
   teamColor,
 } from "./utils";
 import { foopyColor } from "@/app/lib/foopyRating";
+import { venueDisplayName } from "@/app/data/venues";
 
 const API_TEAM_ID_BY_NAME: Record<string, number> = {
   Adelaide: 1,
@@ -2870,29 +2871,106 @@ type H2HPayload = {
   } | null;
 };
 
-function H2HMeetingRow({ m, compact }: { m: H2HMeeting; compact: boolean }) {
+function h2hRoundLabel(m: H2HMeeting) {
+  if (m.isGrandFinal) return "Grand Final";
+  const rn = safeText(m.roundname, "");
+  // "Round 10" → "R10"; finals keep their full name (e.g. "Preliminary Final")
+  const rm = rn.match(/^Round\s+(\d+)$/i);
+  if (rm) return `R${rm[1]}`;
+  return rn || (m.isFinal ? "Final" : "");
+}
+
+function H2HMeetingRow({ m, compact, onOpen }: { m: H2HMeeting; compact: boolean; onOpen: () => void }) {
   const logoSize = compact ? 22 : 26;
   const hWon = m.winner != null && flexMatchTeam(m.winner, m.hteam) && m.hscore !== m.ascore;
   const aWon = m.winner != null && flexMatchTeam(m.winner, m.ateam) && m.hscore !== m.ascore;
-  const dim = "rgba(255,255,255,0.4)";
+  const draw = m.hscore === m.ascore;
+  const dim = "rgba(255,255,255,0.38)";
+  const roundLabel = h2hRoundLabel(m);
+
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0" }}>
-      <div style={{ width: 52, flexShrink: 0, fontSize: 11, fontWeight: 700, color: "var(--text-3)" }}>
-        {m.year}
-        {m.isFinal && (
-          <div style={{ fontSize: 9, fontWeight: 800, color: m.isGrandFinal ? "#fbbf24" : "#60a5fa", letterSpacing: "0.04em" }}>
-            {m.isGrandFinal ? "GF" : "FINAL"}
+    <button
+      type="button"
+      onClick={onOpen}
+      style={{
+        width: "100%", display: "flex", alignItems: "center", gap: compact ? 8 : 11,
+        padding: compact ? "10px 0" : "11px 0", background: "transparent", border: "none",
+        cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+      }}
+    >
+      {/* Date + round/final tag */}
+      <div style={{ width: compact ? 62 : 70, flexShrink: 0 }}>
+        <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>{m.year}</div>
+        {roundLabel && (
+          <div style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.03em", color: m.isGrandFinal ? "#fbbf24" : m.isFinal ? "#60a5fa" : "var(--text-3)", textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {roundLabel}
           </div>
         )}
       </div>
-      <div style={{ width: logoSize, height: logoSize, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)" }}>
-        <img src={getLogo(safeText(m.hteam, ""))} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+
+      {/* Scoreline */}
+      <div style={{ display: "flex", alignItems: "center", gap: compact ? 5 : 7, flexShrink: 0 }}>
+        <div style={{ width: logoSize, height: logoSize, borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.06)", opacity: hWon || draw ? 1 : 0.55 }}>
+          <img src={getLogo(safeText(m.hteam, ""))} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+        </div>
+        <span style={{ width: 26, textAlign: "right", fontSize: 14, fontWeight: hWon ? 900 : 600, color: hWon ? "var(--text-1)" : dim, fontVariantNumeric: "tabular-nums" }}>{m.hscore}</span>
+        <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.25)" }}>–</span>
+        <span style={{ width: 26, textAlign: "left", fontSize: 14, fontWeight: aWon ? 900 : 600, color: aWon ? "var(--text-1)" : dim, fontVariantNumeric: "tabular-nums" }}>{m.ascore}</span>
+        <div style={{ width: logoSize, height: logoSize, borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.06)", opacity: aWon || draw ? 1 : 0.55 }}>
+          <img src={getLogo(safeText(m.ateam, ""))} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+        </div>
       </div>
-      <span style={{ flex: 1, textAlign: "right", fontSize: 14, fontWeight: hWon ? 900 : 600, color: hWon ? "var(--text-1)" : dim, fontVariantNumeric: "tabular-nums" }}>{m.hscore}</span>
-      <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.25)" }}>–</span>
-      <span style={{ flex: 1, textAlign: "left", fontSize: 14, fontWeight: aWon ? 900 : 600, color: aWon ? "var(--text-1)" : dim, fontVariantNumeric: "tabular-nums" }}>{m.ascore}</span>
-      <div style={{ width: logoSize, height: logoSize, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)" }}>
-        <img src={getLogo(safeText(m.ateam, ""))} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+
+      {/* Venue + winner tag */}
+      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
+        <span style={{
+          fontSize: 10, fontWeight: 800, letterSpacing: "0.02em", textTransform: "uppercase",
+          color: draw ? "var(--text-3)" : "#34d058", whiteSpace: "nowrap",
+        }}>
+          {draw ? "Draw" : `${getAbbr(safeText(m.winner, ""))} won`}
+        </span>
+        {m.venue && (
+          <span style={{ fontSize: 11, fontWeight: 500, color: "var(--text-3)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>
+            {venueDisplayName(m.venue)}
+          </span>
+        )}
+      </div>
+
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.6 }}>
+        <polyline points="9 18 15 12 9 6" />
+      </svg>
+    </button>
+  );
+}
+
+function h2hFormResult(m: H2HMeeting, team: string): "W" | "L" | "D" {
+  if (m.hscore === m.ascore) return "D";
+  const isHome = flexMatchTeam(m.hteam, team);
+  const ts = isHome ? m.hscore : m.ascore;
+  const os = isHome ? m.ascore : m.hscore;
+  return ts > os ? "W" : "L";
+}
+
+function H2HFormRow({ team, wins, meetings }: { team: string; wins: number; meetings: H2HMeeting[] }) {
+  // Most recent 5 meetings, displayed oldest → newest (left → right).
+  const last5 = meetings.slice(0, 5).reverse();
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <div style={{ width: 28, height: 28, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)" }}>
+        <img src={getLogo(team)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+      </div>
+      <span style={{ width: 26, fontSize: 18, fontWeight: 900, color: "var(--text-1)", fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{wins}</span>
+      <div style={{ display: "flex", gap: 4, flex: 1, justifyContent: "flex-end" }}>
+        {last5.map((m, i) => {
+          const r = h2hFormResult(m, team);
+          const bg = r === "W" ? "#16a34a" : r === "L" ? "#dc2626" : "#475569";
+          return (
+            <span key={m.id ?? i} style={{
+              width: 22, height: 22, borderRadius: 7, background: bg, color: "#fff",
+              fontSize: 11, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center",
+            }}>{r}</span>
+          );
+        })}
       </div>
     </div>
   );
@@ -2902,6 +2980,7 @@ function HeadToHeadBox({ homeTeam, awayTeam }: { homeTeam: string; awayTeam: str
   const [data, setData] = useState<H2HPayload | null>(null);
   const [showAll, setShowAll] = useState(false);
   const compact = useCompactViewport();
+  const router = useRouter();
 
   useEffect(() => {
     if (!homeTeam || !awayTeam) return;
@@ -2919,51 +2998,34 @@ function HeadToHeadBox({ homeTeam, awayTeam }: { homeTeam: string; awayTeam: str
 
   const { summary, meetings } = data;
   const shown = showAll ? meetings : meetings.slice(0, 5);
-  const total = summary.home.wins + summary.away.wins + summary.draws;
-  const homePct = total ? (summary.home.wins / total) * 100 : 50;
-  const drawPct = total ? (summary.draws / total) * 100 : 0;
+  const pad = compact ? "14px" : "18px";
 
   return (
     <div style={{
       margin: "0 0 14px", borderRadius: 18, overflow: "hidden",
       background: "linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
     }}>
-      <div style={{ padding: "18px 18px 0", display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+      <div style={{ padding: `18px ${pad} 0`, display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
         <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em", color: "var(--text-1)" }}>Head to head</span>
-        <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)" }}>{summary.total} meeting{summary.total === 1 ? "" : "s"}</span>
+        <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)" }}>
+          {summary.total} meeting{summary.total === 1 ? "" : "s"}
+          {summary.draws > 0 && ` · ${summary.draws} draw${summary.draws === 1 ? "" : "s"}`}
+        </span>
       </div>
 
-      {/* Win tally */}
-      <div style={{ padding: compact ? "14px 14px 4px" : "16px 18px 4px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ width: 26, height: 26, borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.06)" }}>
-              <img src={getLogo(homeTeam)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            </div>
-            <span style={{ fontSize: 18, fontWeight: 900, color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>{summary.home.wins}</span>
-          </div>
-          {summary.draws > 0 && (
-            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-3)" }}>{summary.draws} draw{summary.draws === 1 ? "" : "s"}</span>
-          )}
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 18, fontWeight: 900, color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>{summary.away.wins}</span>
-            <div style={{ width: 26, height: 26, borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.06)" }}>
-              <img src={getLogo(awayTeam)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            </div>
-          </div>
-        </div>
-        <div style={{ display: "flex", height: 8, borderRadius: 999, overflow: "hidden", background: "rgba(255,255,255,0.08)" }}>
-          <div style={{ width: `${homePct}%`, background: "#3b82f6" }} />
-          <div style={{ width: `${drawPct}%`, background: "#475569" }} />
-          <div style={{ flex: 1, background: "#ef4444" }} />
-        </div>
+      {/* Recent form (last 5 meetings) for each team */}
+      <div style={{ padding: `15px ${pad} 6px`, display: "flex", flexDirection: "column", gap: 11 }}>
+        <H2HFormRow team={homeTeam} wins={summary.home.wins} meetings={meetings} />
+        <H2HFormRow team={awayTeam} wins={summary.away.wins} meetings={meetings} />
       </div>
 
-      {/* Recent meetings */}
-      <div style={{ padding: compact ? "8px 14px 8px" : "10px 18px 8px", display: "flex", flexDirection: "column", maxHeight: showAll ? 360 : undefined, overflowY: showAll ? "auto" : undefined }}>
+      <div style={{ height: 1, background: "rgba(255,255,255,0.07)", margin: `8px ${pad} 0` }} />
+
+      {/* Meetings list */}
+      <div style={{ padding: `2px ${pad} 6px`, display: "flex", flexDirection: "column" }}>
         {shown.map((m, i) => (
           <div key={m.id} style={{ borderTop: i === 0 ? "none" : "1px solid rgba(255,255,255,0.06)" }}>
-            <H2HMeetingRow m={m} compact={compact} />
+            <H2HMeetingRow m={m} compact={compact} onOpen={() => router.push(`/seasons/${m.year}`)} />
           </div>
         ))}
       </div>
