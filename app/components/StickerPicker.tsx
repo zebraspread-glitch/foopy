@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
@@ -133,7 +133,7 @@ export default function StickerPicker({ onPick }: { onPick: (name: string) => vo
 
   const usable = useMemo(() => usableStickerNames(ownedPackKeys), [ownedPackKeys]);
 
-  function pick(name: string) {
+  const pick = useCallback((name: string) => {
     if (!usable.has(name)) {
       // Locked paid sticker — send the user to the store instead of inserting.
       setShowAll(false);
@@ -143,20 +143,7 @@ export default function StickerPicker({ onPick }: { onPick: (name: string) => vo
     onPick(name);
     setRecent(addRecentSticker(name));
     setShowAll(false);
-  }
-
-  const StickerButton = ({ name, locked }: { name: string; locked: boolean }) => (
-    <button
-      key={name}
-      type="button"
-      onClick={() => pick(name)}
-      style={{ ...gridBtnStyle, position: "relative", opacity: locked ? 0.55 : 1 }}
-      aria-label={locked ? `Buy to use sticker ${name}` : `Insert sticker ${name}`}
-    >
-      <img src={stickerUrl(name)} alt="" style={imgStyle} />
-      {locked && <span style={lockBadgeStyle}><LockIcon /></span>}
-    </button>
-  );
+  }, [usable, onPick, router]);
 
   const popup = (
     <div style={isMobile ? backdropStyleMobile : backdropStyleDesktop} onClick={() => setShowAll(false)}>
@@ -168,7 +155,7 @@ export default function StickerPicker({ onPick }: { onPick: (name: string) => vo
         </div>
         <div style={scrollAreaStyle}>
           <div style={gridStyle}>
-            {FREE_STICKER_NAMES.map(name => <StickerButton key={name} name={name} locked={false} />)}
+            {FREE_STICKER_NAMES.map(name => <StickerButton key={name} name={name} locked={false} onClick={pick} />)}
           </div>
 
           {PAID_STICKERS.length > 0 && (
@@ -181,7 +168,7 @@ export default function StickerPicker({ onPick }: { onPick: (name: string) => vo
               </div>
               <div style={gridStyle}>
                 {PAID_STICKERS.map(s => (
-                  <StickerButton key={s.sticker} name={s.sticker} locked={!ownedPackKeys.has(s.key)} />
+                  <StickerButton key={s.sticker} name={s.sticker} locked={!ownedPackKeys.has(s.key)} onClick={pick} />
                 ))}
               </div>
             </div>
@@ -217,6 +204,23 @@ export default function StickerPicker({ onPick }: { onPick: (name: string) => vo
     </>
   );
 }
+
+// Module-level + memoised so re-renders of the picker (e.g. a parent's live
+// countdown ticking every second) don't remount the sticker images, which was
+// causing them to reload and flicker.
+const StickerButton = memo(function StickerButton({ name, locked, onClick }: { name: string; locked: boolean; onClick: (name: string) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onClick(name)}
+      style={{ ...gridBtnStyle, position: "relative", opacity: locked ? 0.55 : 1 }}
+      aria-label={locked ? `Buy to use sticker ${name}` : `Insert sticker ${name}`}
+    >
+      <img src={stickerUrl(name)} alt="" style={imgStyle} loading="lazy" decoding="async" draggable={false} />
+      {locked && <span style={lockBadgeStyle}><LockIcon /></span>}
+    </button>
+  );
+});
 
 function GridIcon() {
   return (
