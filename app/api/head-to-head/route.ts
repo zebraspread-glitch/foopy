@@ -204,8 +204,9 @@ export async function GET(req: Request) {
     },
     {
       headers: {
-        // Short TTL since the current season's live results can change mid-round.
-        "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+        // Always let the browser revalidate (current-season results change
+        // mid-round); the CDN may serve a short-lived copy and refresh behind it.
+        "Cache-Control": "public, max-age=0, s-maxage=600, stale-while-revalidate=3600",
       },
     }
   );

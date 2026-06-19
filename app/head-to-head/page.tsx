@@ -115,7 +115,7 @@ function HeadToHeadContent() {
     if (!home || !away) { setLoading(false); return; }
     let active = true;
     setLoading(true);
-    fetch(`/api/head-to-head?home=${encodeURIComponent(home)}&away=${encodeURIComponent(away)}`)
+    fetch(`/api/head-to-head?home=${encodeURIComponent(home)}&away=${encodeURIComponent(away)}`, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (active) { setData(d); setLoading(false); } })
       .catch(() => { if (active) setLoading(false); });

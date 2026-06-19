@@ -2985,7 +2985,7 @@ function HeadToHeadBox({ homeTeam, awayTeam }: { homeTeam: string; awayTeam: str
     if (!homeTeam || !awayTeam) return;
     let active = true;
     setData(null);
-    fetch(`/api/head-to-head?home=${encodeURIComponent(homeTeam)}&away=${encodeURIComponent(awayTeam)}`)
+    fetch(`/api/head-to-head?home=${encodeURIComponent(homeTeam)}&away=${encodeURIComponent(awayTeam)}`, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (active && d?.meetings) setData(d); })
       .catch(() => {});
