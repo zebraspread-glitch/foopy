@@ -2061,6 +2061,10 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
   const identityColsWidth = AVATAR_COL_W + NAME_COL_W;
   const statsWidth = activeCols.reduce((w, c) => w + c.width, 0);
   const tableMinWidth = identityColsWidth + statsWidth;
+  // Frozen header width as a % of the full table, so it stretches in lock-step
+  // with the (proportionally-sized) body columns on wide screens while never
+  // shrinking below its intrinsic px width when the table scrolls on mobile.
+  const identityPct = (identityColsWidth / tableMinWidth) * 100;
   const statsHeaderTop = `calc(var(--round-strip-h, 0px) + ${stickyTop}px)`;
   const foopyArrow = sortKey === "foopy" ? (sortDir === "desc" ? "↓" : "↑") : "";
 
@@ -2160,7 +2164,7 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
         }}
       >
         <div style={statsHeaderViewportStyle}>
-          <div style={{ ...statsHeaderFrozenStyle, width: identityColsWidth }}>
+          <div style={{ ...statsHeaderFrozenStyle, width: `max(${identityColsWidth}px, ${identityPct}%)` }}>
             <button
               type="button"
               onClick={() => handleSort("foopy")}
@@ -2169,7 +2173,7 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
               aria-pressed={sortKey === "foopy"}
               style={{
                 ...statsHeaderCellStyle,
-                width: AVATAR_COL_W,
+                flex: `${AVATAR_COL_W} 1 0`,
                 color: sortKey === "foopy" ? "#38bdf8" : "var(--text-3)",
                 background: sortKey === "foopy" ? "rgba(56,189,248,0.08)" : "transparent",
               }}
@@ -2185,7 +2189,7 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
               aria-pressed={sortKey === "foopy"}
               style={{
                 ...statsHeaderCellStyle,
-                width: NAME_COL_W,
+                flex: `${NAME_COL_W} 1 0`,
                 justifyContent: "flex-start",
                 color: sortKey === "foopy" ? "#38bdf8" : "var(--text-3)",
                 background: sortKey === "foopy" ? "rgba(56,189,248,0.08)" : "transparent",
@@ -2198,8 +2202,9 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
             ref={statsHeaderScrollerRef}
             style={{
               ...statsHeaderScrollerStyle,
-              gridTemplateColumns: `${AVATAR_COL_W}px ${NAME_COL_W}px ${activeCols.map((c) => `${c.width}px`).join(" ")}`,
-              width: tableMinWidth,
+              gridTemplateColumns: `${AVATAR_COL_W}fr ${NAME_COL_W}fr ${activeCols.map((c) => `${c.width}fr`).join(" ")}`,
+              width: "100%",
+              minWidth: tableMinWidth,
             }}
           >
             <div />
@@ -2214,7 +2219,7 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
         style={{ ...tableWrapStyle, WebkitOverflowScrolling: "touch", overscrollBehaviorX: "contain" }}
         onScroll={(e) => syncStatsHeaderScroll(e.currentTarget.scrollLeft)}
       >
-        <table style={{ ...tableStyle, width: tableMinWidth, minWidth: tableMinWidth, tableLayout: "fixed" }}>
+        <table style={{ ...tableStyle, width: "100%", minWidth: tableMinWidth, tableLayout: "fixed" }}>
           <colgroup>
             <col style={{ width: AVATAR_COL_W }} />{/* avatar (sticky) */}
             <col style={{ width: NAME_COL_W }} />{/* surname (sticky) */}
