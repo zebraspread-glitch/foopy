@@ -2214,7 +2214,7 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
         style={{ ...tableWrapStyle, WebkitOverflowScrolling: "touch", overscrollBehaviorX: "contain" }}
         onScroll={(e) => syncStatsHeaderScroll(e.currentTarget.scrollLeft)}
       >
-        <table style={{ ...tableStyle, minWidth: tableMinWidth, tableLayout: "fixed" }}>
+        <table style={{ ...tableStyle, width: tableMinWidth, minWidth: tableMinWidth, tableLayout: "fixed" }}>
           <colgroup>
             <col style={{ width: AVATAR_COL_W }} />{/* avatar (sticky) */}
             <col style={{ width: NAME_COL_W }} />{/* surname (sticky) */}
