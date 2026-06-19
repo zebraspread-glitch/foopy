@@ -106,32 +106,19 @@ export async function GET(req: Request) {
     return Response.json({ error: "Two distinct teams required" }, { status: 400 });
   }
 
-  const cacheDir = path.join(process.cwd(), "app/data/season-cache");
-  let files: string[] = [];
-  try {
-    files = fs.readdirSync(cacheDir).filter((f) => f.endsWith(".json"));
-  } catch {
-    return Response.json({ meetings: [], summary: null });
-  }
-
-  // Newest season first.
-  files.sort((a, b) => parseInt(b, 10) - parseInt(a, 10));
-
   const meetings: Meeting[] = [];
-  for (const file of files) {
-    let data: { games?: CacheGame[] };
-    try {
-      data = JSON.parse(fs.readFileSync(path.join(cacheDir, file), "utf-8"));
-    } catch {
-      continue;
-    }
-    for (const g of data.games ?? []) {
+  const seenIds = new Set<number>();
+
+  const collect = (games: CacheGame[] | undefined) => {
+    for (const g of games ?? []) {
       if (Number(g.complete) < 100) continue;
       if (g.hscore == null || g.ascore == null) continue;
       const kh = canonicalTeamKey(g.hteam);
       const ka = canonicalTeamKey(g.ateam);
       const isMatch = (kh === keyA && ka === keyB) || (kh === keyB && ka === keyA);
       if (!isMatch) continue;
+      if (seenIds.has(g.id)) continue;
+      seenIds.add(g.id);
       meetings.push({
         id: g.id,
         year: g.year,
@@ -146,6 +133,44 @@ export async function GET(req: Request) {
         isFinal: Boolean(g.is_final) || Boolean(g.is_grand_final),
         isGrandFinal: Boolean(g.is_grand_final),
       });
+    }
+  };
+
+  // ── Past seasons from the local cache ──────────────────────────────────────
+  const cacheDir = path.join(process.cwd(), "app/data/season-cache");
+  let files: string[] = [];
+  try {
+    files = fs.readdirSync(cacheDir).filter((f) => f.endsWith(".json"));
+  } catch {
+    files = [];
+  }
+  // Newest season first.
+  files.sort((a, b) => parseInt(b, 10) - parseInt(a, 10));
+  for (const file of files) {
+    try {
+      const data = JSON.parse(fs.readFileSync(path.join(cacheDir, file), "utf-8"));
+      collect(data.games);
+    } catch {
+      continue;
+    }
+  }
+
+  // ── Current season from the live Squiggle feed (not in the cache) ─────────
+  // The cache only covers completed seasons, so meetings already played this
+  // year (e.g. an earlier round) live only in the live feed.
+  const currentYear = new Date().getFullYear();
+  if (!files.includes(`${currentYear}.json`)) {
+    try {
+      const res = await fetch(
+        `https://api.squiggle.com.au/?q=games;year=${currentYear}`,
+        { headers: { "User-Agent": "Foopy AFL App (foopy.app)" }, next: { revalidate: 3600 } }
+      );
+      if (res.ok) {
+        const live = await res.json();
+        collect(live.games);
+      }
+    } catch {
+      // Live feed unavailable — fall back to cached history only.
     }
   }
 
@@ -179,7 +204,8 @@ export async function GET(req: Request) {
     },
     {
       headers: {
-        "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+        // Short TTL since the current season's live results can change mid-round.
+        "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
       },
     }
   );

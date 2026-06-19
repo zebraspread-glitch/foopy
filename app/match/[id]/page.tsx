@@ -2978,7 +2978,6 @@ function H2HFormRow({ team, wins, meetings }: { team: string; wins: number; meet
 
 function HeadToHeadBox({ homeTeam, awayTeam }: { homeTeam: string; awayTeam: string }) {
   const [data, setData] = useState<H2HPayload | null>(null);
-  const [showAll, setShowAll] = useState(false);
   const compact = useCompactViewport();
   const router = useRouter();
 
@@ -2986,7 +2985,6 @@ function HeadToHeadBox({ homeTeam, awayTeam }: { homeTeam: string; awayTeam: str
     if (!homeTeam || !awayTeam) return;
     let active = true;
     setData(null);
-    setShowAll(false);
     fetch(`/api/head-to-head?home=${encodeURIComponent(homeTeam)}&away=${encodeURIComponent(awayTeam)}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (active && d?.meetings) setData(d); })
@@ -2997,7 +2995,7 @@ function HeadToHeadBox({ homeTeam, awayTeam }: { homeTeam: string; awayTeam: str
   if (!data || data.meetings.length === 0 || !data.summary) return null;
 
   const { summary, meetings } = data;
-  const shown = showAll ? meetings : meetings.slice(0, 5);
+  const shown = meetings.slice(0, 5);
   const pad = compact ? "14px" : "18px";
 
   return (
@@ -3033,14 +3031,14 @@ function HeadToHeadBox({ homeTeam, awayTeam }: { homeTeam: string; awayTeam: str
       {meetings.length > 5 && (
         <button
           type="button"
-          onClick={() => setShowAll((v) => !v)}
+          onClick={() => router.push(`/head-to-head?home=${encodeURIComponent(homeTeam)}&away=${encodeURIComponent(awayTeam)}`)}
           style={{
             width: "100%", padding: "13px 18px", background: "rgba(255,255,255,0.03)",
             border: "none", borderTop: "1px solid rgba(255,255,255,0.06)", color: "#60a5fa",
             fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", letterSpacing: "-0.01em",
           }}
         >
-          {showAll ? "Show less" : `Show all ${meetings.length} meetings`}
+          {`Show all ${meetings.length} meetings`}
         </button>
       )}
     </div>
