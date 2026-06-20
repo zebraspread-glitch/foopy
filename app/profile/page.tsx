@@ -1617,7 +1617,33 @@ export default function ProfilePage() {
   }
 
   function getTeamLogo(name: string) {
-    const t = TEAMS.find((t) => t.name === name || t.name.includes(name) || name.includes(t.name.split(" ")[0]));
+    // Squiggle full team names → logo slug (exact, to avoid fuzzy mismatches
+    // like "Port Adelaide" matching "Adelaide" or "North Melbourne" → "Melbourne")
+    const SQUIGGLE_SLUG: Record<string, string> = {
+      "Adelaide": "crows",
+      "Brisbane Lions": "lions",
+      "Carlton": "blues",
+      "Collingwood": "magpies",
+      "Essendon": "bombers",
+      "Fremantle": "dockers",
+      "Geelong": "cats",
+      "Gold Coast": "suns",
+      "Greater Western Sydney": "giants",
+      "GWS": "giants",
+      "GWS Giants": "giants",
+      "Hawthorn": "hawks",
+      "Melbourne": "demons",
+      "North Melbourne": "kangaroos",
+      "Port Adelaide": "power",
+      "Richmond": "tigers",
+      "St Kilda": "saints",
+      "Sydney": "swans",
+      "West Coast": "eagles",
+      "Western Bulldogs": "bulldogs",
+    };
+    const slug = SQUIGGLE_SLUG[name];
+    if (slug) return `/team-logos/${slug}.png`;
+    const t = TEAMS.find((t) => t.name === name);
     return t?.logo ?? "/team-logos/crows.png";
   }
 
@@ -2844,7 +2870,7 @@ export default function ProfilePage() {
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
                     {gamesData.map((t) => (
                       <div key={t.name} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "14px 8px", borderRadius: 16, background: "var(--surface-2)", border: "1px solid var(--border-1)" }}>
-                        <img src={t.logo} alt={t.name} style={{ width: 44, height: 44, objectFit: "contain" }} />
+                        <img src={t.logo} alt={t.name} style={{ width: 44, height: 44, objectFit: "contain", borderRadius: "50%", background: "var(--surface-1)", padding: 5 }} />
                         <div style={{ fontSize: 22, fontWeight: 950, color: "var(--text-1)", letterSpacing: "-0.04em" }}>{t.count}</div>
                         <div style={{ fontSize: 10, fontWeight: 800, color: "var(--text-3)", textAlign: "center", lineHeight: 1.3 }}>{t.name}</div>
                       </div>
