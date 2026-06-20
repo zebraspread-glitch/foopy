@@ -18,6 +18,8 @@ import { nameColorStyle } from "@/app/lib/cosmetics";
 import { ReportBlockSheet } from "@/app/components/ReportBlockMenu";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import { foopyRating } from "@/app/match/[id]/utils";
+import { loadPollEntries, type PollEntry } from "@/app/lib/pollHistory";
+import PollPickList from "@/app/components/PollPickList";
 
 function useMediaQuery(query: string) {
   const [matches, setMatches] = useState(false);
@@ -515,6 +517,17 @@ export default function PublicProfilePage() {
   const [pollsVoted,     setPollsVoted]     = useState<number | null>(null);
   const [pollsWon,       setPollsWon]       = useState<number | null>(null);
   const [gamesViewed,    setGamesViewed]    = useState<number | null>(null);
+  const [gamesViewedOpen,    setGamesViewedOpen]    = useState(false);
+  const [gamesData,          setGamesData]          = useState<{ name: string; logo: string; count: number }[]>([]);
+  const [gamesDataLoading,   setGamesDataLoading]   = useState(false);
+  const [passesOpen,         setPassesOpen]         = useState(false);
+  const [pollsOpen,          setPollsOpen]          = useState(false);
+  const [pollsData,          setPollsData]          = useState<PollEntry[]>([]);
+  const [pollsDataLoading,   setPollsDataLoading]   = useState(false);
+  const [likesOpen,          setLikesOpen]          = useState(false);
+  const [likesData,          setLikesData]          = useState<{ id: string; username: string | null; avatar_url: string | null; total: number }[]>([]);
+  const [likesDataLoading,   setLikesDataLoading]   = useState(false);
+  const commentsSectionRef = useRef<HTMLElement>(null);
   const [commentCount,   setCommentCount]   = useState<number | null>(null);
 
   // Fetch player stats for all player_ event key comments so we can embed them in the URL
@@ -945,6 +958,87 @@ export default function PublicProfilePage() {
     setDuelHistoryLoading(false);
   }
 
+  function getTeamLogo(name: string) {
+    // Squiggle full team names → logo slug (exact, to avoid fuzzy mismatches
+    // like "Port Adelaide" matching "Adelaide" or "North Melbourne" → "Melbourne")
+    const SQUIGGLE_SLUG: Record<string, string> = {
+      "Adelaide": "crows",
+      "Brisbane Lions": "lions",
+      "Carlton": "blues",
+      "Collingwood": "magpies",
+      "Essendon": "bombers",
+      "Fremantle": "dockers",
+      "Geelong": "cats",
+      "Gold Coast": "suns",
+      "Greater Western Sydney": "giants",
+      "GWS": "giants",
+      "GWS Giants": "giants",
+      "Hawthorn": "hawks",
+      "Melbourne": "demons",
+      "North Melbourne": "kangaroos",
+      "Port Adelaide": "power",
+      "Richmond": "tigers",
+      "St Kilda": "saints",
+      "Sydney": "swans",
+      "West Coast": "eagles",
+      "Western Bulldogs": "bulldogs",
+    };
+    return `/team-logos/${SQUIGGLE_SLUG[name] ?? "unknown"}.png`;
+  }
+
+  async function openGamesViewed() {
+    setGamesViewedOpen(true);
+    window.scrollTo(0, 0);
+    if (gamesData.length > 0) return;
+    setGamesDataLoading(true);
+    try {
+      const { data: events } = await supabase
+        .from("aura_events")
+        .select("related_id")
+        .eq("user_id", profile.id)
+        .eq("event_type", "live_game_view");
+      const counts: Record<string, { name: string; logo: string; count: number }> = {};
+      for (const e of events ?? []) {
+        const game = gamesMap.get(Number((e as any).related_id));
+        if (!game) continue;
+        for (const teamName of [game.hteam, game.ateam].filter(Boolean)) {
+          if (!counts[teamName]) counts[teamName] = { name: teamName, logo: getTeamLogo(teamName), count: 0 };
+          counts[teamName].count++;
+        }
+      }
+      setGamesData(Object.values(counts).sort((a, b) => b.count - a.count));
+    } catch {}
+    setGamesDataLoading(false);
+  }
+
+  async function openPollsPopup() {
+    setPollsOpen(true);
+    window.scrollTo(0, 0);
+    if (pollsData.length > 0) return;
+    setPollsDataLoading(true);
+    try {
+      setPollsData(await loadPollEntries(profile.id));
+    } catch {}
+    setPollsDataLoading(false);
+  }
+
+  async function openLikesPopup() {
+    setLikesOpen(true);
+    window.scrollTo(0, 0);
+    if (likesData.length > 0) return;
+    setLikesDataLoading(true);
+    try {
+      const { data } = await supabase.rpc("get_likes_leaderboard", { p_limit: 100, p_offset: 0 });
+      setLikesData((data ?? []).map((r: any) => ({
+        id: String(r.user_id),
+        username: r.username ?? null,
+        avatar_url: r.avatar_url ?? null,
+        total: Number(r.total_likes),
+      })));
+    } catch {}
+    setLikesDataLoading(false);
+  }
+
   async function handleFriendAction() {
     if (!currentUserId || !profile) return;
     setFriendLoading(true);
@@ -1250,15 +1344,15 @@ export default function PublicProfilePage() {
         {(() => {
           const passCount = playerPasses.length + teamPasses.length;
           const stats: { label: string; value: string | number; color: string; icon: React.ReactNode; onClick?: () => void }[] = [
-            { label: "Aura Rank",   value: auraRank    != null ? `#${auraRank.toLocaleString()}` : "—", color: "#c084fc", icon: <Star        size={15} /> },
-            { label: "Cards",       value: cardCount,                                                    color: "#fbbf24", icon: <Layers      size={15} /> },
-            { label: "Passes",      value: passCount,                                                    color: "#60a5fa", icon: <Ticket      size={15} /> },
-            { label: "Comments",    value: commentCount ?? "—",                                          color: "#38bdf8", icon: <MessageCircle size={15} /> },
-            { label: "Likes",       value: profile.total_likes ?? "—",                                   color: "#f43f5e", icon: <Heart       size={15} /> },
-            { label: "Games",       value: gamesViewed ?? "—",                                           color: "#4ade80", icon: <Tv          size={15} /> },
+            { label: "Aura Rank",   value: auraRank    != null ? `#${auraRank.toLocaleString()}` : "—", color: "#c084fc", icon: <Star        size={15} />, onClick: () => router.push("/aura-leaderboard") },
+            { label: "Cards",       value: cardCount,                                                    color: "#fbbf24", icon: <Layers      size={15} />, onClick: () => router.push(`/album/${profile.username}`) },
+            { label: "Passes",      value: passCount,                                                    color: "#60a5fa", icon: <Ticket      size={15} />, onClick: () => setPassesOpen(true) },
+            { label: "Comments",    value: commentCount ?? "—",                                          color: "#38bdf8", icon: <MessageCircle size={15} />, onClick: () => commentsSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }) },
+            { label: "Likes",       value: profile.total_likes ?? "—",                                   color: "#f43f5e", icon: <Heart       size={15} />, onClick: openLikesPopup },
+            { label: "Games",       value: gamesViewed ?? "—",                                           color: "#4ade80", icon: <Tv          size={15} />, onClick: openGamesViewed },
             { label: "Duels",       value: duelStats?.total ?? 0,                                        color: "#f97316", icon: <Zap         size={15} />, onClick: openDuelHistory },
-            { label: "Polls Voted", value: pollsVoted  ?? "—",                                           color: "#a78bfa", icon: <BarChart2   size={15} /> },
-            { label: "Polls Won",   value: pollsWon    ?? "—",                                           color: "#22c55e", icon: <Trophy      size={15} /> },
+            { label: "Polls Voted", value: pollsVoted  ?? "—",                                           color: "#a78bfa", icon: <BarChart2   size={15} />, onClick: openPollsPopup },
+            { label: "Polls Won",   value: pollsWon    ?? "—",                                           color: "#22c55e", icon: <Trophy      size={15} />, onClick: openPollsPopup },
           ];
           return (
             <div style={{ background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18, display: "grid", gridTemplateColumns: "repeat(3, 1fr)" }}>
@@ -1342,7 +1436,7 @@ export default function PublicProfilePage() {
 
         {/* ── Comment history ── */}
         {comments.length > 0 && (
-          <section style={{ background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18, padding: "18px 16px 20px" }}>
+          <section ref={commentsSectionRef} style={{ background: "var(--bg)", border: "1px solid var(--border-2)", borderRadius: 18, padding: "18px 16px 20px", scrollMarginTop: 70 }}>
             <div style={{ marginBottom: 14, fontSize: 12, fontWeight: 800, color: "var(--text-3)", textTransform: "uppercase" as const, letterSpacing: "0.08em" }}>
               comments
             </div>
@@ -1469,6 +1563,104 @@ export default function PublicProfilePage() {
                         </span>
                       </div>
                     </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+
+      {gamesViewedOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "var(--bg)", color: "var(--text-1)", overflowY: "auto" }}>
+          <div style={{ height: "calc(58px + env(safe-area-inset-top))", display: "flex", alignItems: "center", gap: 18, padding: "env(safe-area-inset-top) 20px 0", background: "var(--bg)", borderBottom: "1px solid var(--border-2)", position: "sticky", top: 0 }}>
+            <button onClick={() => setGamesViewedOpen(false)} style={overlayBackBtnStyle}>← Back</button>
+            <strong style={{ fontSize: 18 }}>Live Games Viewed</strong>
+          </div>
+          <div style={{ maxWidth: 680, margin: "0 auto", padding: 16 }}>
+            {gamesDataLoading ? (
+              <div style={{ textAlign: "center", padding: 40, color: "var(--text-3)" }}>Loading…</div>
+            ) : gamesData.length === 0 ? (
+              <div style={{ textAlign: "center", padding: 40, color: "var(--text-3)", fontSize: 14, fontWeight: 700 }}>No live games viewed yet.</div>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+                {gamesData.map((t) => (
+                  <div key={t.name} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "14px 8px", borderRadius: 16, background: "var(--surface-2)", border: "1px solid var(--border-1)" }}>
+                    <img src={t.logo} alt={t.name} style={{ width: 44, height: 44, objectFit: "contain", borderRadius: "50%", background: "var(--surface-1)", padding: 5 }} />
+                    <div style={{ fontSize: 22, fontWeight: 950, color: "var(--text-1)", letterSpacing: "-0.04em" }}>{t.count}</div>
+                    <div style={{ fontSize: 10, fontWeight: 800, color: "var(--text-3)", textAlign: "center", lineHeight: 1.3 }}>{t.name}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {passesOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "var(--bg)", color: "var(--text-1)", overflowY: "auto" }}>
+          <div style={{ height: "calc(58px + env(safe-area-inset-top))", display: "flex", alignItems: "center", gap: 18, padding: "env(safe-area-inset-top) 20px 0", background: "var(--bg)", borderBottom: "1px solid var(--border-2)", position: "sticky", top: 0 }}>
+            <button onClick={() => setPassesOpen(false)} style={overlayBackBtnStyle}>← Back</button>
+            <strong style={{ fontSize: 18 }}>Passes</strong>
+          </div>
+          <div style={{ maxWidth: 680, margin: "0 auto", padding: 16 }}>
+            {playerPasses.length + teamPasses.length === 0 ? (
+              <div style={{ textAlign: "center", padding: 40, color: "var(--text-3)", fontSize: 14, fontWeight: 700 }}>No passes yet.</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 18 }}>
+                {teamPasses.map((pass) => (
+                  <div key={pass.id} style={{ width: "min(100%, 320px)" }}><TeamPassCard pass={pass} /></div>
+                ))}
+                {playerPasses.map((pass) => (
+                  <div key={pass.id} style={{ width: "min(100%, 320px)" }}><PlayerPassCard pass={pass} /></div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {pollsOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "var(--bg)", color: "var(--text-1)", overflowY: "auto" }}>
+          <div style={{ height: "calc(58px + env(safe-area-inset-top))", display: "flex", alignItems: "center", gap: 18, padding: "env(safe-area-inset-top) 20px 0", background: "var(--bg)", borderBottom: "1px solid var(--border-2)", position: "sticky", top: 0 }}>
+            <button onClick={() => setPollsOpen(false)} style={overlayBackBtnStyle}>← Back</button>
+            <strong style={{ fontSize: 18 }}>Poll Picks</strong>
+          </div>
+          <div style={{ maxWidth: 680, margin: "0 auto", padding: 16 }}>
+            {pollsDataLoading ? (
+              <div style={{ textAlign: "center", padding: 40, color: "var(--text-3)" }}>Loading…</div>
+            ) : pollsData.length === 0 ? (
+              <div style={{ textAlign: "center", padding: 40, color: "var(--text-3)", fontSize: 14, fontWeight: 700 }}>No poll picks yet.</div>
+            ) : (
+              <PollPickList entries={pollsData} />
+            )}
+          </div>
+        </div>
+      )}
+
+      {likesOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "var(--bg)", color: "var(--text-1)", overflowY: "auto" }}>
+          <div style={{ height: "calc(58px + env(safe-area-inset-top))", display: "flex", alignItems: "center", gap: 18, padding: "env(safe-area-inset-top) 20px 0", background: "var(--bg)", borderBottom: "1px solid var(--border-2)", position: "sticky", top: 0 }}>
+            <button onClick={() => setLikesOpen(false)} style={overlayBackBtnStyle}>← Back</button>
+            <strong style={{ fontSize: 18 }}>Likes Leaderboard</strong>
+          </div>
+          <div style={{ maxWidth: 680, margin: "0 auto", padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+            {likesDataLoading ? (
+              <div style={{ textAlign: "center", padding: 40, color: "var(--text-3)" }}>Loading…</div>
+            ) : likesData.length === 0 ? (
+              <div style={{ textAlign: "center", padding: 40, color: "var(--text-3)", fontSize: 14, fontWeight: 700 }}>No comment likes yet.</div>
+            ) : (
+              likesData.map((entry, i) => {
+                const isThem = entry.id === profile.id;
+                return (
+                  <div key={entry.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 14, background: isThem ? "rgba(59,130,246,.08)" : "var(--surface-2)", border: `1px solid ${isThem ? "rgba(59,130,246,.2)" : "var(--border-1)"}` }}>
+                    <div style={{ fontSize: 13, fontWeight: 900, color: i < 3 ? ["#ffd700", "#c0c0c0", "#cd7f32"][i] : "var(--text-4)", width: 22, textAlign: "center" }}>{i + 1}</div>
+                    {entry.avatar_url
+                      ? <img src={entry.avatar_url} alt="" style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+                      : <div style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--surface-3)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 900, color: "var(--text-3)" }}>{(entry.username ?? "?")[0].toUpperCase()}</div>
+                    }
+                    <div style={{ flex: 1, minWidth: 0, fontWeight: 800, fontSize: 14, color: isThem ? "#60a5fa" : "var(--text-1)" }}>@{entry.username ?? "unknown"}</div>
+                    <div style={{ fontSize: 18, fontWeight: 950, color: "var(--text-1)", letterSpacing: "-0.03em" }}>{entry.total.toLocaleString()}</div>
                   </div>
                 );
               })

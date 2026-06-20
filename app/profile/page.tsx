@@ -18,6 +18,8 @@ import { auraToastEmitter } from "@/app/lib/auraToastEmitter";
 import { playerImgUrl } from "@/app/lib/playerImage";
 import { nameColorStyle, avatarFrameStyle } from "@/app/lib/cosmetics";
 import { supabase } from "@/app/lib/supabase";
+import { loadPollEntries, type PollEntry } from "@/app/lib/pollHistory";
+import PollPickList from "@/app/components/PollPickList";
 import { createNotification } from "@/app/lib/notifications";
 import playersRaw from "@/app/data/players.json";
 import { CARD_PLAYERS } from "@/app/data/cardPlayers";
@@ -999,7 +1001,7 @@ export default function ProfilePage() {
   }
 
   // ── Stats section ──
-  type StatsPopup = null | "games" | "likes" | "polls" | "duels";
+  type StatsPopup = null | "games" | "likes" | "polls" | "duels" | "comments";
   const [statsPopup, setStatsPopup] = useState<StatsPopup>(null);
   const [cardCount, setCardCount] = useState<number | null>(null);
   const [duelStats, setDuelStats] = useState<{ wins: number; losses: number; total: number; winRate: number; winStreak: number } | null>(null);
@@ -1016,7 +1018,7 @@ export default function ProfilePage() {
 
   type TeamStat = { name: string; logo: string; count: number };
   type LikeEntry = { id: string; username: string | null; avatar_url: string | null; total: number };
-  type PollTeamStat = { name: string; logo: string; wins: number; losses: number };
+  type CommentEntry = { id: string; body: string; created_at: string | null };
 
   const [gamesData, setGamesData] = useState<TeamStat[]>([]);
   const [gamesDataLoading, setGamesDataLoading] = useState(false);
@@ -1027,8 +1029,10 @@ export default function ProfilePage() {
   const [myLikesRank, setMyLikesRank] = useState<{ rank: number; total: number } | null>(null);
   const likesSentinelRef = useRef<HTMLDivElement>(null);
   const likesLoadingRef = useRef(false);
-  const [pollsData, setPollsData] = useState<PollTeamStat[]>([]);
+  const [pollsData, setPollsData] = useState<PollEntry[]>([]);
   const [pollsDataLoading, setPollsDataLoading] = useState(false);
+  const [commentsData, setCommentsData] = useState<CommentEntry[]>([]);
+  const [commentsDataLoading, setCommentsDataLoading] = useState(false);
 
   useEffect(() => {
     // Safety net: never hang on the loading screen longer than 8 seconds
@@ -1726,32 +1730,29 @@ export default function ProfilePage() {
   async function openPollsPopup() {
     setStatsPopup("polls");
     if (pollsData.length > 0) return;
+    if (!user) { setPollsDataLoading(false); return; }
     setPollsDataLoading(true);
     try {
-      const res = await fetch("/api/games", { cache: "no-store" });
-      const raw = await res.json();
-      const all: { id: number; hteam?: string; ateam?: string; hscore?: number; ascore?: number; complete?: number; is_final?: number }[] = Array.isArray(raw) ? raw : (raw.games ?? []);
-      const picks: Record<string, "home" | "away"> = {};
-      try { Object.assign(picks, JSON.parse(localStorage.getItem("foopy_picks") ?? "{}")); } catch {}
-      const correctIds = new Set<string>();
-      const teamStats: Record<string, PollTeamStat> = {};
-      for (const [gidStr, side] of Object.entries(picks)) {
-        const game = all.find((g) => String(g.id) === String(gidStr));
-        if (!game) continue;
-        const isDone = (game.complete ?? 0) >= 100 || game.is_final === 1;
-        if (!isDone) continue;
-        const hs = game.hscore ?? 0, as = game.ascore ?? 0;
-        const winner: "home" | "away" | "draw" = hs > as ? "home" : as > hs ? "away" : "draw";
-        if (winner === "draw") continue;
-        const pickedTeam = side === "home" ? (game.hteam ?? "") : (game.ateam ?? "");
-        if (!pickedTeam) continue;
-        if (!teamStats[pickedTeam]) teamStats[pickedTeam] = { name: pickedTeam, logo: getTeamLogo(pickedTeam), wins: 0, losses: 0 };
-        if (correctIds.has(String(gidStr))) teamStats[pickedTeam].wins++;
-        else teamStats[pickedTeam].losses++;
-      }
-      setPollsData(Object.values(teamStats).sort((a, b) => b.wins - a.wins || a.losses - b.losses));
+      setPollsData(await loadPollEntries(user.id));
     } catch {}
     setPollsDataLoading(false);
+  }
+
+  async function openCommentsPopup() {
+    setStatsPopup("comments");
+    if (commentsData.length > 0) return;
+    if (!user) { setCommentsDataLoading(false); return; }
+    setCommentsDataLoading(true);
+    try {
+      const { data } = await supabase
+        .from("feed_comments")
+        .select("id, body, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(100);
+      setCommentsData((data ?? []) as CommentEntry[]);
+    } catch {}
+    setCommentsDataLoading(false);
   }
 
   async function openDuelsPopup() {
@@ -2311,7 +2312,7 @@ export default function ProfilePage() {
             { label: "Aura Rank",   value: auraRank    != null ? `#${auraRank.toLocaleString()}` : "—", color: "#c084fc", icon: <Star     size={15} />, onClick: () => router.push("/aura-leaderboard") },
             { label: "Cards",       value: cardCount   ?? "—",                                           color: "#fbbf24", icon: <Layers   size={15} />, onClick: () => router.push("/album") },
             { label: "Passes",      value: passCount   ?? "—",                                           color: "#60a5fa", icon: <Ticket   size={15} />, onClick: () => router.push("/passes") },
-            { label: "Comments",    value: commentCount ?? "—",                                          color: "#38bdf8", icon: <MessageCircle size={15} /> },
+            { label: "Comments",    value: commentCount ?? "—",                                          color: "#38bdf8", icon: <MessageCircle size={15} />, onClick: openCommentsPopup },
             { label: "Likes",       value: profile?.total_likes ?? totalLikes ?? "—",                    color: "#f43f5e", icon: <Heart    size={15} />, onClick: openLikesPopup },
             { label: "Games",       value: gamesViewed ?? "—",                                           color: "#4ade80", icon: <Tv       size={15} />, onClick: openGamesPopup },
             { label: "Duels",       value: duelStats?.total ?? 0,                                        color: "#f97316", icon: <Zap      size={15} />, onClick: openDuelsPopup },
@@ -2849,8 +2850,9 @@ export default function ProfilePage() {
               <div style={{ fontSize: 18, fontWeight: 950, letterSpacing: "-0.02em" }}>
                 {statsPopup === "games" && "Live Games Viewed"}
                 {statsPopup === "likes" && "Likes Leaderboard"}
-                {statsPopup === "polls" && "Polls Won by Team"}
+                {statsPopup === "polls" && "Poll Picks"}
                 {statsPopup === "duels" && "Duel History"}
+                {statsPopup === "comments" && "Comments"}
               </div>
               <button onClick={() => setStatsPopup(null)} style={{ background: "none", border: "none", color: "var(--text-3)", cursor: "pointer", padding: 4 }}>
                 <X size={20} />
@@ -2982,18 +2984,27 @@ export default function ProfilePage() {
                 pollsDataLoading ? (
                   <div style={{ textAlign: "center", padding: 40, color: "var(--text-3)" }}>Loading…</div>
                 ) : pollsData.length === 0 ? (
-                  <EmptyState icon="📊" text="No completed picks yet. Head to a match and pick a winner!" />
+                  <EmptyState icon="📊" text="No poll picks yet. Head to a match and vote!" />
+                ) : (
+                  <PollPickList entries={pollsData} />
+                )
+              )}
+
+              {statsPopup === "comments" && (
+                commentsDataLoading ? (
+                  <div style={{ textAlign: "center", padding: 40, color: "var(--text-3)" }}>Loading…</div>
+                ) : commentsData.length === 0 ? (
+                  <EmptyState icon="💬" text="No comments yet." />
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {pollsData.map((t) => (
-                      <div key={t.name} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 14px", borderRadius: 14, background: "var(--surface-2)", border: "1px solid var(--border-1)" }}>
-                        <img src={t.logo} alt={t.name} style={{ width: 40, height: 40, objectFit: "contain" }} />
-                        <div style={{ flex: 1, fontWeight: 800, fontSize: 14, color: "var(--text-1)" }}>{t.name}</div>
-                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                          <span style={{ fontSize: 14, fontWeight: 900, color: "#22c55e" }}>{t.wins}W</span>
-                          <span style={{ fontSize: 12, color: "var(--text-4)" }}>–</span>
-                          <span style={{ fontSize: 14, fontWeight: 900, color: "#ef4444" }}>{t.losses}L</span>
-                        </div>
+                    {commentsData.map((c) => (
+                      <div key={c.id} style={{ padding: "12px 14px", borderRadius: 14, background: "var(--surface-2)", border: "1px solid var(--border-1)" }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-1)", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{c.body}</div>
+                        {c.created_at && (
+                          <div style={{ fontSize: 11, color: "var(--text-4)", marginTop: 6 }}>
+                            {new Date(c.created_at).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
