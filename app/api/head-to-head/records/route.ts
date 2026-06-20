@@ -1,33 +1,8 @@
 import fs from "fs";
 import path from "path";
+import { canonicalTeamKey } from "@/app/lib/teams";
 
 export const runtime = "nodejs";
-
-// Canonical key folding historical / relocated names onto the modern club.
-function canonicalTeamKey(team: string) {
-  const key = String(team || "").toLowerCase().replace(/[^a-z]/g, "");
-  const aliases: Record<string, string> = {
-    adelaide: "adelaide", adelaidecrows: "adelaide",
-    brisbane: "brisbane", brisbanelions: "brisbane", brisbanebears: "brisbane",
-    carlton: "carlton", carltonblues: "carlton",
-    collingwood: "collingwood", collingwoodmagpies: "collingwood",
-    essendon: "essendon", essendonbombers: "essendon",
-    fremantle: "fremantle", fremantledockers: "fremantle",
-    geelong: "geelong", geelongcats: "geelong",
-    goldcoast: "goldcoast", goldcoastsuns: "goldcoast",
-    gws: "gws", gwsgiants: "gws", greaterwesternsydney: "gws", greaterwesternsydneygiants: "gws",
-    hawthorn: "hawthorn", hawthornhawks: "hawthorn",
-    melbourne: "melbourne", melbournedemons: "melbourne",
-    northmelbourne: "northmelbourne", northmelbournekangaroos: "northmelbourne", kangaroos: "northmelbourne",
-    portadelaide: "portadelaide", portadelaidepower: "portadelaide", power: "portadelaide",
-    richmond: "richmond", richmondtigers: "richmond",
-    stkilda: "stkilda", stkildasaints: "stkilda",
-    sydney: "sydney", sydneyswans: "sydney", southmelbourne: "sydney",
-    westcoast: "westcoast", westcoasteagles: "westcoast",
-    westernbulldogs: "westernbulldogs", footscray: "westernbulldogs", bulldogs: "westernbulldogs",
-  };
-  return aliases[key] ?? key;
-}
 
 // Modern clubs only — keeps records meaningful and logos available.
 const NAME: Record<string, string> = {

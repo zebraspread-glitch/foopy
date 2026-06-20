@@ -2,6 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/app/lib/supabase";
 import { VerifiedBadge } from "@/app/components/VerifiedBadge";
@@ -896,7 +897,7 @@ function DMsPageInner() {
     <main style={{ minHeight: "100dvh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
       <div style={{ textAlign: "center", color: "var(--text-3)" }}>
         <p style={{ fontWeight: 800, fontSize: 16, marginBottom: 12 }}>Set up your profile first</p>
-        <a href="/profile" style={{ color: "#22c55e", fontWeight: 800 }}>Go to Profile →</a>
+        <Link href="/profile" style={{ color: "#22c55e", fontWeight: 800 }}>Go to Profile →</Link>
       </div>
     </main>
   );

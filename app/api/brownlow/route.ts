@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { loadSeasonGameRatings } from "@/app/lib/seasonRatings";
+import { teamsMatch } from "@/app/lib/teams";
 
 export const dynamic = "force-dynamic";
 
@@ -36,15 +37,11 @@ export async function GET() {
     if (game.round != null) lastRound = Math.max(lastRound, game.round);
 
     const votePoints = [3, 2, 1];
-    const norm = (s: string) => s.toLowerCase().replace(/[^a-z]/g, "");
-    const nh = norm(game.hteam);
     ranked.slice(0, 3).forEach((p, i) => {
       const votes = votePoints[i];
       // Player team names (e.g. "Brisbane") don't always exactly match Squiggle's
-      // ("Brisbane Lions"), so match the home side fuzzily before picking the foe.
-      const nt = norm(p.team);
-      const isHome = nt === nh || nh.includes(nt) || nt.includes(nh);
-      const opponent = isHome ? game.ateam : game.hteam;
+      // ("Brisbane Lions"), so resolve the home side canonically before the foe.
+      const opponent = teamsMatch(p.team, game.hteam) ? game.ateam : game.hteam;
       let t = byPlayer.get(p.apiPlayerId);
       if (!t) {
         t = { name: p.name, team: p.team, image: p.image, votes: 0, threes: 0, twos: 0, ones: 0, gamesPolled: 0, polls: [] };

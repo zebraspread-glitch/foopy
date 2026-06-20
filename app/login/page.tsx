@@ -2,6 +2,7 @@
 
 import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Activity, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/app/lib/supabase";
 
@@ -384,7 +385,7 @@ function LoginPageInner() {
           <span style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.07)" }} />
         </div>
 
-        <a href="/" style={secondaryBtn}>Browse without an account</a>
+        <Link href="/" style={secondaryBtn}>Browse without an account</Link>
       </div>
     </main>
   );
