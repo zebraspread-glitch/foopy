@@ -119,6 +119,17 @@ const NAV_ITEMS: NavItem[] = [
         ),
       },
       {
+        label: "Brownlow",
+        href: "/brownlow",
+        icon: (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="9" r="6" />
+            <path d="M9 14.5 7.5 22 12 19.5 16.5 22 15 14.5" />
+            <path d="M12 6.5 12.9 8.3 14.9 8.6 13.4 10 13.8 12 12 11 10.2 12 10.6 10 9.1 8.6 11.1 8.3 Z" />
+          </svg>
+        ),
+      },
+      {
         label: "Seasons",
         href: "/seasons",
         icon: (
