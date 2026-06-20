@@ -1624,12 +1624,19 @@ export default function ProfilePage() {
   async function openGamesPopup() {
     setStatsPopup("games");
     if (gamesData.length > 0) return;
+    if (!user) { setGamesDataLoading(false); return; }
     setGamesDataLoading(true);
     try {
-      const res = await fetch("/api/games", { cache: "no-store" });
-      const raw = await res.json();
-      const all: { id: number; hteam?: string; ateam?: string }[] = Array.isArray(raw) ? raw : (raw.games ?? []);
-      const matchIds: string[] = [];
+      const [gamesRes, eventsRes] = await Promise.all([
+        fetch("/api/games", { cache: "no-store" }).then((r) => r.json()),
+        supabase
+          .from("aura_events")
+          .select("related_id")
+          .eq("user_id", user.id)
+          .eq("event_type", "live_game_view"),
+      ]);
+      const all: { id: number; hteam?: string; ateam?: string }[] = Array.isArray(gamesRes) ? gamesRes : (gamesRes.games ?? []);
+      const matchIds: string[] = (eventsRes.data ?? []).map((e: any) => String(e.related_id)).filter(Boolean);
       const counts: Record<string, TeamStat> = {};
       for (const mid of matchIds) {
         const game = all.find((g) => String(g.id) === String(mid));
