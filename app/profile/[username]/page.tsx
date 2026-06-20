@@ -44,41 +44,36 @@ function clamp01(value: number) {
   return Math.max(0, Math.min(1, value));
 }
 
-function easeProfile(value: number) {
-  const t = clamp01(value);
-  return t * t * (3 - 2 * t);
-}
-
-function lerp(from: number, to: number, progress: number) {
-  return from + (to - from) * progress;
-}
-
-function useProfileHeaderProgress(distance = 240) {
-  const [progress, setProgress] = useState(0);
-
+// Drives the collapsing header purely through CSS custom properties so the
+// scroll handler never triggers a React re-render of the (heavy) profile page.
+// `--php` is the raw 0..1 progress, `--phe` is the smoothstep-eased value.
+// Both styles below reference these vars via calc(), so the browser does the
+// interpolation on its own — buttery on every frame.
+function useProfileHeaderScroll(distance = 240) {
   useEffect(() => {
     if (typeof window === "undefined") return;
+    const root = document.documentElement;
     let frame = 0;
-    const update = () => {
-      if (frame) return;
-      frame = window.requestAnimationFrame(() => {
-        frame = 0;
-        const next = clamp01((document.scrollingElement?.scrollTop ?? window.scrollY) / distance);
-        setProgress((current) => (Math.abs(current - next) < 0.001 ? current : next));
-      });
+    const apply = () => {
+      frame = 0;
+      const p = clamp01((document.scrollingElement?.scrollTop ?? window.scrollY) / distance);
+      const e = p * p * (3 - 2 * p); // smoothstep — matches easeProfile
+      root.style.setProperty("--php", p.toFixed(4));
+      root.style.setProperty("--phe", e.toFixed(4));
     };
+    const onScroll = () => { if (!frame) frame = window.requestAnimationFrame(apply); };
 
-    update();
-    window.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
+    apply();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
     return () => {
       if (frame) window.cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      root.style.removeProperty("--php");
+      root.style.removeProperty("--phe");
     };
   }, [distance]);
-
-  return progress;
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -492,8 +487,7 @@ export default function PublicProfilePage() {
   const router  = useRouter();
   const username = String(params.username || "").replace("@", "").toLowerCase();
   const compactProfileHeader = useMediaQuery("(max-width: 430px)");
-  const headerProgress = useProfileHeaderProgress(compactProfileHeader ? 224 : 268);
-  const headerEase = easeProfile(headerProgress);
+  useProfileHeaderScroll(compactProfileHeader ? 224 : 268);
 
   const [profile,       setProfile]       = useState<Profile | null>(null);
   const [friends,       setFriends]       = useState<FriendEntry[]>([]);
@@ -753,31 +747,31 @@ export default function PublicProfilePage() {
   const isOwnProfile = currentUserId === profile.id;
   const bannerSrc = profile.banner_url ?? "";
   const avatarSrc = profile.avatar_url ?? "";
-  const expandedBannerHeight = compactProfileHeader ? 246 : 286;
-  const collapsedBannerHeight = compactProfileHeader ? 72 : 82;
-  const bannerHeight = lerp(expandedBannerHeight, collapsedBannerHeight, headerEase);
-  const bannerMediaTop = compactProfileHeader ? -30 : -32;
-  const bannerMediaHeight = expandedBannerHeight + (compactProfileHeader ? 70 : 78);
-  const bannerLift = lerp(0, compactProfileHeader ? -34 : -42, headerEase);
-  const bannerScale = lerp(1.015, 1.045, headerEase);
-  const bannerTopShade = lerp(0.16, 0.4, headerEase);
-  const bannerMiddleShade = lerp(0.18, 0.48, headerEase);
-  const bannerBottomShade = lerp(0.48, 0.9, headerEase);
-  const bannerSaturation = lerp(1.06, 0.96, headerEase);
-  const bannerContrast = lerp(1.03, 0.98, headerEase);
-  const avatarBaseSize = compactProfileHeader ? 106 : 118;
-  const avatarScale = lerp(1, compactProfileHeader ? 0.46 : 0.5, headerEase);
-  const avatarStartLeft = compactProfileHeader ? 18 : 22;
+  const C = compactProfileHeader;
+  const expandedBannerHeight = C ? 246 : 286;
+  const collapsedBannerHeight = C ? 72 : 82;
+  const bannerMediaTop = C ? -30 : -32;
+  const bannerMediaHeight = expandedBannerHeight + (C ? 70 : 78);
+  const avatarBaseSize = C ? 106 : 118;
+  const avatarScaleTo = C ? 0.46 : 0.5;
+  const avatarStartLeft = C ? 18 : 22;
   const avatarStartTop = expandedBannerHeight - avatarBaseSize * 0.5;
-  const avatarTranslateX = lerp(0, (compactProfileHeader ? 60 : 68) - avatarStartLeft, headerEase);
-  const avatarTranslateY = lerp(0, (compactProfileHeader ? 14 : 17) - avatarStartTop, headerEase);
-  const avatarRenderedSize = avatarBaseSize * avatarScale;
-  const mainUsernameOpacity = clamp01(1 - headerProgress * 1.7);
-  const compactUsernameOpacity = clamp01((headerProgress - 0.3) / 0.7);
-  const contentTopPad = lerp(avatarBaseSize * 0.55 + 18, 18, headerEase);
-  const compactUsernameLeft = avatarStartLeft + avatarTranslateX + avatarRenderedSize + 12;
-  const compactUsernameHeight = compactProfileHeader ? 28 : 30;
-  const compactUsernameTop = avatarStartTop + avatarTranslateY + (avatarRenderedSize - compactUsernameHeight) / 2;
+  const avatarTxDelta = (C ? 60 : 68) - avatarStartLeft;
+  const avatarTyDelta = (C ? 14 : 17) - avatarStartTop;
+  const bannerLiftTo = C ? -34 : -42;
+  const compactUsernameHeight = C ? 28 : 30;
+  const headerRadius = C ? "0 0 22px 22px" : "0 0 24px 24px";
+  const topPadFrom = avatarBaseSize * 0.55 + 18;
+
+  // Eased (--phe) and raw (--php) scroll progress, set on <html> by
+  // useProfileHeaderScroll. calc() does the interpolation per-frame, GPU-side.
+  const HE = "var(--phe)";
+  const HP = "var(--php)";
+  const PX = (a: number, b: number) => `calc(${a}px + ${(b - a).toFixed(2)}px * ${HE})`;
+  const NUM = (a: number, b: number) => `calc(${a} + ${(b - a).toFixed(4)} * ${HE})`;
+  const avatarSizeExpr = `(${avatarBaseSize}px * (1 + ${(avatarScaleTo - 1).toFixed(4)} * ${HE}))`;
+  const compactLeftInner = `${avatarStartLeft}px + ${avatarTxDelta.toFixed(2)}px * ${HE} + ${avatarSizeExpr} + 12px`;
+
   const profileHeroShellStyle: CSSProperties = {
     display: "contents",
   };
@@ -785,17 +779,17 @@ export default function PublicProfilePage() {
     position: "sticky",
     top: 0,
     zIndex: 80,
-    height: `calc(${bannerHeight}px + env(safe-area-inset-top))`,
-    borderRadius: compactProfileHeader ? "0 0 22px 22px" : "0 0 24px 24px",
+    height: `calc(${expandedBannerHeight}px + ${(collapsedBannerHeight - expandedBannerHeight).toFixed(1)}px * ${HE} + env(safe-area-inset-top))`,
+    borderRadius: headerRadius,
     overflow: "visible",
     background: "#020617",
-    boxShadow: `0 ${lerp(8, 18, headerEase)}px ${lerp(18, 38, headerEase)}px rgba(0,0,0,${lerp(0.18, 0.42, headerEase)})`,
+    boxShadow: `0 ${PX(8, 18)} ${PX(18, 38)} rgb(0 0 0 / calc(0.18 + 0.24 * ${HE}))`,
   };
   const bannerFrameStyle: CSSProperties = {
     position: "absolute",
     inset: 0,
     overflow: "hidden",
-    borderRadius: compactProfileHeader ? "0 0 22px 22px" : "0 0 24px 24px",
+    borderRadius: headerRadius,
     background: "#06101e",
   };
   const bannerMediaStyle: CSSProperties = {
@@ -808,16 +802,15 @@ export default function PublicProfilePage() {
     height: `calc(${bannerMediaHeight}px + env(safe-area-inset-top))`,
     objectFit: "cover",
     objectPosition: "center top",
-    transform: `translate3d(0, ${bannerLift}px, 0) scale(${bannerScale})`,
+    transform: `translate3d(0, ${PX(0, bannerLiftTo)}, 0) scale(${NUM(1.015, 1.045)})`,
     transformOrigin: "center top",
-    filter: `saturate(${bannerSaturation}) contrast(${bannerContrast})`,
-    transition: "none",
+    filter: `saturate(${NUM(1.06, 0.96)}) contrast(${NUM(1.03, 0.98)})`,
     willChange: "transform",
   };
   const headerOverlayStyle: CSSProperties = {
     position: "absolute",
     inset: 0,
-    background: `linear-gradient(180deg, rgba(2,6,23,${bannerTopShade}) 0%, rgba(2,6,23,${bannerMiddleShade}) 52%, rgba(2,6,23,${bannerBottomShade}) 100%), linear-gradient(90deg, rgba(2,6,23,0.28) 0%, rgba(2,6,23,0) 36%, rgba(2,6,23,0.22) 100%)`,
+    background: `linear-gradient(180deg, rgb(2 6 23 / calc(0.16 + 0.24 * ${HE})) 0%, rgb(2 6 23 / calc(0.18 + 0.30 * ${HE})) 52%, rgb(2 6 23 / calc(0.48 + 0.42 * ${HE})) 100%), linear-gradient(90deg, rgba(2,6,23,0.28) 0%, rgba(2,6,23,0) 36%, rgba(2,6,23,0.22) 100%)`,
     pointerEvents: "none",
   };
   const topControlBaseStyle: CSSProperties = {
@@ -828,7 +821,7 @@ export default function PublicProfilePage() {
     height: 38,
     borderRadius: "50%",
     border: "1px solid rgba(255,255,255,0.14)",
-    background: `rgba(2,6,23,${lerp(0.52, 0.74, headerEase)})`,
+    background: `rgb(2 6 23 / calc(0.52 + 0.22 * ${HE}))`,
     color: "var(--text-1)",
     display: "flex",
     alignItems: "center",
@@ -845,9 +838,8 @@ export default function PublicProfilePage() {
     width: avatarBaseSize,
     height: avatarBaseSize,
     borderRadius: "50%",
-    transform: `translate3d(${avatarTranslateX}px, ${avatarTranslateY}px, 0) scale(${avatarScale})`,
+    transform: `translate3d(${PX(0, avatarTxDelta)}, ${PX(0, avatarTyDelta)}, 0) scale(${NUM(1, avatarScaleTo)})`,
     transformOrigin: "top left",
-    transition: "transform 80ms linear",
     willChange: "transform",
   };
   const avatarImageStyle: CSSProperties = {
@@ -862,9 +854,9 @@ export default function PublicProfilePage() {
   const compactUsernamePillStyle: CSSProperties = {
     position: "absolute",
     zIndex: 8,
-    left: compactUsernameLeft,
-    top: `calc(env(safe-area-inset-top) + ${compactUsernameTop}px)`,
-    maxWidth: `calc(100% - ${compactUsernameLeft + 74}px)`,
+    left: `calc(${compactLeftInner})`,
+    top: `calc(env(safe-area-inset-top) + ${avatarStartTop}px + ${avatarTyDelta.toFixed(2)}px * ${HE} + (${avatarSizeExpr} - ${compactUsernameHeight}px) / 2)`,
+    maxWidth: `calc(100% - (${compactLeftInner}) - 74px)`,
     height: compactUsernameHeight,
     padding: 0,
     borderRadius: 0,
@@ -874,11 +866,11 @@ export default function PublicProfilePage() {
     alignItems: "center",
     gap: 4,
     color: "var(--text-1)",
-    fontSize: compactProfileHeader ? 18 : 20,
+    fontSize: C ? 18 : 20,
     fontWeight: 950,
-    opacity: compactUsernameOpacity,
+    opacity: `clamp(0, calc((${HP} - 0.3) / 0.7), 1)`,
     transform: "translate3d(0, 0, 0)",
-    pointerEvents: compactUsernameOpacity > 0.5 ? "auto" : "none",
+    pointerEvents: "none",
     overflow: "hidden",
     whiteSpace: "nowrap",
     textOverflow: "ellipsis",
@@ -887,16 +879,15 @@ export default function PublicProfilePage() {
   const profileBodyStyle: CSSProperties = {
     position: "relative",
     zIndex: 2,
-    padding: `${contentTopPad}px 14px 16px`,
+    padding: `calc(${topPadFrom}px + ${(18 - topPadFrom).toFixed(2)}px * ${HE}) 14px 16px`,
     background: "var(--bg)",
     border: "1px solid var(--border-2)",
     borderTop: "none",
-    borderRadius: compactProfileHeader ? "0 0 22px 22px" : "0 0 24px 24px",
+    borderRadius: headerRadius,
   };
   const mainIdentityStyle: CSSProperties = {
-    opacity: mainUsernameOpacity,
-    transform: `translate3d(0, -${lerp(0, 12, headerEase)}px, 0)`,
-    transition: "opacity 80ms linear, transform 80ms linear",
+    opacity: `clamp(0, calc(1 - ${HP} * 1.7), 1)`,
+    transform: `translate3d(0, calc(-12px * ${HE}), 0)`,
     willChange: "opacity, transform",
   };
   const profileHeaderStatsStyle: CSSProperties = {
