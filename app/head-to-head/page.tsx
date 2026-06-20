@@ -36,15 +36,17 @@ type Payload = {
 };
 
 type LeagueRecords = {
-  longestCurrent: { team: string; opponent: string; len: number; since: number } | null;
-  longestEver: { team: string; opponent: string; len: number; fromYear: number; toYear: number } | null;
-  highestWinPct: { team: string; opponent: string; pct: number; wins: number; losses: number; total: number } | null;
-  mostWins: { team: string; opponent: string; wins: number; losses: number } | null;
-  mostDraws: { teamA: string; teamB: string; draws: number } | null;
-  closest: { teamA: string; teamB: string; winsA: number; winsB: number; total: number } | null;
-  mostPlayed: { teamA: string; teamB: string; total: number } | null;
+  longestCurrent: { team: string; opponent: string; len: number; since: number }[];
+  longestEver: { team: string; opponent: string; len: number; fromYear: number; toYear: number }[];
+  highestWinPct: { team: string; opponent: string; pct: number; wins: number; losses: number; total: number }[];
+  mostWins: { team: string; opponent: string; wins: number; losses: number }[];
+  mostDraws: { teamA: string; teamB: string; draws: number }[];
+  closest: { teamA: string; teamB: string; winsA: number; winsB: number; total: number }[];
+  mostPlayed: { teamA: string; teamB: string; total: number }[];
   minMeetings: number;
 };
+
+type RecordItem = { value: string; sub: string; team: string; opponent: string; onPick: () => void };
 
 // Current AFL clubs (names getLogo/getAbbr and the API all understand).
 const TEAMS = [
@@ -280,24 +282,54 @@ function SummaryTeam({ team, wins, alignEnd }: { team: string; wins: number; ali
   );
 }
 
-function RecordCard({ label, value, sub, team, opponent, onClick }: { label: string; value: string; sub: string; team: string; opponent: string; onClick: () => void }) {
+function DualLogo({ team, opponent, size = 34 }: { team: string; opponent: string; size?: number }) {
   return (
-    <button type="button" onClick={onClick} style={recordCardStyle} className="h2h-row">
-      <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <div style={{ position: "relative", zIndex: 2 }}><Logo team={team} size={34} /></div>
-          <div style={{ marginLeft: -8, position: "relative", zIndex: 1 }}><Logo team={opponent} size={34} dim /></div>
+    <div style={{ display: "flex", alignItems: "center" }}>
+      <div style={{ position: "relative", zIndex: 2 }}><Logo team={team} size={size} /></div>
+      <div style={{ marginLeft: -size * 0.24, position: "relative", zIndex: 1 }}><Logo team={opponent} size={size} dim /></div>
+    </div>
+  );
+}
+
+function RecordCard({ label, items }: { label: string; items: RecordItem[] }) {
+  const [open, setOpen] = useState(false);
+  if (!items.length) return null;
+  const head = items[0];
+
+  return (
+    <div style={recordCardWrapStyle}>
+      <button type="button" onClick={() => setOpen((o) => !o)} style={recordCardStyle} className="h2h-row" aria-expanded={open}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
+          <DualLogo team={head.team} opponent={head.opponent} />
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--text-3)" }}>{label}</div>
+            <div style={{ fontSize: 17, fontWeight: 900, color: "var(--text-1)", letterSpacing: "-0.02em", marginTop: 2 }}>{head.value}</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-3)", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{head.sub}</div>
+          </div>
         </div>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--text-3)" }}>{label}</div>
-          <div style={{ fontSize: 17, fontWeight: 900, color: "var(--text-1)", letterSpacing: "-0.02em", marginTop: 2 }}>{value}</div>
-          <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-3)", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.7, transform: open ? "rotate(90deg)" : "none", transition: "transform 0.18s ease" }}>
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="h2h-pickergrid" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          {items.map((it, i) => (
+            <button key={i} type="button" onClick={it.onPick} className="h2h-row" style={recordRowStyle}>
+              <span style={{ width: 18, flexShrink: 0, fontSize: 12, fontWeight: 900, color: i < 3 ? ["#ffd700", "#c0c0c0", "#cd7f32"][i] : "var(--text-3)", textAlign: "center", fontVariantNumeric: "tabular-nums" }}>{i + 1}</span>
+              <DualLogo team={it.team} opponent={it.opponent} size={26} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: "var(--text-1)", letterSpacing: "-0.01em" }}>{it.value}</div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-3)", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.sub}</div>
+              </div>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.5 }}>
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+          ))}
         </div>
-      </div>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.6 }}>
-        <polyline points="9 18 15 12 9 6" />
-      </svg>
-    </button>
+      )}
+    </div>
   );
 }
 
@@ -370,76 +402,69 @@ function HeadToHeadContent() {
             {records && (
               <>
                 <div style={sectionLabelStyle}>League records</div>
-                {records.longestEver && (
-                  <RecordCard
-                    label="Longest ever streak"
-                    value={`${records.longestEver.len} wins in a row`}
-                    sub={`${records.longestEver.team} over ${records.longestEver.opponent} · ${records.longestEver.fromYear}–${records.longestEver.toYear}`}
-                    team={records.longestEver.team}
-                    opponent={records.longestEver.opponent}
-                    onClick={() => setTeams(records.longestEver!.team, records.longestEver!.opponent)}
-                  />
-                )}
-                {records.longestCurrent && (
-                  <RecordCard
-                    label="Longest active streak"
-                    value={`${records.longestCurrent.len} wins in a row`}
-                    sub={`${records.longestCurrent.team} over ${records.longestCurrent.opponent} · since ${records.longestCurrent.since}`}
-                    team={records.longestCurrent.team}
-                    opponent={records.longestCurrent.opponent}
-                    onClick={() => setTeams(records.longestCurrent!.team, records.longestCurrent!.opponent)}
-                  />
-                )}
-                {records.highestWinPct && (
-                  <RecordCard
-                    label={`Best win rate (min ${records.minMeetings})`}
-                    value={`${records.highestWinPct.pct}%`}
-                    sub={`${records.highestWinPct.team} vs ${records.highestWinPct.opponent} · ${records.highestWinPct.wins}–${records.highestWinPct.losses}`}
-                    team={records.highestWinPct.team}
-                    opponent={records.highestWinPct.opponent}
-                    onClick={() => setTeams(records.highestWinPct!.team, records.highestWinPct!.opponent)}
-                  />
-                )}
-                {records.mostWins && (
-                  <RecordCard
-                    label="Most wins over one team"
-                    value={`${records.mostWins.wins} wins`}
-                    sub={`${records.mostWins.team} over ${records.mostWins.opponent} · ${records.mostWins.wins}–${records.mostWins.losses}`}
-                    team={records.mostWins.team}
-                    opponent={records.mostWins.opponent}
-                    onClick={() => setTeams(records.mostWins!.team, records.mostWins!.opponent)}
-                  />
-                )}
-                {records.closest && (
-                  <RecordCard
-                    label="Closest rivalry"
-                    value={`${records.closest.winsA}–${records.closest.winsB}`}
-                    sub={`${records.closest.teamA} v ${records.closest.teamB} · ${records.closest.total} meetings`}
-                    team={records.closest.teamA}
-                    opponent={records.closest.teamB}
-                    onClick={() => setTeams(records.closest!.teamA, records.closest!.teamB)}
-                  />
-                )}
-                {records.mostDraws && (
-                  <RecordCard
-                    label="Most draws"
-                    value={`${records.mostDraws.draws} draws`}
-                    sub={`${records.mostDraws.teamA} v ${records.mostDraws.teamB}`}
-                    team={records.mostDraws.teamA}
-                    opponent={records.mostDraws.teamB}
-                    onClick={() => setTeams(records.mostDraws!.teamA, records.mostDraws!.teamB)}
-                  />
-                )}
-                {records.mostPlayed && (
-                  <RecordCard
-                    label="Most played rivalry"
-                    value={`${records.mostPlayed.total} meetings`}
-                    sub={`${records.mostPlayed.teamA} v ${records.mostPlayed.teamB}`}
-                    team={records.mostPlayed.teamA}
-                    opponent={records.mostPlayed.teamB}
-                    onClick={() => setTeams(records.mostPlayed!.teamA, records.mostPlayed!.teamB)}
-                  />
-                )}
+                <RecordCard
+                  label="Longest ever streak"
+                  items={records.longestEver.map((r) => ({
+                    value: `${r.len} wins in a row`,
+                    sub: `${r.team} over ${r.opponent} · ${r.fromYear}–${r.toYear}`,
+                    team: r.team, opponent: r.opponent,
+                    onPick: () => setTeams(r.team, r.opponent),
+                  }))}
+                />
+                <RecordCard
+                  label="Longest active streak"
+                  items={records.longestCurrent.map((r) => ({
+                    value: `${r.len} wins in a row`,
+                    sub: `${r.team} over ${r.opponent} · since ${r.since}`,
+                    team: r.team, opponent: r.opponent,
+                    onPick: () => setTeams(r.team, r.opponent),
+                  }))}
+                />
+                <RecordCard
+                  label={`Best win rate (min ${records.minMeetings})`}
+                  items={records.highestWinPct.map((r) => ({
+                    value: `${r.pct}%`,
+                    sub: `${r.team} vs ${r.opponent} · ${r.wins}–${r.losses}`,
+                    team: r.team, opponent: r.opponent,
+                    onPick: () => setTeams(r.team, r.opponent),
+                  }))}
+                />
+                <RecordCard
+                  label="Most wins over one team"
+                  items={records.mostWins.map((r) => ({
+                    value: `${r.wins} wins`,
+                    sub: `${r.team} over ${r.opponent} · ${r.wins}–${r.losses}`,
+                    team: r.team, opponent: r.opponent,
+                    onPick: () => setTeams(r.team, r.opponent),
+                  }))}
+                />
+                <RecordCard
+                  label="Closest rivalry"
+                  items={records.closest.map((r) => ({
+                    value: `${r.winsA}–${r.winsB}`,
+                    sub: `${r.teamA} v ${r.teamB} · ${r.total} meetings`,
+                    team: r.teamA, opponent: r.teamB,
+                    onPick: () => setTeams(r.teamA, r.teamB),
+                  }))}
+                />
+                <RecordCard
+                  label="Most draws"
+                  items={records.mostDraws.map((r) => ({
+                    value: `${r.draws} draws`,
+                    sub: `${r.teamA} v ${r.teamB}`,
+                    team: r.teamA, opponent: r.teamB,
+                    onPick: () => setTeams(r.teamA, r.teamB),
+                  }))}
+                />
+                <RecordCard
+                  label="Most played rivalry"
+                  items={records.mostPlayed.map((r) => ({
+                    value: `${r.total} meetings`,
+                    sub: `${r.teamA} v ${r.teamB}`,
+                    team: r.teamA, opponent: r.teamB,
+                    onPick: () => setTeams(r.teamA, r.teamB),
+                  }))}
+                />
               </>
             )}
           </>
@@ -622,15 +647,34 @@ const sectionLabelStyle: CSSProperties = {
   padding: "4px 4px 0",
 };
 
+const recordCardWrapStyle: CSSProperties = {
+  background: "linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
+  borderRadius: 16,
+  overflow: "hidden",
+};
+
 const recordCardStyle: CSSProperties = {
   width: "100%",
   display: "flex",
   alignItems: "center",
   gap: 10,
   padding: "14px 16px",
-  background: "linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
-  borderRadius: 16,
+  background: "transparent",
   border: "none",
+  cursor: "pointer",
+  fontFamily: "inherit",
+  textAlign: "left",
+};
+
+const recordRowStyle: CSSProperties = {
+  width: "100%",
+  display: "flex",
+  alignItems: "center",
+  gap: 10,
+  padding: "10px 16px",
+  background: "transparent",
+  border: "none",
+  borderTop: "1px solid rgba(255,255,255,0.04)",
   cursor: "pointer",
   fontFamily: "inherit",
   textAlign: "left",
