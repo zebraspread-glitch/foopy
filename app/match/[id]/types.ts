@@ -43,6 +43,7 @@ export type PlayerStat = {
   player?: string;
   name?: string;
   team?: string;
+  unidentified?: boolean;
   foopy?: number | string;
 
   goals?: number | string;

@@ -221,11 +221,32 @@ function safeText(value: any, fallback = "") {
   return fallback;
 }
 
-function safePlayerName(value: any, fallbackId?: any) {
+// When true, unidentified players show their raw ID (admin-only, so the admin
+// can map it). Set once on mount from NEXT_PUBLIC_ADMIN_USER_ID. Everyone else
+// sees a generic "{Nickname} Player" label instead of an internal ID.
+let adminPlayerView = false;
+
+const TEAM_NICKNAME: Record<string, string> = {
+  adelaide: "Crows", brisbane: "Lions", carlton: "Blues", collingwood: "Magpies",
+  essendon: "Bombers", fremantle: "Dockers", geelong: "Cats", goldcoast: "Suns",
+  gws: "Giants", hawthorn: "Hawks", melbourne: "Demons", northmelbourne: "Kangaroos",
+  portadelaide: "Power", richmond: "Tigers", stkilda: "Saints", sydney: "Swans",
+  westcoast: "Eagles", westernbulldogs: "Bulldogs",
+};
+function nicknameForTeam(team: any): string {
+  return TEAM_NICKNAME[canonicalTeamKey(safeText(team, ""))] ?? "";
+}
+
+function safePlayerName(value: any, fallbackId?: any, team?: any) {
   const name = safeText(value, "");
   if (name) return name;
+  // Unidentified player. Non-admins see "{Nickname} Player"; the admin keeps
+  // the raw ID so it can be mapped into players.json.
+  const nick = nicknameForTeam(team);
+  if (!adminPlayerView && nick) return `${nick} Player`;
   const fallbackText = safeText(fallbackId, "");
-  return fallbackText ? `Player ${fallbackText}` : "Unknown";
+  if (fallbackText) return `Player ${fallbackText}`;
+  return nick ? `${nick} Player` : "Unknown";
 }
 
 function useCompactViewport(maxWidth = 520) {
@@ -920,12 +941,15 @@ function normalizeSavedPlayer(player: any, team?: string): PlayerStat {
     String(player?.name || "").match(/Player\s+(\d+)/i)?.[1];
 
   const mapped = findPlayerByApiSportsId(possibleId);
-  const name = safePlayerName(mapped?.name ?? player?.name ?? player?.player, possibleId);
+  const resolvedTeam = safeText(mapped?.club ?? mapped?.team ?? player?.team ?? team, "");
+  const unidentified = !mapped && !safeText(player?.name ?? player?.player, "");
+  const name = safePlayerName(mapped?.name ?? player?.name ?? player?.player, possibleId, resolvedTeam);
 
   return {
     player: name,
     name,
-    team: safeText(mapped?.club ?? mapped?.team ?? player?.team ?? team, ""),
+    team: resolvedTeam,
+    unidentified,
     foopy: raw.foopy ?? player?.foopy,
     goals: raw.goals?.total ?? raw.goals ?? player?.goals?.total ?? player?.goals ?? 0,
 goalAssists: raw.goals?.assists ?? raw.goalAssists ?? player?.goals?.assists ?? player?.goalAssists ?? 0,
@@ -971,20 +995,22 @@ function normalizeApiSportsPlayer(player: any, team: string): PlayerStat {
   const apiPlayerId = getApiPlayerId(player);
   const mapped = findPlayerByApiSportsId(apiPlayerId);
 
-  const name = safePlayerName(
+  // Pass the RAW name (empty when unidentified) so normalizeSavedPlayer can
+  // apply the nickname/admin-ID fallback rather than baking in "Player {id}".
+  const rawName =
     mapped?.name ||
-      player?.player?.name ||
-      player?.name ||
-      (player?.player?.firstname && player?.player?.lastname
-        ? `${player.player.firstname} ${player.player.lastname}`
-        : ""),
-    apiPlayerId
-  );
+    player?.player?.name ||
+    player?.name ||
+    (player?.player?.firstname && player?.player?.lastname
+      ? `${player.player.firstname} ${player.player.lastname}`
+      : "") ||
+    "";
 
   return normalizeSavedPlayer(
     {
-      name,
-      player: name,
+      name: rawName,
+      player: rawName,
+      apiSportsId: apiPlayerId,
       team: mapped?.club ?? mapped?.team ?? team,
       stats: {
         goals: player?.goals?.total ?? player?.goals ?? 0,
@@ -1239,11 +1265,12 @@ function timeUntilStart(date?: string, now = Date.now()) {
   return `${totalHours}h ${minutes}m`;
 }
 
-function PlayerAvatar({ name, team, size = 48, rating, ratingColor, isBest }: { name: any; team?: any; size?: number; rating?: number | string | null; ratingColor?: string; isBest?: boolean }) {
+function PlayerAvatar({ name, team, size = 48, rating, ratingColor, isBest, unidentified }: { name: any; team?: any; size?: number; rating?: number | string | null; ratingColor?: string; isBest?: boolean; unidentified?: boolean }) {
   const safeName = safePlayerName(name, "");
   const safeTeam = safeText(team, "");
   const [failed, setFailed] = useState(false);
-  const src = playerImagePath(safeName, safeTeam);
+  // Unidentified players have no photo to show — use the club logo as the avatar.
+  const src = unidentified ? "" : playerImagePath(safeName, safeTeam);
   const colours = teamColors(safeTeam || playerClub(safeName));
   const bg = colours.primary;
   const border = colours.secondary;
@@ -1272,7 +1299,9 @@ function PlayerAvatar({ name, team, size = 48, rating, ratingColor, isBest }: { 
           background: `${bg}80`,
         }}
       >
-        {!failed && src ? (
+        {unidentified && logo ? (
+          <img src={logo} alt={safeTeam} style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+        ) : !failed && src ? (
           <Image
             key={src}
             src={src}
@@ -1286,7 +1315,7 @@ function PlayerAvatar({ name, team, size = 48, rating, ratingColor, isBest }: { 
           <span style={{ ...playerInitialsStyle, fontSize: size < 44 ? 12 : 15 }}>{getInitials(safeName)}</span>
         )}
       </span>
-      {logo && (
+      {!unidentified && logo && (
         <img src={logo} alt="" style={{ position: "absolute", bottom: badgeOffset, right: badgeOffset, width: logoSize, height: logoSize, borderRadius: "50%", background: "var(--bg)", border: `${badgeBorder}px solid var(--bg)`, objectFit: "contain", pointerEvents: "none" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
       )}
       {rating !== undefined && rating !== null && (
@@ -1372,7 +1401,8 @@ function LiveFeedPlayer({
   const eventTeam = safeText(inferredTeam || apiEventTeam, "");
   const player = findPlayerForLiveEvent(event, safeText(homeTeam, ""), safeText(awayTeam, ""));
   const team = safeText(eventTeam || player?.club || player?.team, "");
-  const playerName = isInferred ? team : safePlayerName(player?.name || event.playerName, event.playerId || team);
+  const unidentified = !isInferred && !player && !safeText(event.playerName, "");
+  const playerName = isInferred ? team : safePlayerName(player?.name || event.playerName, event.playerId, team);
   const colours = liveFeedTeamColors(team);
 
   const type = safeText(event.type, "event").toUpperCase();
@@ -1473,6 +1503,7 @@ function LiveFeedPlayer({
               name={playerName}
               team={team}
               size={56}
+              unidentified={unidentified}
             />
           )}
 
@@ -1860,14 +1891,14 @@ function SeasonAvgTable({ stats }: { stats: any[] }) {
         </thead>
         <tbody>
           {sorted.map((p, i) => {
-            const name = safePlayerName(p.name, i + 1);
             const rowTeam = safeText(p.team, "");
+            const name = safePlayerName(p.name, i + 1, rowTeam);
             const rating = p._foopy;
             return (
               <tr key={`${name}-${i}`} style={{ cursor: "pointer" }} onClick={() => p.id && router.push(`/player/${p.id}`)}>
                 <td style={tdPlayerStyle}>
                   <span style={playerNameCellStyle}>
-                    <PlayerAvatar name={name} team={rowTeam} size={38} />
+                    <PlayerAvatar name={name} team={rowTeam} size={38} unidentified={p.unidentified} />
                     <span style={playerInfoStyle}>
                       <span style={playerNameTextStyle} title={name}>{name}</span>
                     </span>
@@ -2227,7 +2258,7 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
           </colgroup>
           <tbody>
             {sortedStats.map((p, index) => {
-              const name = safePlayerName(p.name ?? p.player, index + 1);
+              const name = safePlayerName(p.name ?? p.player, index + 1, safeText(p.team ?? team, ""));
               const knownPlayer = findPlayerInfo(name);
               const rowTeam = safeText(knownPlayer?.club ?? knownPlayer?.team ?? p.team ?? team, "");
               const rating = getFoopyValue(p);
@@ -2246,7 +2277,7 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
                   {/* Sticky avatar + comment badge — stays pinned while scrolling. */}
                   <td style={tdAvatarStyle}>
                     <span style={{ position: "relative", display: "inline-flex", flexShrink: 0 }}>
-                      <PlayerAvatar name={name} team={rowTeam} size={36} />
+                      <PlayerAvatar name={name} team={rowTeam} size={36} unidentified={p.unidentified} />
                       <span style={statAvatarCommentStyle}>
                         <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -3933,6 +3964,16 @@ function MatchPageInner() {
   }
 
   const [mounted, setMounted] = useState(() => typeof window !== "undefined");
+  // Only the admin sees raw player IDs for unidentified players; the state
+  // change forces a re-render so the (module-flag-reading) name helpers update.
+  const [, setAdminView] = useState(false);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      const admin = !!ADMIN_USER_ID && data.session?.user?.id === ADMIN_USER_ID;
+      adminPlayerView = admin;
+      setAdminView(admin);
+    });
+  }, []);
   const [activeTab, setActiveTab] = useState<TabKey>(() =>
     (searchParams?.get("tab") as TabKey) ?? "feed"
   );
@@ -5617,7 +5658,7 @@ function MatchPageInner() {
                             const team = safeText(eventTeam || player?.club || player?.team, "");
                             const name = ((event as any).optimistic || (event as any).inferred)
                               ? team || "Team"
-                              : safePlayerName(player?.name || event.playerName, event.playerId || index + 1);
+                              : safePlayerName(player?.name || event.playerName, event.playerId, team);
                             const label = `${name} · ${safeText(event.type, "").toUpperCase()}`;
                             const type = safeText(event.type, "").toUpperCase();
                             const quarter = eventQuarter(event);
