@@ -150,39 +150,56 @@ function TeamSlot({ team, placeholder, active, onClick }: { team: string; placeh
 }
 
 function TeamPicker({ home, away, onPick }: { home: string; away: string; onPick: (slot: "home" | "away", team: string) => void }) {
-  const [editing, setEditing] = useState<"home" | "away" | null>(home ? (away ? null : "away") : "home");
+  // Grid stays hidden until a slot is tapped. Picking a team closes it again.
+  const [editing, setEditing] = useState<"home" | "away" | null>(null);
+  const toggle = (slot: "home" | "away") => setEditing((cur) => (cur === slot ? null : slot));
 
   return (
     <div style={cardStyle}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: 12 }}>
-        <TeamSlot team={home} placeholder="Team A" active={editing === "home"} onClick={() => setEditing(editing === "home" ? null : "home")} />
+        <TeamSlot team={home} placeholder="Team A" active={editing === "home"} onClick={() => toggle("home")} />
         <span style={{ fontSize: 13, fontWeight: 900, color: "var(--text-3)", letterSpacing: "0.04em" }}>VS</span>
-        <TeamSlot team={away} placeholder="Team B" active={editing === "away"} onClick={() => setEditing(editing === "away" ? null : "away")} />
+        <TeamSlot team={away} placeholder="Team B" active={editing === "away"} onClick={() => toggle("away")} />
       </div>
 
       {editing && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 6, padding: "0 12px 14px" }}>
-          {TEAMS.map((t) => {
-            const taken = (editing === "home" ? away : home) === t;
-            const selected = (editing === "home" ? home : away) === t;
-            return (
-              <button
-                key={t}
-                type="button"
-                disabled={taken}
-                onClick={() => { onPick(editing, t); setEditing(editing === "home" ? "away" : null); }}
-                title={t}
-                style={{
-                  display: "flex", alignItems: "center", justifyContent: "center", padding: 6, borderRadius: 10,
-                  background: selected ? "rgba(96,165,250,0.15)" : "transparent",
-                  border: selected ? "1px solid rgba(96,165,250,0.4)" : "1px solid transparent",
-                  cursor: taken ? "not-allowed" : "pointer", opacity: taken ? 0.25 : 1,
-                }}
-              >
-                <Logo team={t} size={32} />
-              </button>
-            );
-          })}
+        <div style={{ padding: "0 12px 14px" }} className="h2h-pickergrid">
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 2px 8px" }}>
+            <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--text-3)" }}>
+              Choose {editing === "home" ? "Team A" : "Team B"}
+            </span>
+            <button
+              type="button"
+              onClick={() => setEditing(null)}
+              aria-label="Close team picker"
+              style={{ background: "none", border: "none", color: "var(--text-3)", cursor: "pointer", padding: 2, lineHeight: 0 }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            </button>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 6 }}>
+            {TEAMS.map((t) => {
+              const taken = (editing === "home" ? away : home) === t;
+              const selected = (editing === "home" ? home : away) === t;
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  disabled={taken}
+                  onClick={() => { onPick(editing, t); setEditing(null); }}
+                  title={t}
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "center", padding: 6, borderRadius: 10,
+                    background: selected ? "rgba(96,165,250,0.15)" : "transparent",
+                    border: selected ? "1px solid rgba(96,165,250,0.4)" : "1px solid transparent",
+                    cursor: taken ? "not-allowed" : "pointer", opacity: taken ? 0.25 : 1,
+                  }}
+                >
+                  <Logo team={t} size={32} />
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
@@ -338,6 +355,8 @@ function HeadToHeadContent() {
         .h2h-row { transition: background 0.12s; }
         .h2h-row:active { background: rgba(255,255,255,0.04); }
         @media (hover: hover) { .h2h-row:hover { background: rgba(255,255,255,0.03); } }
+        .h2h-pickergrid { animation: h2hPickerIn 0.18s ease-out; transform-origin: top center; }
+        @keyframes h2hPickerIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
 
       <PageHeader title="Head to Head" subtitle={bothChosen ? `${getAbbr(home)} v ${getAbbr(away)}` : undefined} />
