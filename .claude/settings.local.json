@@ -312,7 +312,20 @@
       "Bash(curl -s -m 5 -o /dev/null \"http://localhost:3000/head-to-head?home=Collingwood&away=Melbourne\")",
       "Bash(curl -s -m 60 \"http://localhost:3000/api/head-to-head/records\")",
       "Bash(node -e \"let s='';process.stdin.on\\('data',d=>s+=d\\).on\\('end',\\(\\)=>{const d=JSON.parse\\(s\\);console.log\\(JSON.stringify\\(d,null,1\\)\\);}\\)\")",
-      "Bash(node -e \"let s='';process.stdin.on\\('data',d=>s+=d\\).on\\('end',\\(\\)=>{const d=JSON.parse\\(s\\);for\\(const k of Object.keys\\(d\\)\\) console.log\\(k+':', JSON.stringify\\(d[k]\\)\\);}\\)\")"
+      "Bash(node -e \"let s='';process.stdin.on\\('data',d=>s+=d\\).on\\('end',\\(\\)=>{const d=JSON.parse\\(s\\);for\\(const k of Object.keys\\(d\\)\\) console.log\\(k+':', JSON.stringify\\(d[k]\\)\\);}\\)\")",
+      "Bash(grep -rohE \"afl\\\\.api-sports\\\\.io[^\\\\\"'\\\\`]*|API_BASE[^\\\\n]*|\\\\\\\\\\\\$\\\\{API_BASE\\\\}[^\\\\\"'\\\\`]*\" app --include=*.ts --include=*.tsx)",
+      "Bash(grep -rohE \"stats\\\\?\\\\.\\\\w+|\\\\.statistics[^\\\\n]{0,40}|kicks|handballs|disposals|marks|tackles|hitouts|clearances|inside|rebound|clangers|contested|uncontested|metres|goal_assist|one_percent|frees|behinds|goals|bounces|dreamteam|fantasy|supercoach|time_on_ground|spoils|intercept\" app/api/afl/player-stats/route.ts app/api/afl/sync-events/route.ts app/lib/foopyRating.ts)",
+      "WebFetch(domain:api-sports.io)",
+      "Bash(echo \"---EXIT:$?---\")",
+      "Bash(node -e 'const p=require\\(\"./node_modules/eslint-config-next/package.json\"\\); console.log\\(\"version\",p.version\\); console.log\\(\"main\",p.main\\); console.log\\(\"exports\",JSON.stringify\\(p.exports,null,1\\)\\)')",
+      "Bash(grep -oE \"[a-z@/-]+$\")",
+      "Bash(awk '/^C:/{f=$0} /no-html-link|Cannot reassign/{print f\" :: \"$0}')",
+      "Bash(grep -oE \"react-hooks/[a-z-]+|[a-z-]+/[a-z-]+$\")",
+      "Bash(grep -oE \"[a-z@-]+/[a-z-]+$\")",
+      "Bash(sed -n '2388,2410p' app/match/[id]/page.tsx)",
+      "Bash(awk 'NR>=3919 && NR<=5575 && /getSession|getUser|setUserId|const userId|setMeId|currentUser|auth\\\\.user/' app/match/[id]/page.tsx)",
+      "Bash(/)",
+      "Bash(grep -nE \"router\\\\.\\(replace|push\\)\\\\\\(\\\\\"/\\\\\"\\\\\\)|redirect\\\\\\(\\\\\"/\\\\\"\\\\\\)|notFound\\\\\\(\\\\\\)|replace\\\\\\(`/`\\\\\\)\" app/match/[id]/page.tsx)"
     ]
   }
 }

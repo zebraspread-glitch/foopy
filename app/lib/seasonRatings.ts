@@ -3,6 +3,7 @@ import fs from "fs";
 import { createClient } from "@supabase/supabase-js";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import { foopyRating } from "@/app/lib/foopyRating";
+import { playerImgUrl } from "@/app/lib/playerImage";
 
 // Server-only helper. Loads the season's completed games and computes a Foopy
 // rating for every player in each game — the same pipeline the Top Performances
@@ -10,25 +11,6 @@ import { foopyRating } from "@/app/lib/foopyRating";
 // rank players per game consistently.
 
 const SEASON = new Date().getFullYear().toString();
-
-const CLUB_FOLDER: Record<string, string> = {
-  Adelaide: "crows", "Adelaide Crows": "crows", Brisbane: "lions", "Brisbane Lions": "lions",
-  Carlton: "blues", Collingwood: "magpies", Essendon: "bombers", Fremantle: "dockers",
-  Geelong: "cats", "Geelong Cats": "cats", "Gold Coast": "suns", "Gold Coast Suns": "suns",
-  GWS: "giants", "GWS Giants": "giants", "Greater Western Sydney": "giants",
-  Hawthorn: "hawks", "Hawthorn Hawks": "hawks", Melbourne: "demons", "Melbourne Demons": "demons",
-  "North Melbourne": "kangaroos", "North Melbourne Kangaroos": "kangaroos",
-  "Port Adelaide": "power", "Port Adelaide Power": "power", Richmond: "tigers",
-  "St Kilda": "saints", Sydney: "swans", "Sydney Swans": "swans",
-  "West Coast": "eagles", "West Coast Eagles": "eagles", "Western Bulldogs": "bulldogs",
-};
-
-function playerImagePath(name: string, team: string): string {
-  const folder = CLUB_FOLDER[team] ?? team.toLowerCase().replace(/[^a-z]/g, "");
-  if (!folder) return "";
-  const slug = name.toLowerCase().replace(/[^a-z0-9]/g, "");
-  return `/players/${folder}/${slug}.png`;
-}
 
 export type RatedPlayer = {
   apiPlayerId: number;
@@ -184,7 +166,7 @@ export async function loadSeasonGameRatings(): Promise<GameRatings[]> {
         });
 
         players.push({
-          apiPlayerId, name, team, image: playerImagePath(name, team),
+          apiPlayerId, name, team, image: playerImgUrl(name, team),
           rating, goals, disposals, kicks, marks, tackles,
         });
       }

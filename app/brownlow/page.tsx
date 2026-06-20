@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { foopyColor } from "@/app/lib/foopyRating";
+import { getLogo } from "@/app/match/[id]/utils";
 import PageHeader from "@/app/components/PageHeader";
 
 type Poll = { round: number | null; opponent: string; votes: number; rating: number };
@@ -182,13 +183,18 @@ export default function BrownlowPage() {
               style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "11px 16px", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: "inherit" }}
             >
               <span style={{ fontSize: 13, fontWeight: 900, width: 20, textAlign: "center", flexShrink: 0, color: medal }}>{e.rank}</span>
-              <div style={{ width: 38, height: 38, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "var(--surface-3)" }}>
-                <PlayerImage src={e.image} name={e.name} />
-              </div>
+              <span style={{ position: "relative", display: "inline-flex", flexShrink: 0, width: 38, height: 38 }}>
+                <span style={{ width: 38, height: 38, borderRadius: "50%", overflow: "hidden", background: "var(--surface-3)", display: "block" }}>
+                  <PlayerImage src={e.image} name={e.name} />
+                </span>
+                {getLogo(e.team) && (
+                  <img src={getLogo(e.team)} alt="" style={{ position: "absolute", bottom: -2, right: -2, width: 16, height: 16, borderRadius: "50%", background: "var(--bg)", border: "1.5px solid var(--bg)", objectFit: "contain", pointerEvents: "none" }} onError={(ev) => { (ev.target as HTMLImageElement).style.display = "none"; }} />
+                )}
+              </span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shortName(e.name)}</div>
                 <div style={{ fontSize: 10.5, fontWeight: 600, color: "var(--text-4)", marginTop: 1 }}>
-                  {abbr(e.team)} · {e.threes}×3 {e.twos}×2 {e.ones}×1
+                  {abbr(e.team)}
                 </div>
               </div>
               <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", background: "#3b82f6", borderRadius: 8, padding: "5px 11px", minWidth: 46 }}>
