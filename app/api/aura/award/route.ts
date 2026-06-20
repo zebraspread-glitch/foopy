@@ -174,7 +174,7 @@ export async function POST(req: Request) {
       }
     }
 
-    const result = await awardAura(targetUserId, eventType, relatedId, undefined, token);
+    const result = await awardAura(targetUserId, eventType, relatedId);
 
     // Viewing a live game is the engagement gate that releases a referral
     // payout to whoever referred this user. Non-fatal.

@@ -1,5 +1,4 @@
 // Server-only — import ONLY from API routes
-import { createClient } from "@supabase/supabase-js";
 import { supabaseServer } from "./supabase-server";
 import { creditAuraMilestones } from "./coins";
 
@@ -15,31 +14,25 @@ const AURA_AMOUNTS: Record<string, number> = {
 
 /**
  * Award aura to a user via the award_aura_event SECURITY DEFINER RPC.
- * The RPC handles insert + profile increment atomically and works from any role.
- * Pass userJwt when available so the RPC call is authenticated.
+ * The RPC handles insert + profile increment atomically.
+ *
+ * SECURITY: always called with the service-role key — never the user's JWT.
+ * The aura amount is derived server-side here (AURA_AMOUNTS / validated
+ * overrides), so EXECUTE on award_aura_event must be revoked from the
+ * `authenticated`/`public` roles (see supabase/lock-aura-rpc.sql). Otherwise a
+ * client could call the RPC directly with an arbitrary p_amount and mint aura.
  * Returns { awarded: true } if new, { awarded: false } if already awarded (dedup).
  */
 export async function awardAura(
   userId: string,
   eventType: string,
   relatedId: string,
-  amountOverride?: number,
-  userJwt?: string
+  amountOverride?: number
 ): Promise<{ awarded: boolean; amount: number; reason?: string }> {
   const amount = amountOverride ?? AURA_AMOUNTS[eventType];
   if (!amount) return { awarded: false, amount: 0, reason: "no_amount" };
 
-  // Use user JWT when available so the call runs as authenticated role.
-  // award_aura_event is SECURITY DEFINER so it can insert+update regardless of caller.
-  const client = userJwt
-    ? createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        { global: { headers: { Authorization: `Bearer ${userJwt}` } } }
-      )
-    : supabaseServer;
-
-  const { data, error } = await client.rpc("award_aura_event", {
+  const { data, error } = await supabaseServer.rpc("award_aura_event", {
     p_user_id:    userId,
     p_event_type: eventType,
     p_related_id: relatedId,
