@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { foopyColor } from "@/app/lib/foopyRating";
 import PageHeader from "@/app/components/PageHeader";
 
@@ -50,11 +49,20 @@ function PlayerImage({ src, name }: { src: string; name: string }) {
   return <img src={src} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={() => setFailed(true)} />;
 }
 
+const WINDOWS: { key: number; label: string }[] = [
+  { key: 0, label: "Season" },
+  { key: 3, label: "Last 3" },
+  { key: 5, label: "Last 5" },
+  { key: 10, label: "Last 10" },
+];
+
 export default function BrownlowPage() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [meta, setMeta] = useState<{ gamesCounted: number; lastRound: number }>({ gamesCounted: 0, lastRound: 0 });
   const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState<number | null>(null);
+  const [open, setOpen] = useState<string | null>(null);
+  const [windowN, setWindowN] = useState(0); // 0 = whole season, else last N rounds
+  const [team, setTeam] = useState("all");
 
   useEffect(() => {
     setLoading(true);
@@ -67,6 +75,33 @@ export default function BrownlowPage() {
       })
       .catch(() => setLoading(false));
   }, []);
+
+  const teams = useMemo(
+    () => Array.from(new Set(entries.map((e) => e.team).filter(Boolean))).sort(),
+    [entries]
+  );
+
+  // Both filters are derived client-side from each player's per-round polls,
+  // re-tallying votes over the selected round window and team.
+  const view = useMemo<Entry[]>(() => {
+    const maxRound = entries.reduce((m, e) => Math.max(m, ...e.polls.map((p) => p.round ?? 0)), 0);
+    const minRound = windowN === 0 ? -Infinity : maxRound - windowN + 1;
+    let list = entries.map((e) => {
+      const polls = windowN === 0 ? e.polls : e.polls.filter((p) => (p.round ?? 0) >= minRound);
+      return {
+        ...e,
+        polls,
+        votes: polls.reduce((s, p) => s + p.votes, 0),
+        threes: polls.filter((p) => p.votes === 3).length,
+        twos: polls.filter((p) => p.votes === 2).length,
+        ones: polls.filter((p) => p.votes === 1).length,
+        gamesPolled: polls.length,
+      };
+    }).filter((e) => e.votes > 0);
+    if (team !== "all") list = list.filter((e) => e.team === team);
+    list.sort((a, b) => b.votes - a.votes || b.threes - a.threes || b.twos - a.twos);
+    return list.map((e, i) => ({ ...e, rank: i + 1 }));
+  }, [entries, windowN, team]);
 
   return (
     <main style={{ maxWidth: 600, margin: "0 auto", padding: "0 0 80px" }}>
@@ -82,28 +117,67 @@ export default function BrownlowPage() {
         {meta.gamesCounted > 0 && ` ${meta.gamesCounted} games counted.`}
       </div>
 
+      {/* Filters */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 16px 4px", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 6 }}>
+          {WINDOWS.map((w) => (
+            <button
+              key={w.key}
+              onClick={() => setWindowN(w.key)}
+              style={{
+                padding: "7px 13px", borderRadius: 999,
+                border: windowN === w.key ? "none" : "1px solid var(--border-2)",
+                background: windowN === w.key ? "#3b82f6" : "var(--surface-2)",
+                color: windowN === w.key ? "#fff" : "var(--text-2)",
+                fontSize: 13, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap",
+              }}
+            >
+              {w.label}
+            </button>
+          ))}
+        </div>
+        <select
+          value={team}
+          onChange={(e) => setTeam(e.target.value)}
+          style={{
+            marginLeft: "auto", padding: "7px 12px", borderRadius: 999,
+            border: team === "all" ? "1px solid var(--border-2)" : "none",
+            background: team === "all" ? "var(--surface-2)" : "#3b82f6",
+            color: team === "all" ? "var(--text-2)" : "#fff",
+            fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+            appearance: "none", WebkitAppearance: "none",
+          }}
+        >
+          <option value="all">All teams</option>
+          {teams.map((t) => (
+            <option key={t} value={t}>{t}</option>
+          ))}
+        </select>
+      </div>
+
       {loading && (
         <div style={{ display: "flex", justifyContent: "center", padding: "48px 0" }}>
           <div style={{ width: 28, height: 28, borderRadius: "50%", border: "3px solid rgba(255,255,255,0.1)", borderTopColor: "#3b82f6", animation: "spin 0.75s linear infinite" }} />
         </div>
       )}
 
-      {!loading && entries.length === 0 && (
+      {!loading && view.length === 0 && (
         <div style={{ textAlign: "center", padding: "48px 0", color: "var(--text-3)" }}>
           <div style={{ fontSize: 32, marginBottom: 8 }}>🏅</div>
           <div style={{ fontWeight: 700 }}>No votes yet</div>
-          <div style={{ fontSize: 13, marginTop: 4 }}>Check back once games are played</div>
+          <div style={{ fontSize: 13, marginTop: 4 }}>Try a different filter</div>
         </div>
       )}
 
-      {!loading && entries.map((e, idx) => {
-        const isOpen = open === e.rank;
+      {!loading && view.map((e, idx) => {
+        const key = `${e.name}::${e.team}`;
+        const isOpen = open === key;
         const medal = e.rank === 1 ? "#ffd700" : e.rank === 2 ? "#cbd5e1" : e.rank === 3 ? "#cd7f32" : "var(--text-4)";
         return (
-          <div key={`${e.name}-${e.rank}`} style={{ borderBottom: "1px solid var(--border-2)", borderTop: idx === 0 ? "1px solid var(--border-2)" : "none" }}>
+          <div key={key} style={{ borderBottom: "1px solid var(--border-2)", borderTop: idx === 0 ? "1px solid var(--border-2)" : "none" }}>
             <button
               type="button"
-              onClick={() => setOpen(isOpen ? null : e.rank)}
+              onClick={() => setOpen(isOpen ? null : key)}
               aria-expanded={isOpen}
               style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "11px 16px", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: "inherit" }}
             >
