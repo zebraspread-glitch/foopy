@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { Mail, ArrowLeft, ArrowRight } from "lucide-react";
@@ -11,6 +11,14 @@ export default function ForgotPasswordPage() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+
+  // Prefill the email when arriving from the Sign In page's "Forgot password?"
+  // link (which passes ?email=). Read from the URL directly so we don't need a
+  // Suspense boundary around useSearchParams.
+  useEffect(() => {
+    const fromUrl = new URLSearchParams(window.location.search).get("email");
+    if (fromUrl) setEmail(fromUrl);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

@@ -255,6 +255,14 @@ function LoginPageInner() {
                 {showPassword ? <EyeOff size={17} strokeWidth={2} /> : <Eye size={17} strokeWidth={2} />}
               </button>
             </div>
+            {mode === "login" && (
+              <Link
+                href={email ? `/forgot-password?email=${encodeURIComponent(email)}` : "/forgot-password"}
+                style={forgotLink}
+              >
+                Forgot password?
+              </Link>
+            )}
           </div>
 
           {mode === "signup" && (
@@ -477,6 +485,15 @@ const label: React.CSSProperties = {
   color: "rgba(255,255,255,0.45)",
   letterSpacing: "0.04em",
   textTransform: "uppercase",
+};
+
+const forgotLink: React.CSSProperties = {
+  alignSelf: "flex-end",
+  marginTop: 2,
+  fontSize: 12,
+  fontWeight: 600,
+  color: "#38bdf8",
+  textDecoration: "none",
 };
 
 const input: React.CSSProperties = {
