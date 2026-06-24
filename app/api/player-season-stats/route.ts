@@ -4,6 +4,7 @@ import fs from "fs";
 import { createClient } from "@supabase/supabase-js";
 import { foopyRating } from "@/app/lib/foopyRating";
 import { computeAvgFoopyMap } from "@/app/lib/computeAvgFoopy.server";
+import { applyStatCorrections } from "@/app/data/statCorrections";
 
 export const dynamic = "force-dynamic";
 
@@ -61,11 +62,13 @@ export async function GET() {
   ]);
 
   function injectAvgFoopy(players: any[]): any[] {
-    return players.map(p => {
+    const withFoopy = players.map(p => {
       const id = Number(p.apiSportsId);
       const avg = id ? avgFoopyMap.get(id) : undefined;
       return avg !== undefined ? { ...p, avgFoopy: avg } : p;
     });
+    // Manual overrides (e.g. goal totals API-Sports undercounts) always win.
+    return applyStatCorrections(withFoopy);
   }
 
   // 1. Supabase cache (written by hourly cron)
@@ -201,7 +204,7 @@ export async function GET() {
     });
   }
 
-  return NextResponse.json(results, {
+  return NextResponse.json(applyStatCorrections(results), {
     headers: { "Cache-Control": "public, max-age=300, stale-while-revalidate=600" },
   });
 }

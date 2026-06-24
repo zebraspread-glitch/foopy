@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import rawStats from "@/app/data/player-season-stats.json";
+import { applyStatCorrections } from "@/app/data/statCorrections";
 import { CARD_PLAYERS } from "@/app/data/cardPlayers";
 import { PLAYER_IMG_BASE } from "@/app/lib/playerImage";
 import { StatsTableSkeleton } from "@/app/components/Skeleton";
@@ -216,8 +217,10 @@ export default function StatsPage() {
       .catch(() => {});
   }, []);
 
-  // Use live API data when available, fall back to static JSON while loading
-  const players  = (liveStats ?? rawStats) as PlayerStat[];
+  // Use live API data when available, fall back to static JSON while loading.
+  // The API already applies stat corrections; apply them to the static
+  // fallback too so the numbers match before/after the fetch resolves.
+  const players  = (liveStats ?? applyStatCorrections(rawStats as PlayerStat[])) as PlayerStat[];
   const catMeta  = CATEGORIES.find(c => c.key === cat)!;
   const displayUnit: "avg" | "tot" = mode === "total" ? "tot" : "avg";
 
