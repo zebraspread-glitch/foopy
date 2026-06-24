@@ -14,6 +14,7 @@ import {
   addRecentSticker,
   usableStickerNames,
 } from "@/app/lib/stickers";
+import { STORE_ENABLED } from "@/app/lib/featureFlags";
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(true);
@@ -136,8 +137,11 @@ export default function StickerPicker({ onPick }: { onPick: (name: string) => vo
   const pick = useCallback((name: string) => {
     if (!usable.has(name)) {
       // Locked paid sticker — send the user to the store instead of inserting.
-      setShowAll(false);
-      router.push("/store");
+      // While the store is hidden, locked stickers simply do nothing.
+      if (STORE_ENABLED) {
+        setShowAll(false);
+        router.push("/store");
+      }
       return;
     }
     onPick(name);
@@ -158,7 +162,7 @@ export default function StickerPicker({ onPick }: { onPick: (name: string) => vo
             {FREE_STICKER_NAMES.map(name => <StickerButton key={name} name={name} locked={false} onClick={pick} />)}
           </div>
 
-          {PAID_STICKERS.length > 0 && (
+          {STORE_ENABLED && PAID_STICKERS.length > 0 && (
             <div>
               <div style={packHeaderStyle}>
                 <span>Premium</span>

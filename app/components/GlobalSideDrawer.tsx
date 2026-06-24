@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { showsDrawerButton } from "@/app/lib/navRoutes";
+import { STORE_ENABLED } from "@/app/lib/featureFlags";
 
 type NavItem = {
   label: string;
@@ -26,7 +27,8 @@ const NAV_ITEMS: NavItem[] = [
       </svg>
     ),
   },
-  {
+  // Store is hidden until In-App Purchases ship (tokens are purchase-only).
+  ...(STORE_ENABLED ? [{
     label: "Store",
     href: "/store",
     icon: (
@@ -36,7 +38,7 @@ const NAV_ITEMS: NavItem[] = [
         <path d="M9 13h6" />
       </svg>
     ),
-  },
+  }] : []),
   {
     label: "Aura",
     href: "/aura",

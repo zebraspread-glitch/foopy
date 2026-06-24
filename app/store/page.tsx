@@ -9,6 +9,8 @@ import { PAID_STICKERS, stickerUrl } from "@/app/lib/stickers";
 import { StoreItemSkeleton } from "@/app/components/Skeleton";
 import { getPassLevel, PLAYER_PASS_LEVELS } from "@/app/lib/passes";
 import PageHeader from "@/app/components/PageHeader";
+import { redirect } from "next/navigation";
+import { STORE_ENABLED } from "@/app/lib/featureFlags";
 
 const PATTERN_PREVIEW_LEVEL = getPassLevel(375, PLAYER_PASS_LEVELS);
 
@@ -58,6 +60,8 @@ const sectionId = (slot: string) => `store-section-${slot.replace(/[^a-z0-9_-]/g
 const rarityOf = (c: Cosmetic) => RARITY[c.rarity ?? "common"] ?? RARITY.common;
 
 export default function StorePage() {
+  // Store is hidden until IAP ships — keep the page unreachable by direct URL.
+  if (!STORE_ENABLED) redirect("/");
   const { user, accessToken, profile, loading: sessionLoading, mutateProfile } = useSession();
   const token = accessToken;
   const username = profile?.username || "You";

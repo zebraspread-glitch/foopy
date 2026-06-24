@@ -26,6 +26,7 @@ import { PlayerCard } from "@/app/components/PlayerCard";
 import { PlayerPassCard, TeamPassCard } from "@/app/components/PassCard";
 import { type PlayerPass, type TeamPass, PLAYER_PASS_LEVELS, TEAM_PASS_LEVELS, getPassLevel, dedupePlayerPasses } from "@/app/lib/passes";
 import { finalizePendingProfile } from "@/app/lib/finalizePendingProfile";
+import { STORE_ENABLED } from "@/app/lib/featureFlags";
 
 /* ─────────────────── Team picker data ─────────────────── */
 const TEAM_PICKER_LIST = [
@@ -2096,14 +2097,16 @@ export default function ProfilePage() {
               </div>
               <span style={profileHeaderLabelStyle}>Coins</span>
             </a>
-            {/* Foopy Tokens */}
-            <a href="/tokens" style={profileHeaderStatStyle}>
-              <div style={profileHeaderIconRowStyle}>
-                <img src="/token/token.png" alt="" style={{ width: profileHeaderIconSize, height: profileHeaderIconSize, objectFit: "contain", flexShrink: 0 }} />
-                <span style={profileHeaderValueStyle}>{(profile?.tokens ?? 0).toLocaleString()}</span>
-              </div>
-              <span style={profileHeaderLabelStyle}>Tokens</span>
-            </a>
+            {/* Foopy Tokens — hidden until IAP ships (purchase-only currency) */}
+            {STORE_ENABLED && (
+              <a href="/tokens" style={profileHeaderStatStyle}>
+                <div style={profileHeaderIconRowStyle}>
+                  <img src="/token/token.png" alt="" style={{ width: profileHeaderIconSize, height: profileHeaderIconSize, objectFit: "contain", flexShrink: 0 }} />
+                  <span style={profileHeaderValueStyle}>{(profile?.tokens ?? 0).toLocaleString()}</span>
+                </div>
+                <span style={profileHeaderLabelStyle}>Tokens</span>
+              </a>
+            )}
             {/* Friends */}
             <button onClick={openFriends} style={{ ...profileHeaderStatStyle, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit" }}>
               <div style={profileHeaderIconRowStyle}>

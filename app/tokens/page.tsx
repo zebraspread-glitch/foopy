@@ -4,6 +4,8 @@ import { useEffect, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
 import PageHeader from "@/app/components/PageHeader";
+import { redirect } from "next/navigation";
+import { STORE_ENABLED } from "@/app/lib/featureFlags";
 
 type TokenPack = {
   id: string;
@@ -27,6 +29,8 @@ const PACKS: TokenPack[] = [
 ];
 
 export default function TokensPage() {
+  // Tokens are purchase-only; hidden until IAP ships. Keep the page unreachable.
+  if (!STORE_ENABLED) redirect("/");
   const router = useRouter();
   const [tokens, setTokens] = useState<number>(0);
   const [loading, setLoading] = useState(true);
