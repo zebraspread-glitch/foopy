@@ -119,9 +119,8 @@ const wrap: CSSProperties = {
 
 const card: CSSProperties = {
   background: "var(--bg)",
-  border: "1px solid rgba(255,255,255,.13)",
-  borderRadius: 15,
-  boxShadow: "0 18px 45px rgba(0,0,0,.22)",
+  border: "1px solid rgba(255,255,255,.1)",
+  borderRadius: 12,
 };
 
 const authCard: CSSProperties = {
@@ -132,8 +131,9 @@ const authCard: CSSProperties = {
 };
 
 const authTitle: CSSProperties = {
-  fontSize: 28,
-  fontWeight: 950,
+  fontSize: 24,
+  fontWeight: 900,
+  letterSpacing: "-0.03em",
   margin: "0 0 6px",
 };
 
@@ -177,13 +177,14 @@ const eyeBtn: CSSProperties = {
 
 const primaryBtn: CSSProperties = {
   marginTop: 4,
-  padding: "13px",
+  padding: "14px",
   borderRadius: 10,
   border: "none",
-  background: "linear-gradient(135deg,#3b82f6,#6366f1)",
-  color: "var(--text-1)",
-  fontWeight: 950,
+  background: "#5865f2",
+  color: "#fff",
+  fontWeight: 700,
   fontSize: 15,
+  letterSpacing: "-0.01em",
   cursor: "pointer",
 };
 

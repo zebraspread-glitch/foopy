@@ -42,7 +42,7 @@ export default function ForgotPasswordPage() {
     return (
       <main style={pageStyle} className="page-enter">
         <div style={containerStyle}>
-          <div style={{ ...iconStyle, background: "linear-gradient(135deg,#22c55e,#16a34a)" }}>
+          <div style={{ ...iconStyle, background: "#22c55e" }}>
             <Mail size={28} color="white" />
           </div>
           <h1 style={titleStyle}>Check your email</h1>
@@ -117,32 +117,31 @@ const containerStyle: CSSProperties = {
 };
 
 const iconStyle: CSSProperties = {
-  width: 64,
-  height: 64,
-  borderRadius: 18,
-  background: "linear-gradient(135deg,#3b82f6,#6366f1)",
+  width: 56,
+  height: 56,
+  borderRadius: 16,
+  background: "#5865f2",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  boxShadow: "0 8px 32px rgba(99,102,241,.45)",
   marginBottom: 4,
 };
 
 const titleStyle: CSSProperties = {
   margin: 0,
-  fontSize: 26,
-  fontWeight: 950,
-  letterSpacing: "-0.04em",
+  fontSize: 24,
+  fontWeight: 900,
+  letterSpacing: "-0.03em",
   textAlign: "center",
 };
 
 const bodyStyle: CSSProperties = {
   margin: 0,
-  fontSize: 14,
+  fontSize: 13,
   color: "var(--text-3)",
-  fontWeight: 600,
+  fontWeight: 500,
   textAlign: "center",
-  lineHeight: 1.6,
+  lineHeight: 1.5,
 };
 
 const formStyle: CSSProperties = {
@@ -169,13 +168,13 @@ const fieldIconStyle: CSSProperties = {
 
 const inputStyle: CSSProperties = {
   width: "100%",
-  padding: "16px 14px 16px 44px",
-  borderRadius: 999,
-  border: "1px solid var(--border-2)",
-  background: "var(--surface-2)",
+  padding: "13px 14px 13px 40px",
+  borderRadius: 10,
+  border: "1px solid rgba(255,255,255,0.1)",
+  background: "rgba(255,255,255,0.05)",
   color: "var(--text-1)",
   fontSize: 15,
-  fontWeight: 500,
+  fontWeight: 400,
   outline: "none",
 };
 
@@ -196,14 +195,14 @@ const submitBtnStyle: CSSProperties = {
   justifyContent: "center",
   gap: 8,
   width: "100%",
-  padding: "17px 24px",
-  borderRadius: 999,
+  padding: "14px",
+  borderRadius: 10,
   border: "none",
-  background: "linear-gradient(135deg,#3b82f6,#6366f1)",
-  color: "var(--text-1)",
-  fontSize: 16,
-  fontWeight: 900,
-  boxShadow: "0 4px 20px rgba(59,130,246,.35)",
+  background: "#5865f2",
+  color: "#fff",
+  fontSize: 15,
+  fontWeight: 700,
+  letterSpacing: "-0.01em",
   cursor: "pointer",
 };
 
@@ -211,9 +210,9 @@ const linkStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   gap: 6,
-  color: "#60a5fa",
-  fontSize: 14,
-  fontWeight: 700,
+  color: "rgba(255,255,255,0.45)",
+  fontSize: 13,
+  fontWeight: 600,
   textDecoration: "none",
 };
 
@@ -221,13 +220,13 @@ const backBtnStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   gap: 8,
-  padding: "15px 24px",
-  borderRadius: 999,
-  border: "1px solid var(--border-2)",
-  background: "var(--surface-2)",
-  color: "var(--text-2)",
+  padding: "13px",
+  borderRadius: 10,
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "transparent",
+  color: "rgba(255,255,255,0.6)",
   fontSize: 14,
-  fontWeight: 800,
+  fontWeight: 700,
   textDecoration: "none",
   width: "100%",
   justifyContent: "center",
