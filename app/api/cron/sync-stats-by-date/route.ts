@@ -7,15 +7,26 @@ export const maxDuration = 300;
 /**
  * GET /api/cron/sync-stats-by-date
  *
- * Runs every 15 minutes via Vercel Cron.
- * Fetches player + team stats for TODAY from API Sports using the date endpoint
+ * Runs every 30 minutes via Vercel Cron.
+ * Fetches player + team stats from API Sports using the date endpoint
  * (no game ID mapping required — catches every completed game automatically).
  *
  * Stores results in match_cache keyed by API Sports game ID so the player page
  * can read them without a redeploy of game-stats.json.
  *
+ * Window: the last LOOKBACK_DAYS days, not just today. API-Sports populates
+ * per-game player stats a few days after a game finishes, so a today/yesterday
+ * window permanently misses late-arriving data — the round drops out of
+ * match_cache and season totals freeze until game-stats.json is re-pulled by
+ * hand. Re-scanning a week of dates each run is cheap (one API call per date)
+ * and self-heals any gap.
+ *
  * Protected by CRON_SECRET env var.
  */
+
+// How many days back to re-scan each run. Comfortably covers API-Sports'
+// stat-population lag while staying a handful of API calls per run.
+const LOOKBACK_DAYS = 6;
 
 function adminSupabase() {
   return createClient(
@@ -45,15 +56,17 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Check today AND yesterday (handles late-finishing games / timezone edge cases)
+  // Re-scan the last LOOKBACK_DAYS days so late-populated stats are caught even
+  // if they only appear in the API days after the game finished.
   const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
+  const todayStr = today.toISOString().slice(0, 10);
 
-  const todayStr     = today.toISOString().slice(0, 10);
-  const yesterdayStr = yesterday.toISOString().slice(0, 10);
-
-  const dates = [yesterdayStr, todayStr];
+  const dates: string[] = [];
+  for (let i = LOOKBACK_DAYS; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    dates.push(d.toISOString().slice(0, 10));
+  }
 
   const supabase = adminSupabase();
   const results: any[] = [];
