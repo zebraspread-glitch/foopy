@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/app/lib/supabase-server";
 import { createClient } from "@supabase/supabase-js";
+import { isUuid } from "@/app/lib/validation";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,7 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   // Allow fetching another user's history (for public profile viewing)
   const targetUserId = searchParams.get("user_id") ?? user.id;
+  if (!isUuid(targetUserId)) return NextResponse.json({ error: "Invalid user_id" }, { status: 400 });
 
   const db = adminSupabase();
 
