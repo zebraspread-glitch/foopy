@@ -14,7 +14,6 @@ import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
 import AuraBadge from "@/app/components/AuraBadge";
 import { VerifiedBadge } from "@/app/components/VerifiedBadge";
-import { auraToastEmitter } from "@/app/lib/auraToastEmitter";
 import { playerImgUrl } from "@/app/lib/playerImage";
 import { nameColorStyle, avatarFrameStyle } from "@/app/lib/cosmetics";
 import { supabase } from "@/app/lib/supabase";
@@ -1046,15 +1045,8 @@ export default function ProfilePage() {
           const { data } = await supabase.from("profiles").select("*").eq("id", u.id).single();
           await applyPending(u, data as Profile | null);
           loadFriends(u.id);
-          // Award daily login Aura (deduped per calendar day)
-          if (session?.access_token) {
-            const today = new Date().toISOString().split("T")[0];
-            fetch("/api/aura/award", {
-              method: "POST",
-              headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
-              body: JSON.stringify({ event_type: "daily_login", related_id: today }),
-            }).then(r => r.json()).then(d => { if (d.awarded) auraToastEmitter.emit(10, "daily login"); }).catch(() => {});
-          }
+          // Daily-login Aura is awarded globally by DailyAuraCollector
+          // (mounted in the root layout) so it fires on any page, not just here.
         }
         clearTimeout(fallback);
         setLoading(false);

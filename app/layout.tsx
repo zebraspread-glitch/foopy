@@ -8,6 +8,7 @@ import ThemeModeBootstrap from "./components/ThemeModeBootstrap";
 import AuraToast from "./components/AuraToast";
 import HapticsProvider from "./components/HapticsProvider";
 import PassRewardCollector from "./components/PassRewardCollector";
+import DailyAuraCollector from "./components/DailyAuraCollector";
 import SplashScreen from "./components/SplashScreen";
 import OfflineBanner from "./components/OfflineBanner";
 import { SessionProvider } from "./context/SessionProvider";
@@ -73,6 +74,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
           <BottomNav />
           <PassRewardCollector />
+          <DailyAuraCollector />
           <AuraToast />
         </SessionProvider>
         <Analytics />
