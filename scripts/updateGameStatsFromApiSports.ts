@@ -54,8 +54,24 @@ const API_TEAM_ID_BY_NAME: Record<string, number> = {
 
 const TODAY = new Date().toISOString().slice(0, 10);
 
-const START_DATE = TODAY;
-const END_DATE = TODAY;
+// Date range to fetch. Defaults to today, but can be overridden from the CLI:
+//   tsx scripts/updateGameStatsFromApiSports.ts --start 2026-06-15 --end 2026-06-24
+//   tsx scripts/updateGameStatsFromApiSports.ts --days 10   # last 10 days incl. today
+function argValue(flag: string): string | null {
+  const i = process.argv.indexOf(flag);
+  return i !== -1 ? process.argv[i + 1] ?? null : null;
+}
+
+const DAYS = argValue("--days");
+const START_DATE = (() => {
+  if (DAYS) {
+    const d = new Date();
+    d.setDate(d.getDate() - (Number(DAYS) - 1));
+    return d.toISOString().slice(0, 10);
+  }
+  return argValue("--start") ?? TODAY;
+})();
+const END_DATE = argValue("--end") ?? TODAY;
 
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
