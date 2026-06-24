@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/app/lib/supabase-server";
+import { readJsonObject } from "@/app/lib/http";
 
 function auth(req: Request) {
   const h = req.headers.get("authorization");
@@ -13,7 +14,7 @@ export async function POST(req: Request) {
   const { data: { user }, error } = await supabaseServer.auth.getUser(token);
   if (error || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { pass_type, pass_id, pattern } = await req.json() as {
+  const { pass_type, pass_id, pattern } = await readJsonObject(req) as {
     pass_type?: "player" | "team";
     pass_id?: string;
     pattern?: string | null;

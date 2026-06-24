@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/app/lib/supabase-server";
 import { awardAura } from "@/app/lib/aura";
+import { readJsonObject } from "@/app/lib/http";
 
 const db = supabaseServer;
 
@@ -42,7 +43,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const body = await req.json();
+  const body = await readJsonObject(req);
   const { matchId, team, side } = body;
 
   if (!matchId || !team || !side) {

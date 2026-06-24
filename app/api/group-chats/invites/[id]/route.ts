@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/app/lib/supabase-server";
+import { readJsonObject } from "@/app/lib/http";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const { data: { user }, error: authErr } = await supabaseServer.auth.getUser(token);
   if (authErr || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { action } = await req.json() as { action?: "accept" | "decline" };
+  const { action } = await readJsonObject(req) as { action?: "accept" | "decline" };
   if (action !== "accept" && action !== "decline")
     return NextResponse.json({ error: "action must be accept or decline" }, { status: 400 });
 

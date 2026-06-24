@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/app/lib/supabase-server";
+import { readJsonObject } from "@/app/lib/http";
 
 // PATCH /api/profile  — update allowed profile fields (service role, bypasses RLS)
 export async function PATCH(req: NextRequest) {
@@ -10,7 +11,7 @@ export async function PATCH(req: NextRequest) {
   const { data: { user }, error: authErr } = await supabaseServer.auth.getUser(token);
   if (authErr || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await req.json();
+  const body = await readJsonObject(req);
 
   // Only allow updating safe fields
   const allowed = ["featured_cards", "featured_passes", "bio", "display_name", "favourites"];

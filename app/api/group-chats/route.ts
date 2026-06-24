@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/app/lib/supabase-server";
+import { readJsonObject } from "@/app/lib/http";
 
 export const dynamic = "force-dynamic";
 
@@ -72,7 +73,7 @@ export async function POST(req: Request) {
   const { data: { user }, error: authErr } = await supabaseServer.auth.getUser(token);
   if (authErr || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { name, description, is_public, image_url } = await req.json() as {
+  const { name, description, is_public, image_url } = await readJsonObject(req) as {
     name?: string; description?: string; is_public?: boolean; image_url?: string;
   };
 
