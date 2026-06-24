@@ -390,7 +390,12 @@ function CommentRow({
   liking: Set<string>;
   isReply?: boolean;
 }) {
-  const name = comment.profile?.display_name || comment.profile?.username || "User";
+  // A null profile means the author deleted their account — the comment is kept
+  // (anonymised) so the thread isn't left with holes. See
+  // supabase/preserve-feed-comments-on-account-deletion.sql.
+  const name = comment.profile
+    ? comment.profile.display_name || comment.profile.username || "User"
+    : "Deleted user";
   const avatar = comment.profile?.avatar_url;
   const isOwn = userId === comment.user_id;
   const isLiked = comment.liked;
