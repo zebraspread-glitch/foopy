@@ -9,3 +9,6 @@ public/players/
 
 # Local Claude Code state — never commit (contains local settings/secrets)
 .claude/
+
+# TypeScript incremental build cache
+tsconfig.tsbuildinfo
