@@ -3,10 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CSSProperties } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/app/lib/supabase";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const router = useRouter();
@@ -17,6 +21,11 @@ export default function ResetPasswordPage() {
 
     if (password.length < 6) {
       setMessage("Password must be at least 6 characters.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setMessage("Passwords do not match.");
       return;
     }
 
@@ -48,13 +57,37 @@ export default function ResetPasswordPage() {
           </p>
 
           <form onSubmit={updatePassword} style={form}>
-            <input
-              style={input}
-              type="password"
-              placeholder="New password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <div style={{ position: "relative" }}>
+              <input
+                style={{ ...input, width: "100%", paddingRight: 44 }}
+                type={showPassword ? "text" : "password"}
+                placeholder="New password"
+                autoComplete="new-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <button type="button" onClick={() => setShowPassword((v) => !v)} style={eyeBtn} aria-label={showPassword ? "Hide password" : "Show password"}>
+                {showPassword ? <EyeOff size={17} strokeWidth={2} /> : <Eye size={17} strokeWidth={2} />}
+              </button>
+            </div>
+
+            <div style={{ position: "relative" }}>
+              <input
+                style={{ ...input, width: "100%", paddingRight: 44 }}
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Confirm new password"
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+              <button type="button" onClick={() => setShowConfirmPassword((v) => !v)} style={eyeBtn} aria-label={showConfirmPassword ? "Hide password" : "Show password"}>
+                {showConfirmPassword ? <EyeOff size={17} strokeWidth={2} /> : <Eye size={17} strokeWidth={2} />}
+              </button>
+            </div>
+
+            {confirmPassword.length > 0 && password !== confirmPassword && (
+              <span style={{ fontSize: 12, fontWeight: 600, color: "#f87171" }}>Passwords don&apos;t match</span>
+            )}
 
             <button style={primaryBtn} disabled={busy}>
               {busy ? "Updating..." : "Update password"}
@@ -127,6 +160,19 @@ const input: CSSProperties = {
   fontSize: 15,
   fontWeight: 650,
   outline: "none",
+};
+
+const eyeBtn: CSSProperties = {
+  position: "absolute",
+  right: 14,
+  top: "50%",
+  transform: "translateY(-50%)",
+  background: "none",
+  border: "none",
+  color: "rgba(255,255,255,0.3)",
+  cursor: "pointer",
+  padding: 0,
+  display: "flex",
 };
 
 const primaryBtn: CSSProperties = {

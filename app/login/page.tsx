@@ -61,8 +61,10 @@ function LoginPageInner() {
   const searchParams = useSearchParams();
   const [mode, setMode]                 = useState<Mode>(() => searchParams.get("mode") === "signup" ? "signup" : "login");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [email, setEmail]               = useState("");
   const [password, setPassword]         = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [username, setUsername]         = useState("");
   const [loading, setLoading]           = useState(false);
   const [error, setError]               = useState("");
@@ -97,6 +99,10 @@ function LoginPageInner() {
     setError("");
     if (!email || !password) { setError("Please fill in all fields."); return; }
     if (password.length < 6)  { setError("Password must be at least 6 characters."); return; }
+    if (mode === "signup" && password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
     setLoading(true);
 
     if (mode === "login") {
@@ -188,10 +194,11 @@ function LoginPageInner() {
     setLoading(false);
   }
 
-  function switchMode(m: Mode) { setMode(m); setError(""); setUsername(""); setFavouriteTeam(""); setAgreed(false); }
+  function switchMode(m: Mode) { setMode(m); setError(""); setUsername(""); setFavouriteTeam(""); setAgreed(false); setConfirmPassword(""); }
 
   const signupBlocked = mode === "signup" &&
-    (usernameStatus === "taken" || usernameStatus === "checking" || usernameStatus === "short" || !agreed);
+    (usernameStatus === "taken" || usernameStatus === "checking" || usernameStatus === "short" || !agreed
+      || !confirmPassword || password !== confirmPassword);
 
   if (checkEmail) {
     return (
@@ -264,6 +271,26 @@ function LoginPageInner() {
               </Link>
             )}
           </div>
+
+          {mode === "signup" && (
+            <div style={fieldGroup}>
+              <label style={label}>Confirm Password</label>
+              <div style={{ position: "relative" }}>
+                <input
+                  type={showConfirmPassword ? "text" : "password"} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••" autoComplete="new-password"
+                  required style={{ ...input, paddingRight: 44 }}
+                />
+                <button type="button" onClick={() => setShowConfirmPassword(v => !v)}
+                  style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "rgba(255,255,255,0.3)", cursor: "pointer", padding: 0, display: "flex" }}>
+                  {showConfirmPassword ? <EyeOff size={17} strokeWidth={2} /> : <Eye size={17} strokeWidth={2} />}
+                </button>
+              </div>
+              {confirmPassword.length > 0 && password !== confirmPassword && (
+                <span style={mismatchHint}>Passwords don&apos;t match</span>
+              )}
+            </div>
+          )}
 
           {mode === "signup" && (
             <div style={fieldGroup}>
@@ -494,6 +521,13 @@ const forgotLink: React.CSSProperties = {
   fontWeight: 600,
   color: "#38bdf8",
   textDecoration: "none",
+};
+
+const mismatchHint: React.CSSProperties = {
+  fontSize: 12,
+  fontWeight: 600,
+  color: "#f87171",
+  marginTop: 2,
 };
 
 const input: React.CSSProperties = {
