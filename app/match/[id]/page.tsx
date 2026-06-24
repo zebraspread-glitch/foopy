@@ -2251,10 +2251,14 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
         onScroll={(e) => syncStatsHeaderScroll(e.currentTarget.scrollLeft)}
       >
         <table style={{ ...tableStyle, width: "100%", minWidth: tableMinWidth, tableLayout: "fixed" }}>
+          {/* Column widths as % of the total so the body distributes stretch
+              identically to the grid-`fr` header — otherwise table-layout:fixed
+              spreads extra width differently and the headers drift off their
+              number columns on wide screens. minWidth pins exact px on mobile. */}
           <colgroup>
-            <col style={{ width: AVATAR_COL_W }} />{/* avatar (sticky) */}
-            <col style={{ width: NAME_COL_W }} />{/* surname (sticky) */}
-            {activeCols.map((c) => <col key={c.id} style={{ width: c.width }} />)}
+            <col style={{ width: `${(AVATAR_COL_W / tableMinWidth) * 100}%` }} />{/* avatar (sticky) */}
+            <col style={{ width: `${(NAME_COL_W / tableMinWidth) * 100}%` }} />{/* surname (sticky) */}
+            {activeCols.map((c) => <col key={c.id} style={{ width: `${(c.width / tableMinWidth) * 100}%` }} />)}
           </colgroup>
           <tbody>
             {sortedStats.map((p, index) => {
