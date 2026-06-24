@@ -2,6 +2,10 @@ node_modules
 .next
 out
 .env.local
+.env*.local
 .vercel
 .DS_Store
 public/players/
+
+# Local Claude Code state — never commit (contains local settings/secrets)
+.claude/
