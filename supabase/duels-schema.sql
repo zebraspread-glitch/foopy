@@ -109,39 +109,41 @@ create policy "Users can insert own picks"
 
 -- 5. DUEL STATS VIEW (for leaderboards and profiles)
 -- ============================================================
+-- Sourced from public.profiles (NOT auth.users) so the view never exposes
+-- the internal auth schema through the API. profiles.id == auth.users.id.
 create or replace view public.duel_stats as
 select
-  u.id                                                       as user_id,
+  p.id                                                       as user_id,
   p.username,
   p.display_name,
   p.avatar_url,
   count(*) filter (where d.status = 'complete')              as total_duels,
-  count(*) filter (where d.winner_id = u.id)                 as wins,
+  count(*) filter (where d.winner_id = p.id)                 as wins,
   count(*) filter (
     where d.status = 'complete'
       and d.winner_id is null
-      and not d.is_draw = false
       and d.is_draw = true
   )                                                          as draws,
   count(*) filter (
     where d.status = 'complete'
       and d.winner_id is not null
-      and d.winner_id != u.id
+      and d.winner_id != p.id
   )                                                          as losses,
   case
     when count(*) filter (where d.status = 'complete' and d.winner_id is not null) > 0
     then round(
-      count(*) filter (where d.winner_id = u.id)::numeric /
+      count(*) filter (where d.winner_id = p.id)::numeric /
       count(*) filter (where d.status = 'complete' and d.winner_id is not null)::numeric * 100
     )
     else 0
   end                                                        as win_rate
-from auth.users u
-join public.profiles p on p.id = u.id
+from public.profiles p
 left join public.duels d
   on d.status = 'complete'
-  and (d.challenger_id = u.id or d.opponent_id = u.id)
-group by u.id, p.username, p.display_name, p.avatar_url;
+  and (d.challenger_id = p.id or d.opponent_id = p.id)
+group by p.id, p.username, p.display_name, p.avatar_url;
+
+alter view public.duel_stats set (security_invoker = on);
 
 -- 6. HELPER FUNCTION: get win streak for a user
 -- ============================================================
