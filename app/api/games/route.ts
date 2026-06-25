@@ -8,13 +8,17 @@ export async function GET(request: Request) {
   const year = new Date().getFullYear();
   const fresh = new URL(request.url).searchParams.get("fresh") === "1";
 
+  // Always go through the shared Next.js data cache (revalidate every 10s) so
+  // that, no matter how many users poll, Squiggle is hit at most once per 10s
+  // globally and can never rate-limit/block us. `?fresh=1` only relaxes the
+  // *browser* cache header below — it no longer bypasses the server cache.
   const res = await fetch(
     `https://api.squiggle.com.au/?q=games;year=${year}`,
     {
       headers: {
         "User-Agent": "Foopy AFL App (foopy.app)",
       },
-      ...(fresh ? { cache: "no-store" as const } : { next: { revalidate: 10 } }),
+      next: { revalidate: 10 },
     }
   );
 

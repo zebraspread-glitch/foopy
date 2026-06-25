@@ -114,7 +114,8 @@ export async function GET(req: Request) {
   try {
     const sq = await fetch(
       `https://api.squiggle.com.au/?q=games;year=${SEASON}`,
-      { headers: { "User-Agent": "Foopy AFL App" }, cache: "no-store" }
+      // Shared 2-min cache so user traffic can't hammer Squiggle.
+      { headers: { "User-Agent": "Foopy AFL App" }, next: { revalidate: 120 } }
     );
     if (sq.ok) {
       const sqData = await sq.json();

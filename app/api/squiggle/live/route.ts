@@ -10,7 +10,8 @@ export async function GET() {
         headers: {
           "User-Agent": "Foopy AFL App",
         },
-        cache: "no-store",
+        // Shared 10s cache so concurrent users coalesce into one Squiggle hit.
+        next: { revalidate: 10 },
       }
     );
 

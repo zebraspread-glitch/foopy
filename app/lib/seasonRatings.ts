@@ -86,7 +86,8 @@ export async function loadSeasonGameRatings(): Promise<GameRatings[]> {
   const squiggleGameInfo = new Map<string, SqGame>();
   try {
     const sq = await fetch(`https://api.squiggle.com.au/?q=games;year=${SEASON}`, {
-      headers: { "User-Agent": "Foopy AFL App" }, cache: "no-store",
+      // Shared 5-min cache so callers coalesce into one Squiggle hit.
+      headers: { "User-Agent": "Foopy AFL App" }, next: { revalidate: 300 },
     });
     if (sq.ok) {
       const sqData = await sq.json();

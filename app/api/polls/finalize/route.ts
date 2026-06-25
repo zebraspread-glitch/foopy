@@ -4,14 +4,13 @@ import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import { awardAura } from "@/app/lib/aura";
 import { awardCoins } from "@/app/lib/coins";
 import { foopyRating } from "@/app/lib/foopyRating";
+import { readCacheOnly } from "@/app/lib/matchCache";
 
 // Coins paid to the top finishers on a match's poll leaderboard (rank 1→10),
 // ranked by total aura earned across that match's polls.
 const POLL_LEADERBOARD_TIERS = [100, 75, 50, 40, 30, 25, 20, 15, 10, 10];
 
 export const dynamic = "force-dynamic";
-
-const API_BASE = "https://v1.afl.api-sports.io";
 
 function adminSupabase() {
   return createClient(
@@ -135,16 +134,13 @@ function optionMatchesWinner(label: string, winner: string): boolean {
 
 async function fetchPlayerStats(apiSportsId: string): Promise<StatRow[]> {
   try {
-    const res = await fetch(
-      `${API_BASE}/games/statistics/players?id=${apiSportsId}`,
-      {
-        headers: { "x-apisports-key": process.env.API_SPORTS_AFL_KEY ?? "" },
-        cache: "no-store",
-      }
-    );
-    if (!res.ok) return [];
+    // Read the player stats the sync cron has already warmed into match_cache —
+    // never call API-Sports here. This route is user-triggerable (the match page
+    // pings it on load), so hitting upstream would let user traffic burn the
+    // API-Sports quota. Completed games are kept warm by sync-round-stats.
+    const { data, found } = await readCacheOnly<any>(apiSportsId, "player_stats");
+    if (!found) return [];
 
-    const data = await res.json();
     const teams: any[] = data?.response?.[0]?.teams ?? [];
     const rows: StatRow[] = [];
 
@@ -199,9 +195,11 @@ async function finalize(squiggleGameId: number | undefined) {
   }
 
   // 1. Fetch game from Squiggle
+  // Shared 30s cache: this route is pinged by every match-page load, so without
+  // coalescing a popular live game would fan out one Squiggle hit per viewer.
   const squiggleRes = await fetch(
     `https://api.squiggle.com.au/?q=games;game=${squiggleGameId}`,
-    { headers: { "User-Agent": "Foopy AFL App" }, cache: "no-store" }
+    { headers: { "User-Agent": "Foopy AFL App" }, next: { revalidate: 30 } }
   );
   if (!squiggleRes.ok) {
     return NextResponse.json({ error: "Squiggle fetch failed" }, { status: 502 });

@@ -183,7 +183,8 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
   try {
     const res = await fetch(
       `https://api.squiggle.com.au/?q=games;year=${new Date().getFullYear()}`,
-      { headers: { "User-Agent": "Foopy AFL App (foopy.app)" }, cache: "no-store" }
+      // Shared 5-min cache so per-visit page renders coalesce into one Squiggle hit.
+      { headers: { "User-Agent": "Foopy AFL App (foopy.app)" }, next: { revalidate: 300 } }
     );
     if (res.ok) {
       const json = await res.json();
@@ -293,38 +294,11 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
         .in("game_id", missingGames.map(m => String(m.apiId)))
         .eq("data_type", "player_stats");
 
-      const cachedIds = new Set((cacheRows ?? []).map((r: any) => String(r.game_id)));
-
-      // 2. For any game not yet cached, fetch live from API Sports and store it
-      const notCached = missingGames.filter(m => !cachedIds.has(String(m.apiId)));
-      const freshRows: { game_id: string; payload: any }[] = [];
-
-      await Promise.all(
-        notCached.map(async (m) => {
-          try {
-            const res = await fetch(
-              `https://v1.afl.api-sports.io/games/statistics/players?id=${m.apiId}`,
-              {
-                headers: { "x-apisports-key": process.env.API_SPORTS_AFL_KEY! },
-                cache: "no-store",
-              }
-            );
-            if (!res.ok) return;
-            const json = await res.json();
-            const payload = json;
-            freshRows.push({ game_id: String(m.apiId), payload });
-            await supabaseServer.from("match_cache").upsert(
-              { game_id: String(m.apiId), data_type: "player_stats", payload, fetched_at: new Date().toISOString(), is_final: true },
-              { onConflict: "game_id,data_type" }
-            );
-          } catch (e) {
-            console.error(`[player-page] fetch error for id=${m.apiId}:`, e);
-          }
-        })
-      );
-
-      // 3. Merge cached + freshly-fetched rows
-      const allRows = [...(cacheRows ?? []), ...freshRows];
+      // Cache-only: any game not yet warmed by the sync cron is simply skipped
+      // here. We never fetch API-Sports on a user page view, so user traffic
+      // can't burn the upstream request quota. The every-minute sync-round-stats
+      // cron is the sole upstream caller and keeps these rows populated.
+      const allRows = cacheRows ?? [];
 
       for (const row of allRows) {
         const meta = missingGames.find(m => String(m.apiId) === String(row.game_id));
