@@ -99,10 +99,16 @@ export async function GET(req: Request) {
       const isFinal = status === "COMPLETED";
       const statsUrl = `${origin}/api/afl/player-stats?id=${apiId}${isFinal ? "&final=true" : ""}`;
       const quartersUrl = `${origin}/api/afl/quarters?id=${apiId}${isFinal ? "&final=true" : ""}`;
+      const pbpUrl = `${origin}/api/afl/play-by-play?id=${apiId}${isFinal ? "&final=true" : ""}`;
       try {
+        // The AFL stat routes only reach API-Sports when this secret is
+        // presented — user traffic is served cache-only. This warming job is
+        // the sole upstream caller, so it must authenticate as such.
+        const syncHeaders = { "x-sync-secret": secret };
         const [statsRes] = await Promise.all([
-          fetch(statsUrl, { cache: "no-store" }),
-          fetch(quartersUrl, { cache: "no-store" }),
+          fetch(statsUrl, { cache: "no-store", headers: syncHeaders }),
+          fetch(quartersUrl, { cache: "no-store", headers: syncHeaders }),
+          fetch(pbpUrl, { cache: "no-store", headers: syncHeaders }),
           // For live games also sync feed events
           status === "LIVE"
             ? fetch(`${origin}/api/afl/sync-events?id=${apiId}`, { cache: "no-store" })

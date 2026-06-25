@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { withCache } from "@/app/lib/matchCache";
+import { withCache, readCacheOnly } from "@/app/lib/matchCache";
 
 export const dynamic = "force-dynamic";
 
@@ -36,10 +36,18 @@ export async function GET(req: Request) {
 
   if (!gameId) return NextResponse.json({ error: "Missing game id" }, { status: 400 });
 
+  // Only the sync cron may hit API-Sports; users are served cache-only so their
+  // traffic never burns the upstream quota. See team-stats for the same pattern.
+  const syncSecret = process.env.CRON_SECRET;
+  const isSyncCall = !!syncSecret && req.headers.get("x-sync-secret") === syncSecret;
+
   try {
-    const { data: payload, fromCache } = await withCache(
-      gameId, "events", 10, () => fetchEvents(gameId), isFinal
-    );
+    const { data: payload, fromCache } = isSyncCall
+      ? await withCache(gameId, "events", 10, () => fetchEvents(gameId), isFinal)
+      : await (async () => {
+          const { data, found } = await readCacheOnly<any>(gameId, "events");
+          return { data: found ? data : { gameId, events: [], total: 0 }, fromCache: true };
+        })();
 
     const knownTotal = searchParams.get("knownTotal");
     if (knownTotal !== null && parseInt(knownTotal) === (payload as any).total) {

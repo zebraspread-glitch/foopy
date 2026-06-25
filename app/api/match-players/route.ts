@@ -27,6 +27,13 @@ export async function GET(req: Request) {
 
   if (!date || !homeTeam || !awayTeam) return NextResponse.json({ home: [], away: [] });
 
+  // This endpoint has no cache layer, so to protect the API-Sports quota only
+  // the sync cron (which presents the secret) is allowed to reach upstream.
+  // Real users get an empty squad list and the client falls back gracefully.
+  const syncSecret = process.env.CRON_SECRET;
+  const isSyncCall = !!syncSecret && req.headers.get("x-sync-secret") === syncSecret;
+  if (!isSyncCall) return NextResponse.json({ home: [], away: [] });
+
   const apiKey = process.env.API_SPORTS_AFL_KEY;
   if (!apiKey) return NextResponse.json({ home: [], away: [] });
 
