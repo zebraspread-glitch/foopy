@@ -7,7 +7,13 @@ function adminSupabase() {
   );
 }
 
-export type DataType = "events" | "player_stats" | "quarters" | "sync" | "team_stats";
+export type DataType =
+  | "events"
+  | "player_stats"
+  | "player_stats_by_date"
+  | "quarters"
+  | "sync"
+  | "team_stats";
 
 // In-process deduplication: one fetch at a time per (gameId, dataType) within a single instance
 const inFlight = new Map<string, Promise<unknown>>();

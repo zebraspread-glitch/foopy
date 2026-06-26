@@ -88,7 +88,7 @@ export async function GET(req: Request) {
     const staticIds = new Set(Object.keys(gameStats));
     for (const row of rows) {
       const gameId = String(row.game_id);
-      if (staticIds.has(gameId)) continue;
+      if (!/^\d+$/.test(gameId) || staticIds.has(gameId)) continue;
       const payload = row.payload as any;
       const responseItems: any[] = payload?.response ?? [];
       const teams = responseItems.length > 0 && Array.isArray(responseItems[0]?.teams)

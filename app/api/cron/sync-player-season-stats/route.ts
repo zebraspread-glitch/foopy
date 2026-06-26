@@ -97,7 +97,7 @@ export async function GET(req: Request) {
   }
   for (const row of allCacheRows) {
     const gameId = String((row as any).game_id);
-    if (staticIds.has(gameId)) continue;
+    if (!/^\d+$/.test(gameId) || staticIds.has(gameId)) continue;
     const payload = (row as any).payload as any;
     const responseItems: any[] = payload?.response ?? [];
     const date: string = responseItems[0]?.game?.date?.slice(0, 10) ?? "";

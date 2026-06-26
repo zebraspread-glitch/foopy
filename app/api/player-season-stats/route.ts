@@ -123,7 +123,7 @@ export async function GET() {
 
     for (const row of allRows) {
       const gameId = String(row.game_id);
-      if (staticIds.has(gameId)) continue;
+      if (!/^\d+$/.test(gameId) || staticIds.has(gameId)) continue;
       const payload = row.payload as any;
       const responseItems: any[] = payload?.response ?? [];
       const teams = responseItems[0]?.teams ?? [];

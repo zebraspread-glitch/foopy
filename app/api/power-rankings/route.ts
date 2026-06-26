@@ -229,7 +229,7 @@ export async function GET() {
 
     for (const row of allRows) {
       const gameId = String(row.game_id);
-      if (staticIds.has(gameId)) continue; // already covered by static JSON
+      if (!/^\d+$/.test(gameId) || staticIds.has(gameId)) continue; // already covered by static JSON
       const payload = row.payload as any;
       const responseItems: any[] = payload?.response ?? [];
       const rawTeams: any[] = responseItems[0]?.teams ?? [];

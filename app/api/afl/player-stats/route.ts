@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { withCache, readCacheOnly } from "@/app/lib/matchCache";
-import { findGameByTeamIds } from "@/app/lib/apiSportsTeams";
+import { findGameByTeamIds, gameHasTeamIds } from "@/app/lib/apiSportsTeams";
 
 export const dynamic = "force-dynamic";
 
@@ -61,22 +61,18 @@ export async function GET(req: Request) {
       return res;
     }
 
-    // Sync (cron) path. Fetch by the mapped id; if that's empty AND we were
-    // given the date + team ids, re-resolve the real game by date and cache
-    // its stats under the SAME (mapped) id the match page reads — so the page
-    // needs no change and games with a correct mapping are untouched.
+    // Sync (cron) path. Resolve by date+teams when hints are present, then
+    // cache the matched game under the mapped id the page already reads.
+    // If the date sweep cannot find the game, fall back to the id endpoint,
+    // but never cache a non-empty id response for the wrong two teams.
     const fetchWithDateFallback = async () => {
-      const byId = await fetchPlayerStats(id);
-      if (hasTeams(byId)) return byId;
       if (date && home && away) {
-        // The date sweep is best-effort: if it errors or finds no match, fall
-        // back to the (empty) id result rather than failing the whole warm.
         try {
           // Cache the per-date sweep briefly so multiple games on the same date
           // in one cron run reuse a single upstream call.
           const { data: dateData } = await withCache(
             `apidate:${date}`,
-            "player_stats",
+            "player_stats_by_date",
             30,
             () => fetchPlayerStatsByDate(date)
           );
@@ -85,10 +81,15 @@ export async function GET(req: Request) {
             return { get: "games/statistics/players", results: 1, response: [matched], resolvedBy: "date" };
           }
         } catch {
-          /* non-fatal — fall through to the empty id result below */
+          // Non-fatal: fall through to the id endpoint below.
         }
       }
-      return byId; // still empty — withCache won't clobber any prior good payload
+      const byId = await fetchPlayerStats(id);
+      if (date && home && away && hasTeams(byId) && !gameHasTeamIds(byId?.response?.[0], home, away)) {
+        return { ...byId, results: 0, response: [], ignoredWrongId: true };
+      }
+
+      return byId;
     };
 
     const { data, fromCache } = await withCache(

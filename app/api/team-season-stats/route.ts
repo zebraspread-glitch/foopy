@@ -60,7 +60,7 @@ export async function GET() {
 
     for (const row of finalRows ?? []) {
       const gameId = String(row.game_id);
-      if (staticIds.has(gameId)) continue; // already in static baseline
+      if (!/^\d+$/.test(gameId) || staticIds.has(gameId)) continue; // already in static baseline
 
       const payload = row.payload as any;
       const responseItems: any[] = payload?.response ?? [];

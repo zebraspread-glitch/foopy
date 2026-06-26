@@ -84,7 +84,7 @@ export async function computeAvgFoopyMap(
     // 2. match_cache rows for games not already in static JSON
     for (const row of [...(finalRows ?? []), ...extraRows]) {
       const gameId = String((row as any).game_id);
-      if (staticIds.has(gameId)) continue;
+      if (!/^\d+$/.test(gameId) || staticIds.has(gameId)) continue;
       const payload = (row as any).payload as any;
       const responseItems: any[] = payload?.response ?? [];
       const rawTeams: any[] = responseItems[0]?.teams ?? [];

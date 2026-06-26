@@ -71,6 +71,23 @@ export function getApiTeamId(teamName: unknown): number {
   return API_TEAM_ID_BY_NAME[raw] ?? API_TEAM_ID_BY_NAME[normalizeTeamName(raw)] ?? 0;
 }
 
+function gameTeamIds(gameEntry: any): number[] {
+  return (gameEntry?.teams ?? [])
+    .map((t: any) => Number(t?.team?.id ?? t?.id ?? 0))
+    .filter(Boolean);
+}
+
+export function gameHasTeamIds(
+  gameEntry: any,
+  homeApiTeamId: number,
+  awayApiTeamId: number
+): boolean {
+  if (!homeApiTeamId || !awayApiTeamId) return false;
+  const ids = new Set(gameTeamIds(gameEntry));
+  const wanted = new Set([homeApiTeamId, awayApiTeamId]);
+  return ids.has(homeApiTeamId) && ids.has(awayApiTeamId) && ids.size >= wanted.size;
+}
+
 /**
  * Given the `response` array from `/games/statistics/players?date=…` (each entry
  * is one game with a `teams` array), find the game whose two teams match the
@@ -83,14 +100,8 @@ export function findGameByTeamIds(
   awayApiTeamId: number
 ): any | null {
   if (!Array.isArray(dateResponse) || !homeApiTeamId || !awayApiTeamId) return null;
-  const want = new Set([homeApiTeamId, awayApiTeamId]);
   for (const g of dateResponse) {
-    const ids = (g?.teams ?? [])
-      .map((t: any) => Number(t?.team?.id ?? t?.id ?? 0))
-      .filter(Boolean);
-    if (ids.length >= 2 && ids.some((id: number) => id === homeApiTeamId) && ids.some((id: number) => id === awayApiTeamId) && new Set(ids).size >= want.size) {
-      return g;
-    }
+    if (gameHasTeamIds(g, homeApiTeamId, awayApiTeamId)) return g;
   }
   return null;
 }
