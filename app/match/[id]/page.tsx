@@ -2210,8 +2210,7 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
                 background: sortKey === "foopy" ? "rgba(56,189,248,0.08)" : "transparent",
               }}
             >
-              <span style={{ flex: `${AVATAR_COL_W} 1 0`, textAlign: "center" }}>{"\u2726"}</span>
-              <span style={{ flex: `${NAME_COL_W} 1 0`, textAlign: "left" }}>Player</span>
+              <span>Player</span>
               {foopyArrow && <span style={statsHeaderArrowStyle}>{foopyArrow}</span>}
             </button>
           </div>
