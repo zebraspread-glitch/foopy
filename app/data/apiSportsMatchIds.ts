@@ -205,4 +205,5 @@ export const API_SPORTS_MATCH_IDS: Record<string, string> = {
   "38698": "3549",
   "38699": "3550",
   "38700": "3551",
+  "38701": "3552",
 };

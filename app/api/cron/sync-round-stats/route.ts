@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
+import { getApiTeamId } from "@/app/lib/apiSportsTeams";
 
 export const dynamic = "force-dynamic";
 // Allow up to 5 minutes — this fans out to multiple API calls
@@ -97,7 +98,22 @@ export async function GET(req: Request) {
         (API_SPORTS_MATCH_IDS as Record<string, string>)[squiggleId] ?? squiggleId;
 
       const isFinal = status === "COMPLETED";
-      const statsUrl = `${origin}/api/afl/player-stats?id=${apiId}${isFinal ? "&final=true" : ""}`;
+
+      // Re-resolution hints for the stats route: the static apiId is an
+      // offset guess (squiggleId − 35149) that drifts from API-Sports' real
+      // per-game ids for recent fixtures. Passing the game's date + the two
+      // STABLE API-Sports team ids lets the route re-match the real game by
+      // date when the guessed id comes back empty. Stable team ids never
+      // drift, so this is reliable. (No-op when the guess is already correct.)
+      const homeApiTeamId = getApiTeamId(game.hteam ?? game.hteamname);
+      const awayApiTeamId = getApiTeamId(game.ateam ?? game.ateamname);
+      const gameDate = String(game.date ?? "").slice(0, 10); // YYYY-MM-DD
+      const resolveParams =
+        gameDate && homeApiTeamId && awayApiTeamId
+          ? `&date=${gameDate}&home=${homeApiTeamId}&away=${awayApiTeamId}`
+          : "";
+
+      const statsUrl = `${origin}/api/afl/player-stats?id=${apiId}${isFinal ? "&final=true" : ""}${resolveParams}`;
       const quartersUrl = `${origin}/api/afl/quarters?id=${apiId}${isFinal ? "&final=true" : ""}`;
       const pbpUrl = `${origin}/api/afl/play-by-play?id=${apiId}${isFinal ? "&final=true" : ""}`;
       try {
