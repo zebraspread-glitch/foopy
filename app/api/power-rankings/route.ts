@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import { foopyRating } from "@/app/lib/foopyRating";
+import { getSeasonGames } from "@/app/lib/squiggleCache";
 
 export const dynamic = "force-dynamic";
 
@@ -197,16 +198,10 @@ export async function GET() {
       Object.entries(API_SPORTS_MATCH_IDS as Record<string, string>)
     ); // squiggleId → apiSportsId
 
-    const sq = await fetch(`https://api.squiggle.com.au/?q=games;year=${year}`, {
-      headers: { "User-Agent": "Foopy AFL App" },
-      next: { revalidate: 600 }, // cache for 10 min
-    });
-    if (sq.ok) {
-      const sqData = await sq.json();
-      for (const g of sqData.games ?? sqData ?? []) {
-        const apiId = bySquiggle[String(g.id)];
-        if (apiId && g.date) apiSportsDateMap.set(apiId, String(g.date).slice(0, 10));
-      }
+    // Served from the shared Squiggle cache — no upstream call on user traffic.
+    for (const g of await getSeasonGames(year)) {
+      const apiId = bySquiggle[String(g.id)];
+      if (apiId && g.date) apiSportsDateMap.set(apiId, String(g.date).slice(0, 10));
     }
   } catch {}
 

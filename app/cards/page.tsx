@@ -1901,7 +1901,7 @@ function CardOptionsModal({ card, isFeatured, featuredCount, onToggleFeatured, o
             <div style={{ fontSize: 17, fontWeight: 900, color: "var(--text-1)", letterSpacing: "-0.02em" }}>{card.player_name}</div>
             <div style={{ fontSize: 12, fontWeight: 700, color: meta.color, marginTop: 2 }}>{meta.label}</div>
           </div>
-          <button onClick={onCancel} style={{ background: "rgba(255,255,255,0.08)", border: "none", color: "rgba(255,255,255,0.5)", width: 28, height: 28, borderRadius: "50%", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>✕</button>
+          <button onClick={onCancel} aria-label="Close" style={{ background: "rgba(255,255,255,0.08)", border: "none", color: "rgba(255,255,255,0.5)", width: 28, height: 28, borderRadius: "50%", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>✕</button>
         </div>
 
         {/* Action list */}

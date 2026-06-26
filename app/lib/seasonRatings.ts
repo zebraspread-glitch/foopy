@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import { foopyRating } from "@/app/lib/foopyRating";
 import { playerImgUrl } from "@/app/lib/playerImage";
+import { getSeasonGames } from "@/app/lib/squiggleCache";
 
 // Server-only helper. Loads the season's completed games and computes a Foopy
 // rating for every player in each game — the same pipeline the Top Performances
@@ -85,13 +86,9 @@ export async function loadSeasonGameRatings(): Promise<GameRatings[]> {
   // Squiggle games give round/teams/completeness.
   const squiggleGameInfo = new Map<string, SqGame>();
   try {
-    const sq = await fetch(`https://api.squiggle.com.au/?q=games;year=${SEASON}`, {
-      // Shared 5-min cache so callers coalesce into one Squiggle hit.
-      headers: { "User-Agent": "Foopy AFL App" }, next: { revalidate: 300 },
-    });
-    if (sq.ok) {
-      const sqData = await sq.json();
-      for (const g of sqData.games ?? []) {
+    {
+      // Shared Squiggle cache — never hits Squiggle directly.
+      for (const g of await getSeasonGames(Number(SEASON))) {
         squiggleGameInfo.set(String(g.id), {
           id: String(g.id),
           round: Number(g.round),

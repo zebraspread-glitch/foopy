@@ -699,52 +699,67 @@ function DMsPageInner() {
     // Use the already-resized data URL directly (no storage upload needed)
     const imageUrl = createImageDataUrl ?? undefined;
 
-    const res = await fetch("/api/group-chats", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", authorization: `Bearer ${token}` },
-      body: JSON.stringify({
-        name: createName.trim(),
-        description: createDesc.trim() || undefined,
-        is_public: createPublic,
-        image_url: imageUrl,
-      }),
-    });
-    const json = await res.json();
-    setCreating(false);
-    if (!res.ok) { setCreateError(json.error ?? "Failed to create"); return; }
-    setCreateOpen(false);
-    setCreateName(""); setCreateDesc(""); setCreatePublic(false);
-    setCreateImageDataUrl(null);
-    await loadGroupChats();
-    openGroup(json.chat);
-    setTab("groups");
+    try {
+      const res = await fetch("/api/group-chats", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          name: createName.trim(),
+          description: createDesc.trim() || undefined,
+          is_public: createPublic,
+          image_url: imageUrl,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) { setCreateError(json.error ?? "Failed to create"); return; }
+      setCreateOpen(false);
+      setCreateName(""); setCreateDesc(""); setCreatePublic(false);
+      setCreateImageDataUrl(null);
+      await loadGroupChats();
+      openGroup(json.chat);
+      setTab("groups");
+    } catch {
+      setCreateError("Something went wrong. Please try again.");
+    } finally {
+      setCreating(false);
+    }
   }
 
   /* ── Join public chat ── */
   async function joinChat(chatId: string) {
     if (joiningId) return;
     setJoiningId(chatId);
-    const token = await getToken();
-    const res = await fetch(`/api/group-chats/${chatId}/join`, { method: "POST", headers: { authorization: `Bearer ${token}` } });
-    const json = await res.json();
-    setJoiningId(null);
-    if (!res.ok) { alert(json.error ?? "Could not join"); return; }
-    setDiscoverOpen(false);
-    await loadGroupChats();
-    const joined = discoverResults.find(g => g.id === chatId);
-    if (joined) { setTab("groups"); openGroup(joined); }
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/group-chats/${chatId}/join`, { method: "POST", headers: { authorization: `Bearer ${token}` } });
+      const json = await res.json();
+      if (!res.ok) { alert(json.error ?? "Could not join"); return; }
+      setDiscoverOpen(false);
+      await loadGroupChats();
+      const joined = discoverResults.find(g => g.id === chatId);
+      if (joined) { setTab("groups"); openGroup(joined); }
+    } catch {
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setJoiningId(null);
+    }
   }
 
   /* ── Respond to invite ── */
   async function respondInvite(invite: GroupInvite, action: "accept" | "decline") {
     setRespondingId(invite.id);
-    const token = await getToken();
-    const res = await fetch(`/api/group-chats/invites/${invite.id}`, { method: "PATCH", headers: { "Content-Type": "application/json", authorization: `Bearer ${token}` }, body: JSON.stringify({ action }) });
-    const json = await res.json();
-    setRespondingId(null);
-    if (!res.ok) { alert(json.error ?? "Failed"); return; }
-    setPendingInvites(prev => prev.filter(i => i.id !== invite.id));
-    if (action === "accept") { await loadGroupChats(); }
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/group-chats/invites/${invite.id}`, { method: "PATCH", headers: { "Content-Type": "application/json", authorization: `Bearer ${token}` }, body: JSON.stringify({ action }) });
+      const json = await res.json();
+      if (!res.ok) { alert(json.error ?? "Failed"); return; }
+      setPendingInvites(prev => prev.filter(i => i.id !== invite.id));
+      if (action === "accept") { await loadGroupChats(); }
+    } catch {
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setRespondingId(null);
+    }
   }
 
   /* ── Send invite ── */
@@ -783,15 +798,19 @@ function DMsPageInner() {
   async function deleteGroup() {
     if (!myProfile || !activeGroup) return;
     if (!confirm(`Delete "${activeGroup.team_name}"? This will remove all messages and members permanently.`)) return;
-    const session = await supabase.auth.getSession();
-    const token = session.data.session?.access_token;
-    const res = await fetch(`/api/group-chats/${activeGroup.id}`, {
-      method: "DELETE",
-      headers: { authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) { const j = await res.json(); alert(j.error ?? "Failed to delete group"); return; }
-    setActiveGroup(null); setTab("groups");
-    await loadGroupChats();
+    try {
+      const session = await supabase.auth.getSession();
+      const token = session.data.session?.access_token;
+      const res = await fetch(`/api/group-chats/${activeGroup.id}`, {
+        method: "DELETE",
+        headers: { authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) { const j = await res.json(); alert(j.error ?? "Failed to delete group"); return; }
+      setActiveGroup(null); setTab("groups");
+      await loadGroupChats();
+    } catch {
+      alert("Something went wrong. Please try again.");
+    }
   }
 
   /* ── Leave group ── */
@@ -1099,7 +1118,7 @@ function DMsPageInner() {
         <div style={{ flex: 1, display: "flex", alignItems: "center", background: "var(--surface-2)", borderRadius: 24, border: "1px solid var(--border-2)", padding: "2px 6px 2px 16px", minHeight: 44 }}>
           <input ref={groupInputRef} value={groupText} onChange={e => setGroupText(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendGroupMessage(); } }} placeholder={`Message ${activeGroup.team_name}…`} style={{ flex: 1, background: "none", border: "none", outline: "none", color: "var(--text-1)", fontSize: 15, fontFamily: "inherit", padding: "8px 0" }} />
           {groupText.trim() && (
-            <button onClick={sendGroupMessage} style={{ width: 32, height: 32, borderRadius: "50%", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", background: bubbleColor, flexShrink: 0 }}>
+            <button onClick={sendGroupMessage} aria-label="Send message" style={{ width: 32, height: 32, borderRadius: "50%", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", background: bubbleColor, flexShrink: 0 }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
           )}
@@ -1226,7 +1245,7 @@ function DMsPageInner() {
         <div style={{ flex: 1, display: "flex", alignItems: "center", background: "var(--surface-2)", borderRadius: 24, border: "1px solid var(--border-2)", padding: "2px 6px 2px 16px", minHeight: 44 }}>
           <input ref={inputRef} value={text} onChange={e => setText(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} placeholder="Message…" style={{ flex: 1, background: "none", border: "none", outline: "none", color: "var(--text-1)", fontSize: 15, fontFamily: "inherit", padding: "8px 0" }} />
           {text.trim() && (
-            <button onClick={send} style={{ width: 32, height: 32, borderRadius: "50%", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", background: bubbleColor, flexShrink: 0 }}>
+            <button onClick={send} aria-label="Send message" style={{ width: 32, height: 32, borderRadius: "50%", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", background: bubbleColor, flexShrink: 0 }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
           )}

@@ -14,6 +14,13 @@ import { STORE_ENABLED } from "@/app/lib/featureFlags";
 
 const PATTERN_PREVIEW_LEVEL = getPassLevel(375, PLAYER_PASS_LEVELS);
 
+const TokenPrice = ({ c, size = 15 }: { c: Cosmetic; size?: number }) => (
+  <span className="store-price">
+    <img src="/token/token.png" alt="" style={{ width: size, height: size }} />
+    <span>{c.token_price.toLocaleString()}</span>
+  </span>
+);
+
 const RARITY: Record<string, { label: string; color: string; grad: string; tint: string }> = {
   common:    { label: "Common",    color: "#9ca3af", grad: "linear-gradient(135deg,#6b7280,#9ca3af)", tint: "rgba(156,163,175,0.16)" },
   rare:      { label: "Rare",      color: "#38bdf8", grad: "linear-gradient(135deg,#2563eb,#38bdf8)", tint: "rgba(56,189,248,0.15)" },
@@ -290,13 +297,6 @@ export default function StorePage() {
       </span>
     );
   };
-
-  const TokenPrice = ({ c, size = 15 }: { c: Cosmetic; size?: number }) => (
-    <span className="store-price">
-      <img src="/token/token.png" alt="" style={{ width: size, height: size }} />
-      <span>{c.token_price.toLocaleString()}</span>
-    </span>
-  );
 
   const FeaturedAction = ({ c }: { c: Cosmetic }) => {
     const isOwned = owned.has(c.id);

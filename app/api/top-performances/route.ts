@@ -4,6 +4,7 @@ import fs from "fs";
 import { createClient } from "@supabase/supabase-js";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import { foopyRating } from "@/app/lib/foopyRating";
+import { getSeasonGames } from "@/app/lib/squiggleCache";
 
 export const dynamic = "force-dynamic";
 
@@ -112,14 +113,9 @@ export async function GET(req: Request) {
   // squiggleId → SqGame
   const squiggleGameInfo = new Map<string, SqGame>();
   try {
-    const sq = await fetch(
-      `https://api.squiggle.com.au/?q=games;year=${SEASON}`,
-      // Shared 2-min cache so user traffic can't hammer Squiggle.
-      { headers: { "User-Agent": "Foopy AFL App" }, next: { revalidate: 120 } }
-    );
-    if (sq.ok) {
-      const sqData = await sq.json();
-      for (const g of sqData.games ?? []) {
+    {
+      // Served from the shared Squiggle cache — no upstream call on user traffic.
+      for (const g of await getSeasonGames(Number(SEASON))) {
         const entry: SqGame = {
           id:       String(g.id),
           round:    Number(g.round),

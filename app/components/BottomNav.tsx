@@ -166,8 +166,15 @@ export default function BottomNav() {
     if (pathname.startsWith("/dms")) setUnreadDms(0);
   }, [pathname]);
 
-  // Hide the bottom nav on the match detail page
+  // Hide the bottom nav on the match detail page and on pre-auth screens —
+  // tapping a tab before signing in just bounces back or shows a broken state.
   if (pathname.startsWith("/match/")) return null;
+  if (
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/welcome") ||
+    pathname.startsWith("/forgot-password") ||
+    pathname.startsWith("/reset-password")
+  ) return null;
 
   return (
     <nav className="bottom-nav" role="tablist">

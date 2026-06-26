@@ -928,7 +928,7 @@ function TradeCardSlot({ card, player, onRemove }: { card: UserCard | MyCard; pl
         <div style={{ position: "absolute", bottom: 4, left: 0, right: 0, textAlign: "center", fontSize: 7, fontWeight: 900, color: meta.color, letterSpacing: ".08em" }}>{card.rarity.toUpperCase()}</div>
       </div>
       {/* X button — outside overflow:hidden so it's never clipped */}
-      <button onClick={onRemove} style={{ position: "absolute", top: -7, left: -7, width: 18, height: 18, borderRadius: "50%", background: "#ef4444", border: "2px solid #111", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 2 }}>
+      <button onClick={onRemove} aria-label="Remove card" style={{ position: "absolute", top: -7, left: -7, width: 18, height: 18, borderRadius: "50%", background: "#ef4444", border: "2px solid #111", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 2 }}>
         <svg width="8" height="8" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2l-8 8" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>
       </button>
     </div>

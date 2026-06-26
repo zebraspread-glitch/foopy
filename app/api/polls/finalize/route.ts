@@ -5,6 +5,7 @@ import { awardAura } from "@/app/lib/aura";
 import { awardCoins } from "@/app/lib/coins";
 import { foopyRating } from "@/app/lib/foopyRating";
 import { readCacheOnly } from "@/app/lib/matchCache";
+import { getGame } from "@/app/lib/squiggleCache";
 
 // Coins paid to the top finishers on a match's poll leaderboard (rank 1→10),
 // ranked by total aura earned across that match's polls.
@@ -194,18 +195,9 @@ async function finalize(squiggleGameId: number | undefined) {
     return NextResponse.json({ error: "Missing game_id" }, { status: 400 });
   }
 
-  // 1. Fetch game from Squiggle
-  // Shared 30s cache: this route is pinged by every match-page load, so without
-  // coalescing a popular live game would fan out one Squiggle hit per viewer.
-  const squiggleRes = await fetch(
-    `https://api.squiggle.com.au/?q=games;game=${squiggleGameId}`,
-    { headers: { "User-Agent": "Foopy AFL App" }, next: { revalidate: 30 } }
-  );
-  if (!squiggleRes.ok) {
-    return NextResponse.json({ error: "Squiggle fetch failed" }, { status: 502 });
-  }
-  const squiggleData = await squiggleRes.json();
-  const game = squiggleData.games?.[0];
+  // 1. Game from the shared Squiggle cache — this route is pinged by every
+  //    match-page load, so it must never hit Squiggle on a user request.
+  const game = await getGame(squiggleGameId).catch(() => null);
 
   if (!game) return NextResponse.json({ error: "Game not found" }, { status: 404 });
   if (Number(game.complete ?? 0) < 100 && game.is_final !== 1) {

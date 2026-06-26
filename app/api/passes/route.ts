@@ -12,6 +12,7 @@ import {
   type PassReward,
 } from "@/app/lib/passes";
 import { foopyRatingFromRaw } from "@/app/lib/foopyRating";
+import { getSeasonGames } from "@/app/lib/squiggleCache";
 import { API_SPORTS_MATCH_IDS } from "@/app/data/apiSportsMatchIds";
 import matchStatsRaw from "@/app/data/game-stats.json";
 import playersRaw from "@/app/data/players.json";
@@ -126,15 +127,8 @@ export async function calcPendingRewards(
 
   if (!prefetchedGames) {
     try {
-      const year = new Date().getFullYear();
-      const res = await fetch(`https://api.squiggle.com.au/?q=games;year=${year}`, {
-        headers: { "User-Agent": "Foopy AFL App (foopy.app)" },
-        next: { revalidate: 60 },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        games = (data.games ?? []) as SquiggleGame[];
-      }
+      // Shared Squiggle cache — no upstream call on user traffic.
+      games = (await getSeasonGames()) as SquiggleGame[];
     } catch {}
   }
 
@@ -245,12 +239,9 @@ export async function GET(req: Request) {
   const { data: { user }, error: authErr } = await supabaseServer.auth.getUser(token);
   if (authErr || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // Start Squiggle fetch immediately so it overlaps with DB queries
-  const year = new Date().getFullYear();
-  const squigglePromise = fetch(`https://api.squiggle.com.au/?q=games;year=${year}`, {
-    headers: { "User-Agent": "Foopy AFL App (foopy.app)" },
-    next: { revalidate: 60 },
-  }).then(r => r.ok ? r.json() : null).catch(() => null);
+  // Start the cached Squiggle read immediately so it overlaps with DB queries
+  // (shared cache — no upstream call on user traffic).
+  const squigglePromise = getSeasonGames().catch(() => [] as any[]);
 
   // Fetch all DB data in parallel
   const since = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
@@ -279,7 +270,7 @@ export async function GET(req: Request) {
     teamPasses,
     playerPasses,
     claimedRewards,
-    (squiggleData?.games ?? []) as SquiggleGame[]
+    (squiggleData ?? []) as SquiggleGame[]
   );
 
   return NextResponse.json({

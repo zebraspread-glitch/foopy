@@ -982,14 +982,20 @@ export default function ProfilePage() {
       setProfile(prev => prev ? { ...prev, featured_cards: current } : prev);
       return;
     }
-    const res = await fetch("/api/profile", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ featured_cards: newFeatured }),
-    });
-    if (!res.ok) {
-      console.error("Failed to save featured cards:", await res.text());
-      // Revert on failure
+    try {
+      const res = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ featured_cards: newFeatured }),
+      });
+      if (!res.ok) {
+        console.error("Failed to save featured cards:", await res.text());
+        // Revert on failure
+        setProfile(prev => prev ? { ...prev, featured_cards: current } : prev);
+      }
+    } catch (err) {
+      console.error("Failed to save featured cards:", err);
+      // Revert — network failure, not just a non-2xx response
       setProfile(prev => prev ? { ...prev, featured_cards: current } : prev);
     }
   }

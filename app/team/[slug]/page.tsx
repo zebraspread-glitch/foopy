@@ -6,6 +6,7 @@ import { TeamPassSection } from "./TeamPassSection";
 import { foopyColor } from "@/app/lib/foopyRating";
 import { computeAvgFoopyMap } from "@/app/lib/computeAvgFoopy.server";
 import { playerImgUrl } from "@/app/lib/playerImage";
+import { getSeasonGames } from "@/app/lib/squiggleCache";
 
 // Cache the rendered team page for 5 minutes (ISR). The heavy server work —
 // reading players.json / season stats and computing avg-Foopy — then runs once
@@ -155,17 +156,8 @@ export default async function TeamProfilePage({ params }: { params: Promise<{ sl
   // Squiggle is the single source of truth for game results — always up to date.
   const [avgFoopyMap, squiggleGames] = await Promise.all([
     computeAvgFoopyMap(),
-    (async (): Promise<SquiggleGame[]> => {
-      try {
-        const res = await fetch(
-          `https://api.squiggle.com.au/?q=games;year=${new Date().getFullYear()}`,
-          { headers: { "User-Agent": "Foopy AFL App (foopy.app)" }, next: { revalidate: 300 } }
-        );
-        if (!res.ok) return [];
-        const json = await res.json();
-        return json.games ?? [];
-      } catch { return []; }
-    })(),
+    // Shared Squiggle cache — page renders never hit Squiggle directly.
+    getSeasonGames().catch(() => []) as Promise<SquiggleGame[]>,
   ]);
 
   // Look up a player's avg foopy from the map (handles apiSportsId + statsIds)

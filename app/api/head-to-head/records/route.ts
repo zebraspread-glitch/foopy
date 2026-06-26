@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { canonicalTeamKey } from "@/app/lib/teams";
+import { getSeasonGames } from "@/app/lib/squiggleCache";
 
 export const runtime = "nodejs";
 
@@ -55,10 +56,7 @@ export async function GET() {
   const currentYear = new Date().getFullYear();
   if (!files.includes(`${currentYear}.json`)) {
     try {
-      const res = await fetch(`https://api.squiggle.com.au/?q=games;year=${currentYear}`, {
-        headers: { "User-Agent": "Foopy AFL App (foopy.app)" }, next: { revalidate: 3600 },
-      });
-      if (res.ok) collect((await res.json()).games);
+      collect(await getSeasonGames(currentYear));
     } catch { /* fall back to cache */ }
   }
 

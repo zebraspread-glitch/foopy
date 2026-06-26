@@ -40,6 +40,10 @@ const config: CapacitorConfig = {
       style: "dark",
       resizeOnFullScreen: true,
     },
+    PushNotifications: {
+      // Show alert/badge/sound while the app is in the foreground too.
+      presentationOptions: ["badge", "sound", "alert"],
+    },
   },
 };
 

@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { getSeasonGames, getStandings } from "@/app/lib/squiggleCache";
 
 export const runtime = "nodejs";
 
@@ -33,23 +34,15 @@ export async function GET(
     }
   }
 
-  // ── Current season (or missing cache): fetch live from Squiggle ───────────
-  const headers = { "User-Agent": "Foopy AFL App (foopy.app)" };
-  const opts = { next: { revalidate: 3600 } } as const;
-
-  const [gamesRes, standingsRes] = await Promise.all([
-    fetch(`https://api.squiggle.com.au/?q=games;year=${yearNum}`, { headers, ...opts }),
-    fetch(`https://api.squiggle.com.au/?q=standings;year=${yearNum}`, { headers, ...opts }),
+  // ── Current season (or missing cache): served from the shared Squiggle
+  //    cache — never hits Squiggle on a user request. ─────────────────────────
+  const [games, standings] = await Promise.all([
+    getSeasonGames(yearNum).catch(() => []),
+    getStandings(yearNum).catch(() => []),
   ]);
 
-  const gamesData = gamesRes.ok ? await gamesRes.json() : { games: [] };
-  const standingsData = standingsRes.ok ? await standingsRes.json() : { standings: [] };
-
   return Response.json(
-    {
-      games: gamesData.games ?? [],
-      standings: standingsData.standings ?? [],
-    },
+    { games, standings },
     {
       headers: { "Cache-Control": "public, max-age=3600, stale-while-revalidate=7200" },
     }

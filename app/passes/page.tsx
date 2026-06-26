@@ -787,7 +787,6 @@ function PassesPageInner() {
     const imgSrc = playerPassImgSrc(pname, team);
     setPendingPlayer({ pid, name: pname, team, imgSrc, xp: 0 });
     setPlayerPickerOpen(true);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   // Auto-open team pass confirmation when navigated from a team profile page
@@ -802,7 +801,6 @@ function PassesPageInner() {
     setPendingTeam(matched);
     setTeamPickerOpen(true);
     setTab("team");
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   useEffect(() => {

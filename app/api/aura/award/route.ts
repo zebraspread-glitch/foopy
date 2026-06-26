@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseServer } from "@/app/lib/supabase-server";
 import { awardAura } from "@/app/lib/aura";
 import { awardCoins } from "@/app/lib/coins";
+import { getGame } from "@/app/lib/squiggleCache";
 
 const REFERRAL_COINS = 250;
 const MAX_PAID_REFERRALS = 10;
@@ -93,14 +94,8 @@ async function hasLike(commentId: string, userId: string) {
 async function isLiveGame(gameId: string) {
   if (!/^\d+$/.test(gameId)) return false;
 
-  const res = await fetch(`https://api.squiggle.com.au/?q=games;game=${gameId}`, {
-    headers: { "User-Agent": "Foopy AFL App (foopy.app)" },
-    next: { revalidate: 30 },
-  });
-
-  if (!res.ok) return false;
-  const data = await res.json();
-  const game = data?.games?.[0];
+  // From the shared Squiggle cache — never hits Squiggle on a user request.
+  const game = await getGame(gameId).catch(() => null);
   if (!game) return false;
 
   const complete = Number(game.complete ?? 0);

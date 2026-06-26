@@ -8,6 +8,7 @@ import { supabaseServer } from "@/app/lib/supabase-server";
 import { foopyRating, foopyColor } from "@/app/lib/foopyRating";
 import { computeAvgFoopyMap } from "@/app/lib/computeAvgFoopy.server";
 import { playerImgUrl } from "@/app/lib/playerImage";
+import { getSeasonGames } from "@/app/lib/squiggleCache";
 
 // Reverse map: API Sports game ID → Squiggle game ID
 const API_SPORTS_TO_SQUIGGLE: Record<number, string> = Object.fromEntries(
@@ -181,14 +182,9 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
   // Fetch Squiggle for round numbers + completed game detection
   const squiggleMap = new Map<number, { round: number | string; hteam: string; ateam: string; complete: number; is_final: number; date: string }>();
   try {
-    const res = await fetch(
-      `https://api.squiggle.com.au/?q=games;year=${new Date().getFullYear()}`,
-      // Shared 5-min cache so per-visit page renders coalesce into one Squiggle hit.
-      { headers: { "User-Agent": "Foopy AFL App (foopy.app)" }, next: { revalidate: 300 } }
-    );
-    if (res.ok) {
-      const json = await res.json();
-      for (const g of json.games ?? []) {
+    {
+      // Shared Squiggle cache — page renders never hit Squiggle directly.
+      for (const g of await getSeasonGames()) {
         squiggleMap.set(Number(g.id), {
           round: g.round, hteam: g.hteam, ateam: g.ateam,
           complete: Number(g.complete ?? 0), is_final: Number(g.is_final ?? 0),

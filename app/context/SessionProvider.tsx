@@ -25,6 +25,7 @@ import {
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/app/lib/supabase";
+import { refreshPushRegistration, requestPushPermission, unregisterPushOnSignOut } from "@/app/lib/pushNotifications";
 
 export type SessionProfile = {
   id: string;
@@ -90,6 +91,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   // trigger a duplicate profile query.
   const handledUserId = useRef<string | null | undefined>(undefined);
 
+  // Tracks the most recent access token so push notification sign-out
+  // cleanup can use the OUTGOING token (captured before Supabase clears it).
+  const lastAccessTokenRef = useRef<string | null>(null);
+
   const fetchProfile = useCallback(async (uid: string) => {
     setProfileLoading(true);
     const { data, error } = await supabase
@@ -101,7 +106,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     if (!error && data) setProfile(normalize(data as Record<string, unknown>));
   }, []);
 
-  const apply = useCallback((next: Session | null) => {
+  const apply = useCallback((next: Session | null, event?: string) => {
     setSession(next);
     setLoading(false);
     const uid = next?.user?.id ?? null;
@@ -110,15 +115,33 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       if (uid) fetchProfile(uid);
       else setProfile(null);
     }
+
+    // Push notifications — native iOS only, no-ops on web, never throws.
+    const outgoingToken = lastAccessTokenRef.current;
+    lastAccessTokenRef.current = next?.access_token ?? null;
+
+    if (event === "SIGNED_OUT") {
+      void unregisterPushOnSignOut(outgoingToken);
+    } else if (next?.access_token) {
+      if (event === "SIGNED_IN") {
+        // A fresh, explicit login — the right moment to ask for permission.
+        // Never fires on cold app launch (that's INITIAL_SESSION below).
+        void requestPushPermission(next.access_token);
+      } else {
+        // App opened with an already-existing session, or a token refresh —
+        // silently re-register if permission was already granted. No prompt.
+        void refreshPushRegistration(next.access_token);
+      }
+    }
   }, [fetchProfile]);
 
   useEffect(() => {
     let active = true;
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (active) apply(session);
+      if (active) apply(session, "INITIAL_SESSION");
     }).catch(() => { if (active) setLoading(false); });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (active) apply(session);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (active) apply(session, event);
     });
     // Failsafe: never let a stalled auth check freeze the app on a loading
     // screen. If nothing has resolved in 8s, stop blocking — onAuthStateChange
