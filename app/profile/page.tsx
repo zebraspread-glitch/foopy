@@ -1842,23 +1842,36 @@ export default function ProfilePage() {
   const profileHeroShellStyle: CSSProperties = {
     display: "contents",
   };
-  const profileStickyHeaderStyle: CSSProperties = {
+  // Split into two sticky siblings instead of one element whose `height`
+  // animates every scroll frame (that forced a full-page reflow 60x/sec —
+  // height is a layout property, not a compositor one). Both are
+  // `position: sticky; top: 0` starting at the same natural document
+  // position, so they stick in perfect sync with each other.
+  //
+  // 1. bannerStickyStyle — the banner image. Height is now CONSTANT (always
+  //    the expanded size), so it never triggers layout at all. It visually
+  //    "collapses" only because of bannerExcessMaskStyle (below) and
+  //    profileBodyStyle's transform, both of which are compositor-only.
+  // 2. controlsStickyStyle — a zero-height positioning anchor for the back/
+  //    menu/edit buttons, avatar, and compact username pill, which were
+  //    already `position: absolute` + `transform`-animated and never the
+  //    problem.
+  const bannerStickyStyle: CSSProperties = {
     position: "sticky",
     top: 0,
-    zIndex: 80,
-    height: `calc(${expandedBannerHeight}px + ${(collapsedBannerHeight - expandedBannerHeight).toFixed(1)}px * ${HE} + env(safe-area-inset-top))`,
+    zIndex: 1,
+    height: `calc(${expandedBannerHeight}px + env(safe-area-inset-top))`,
     borderRadius: headerRadius,
-    overflow: "visible",
+    overflow: "hidden",
     background: "#020617",
-    // Static shadow — interpolating blur/spread/alpha here was a paint cost on
-    // every scroll frame for a barely-perceptible effect. The height change
-    // above already gives the browser plenty to do each frame.
     boxShadow: "0 14px 30px rgb(0 0 0 / 0.32)",
-    // Bounds the reflow this box's own per-frame height change can trigger —
-    // tells the browser nothing outside this box depends on its content size
-    // and vice versa, so the layout/paint work stays scoped to the header
-    // instead of touching the rest of this (very long) page each frame.
-    contain: "layout paint",
+  };
+  const controlsStickyStyle: CSSProperties = {
+    position: "sticky",
+    top: 0,
+    zIndex: 90,
+    height: 0,
+    overflow: "visible",
   };
   const bannerFrameStyle: CSSProperties = {
     position: "absolute",
@@ -1889,6 +1902,26 @@ export default function ProfilePage() {
     position: "absolute",
     inset: 0,
     background: `linear-gradient(180deg, rgb(2 6 23 / calc(0.16 + 0.24 * ${HE})) 0%, rgb(2 6 23 / calc(0.18 + 0.30 * ${HE})) 52%, rgb(2 6 23 / calc(0.48 + 0.42 * ${HE})) 100%), linear-gradient(90deg, rgba(2,6,23,0.28) 0%, rgba(2,6,23,0) 36%, rgba(2,6,23,0.22) 100%)`,
+    pointerEvents: "none",
+  };
+  // Covers exactly the banner's "excess" height (expanded minus collapsed)
+  // as you scroll, so the now-constant-height banner LOOKS like it shrunk —
+  // grows from 0 to full as HE goes 0→1, giving the same crisp "edge moves
+  // up" look the old literal height-shrink had, instead of a soft fade.
+  // This lives inside the banner box itself — sized off fixed numbers, not
+  // off profileBodyStyle's actual content height — so it covers correctly
+  // regardless of how much/little content a given profile has below it.
+  // Animating height here is cheap (unlike the old sticky-header height
+  // animation): this element is absolutely positioned with no children and
+  // no siblings that depend on its size, so the cost is isolated to just
+  // this one box — it can't cascade into a page-wide reflow.
+  const bannerExcessMaskStyle: CSSProperties = {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: `calc(${(expandedBannerHeight - collapsedBannerHeight).toFixed(1)}px * ${HE})`,
+    background: "var(--bg)",
     pointerEvents: "none",
   };
   const topControlBaseStyle: CSSProperties = {
@@ -1967,11 +2000,21 @@ export default function ProfilePage() {
   const profileBodyStyle: CSSProperties = {
     position: "relative",
     zIndex: 2,
-    padding: `calc(${topPadFrom}px + ${(18 - topPadFrom).toFixed(2)}px * ${HE}) 14px 16px`,
+    // Constant padding (no longer interpolated — that was a layout property
+    // changing every scroll frame). This trades a little extra breathing
+    // room above the username once fully collapsed for zero per-frame
+    // layout cost, which is the actual fix for the scroll jank.
+    padding: `${topPadFrom}px 14px 16px`,
     background: "var(--bg)",
     border: "1px solid var(--border-2)",
     borderTop: "none",
     borderRadius: headerRadius,
+    // Slides this whole box up to track the banner's now-constant-height
+    // box exactly at the point it used to visually collapse to — replaces
+    // what the old height animation used to do automatically via layout.
+    // transform is compositor-only, so this costs nothing extra per frame.
+    transform: `translate3d(0, calc(${(collapsedBannerHeight - expandedBannerHeight).toFixed(1)}px * ${HE}), 0)`,
+    willChange: "transform",
   };
   const mainIdentityStyle: CSSProperties = {
     opacity: `clamp(0, calc(1 - ${HP} * 1.7), 1)`,
@@ -2028,32 +2071,16 @@ export default function ProfilePage() {
       <div style={{ ...wrapStyle, paddingTop: 0 }}>
         {/* ── Profile header card ── */}
         <div style={profileHeroShellStyle}>
-          {/* Banner — tappable */}
-          <section style={profileStickyHeaderStyle}>
+          {/* controlsStickyStyle has height:0, so it must come FIRST in DOM
+              order — otherwise its "natural" (pre-stick) flow position would
+              start after the banner's real height instead of at the top,
+              throwing off every absolute-positioned child inside it. */}
+          <div style={controlsStickyStyle}>
             <button type="button" onClick={() => router.back()} aria-label="Back" style={{ ...topControlBaseStyle, left: 12 }}>
               <ChevronLeft size={22} strokeWidth={2.6} />
             </button>
             <button type="button" onClick={() => setEditSection("menu")} aria-label="Profile options" style={{ ...topControlBaseStyle, right: 12 }}>
               <MoreHorizontal size={22} strokeWidth={2.6} />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setBannerSheetOpen(true)}
-              aria-label="Edit banner"
-              style={{ position: "absolute", inset: 0, border: "none", background: "none", padding: 0, cursor: "pointer", overflow: "hidden", borderRadius: profileStickyHeaderStyle.borderRadius }}
-            >
-              <div style={bannerFrameStyle}>
-                {bannerSrc ? (
-                  <img src={bannerSrc} alt="" style={bannerMediaStyle} />
-                ) : (
-                  <div style={{ ...bannerMediaStyle, background: bannerStyle.background }} />
-                )}
-                <div style={headerOverlayStyle} />
-                <div style={{ position: "absolute", right: 14, bottom: 14, width: 32, height: 32, borderRadius: "50%", background: "rgba(2,6,23,0.58)", border: "1px solid rgba(255,255,255,0.18)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", opacity: expandedOnlyOpacity, backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)" }}>
-                  {bannerUploading ? <div className="spinner" style={{ width: 14, height: 14 }} /> : <Camera size={15} />}
-                </div>
-              </div>
             </button>
 
             <button type="button" onClick={() => setAvatarSheetOpen(true)} style={avatarButtonStyle} aria-label="Edit profile photo">
@@ -2074,7 +2101,30 @@ export default function ProfilePage() {
             <div style={compactUsernamePillStyle}>
               <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", ...nameColorStyle(profile?.name_color) }}>@{username || "profile"}</span>
             </div>
-          </section>
+          </div>
+
+          {/* Banner — tappable */}
+          <div style={bannerStickyStyle}>
+            <button
+              type="button"
+              onClick={() => setBannerSheetOpen(true)}
+              aria-label="Edit banner"
+              style={{ position: "absolute", inset: 0, border: "none", background: "none", padding: 0, cursor: "pointer", overflow: "hidden", borderRadius: bannerStickyStyle.borderRadius }}
+            >
+              <div style={bannerFrameStyle}>
+                {bannerSrc ? (
+                  <img src={bannerSrc} alt="" style={bannerMediaStyle} />
+                ) : (
+                  <div style={{ ...bannerMediaStyle, background: bannerStyle.background }} />
+                )}
+                <div style={headerOverlayStyle} />
+                <div style={{ position: "absolute", right: 14, bottom: 14, width: 32, height: 32, borderRadius: "50%", background: "rgba(2,6,23,0.58)", border: "1px solid rgba(255,255,255,0.18)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", opacity: expandedOnlyOpacity, backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)" }}>
+                  {bannerUploading ? <div className="spinner" style={{ width: 14, height: 14 }} /> : <Camera size={15} />}
+                </div>
+                <div style={bannerExcessMaskStyle} />
+              </div>
+            </button>
+          </div>
 
           <input ref={fileInputRef} type="file" accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif" style={{ display: "none" }}
             onChange={(e) => { const file = e.target.files?.[0]; if (!file) return; setAvatarErr(""); openImagePreview(file, "avatar"); e.target.value = ""; }}
