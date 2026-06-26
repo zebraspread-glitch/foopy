@@ -16,6 +16,7 @@
     "update-all": "tsx scripts/updateAll.ts",
     "build:players": "node scripts/buildPlayerData.cjs",
     "update:players": "node scripts/updatePlayerSeasonStats.cjs",
+    "update:api-sports-ids": "tsx scripts/updateApiSportsMatchIds.ts",
     "fetch:stats": "node scripts/fetchSeasonStats.cjs",
     "fetch:stats:force": "node scripts/fetchSeasonStats.cjs --force",
     "fetch:seasons": "node scripts/fetch-seasons.mjs",
