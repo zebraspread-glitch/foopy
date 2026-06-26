@@ -783,7 +783,15 @@ export default function PublicProfilePage() {
     borderRadius: headerRadius,
     overflow: "visible",
     background: "#020617",
-    boxShadow: `0 ${PX(8, 18)} ${PX(18, 38)} rgb(0 0 0 / calc(0.18 + 0.24 * ${HE}))`,
+    // Static shadow — interpolating blur/spread/alpha here was a paint cost on
+    // every scroll frame for a barely-perceptible effect. The height change
+    // above already gives the browser plenty to do each frame.
+    boxShadow: "0 14px 30px rgb(0 0 0 / 0.32)",
+    // Bounds the reflow this box's own per-frame height change can trigger —
+    // tells the browser nothing outside this box depends on its content size
+    // and vice versa, so the layout/paint work stays scoped to the header
+    // instead of touching the rest of this (very long) page each frame.
+    contain: "layout paint",
   };
   const bannerFrameStyle: CSSProperties = {
     position: "absolute",
@@ -804,7 +812,10 @@ export default function PublicProfilePage() {
     objectPosition: "center top",
     transform: `translate3d(0, ${PX(0, bannerLiftTo)}, 0) scale(${NUM(1.015, 1.045)})`,
     transformOrigin: "center top",
-    filter: `saturate(${NUM(1.06, 0.96)}) contrast(${NUM(1.03, 0.98)})`,
+    // Static filter — animating saturate/contrast per scroll frame forces a
+    // repaint of the whole banner image every frame for an effect nobody
+    // can actually see mid-scroll. transform (above) stays GPU-only.
+    filter: "saturate(1.01) contrast(1.005)",
     willChange: "transform",
   };
   const headerOverlayStyle: CSSProperties = {
@@ -827,8 +838,14 @@ export default function PublicProfilePage() {
     alignItems: "center",
     justifyContent: "center",
     cursor: "pointer",
-    backdropFilter: "blur(14px)",
-    WebkitBackdropFilter: "blur(14px)",
+    // backdrop-filter is one of the most expensive operations on iOS WebKit,
+    // and these buttons sit over a banner that's moving every scroll frame —
+    // a smaller radius cuts that cost noticeably while still looking frosted.
+    // translateZ(0) promotes the button to its own compositor layer so the
+    // blur recompute stays scoped to this small circle, not a larger region.
+    backdropFilter: "blur(8px)",
+    WebkitBackdropFilter: "blur(8px)",
+    transform: "translateZ(0)",
   };
   const avatarButtonStyle: CSSProperties = {
     position: "absolute",
