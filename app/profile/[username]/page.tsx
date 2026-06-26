@@ -772,6 +772,17 @@ export default function PublicProfilePage() {
   const avatarSizeExpr = `(${avatarBaseSize}px * (1 + ${(avatarScaleTo - 1).toFixed(4)} * ${HE}))`;
   const compactLeftInner = `${avatarStartLeft}px + ${avatarTxDelta.toFixed(2)}px * ${HE} + ${avatarSizeExpr} + 12px`;
 
+  // The compact username pill used to animate `left`/`top` via calc(--phe) —
+  // both are LAYOUT properties, so it reflowed every scroll frame. Its
+  // position is linear in the scroll progress, so we can split it into a
+  // constant base position + a per-frame `transform: translate3d` (compositor
+  // only). These coefficients are that decomposition: pos(HE) = base + slope*HE.
+  const pillLeftBase  = avatarStartLeft + avatarBaseSize + 12;
+  const pillLeftSlope = avatarTxDelta + avatarBaseSize * (avatarScaleTo - 1);
+  const pillTopBase   = avatarStartTop + (avatarBaseSize - compactUsernameHeight) / 2; // env() added in style
+  const pillTopSlope  = avatarTyDelta + avatarBaseSize * (avatarScaleTo - 1) / 2;
+  const pillCollapsedLeft = pillLeftBase + pillLeftSlope; // left at HE=1, used for a stable maxWidth
+
   const profileHeroShellStyle: CSSProperties = {
     display: "contents",
   };
@@ -830,32 +841,46 @@ export default function PublicProfilePage() {
     filter: "saturate(1.01) contrast(1.005)",
     willChange: "transform",
   };
-  const headerOverlayStyle: CSSProperties = {
+  // The darkening overlay used to animate the alpha of three gradient color
+  // stops via calc(--phe) — animating a gradient forces a full repaint of
+  // this banner-sized element every scroll frame (the single biggest paint
+  // cost that remained). Replaced with two STATIC gradient layers crossfaded
+  // by `opacity` (compositor-only): the base is always visible, the darker
+  // "collapsed" gradient fades in over it as you scroll. Visually equivalent,
+  // but the GPU just composites two pre-painted layers each frame.
+  const headerOverlayBaseStyle: CSSProperties = {
     position: "absolute",
     inset: 0,
-    background: `linear-gradient(180deg, rgb(2 6 23 / calc(0.16 + 0.24 * ${HE})) 0%, rgb(2 6 23 / calc(0.18 + 0.30 * ${HE})) 52%, rgb(2 6 23 / calc(0.48 + 0.42 * ${HE})) 100%), linear-gradient(90deg, rgba(2,6,23,0.28) 0%, rgba(2,6,23,0) 36%, rgba(2,6,23,0.22) 100%)`,
+    background: `linear-gradient(180deg, rgb(2 6 23 / 0.16) 0%, rgb(2 6 23 / 0.18) 52%, rgb(2 6 23 / 0.48) 100%), linear-gradient(90deg, rgba(2,6,23,0.28) 0%, rgba(2,6,23,0) 36%, rgba(2,6,23,0.22) 100%)`,
     pointerEvents: "none",
   };
-  // Covers exactly the banner's "excess" height (expanded minus collapsed)
-  // as you scroll, so the now-constant-height banner LOOKS like it shrunk —
-  // grows from 0 to full as HE goes 0→1, giving the same crisp "edge moves
-  // up" look the old literal height-shrink had, instead of a soft fade.
-  // This lives inside the banner box itself — sized off fixed numbers, not
-  // off profileBodyStyle's actual content height — so it covers correctly
-  // regardless of how much/little content a given profile has below it.
-  // profileBodyStyle's own transform (see below) only has to slide its
-  // content up to meet this mask's bottom edge, not cover the gap itself.
-  // Animating height here is cheap (unlike the old sticky-header height
-  // animation): this element is absolutely positioned with no children and
-  // no siblings that depend on its size, so the cost is isolated to just
-  // this one box — it can't cascade into a page-wide reflow.
+  const headerOverlayCollapsedStyle: CSSProperties = {
+    position: "absolute",
+    inset: 0,
+    background: `linear-gradient(180deg, rgb(2 6 23 / 0.40) 0%, rgb(2 6 23 / 0.48) 52%, rgb(2 6 23 / 0.90) 100%)`,
+    opacity: HE,
+    willChange: "opacity",
+    pointerEvents: "none",
+  };
+  // Covers the banner's "excess" height (expanded minus collapsed) as you
+  // scroll, so the now-constant-height banner LOOKS like it shrunk. A
+  // constant-height bar pinned to the bottom of the banner, slid DOWN out of
+  // view (clipped by the banner's overflow:hidden) when expanded and up into
+  // place as you collapse — all via transform, so it's compositor-only. The
+  // previous version animated `height` here, which is a layout property and
+  // reflowed this element every frame; transform avoids that entirely.
+  // Sized off fixed numbers, not profileBodyStyle's actual content height,
+  // so it covers correctly regardless of how much content a profile has.
+  const bannerExcess = expandedBannerHeight - collapsedBannerHeight;
   const bannerExcessMaskStyle: CSSProperties = {
     position: "absolute",
     left: 0,
     right: 0,
     bottom: 0,
-    height: `calc(${(expandedBannerHeight - collapsedBannerHeight).toFixed(1)}px * ${HE})`,
+    height: `${bannerExcess.toFixed(1)}px`,
     background: "var(--bg)",
+    transform: `translate3d(0, calc(${bannerExcess.toFixed(1)}px * (1 - ${HE})), 0)`,
+    willChange: "transform",
     pointerEvents: "none",
   };
   const topControlBaseStyle: CSSProperties = {
@@ -866,7 +891,10 @@ export default function PublicProfilePage() {
     height: 38,
     borderRadius: "50%",
     border: "1px solid rgba(255,255,255,0.14)",
-    background: `rgb(2 6 23 / calc(0.52 + 0.22 * ${HE}))`,
+    // Static background — it used to interpolate its alpha via calc(--phe),
+    // repainting both buttons every scroll frame for a darkening nobody
+    // notices. A fixed mid value looks identical in motion.
+    background: "rgb(2 6 23 / 0.62)",
     color: "var(--text-1)",
     display: "flex",
     alignItems: "center",
@@ -905,9 +933,13 @@ export default function PublicProfilePage() {
   const compactUsernamePillStyle: CSSProperties = {
     position: "absolute",
     zIndex: 8,
-    left: `calc(${compactLeftInner})`,
-    top: `calc(env(safe-area-inset-top) + ${avatarStartTop}px + ${avatarTyDelta.toFixed(2)}px * ${HE} + (${avatarSizeExpr} - ${compactUsernameHeight}px) / 2)`,
-    maxWidth: `calc(100% - (${compactLeftInner}) - 74px)`,
+    // Constant base position + per-frame transform (see pill* coefficients
+    // above) — was animating left/top (layout) every frame, now compositor
+    // only. maxWidth is pinned to the collapsed (visible) position so the
+    // box never has to relayout for text clipping mid-scroll.
+    left: pillLeftBase,
+    top: `calc(env(safe-area-inset-top) + ${pillTopBase.toFixed(2)}px)`,
+    maxWidth: `calc(100% - ${pillCollapsedLeft.toFixed(1)}px - 74px)`,
     height: compactUsernameHeight,
     padding: 0,
     borderRadius: 0,
@@ -920,7 +952,8 @@ export default function PublicProfilePage() {
     fontSize: C ? 18 : 20,
     fontWeight: 950,
     opacity: `clamp(0, calc((${HP} - 0.3) / 0.7), 1)`,
-    transform: "translate3d(0, 0, 0)",
+    transform: `translate3d(calc(${pillLeftSlope.toFixed(2)}px * ${HE}), calc(${pillTopSlope.toFixed(2)}px * ${HE}), 0)`,
+    willChange: "transform",
     pointerEvents: "none",
     overflow: "hidden",
     whiteSpace: "nowrap",
@@ -1159,11 +1192,12 @@ export default function PublicProfilePage() {
           <div style={bannerStickyStyle}>
             <div style={bannerFrameStyle}>
               {bannerSrc ? (
-                <img src={bannerSrc} alt="" style={bannerMediaStyle} />
+                <img src={bannerSrc} alt="" className="profile-banner-media" style={bannerMediaStyle} />
               ) : (
-                <div style={{ ...bannerMediaStyle, background: "radial-gradient(ellipse at 15% 60%,rgba(59,130,246,.6),transparent 40%),radial-gradient(ellipse at 85% 20%,rgba(99,102,241,.5),transparent 40%),radial-gradient(ellipse at 50% 100%,rgba(34,197,94,.2),transparent 50%),linear-gradient(160deg,#06101e,#000)" }} />
+                <div className="profile-banner-media" style={{ ...bannerMediaStyle, background: "radial-gradient(ellipse at 15% 60%,rgba(59,130,246,.6),transparent 40%),radial-gradient(ellipse at 85% 20%,rgba(99,102,241,.5),transparent 40%),radial-gradient(ellipse at 50% 100%,rgba(34,197,94,.2),transparent 50%),linear-gradient(160deg,#06101e,#000)" }} />
               )}
-              <div style={headerOverlayStyle} />
+              <div style={headerOverlayBaseStyle} />
+              <div style={headerOverlayCollapsedStyle} />
               <div style={bannerExcessMaskStyle} />
             </div>
           </div>

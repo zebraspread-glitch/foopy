@@ -1123,6 +1123,16 @@ textarea::placeholder { color: var(--text-3); }
   .page-enter-up {
     animation: none;
   }
+
+  /* Profile header: drop the decorative banner parallax (scale + lift) for
+     users who prefer reduced motion. The structural collapse itself still
+     tracks scroll position 1:1 (essential layout, not a decorative flourish),
+     but the banner no longer zooms/shifts at a different rate from the scroll.
+     A stylesheet !important rule overrides the element's inline transform. */
+  .profile-banner-media {
+    transform: none !important;
+    will-change: auto !important;
+  }
 }
 
 /* ============================================================
