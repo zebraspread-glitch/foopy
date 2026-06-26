@@ -2140,14 +2140,15 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
   }
 
   if (!stats.length) {
-    // A live or finished game HAS player stats — they're just still being
-    // fetched. Showing "once the game has been played" there is wrong, so only
-    // upcoming games get that copy; played games get a loading state instead.
-    const played = isFinal || isLive;
+    // Tailor the empty-state copy to the game's actual phase. For LIVE games,
+    // API-Sports' AFL player-stat feed often lags the live score and only
+    // populates near/after the game — so "Final stats are on their way" reads
+    // wrong mid-match. Be accurate: live → "not in yet", final → "on their
+    // way", upcoming → "once the game has been played".
     return (
       <div style={noStatsStyle}>
-        <strong>{played ? "Loading player stats…" : "No player stats available yet."}</strong>
-        <span>{played ? "Final stats are on their way." : "Stats will appear here once the game has been played."}</span>
+        <strong>{isFinal ? "Loading player stats…" : isLive ? "Live player stats aren’t in yet" : "No player stats available yet."}</strong>
+        <span>{isFinal ? "Final stats are on their way." : isLive ? "AFL stats can lag the live score — they’ll appear here once published." : "Stats will appear here once the game has been played."}</span>
       </div>
     );
   }
@@ -4695,7 +4696,20 @@ function MatchPageInner() {
         const data = await res.json();
         const apiMatch = data?.response?.[0];
 
-        if (!apiMatch?.teams?.length) throw new Error();
+        if (!apiMatch?.teams?.length) {
+          // The request SUCCEEDED, but API-Sports simply has no player stats
+          // for this game yet. This is common for live games — their AFL
+          // player-stat feed lags the live score and often only populates
+          // near/after the game. It is NOT a failure, so don't show an error:
+          // leave the stats empty (the tabs show a calm "not in yet" state)
+          // and keep polling — they'll appear once API-Sports publishes them.
+          if (!cancelled) {
+            setLiveHomeStats([]);
+            setLiveAwayStats([]);
+            setLiveStatsError("");
+          }
+          return;
+        }
 
         const homeApiTeamId = getApiTeamId(game.hteam);
         const awayApiTeamId = getApiTeamId(game.ateam);
@@ -4712,7 +4726,9 @@ function MatchPageInner() {
           setLiveAwayStats(split.away.length ? split.away : away);
         }
       } catch {
-        if (!cancelled) setLiveStatsError("Could not load live player stats.");
+        // A genuine fetch/network failure (not just missing data). Poll
+        // continues every 10s, so frame it as transient rather than fatal.
+        if (!cancelled) setLiveStatsError("Couldn't refresh live stats — retrying…");
       }
     }
 
