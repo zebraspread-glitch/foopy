@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState, type CSSProperties } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
 import PageHeader from "@/app/components/PageHeader";
@@ -143,17 +143,30 @@ function CoinsInner() {
   }
 
   return (
-    <div style={pageStyle}>
+    <div style={{ minHeight: "100dvh", background: "var(--bg)", paddingBottom: 60 }}>
       <PageHeader title="Coins" onBack={() => router.back()} />
 
       {/* Tabs */}
-      <div style={tabsShellStyle}>
-        <div style={tabsWrapStyle}>
+      <div style={{ background: "var(--bg)", borderBottom: "1px solid var(--border-1)" }}>
+        <div style={{ display: "flex", padding: "0 18px 12px", gap: 6 }}>
           {(["history", "referrals"] as MainTab[]).map(tab => (
             <button
               key={tab}
               onClick={() => setMainTab(tab)}
-              style={tabButtonStyle(mainTab === tab)}
+              style={{
+                flex: 1,
+                padding: "9px 0",
+                borderRadius: 12,
+                border: mainTab === tab ? "1px solid rgba(251,191,36,0.5)" : "1px solid var(--border-2)",
+                background: mainTab === tab ? "linear-gradient(135deg, rgba(251,191,36,0.22), rgba(217,119,6,0.14))" : "var(--surface-3)",
+                color: mainTab === tab ? "#fbbf24" : "var(--text-3)",
+                fontSize: 13,
+                fontWeight: 800,
+                cursor: "pointer",
+                letterSpacing: "0.04em",
+                textTransform: "capitalize",
+                transition: "all 0.15s",
+              }}
             >
               {tab === "history" ? "History" : "Referrals"}
             </button>
@@ -213,7 +226,7 @@ function CoinsInner() {
 
       {/* ── Referrals tab ── */}
       {mainTab === "referrals" && (
-        <div style={contentStyle}>
+        <div style={{ padding: "16px 16px 0" }}>
           {!myUserId ? (
             <div style={emptyStyle}>Sign in to view your referrals</div>
           ) : refLoading ? (
@@ -223,53 +236,57 @@ function CoinsInner() {
           ) : (
             <>
               {/* Code + share */}
-              <div style={referralPanelStyle}>
-                <div style={referralTopRowStyle}>
-                  <div style={referralCodeBlockStyle}>
-                    <div style={sectionLabelStyle}>Referral code</div>
-                    <div style={referralCodeStyle}>{myUsername ?? "—"}</div>
-                  </div>
-                  <button
-                    onClick={copyLink}
-                    disabled={!shareLink}
-                    style={copyInviteButtonStyle(Boolean(shareLink), copied)}
-                  >
-                    {copied ? "Copied" : "Copy link"}
-                  </button>
+              <div style={{ padding: "16px", borderRadius: 16, border: "1px solid rgba(251,191,36,0.3)", background: "linear-gradient(135deg, rgba(251,191,36,0.12), rgba(217,119,6,0.08))", marginBottom: 16 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Your referral code</div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: "#fbbf24", marginTop: 4 }}>{myUsername ?? "—"}</div>
+                <div style={{ fontSize: 13, color: "var(--text-2)", fontWeight: 500, marginTop: 8, lineHeight: 1.4 }}>
+                  Friends enter your username when signing up. You earn{" "}
+                  <span style={{ color: "#fbbf24", fontWeight: 800 }}>{REFERRAL_COINS} coins</span>{" "}
+                  once they watch their first live game — up to {MAX_REFERRALS} friends.
                 </div>
-                <p style={referralCopyStyle}>
-                  Earn <span style={coinTextStyle}>{REFERRAL_COINS} coins</span> when a friend signs up with your username and watches their first live game. Up to {MAX_REFERRALS} rewards.
-                </p>
+                <button
+                  onClick={copyLink}
+                  disabled={!shareLink}
+                  style={{ marginTop: 12, width: "100%", padding: "11px 0", borderRadius: 10, border: "none", background: shareLink ? "linear-gradient(135deg,#d97706,#fbbf24)" : "var(--surface-2)", color: shareLink ? "#1a1205" : "var(--text-3)", fontSize: 14, fontWeight: 900, cursor: shareLink ? "pointer" : "default" }}
+                >
+                  {copied ? "✓ Link copied!" : "Copy invite link"}
+                </button>
               </div>
 
               {/* Stats */}
-              <div style={referralMetricsStyle}>
-                <ReferralMetric label="Joined" value={`${paidCount}/${MAX_REFERRALS}`} />
-                <ReferralMetric label="Pending" value={pendingCount.toLocaleString()} />
-                <ReferralMetric label="Earned" value={coinsEarned.toLocaleString()} accent />
+              <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
+                <div style={statCardStyle}>
+                  <div style={statValueStyle}>{paidCount}<span style={{ fontSize: 14, color: "var(--text-3)", fontWeight: 700 }}>/{MAX_REFERRALS}</span></div>
+                  <div style={statLabelStyle}>Joined</div>
+                </div>
+                <div style={statCardStyle}>
+                  <div style={statValueStyle}>{pendingCount}</div>
+                  <div style={statLabelStyle}>Pending</div>
+                </div>
+                <div style={statCardStyle}>
+                  <div style={{ ...statValueStyle, color: "#fbbf24" }}>{coinsEarned.toLocaleString()}</div>
+                  <div style={statLabelStyle}>Coins earned</div>
+                </div>
               </div>
 
               {/* Referral list */}
               {referrals.length === 0 ? (
-                <div style={referralEmptyStyle}>
-                  <div style={referralEmptyTitleStyle}>No referrals yet</div>
-                  <div style={referralEmptyCopyStyle}>Copy your link and send it to friends watching the next game.</div>
-                </div>
+                <div style={emptyStyle}>No referrals yet — share your code to start earning!</div>
               ) : referrals.map((r, i) => (
                 <div
                   key={`${r.username}-${i}`}
-                  style={{ ...referralRowStyle, borderBottom: i < referrals.length - 1 ? "1px solid var(--border-1)" : "none" }}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 4px", borderBottom: i < referrals.length - 1 ? "1px solid var(--border-1)" : "none" }}
                 >
                   <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-1)" }}>
                     @{r.username ?? "unknown"}
                   </div>
                   {r.referral_paid ? (
-                    <span style={referralPaidStyle}>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: "#fbbf24", display: "flex", alignItems: "center", gap: 4 }}>
                       +{REFERRAL_COINS}
                       <img src="/coin/coin.png" alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />
                     </span>
                   ) : (
-                    <span style={referralPendingStyle}>Pending live game</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-3)" }}>Pending live game</span>
                   )}
                 </div>
               ))}
@@ -281,65 +298,8 @@ function CoinsInner() {
   );
 }
 
-function ReferralMetric({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
-  return (
-    <div style={referralMetricStyle}>
-      <div style={{ ...referralMetricValueStyle, color: accent ? "#fbbf24" : "var(--text-1)" }}>{value}</div>
-      <div style={referralMetricLabelStyle}>{label}</div>
-    </div>
-  );
-}
-
-const pageStyle: CSSProperties = { minHeight: "100dvh", background: "var(--bg)", paddingBottom: 60 };
-const tabsShellStyle: CSSProperties = { background: "var(--bg)", borderBottom: "1px solid var(--border-1)" };
-const tabsWrapStyle: CSSProperties = { display: "flex", padding: "0 18px 12px", gap: 6, maxWidth: 760, margin: "0 auto" };
-function tabButtonStyle(active: boolean): CSSProperties {
-  return {
-    flex: 1,
-    padding: "9px 0",
-    borderRadius: 10,
-    border: "1px solid var(--border-2)",
-    background: active ? "var(--surface-3)" : "transparent",
-    color: active ? "var(--text-1)" : "var(--text-3)",
-    fontSize: 13,
-    fontWeight: 800,
-    cursor: "pointer",
-    letterSpacing: "0.02em",
-    textTransform: "capitalize",
-    transition: "background 0.15s ease, color 0.15s ease, border-color 0.15s ease",
-  };
-}
-const contentStyle: CSSProperties = { padding: "16px 16px 0", maxWidth: 760, margin: "0 auto" };
-const emptyStyle: CSSProperties = { textAlign: "center", padding: "60px 20px", color: "var(--text-3)", fontSize: 14, fontWeight: 700 };
-const bannerStyle: CSSProperties = { marginBottom: 14, padding: "13px 16px", borderRadius: 14, background: "linear-gradient(135deg, rgba(251,191,36,0.14), rgba(217,119,6,0.08))", border: "1px solid rgba(251,191,36,0.3)", display: "flex", alignItems: "center", justifyContent: "space-between" };
-const referralPanelStyle: CSSProperties = { padding: 16, borderRadius: 12, border: "1px solid var(--border-2)", background: "var(--surface-2)", marginBottom: 12 };
-const referralTopRowStyle: CSSProperties = { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" };
-const referralCodeBlockStyle: CSSProperties = { flex: "1 1 220px", minWidth: 0 };
-const sectionLabelStyle: CSSProperties = { fontSize: 12, fontWeight: 750, color: "var(--text-3)" };
-const referralCodeStyle: CSSProperties = { marginTop: 5, color: "var(--text-1)", fontSize: 24, fontWeight: 900, lineHeight: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
-function copyInviteButtonStyle(enabled: boolean, copied: boolean): CSSProperties {
-  return {
-    flex: "0 1 150px",
-    minHeight: 38,
-    padding: "0 16px",
-    borderRadius: 10,
-    border: enabled ? "1px solid rgba(251,191,36,0.45)" : "1px solid var(--border-2)",
-    background: enabled ? (copied ? "rgba(34,197,94,0.16)" : "rgba(251,191,36,0.12)") : "var(--surface-3)",
-    color: enabled ? (copied ? "#4ade80" : "#fbbf24") : "var(--text-3)",
-    fontSize: 13,
-    fontWeight: 850,
-    cursor: enabled ? "pointer" : "default",
-  };
-}
-const referralCopyStyle: CSSProperties = { margin: "14px 0 0", color: "var(--text-2)", fontSize: 13, fontWeight: 600, lineHeight: 1.45 };
-const coinTextStyle: CSSProperties = { color: "#fbbf24", fontWeight: 850 };
-const referralMetricsStyle: CSSProperties = { display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 1, marginBottom: 14, border: "1px solid var(--border-1)", borderRadius: 12, overflow: "hidden", background: "var(--border-1)" };
-const referralMetricStyle: CSSProperties = { minWidth: 0, padding: "12px 8px", background: "var(--surface-2)", textAlign: "center" };
-const referralMetricValueStyle: CSSProperties = { fontSize: 18, fontWeight: 900, fontVariantNumeric: "tabular-nums", lineHeight: 1.1 };
-const referralMetricLabelStyle: CSSProperties = { marginTop: 4, color: "var(--text-3)", fontSize: 10.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em" };
-const referralEmptyStyle: CSSProperties = { marginTop: 18, padding: "28px 18px", borderRadius: 12, border: "1px dashed var(--border-2)", background: "rgba(255,255,255,0.02)", textAlign: "center" };
-const referralEmptyTitleStyle: CSSProperties = { color: "var(--text-1)", fontSize: 15, fontWeight: 850 };
-const referralEmptyCopyStyle: CSSProperties = { marginTop: 6, color: "var(--text-3)", fontSize: 13, fontWeight: 600, lineHeight: 1.4 };
-const referralRowStyle: CSSProperties = { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 4px", gap: 12 };
-const referralPaidStyle: CSSProperties = { fontSize: 13, fontWeight: 850, color: "#fbbf24", display: "flex", alignItems: "center", gap: 4, flexShrink: 0 };
-const referralPendingStyle: CSSProperties = { fontSize: 12, fontWeight: 750, color: "var(--text-3)", flexShrink: 0 };
+const emptyStyle = { textAlign: "center" as const, padding: "60px 20px", color: "var(--text-3)", fontSize: 14, fontWeight: 700 };
+const bannerStyle = { marginBottom: 14, padding: "13px 16px", borderRadius: 14, background: "linear-gradient(135deg, rgba(251,191,36,0.14), rgba(217,119,6,0.08))", border: "1px solid rgba(251,191,36,0.3)", display: "flex", alignItems: "center", justifyContent: "space-between" };
+const statCardStyle = { flex: 1, padding: "12px 8px", borderRadius: 12, border: "1px solid var(--border-1)", background: "var(--surface-3)", textAlign: "center" as const };
+const statValueStyle = { fontSize: 20, fontWeight: 900, color: "var(--text-1)" };
+const statLabelStyle = { fontSize: 11, fontWeight: 700, color: "var(--text-3)", marginTop: 2, textTransform: "uppercase" as const, letterSpacing: "0.04em" };
