@@ -48,6 +48,23 @@ async function fetchByDate(endpoint: string, date: string) {
   return json.response ?? [];
 }
 
+async function fetchById(endpoint: string, id: string) {
+  const res = await fetch(
+    `https://v1.afl.api-sports.io${endpoint}?id=${id}`,
+    {
+      headers: { "x-apisports-key": process.env.API_SPORTS_AFL_KEY! },
+      cache: "no-store",
+    }
+  );
+  if (!res.ok) throw new Error(`API-Sports ${endpoint} failed: ${res.status}`);
+  return res.json();
+}
+
+function hasQuarters(payload: any): boolean {
+  const quarters = payload?.response?.[0]?.quarters ?? payload?.quarters ?? [];
+  return Array.isArray(quarters) && quarters.length > 0;
+}
+
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
   if (!secret) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -128,6 +145,43 @@ export async function GET(req: Request) {
             { onConflict: "game_id,data_type" }
           );
         results.push({ date, game_id: gameId, status: "saved", is_final: isFinalGame });
+
+        const { data: existingQuarters } = await supabase
+          .from("match_cache")
+          .select("payload, is_final")
+          .eq("game_id", gameId)
+          .eq("data_type", "quarters")
+          .maybeSingle();
+
+        const existingHasQuarters = hasQuarters(existingQuarters?.payload);
+        const shouldFetchQuarters =
+          !existingHasQuarters || (date === todayStr && !existingQuarters?.is_final);
+
+        if (shouldFetchQuarters) {
+          try {
+            const quartersPayload = await fetchById("/games/quarters", gameId);
+            await supabase
+              .from("match_cache")
+              .upsert(
+                {
+                  game_id: gameId,
+                  data_type: "quarters",
+                  payload: quartersPayload,
+                  fetched_at: new Date().toISOString(),
+                  is_final: isFinalGame,
+                },
+                { onConflict: "game_id,data_type" }
+              );
+            results.push({
+              date,
+              game_id: gameId,
+              quarters: hasQuarters(quartersPayload) ? "saved" : "empty",
+              is_final: isFinalGame,
+            });
+          } catch (err: any) {
+            results.push({ date, game_id: gameId, quarters_error: err.message });
+          }
+        }
       } catch (err: any) {
         results.push({ date, game_id: gameId, error: err.message });
       }
