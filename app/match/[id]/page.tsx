@@ -2116,7 +2116,7 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
     return true;
   }
 
-  function sortHeaderButton(label: string, key: SortKey, width: number, fullLabel = label) {
+  function sortHeaderButton(label: string, key: SortKey, fullLabel = label) {
     const active = sortKey === key;
     return (
       <button
@@ -2127,7 +2127,7 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
         aria-pressed={active}
         style={{
           ...statsHeaderCellStyle,
-          width,
+          width: "100%",
           color: active ? "#38bdf8" : "var(--text-3)",
           background: active ? "rgba(56,189,248,0.08)" : "transparent",
         }}
@@ -2241,7 +2241,7 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
           >
             <div />
             <div />
-            {activeCols.map((c) => sortHeaderButton(c.label, c.id, c.width, c.full))}
+            {activeCols.map((c) => sortHeaderButton(c.label, c.id, c.full))}
           </div>
         </div>
       </div>
