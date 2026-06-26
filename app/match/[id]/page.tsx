@@ -2205,29 +2205,14 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
               aria-pressed={sortKey === "foopy"}
               style={{
                 ...statsHeaderCellStyle,
-                flex: `${AVATAR_COL_W} 1 0`,
+                width: "100%",
                 color: sortKey === "foopy" ? "#38bdf8" : "var(--text-3)",
                 background: sortKey === "foopy" ? "rgba(56,189,248,0.08)" : "transparent",
               }}
             >
-              <span>✦</span>
+              <span style={{ flex: `${AVATAR_COL_W} 1 0`, textAlign: "center" }}>{"\u2726"}</span>
+              <span style={{ flex: `${NAME_COL_W} 1 0`, textAlign: "left" }}>Player</span>
               {foopyArrow && <span style={statsHeaderArrowStyle}>{foopyArrow}</span>}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSort("foopy")}
-              title="Sort by Foopy rating"
-              aria-label="Sort by Foopy rating"
-              aria-pressed={sortKey === "foopy"}
-              style={{
-                ...statsHeaderCellStyle,
-                flex: `${NAME_COL_W} 1 0`,
-                justifyContent: "flex-start",
-                color: sortKey === "foopy" ? "#38bdf8" : "var(--text-3)",
-                background: sortKey === "foopy" ? "rgba(56,189,248,0.08)" : "transparent",
-              }}
-            >
-              Player
             </button>
           </div>
           <div
