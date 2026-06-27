@@ -886,6 +886,19 @@ function saveStatCols(ids: SortKey[]) {
   try { localStorage.setItem(STAT_COLS_KEY, JSON.stringify(ids)); } catch { /* ignore */ }
 }
 
+const SHOW_RATING_KEY = "foopy_stat_show_rating";
+function loadShowRating(): boolean {
+  try {
+    const raw = localStorage.getItem(SHOW_RATING_KEY);
+    return raw === null ? true : raw === "1";
+  } catch {
+    return true;
+  }
+}
+function saveShowRating(show: boolean) {
+  try { localStorage.setItem(SHOW_RATING_KEY, show ? "1" : "0"); } catch { /* ignore */ }
+}
+
 function numericValue(value: unknown): number | null {
   if (value == null || value === "") return null;
   const n = Number(value);
@@ -2020,7 +2033,7 @@ function useAxisLockedScroll<T extends HTMLElement>() {
   return ref;
 }
 
-function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameId, bestRating, stickyTop = 0, statMode: statModeProp, sortKey: sortKeyProp, sortDir: sortDirProp, onSort, columns }: { stats: PlayerStat[]; isLive?: boolean; isFinal?: boolean; currentPeriod?: number; team?: string; gameId: number; bestRating: number; stickyTop?: number; statMode?: StatMode; sortKey?: SortKey; sortDir?: "desc"|"asc"; onSort?: (k: SortKey) => void; columns?: SortKey[] }) {
+function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameId, bestRating, stickyTop = 0, statMode: statModeProp, sortKey: sortKeyProp, sortDir: sortDirProp, onSort, columns, showRating = true }: { stats: PlayerStat[]; isLive?: boolean; isFinal?: boolean; currentPeriod?: number; team?: string; gameId: number; bestRating: number; stickyTop?: number; statMode?: StatMode; sortKey?: SortKey; sortDir?: "desc"|"asc"; onSort?: (k: SortKey) => void; columns?: SortKey[]; showRating?: boolean }) {
   // Resolve the chosen stat columns (defaults to the standard set), preserving
   // the canonical STAT_COLUMNS order.
   const activeCols = STAT_COLUMNS.filter((c) => (columns ?? DEFAULT_STAT_COLS).includes(c.id));
@@ -2253,7 +2266,7 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
               const knownPlayer = findPlayerInfo(name);
               const rowTeam = safeText(knownPlayer?.club ?? knownPlayer?.team ?? p.team ?? team, "");
               const rating = getFoopyValue(p);
-              const ratingVisible = rating !== null && (rating >= 0 || showNegativeRatings);
+              const ratingVisible = showRating && rating !== null && (rating >= 0 || showNegativeRatings);
               const isBest = ratingVisible && isFinal && bestRating > 0 && rating === bestRating;
               const playerSlugUrl = slugName(name);
               const playerDbKey = `player_${playerSlugUrl}`; // DB event_key still uses player_ prefix
@@ -2316,7 +2329,7 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
 }
 
 // Bottom-sheet editor for choosing which stat columns the player tables show.
-function StatColumnsEditor({ selected, onChange, onClose }: { selected: SortKey[]; onChange: (next: SortKey[]) => void; onClose: () => void }) {
+function StatColumnsEditor({ selected, onChange, showRating, onChangeShowRating, onClose }: { selected: SortKey[]; onChange: (next: SortKey[]) => void; showRating: boolean; onChangeShowRating: (show: boolean) => void; onClose: () => void }) {
   const set = new Set(selected);
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
 
@@ -2343,8 +2356,21 @@ function StatColumnsEditor({ selected, onChange, onClose }: { selected: SortKey[
           <span style={{ fontSize: 18, fontWeight: 900, color: "var(--text-1)" }}>Stat columns</span>
           <button type="button" onClick={onClose} style={statEditorDoneStyle}>Done</button>
         </div>
-        <p style={statEditorHintStyle}>Choose which stats appear in the player tables. The player and rating columns always stay.</p>
+        <p style={statEditorHintStyle}>Choose which stats appear in the player tables. The player column always stays.</p>
         <div style={statEditorListStyle}>
+          <button
+            type="button"
+            onClick={() => onChangeShowRating(!showRating)}
+            style={{ ...statEditorRowStyle, ...(showRating ? statEditorRowOnStyle : null) }}
+          >
+            <span style={{ ...statEditorBadgeStyle, ...(showRating ? { background: "#0ea5e9", color: "#fff" } : null) }}>RTG</span>
+            <span style={{ flex: 1, textAlign: "left", fontWeight: 700, color: showRating ? "var(--text-1)" : "var(--text-2)" }}>Foopy rating</span>
+            <span style={{ width: 22, height: 22, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", border: showRating ? "none" : "2px solid var(--border-3)", background: showRating ? "#0ea5e9" : "transparent" }}>
+              {showRating && (
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+              )}
+            </span>
+          </button>
           {STAT_COLUMNS.map((c) => {
             const on = set.has(c.id);
             return (
@@ -3985,11 +4011,16 @@ function MatchPageInner() {
   // load the saved preference after mount.
   const [statCols, setStatCols] = useState<SortKey[]>(DEFAULT_STAT_COLS);
   const [statColsEditorOpen, setStatColsEditorOpen] = useState(false);
-  useEffect(() => { setStatCols(loadStatCols()); }, []);
+  const [showRating, setShowRating] = useState<boolean>(true);
+  useEffect(() => { setStatCols(loadStatCols()); setShowRating(loadShowRating()); }, []);
   const applyStatCols = useCallback((next: SortKey[]) => {
     const ordered = STAT_COLUMNS.filter((c) => next.includes(c.id)).map((c) => c.id);
     setStatCols(ordered);
     saveStatCols(ordered);
+  }, []);
+  const applyShowRating = useCallback((show: boolean) => {
+    setShowRating(show);
+    saveShowRating(show);
   }, []);
   const [seasonStats, setSeasonStats] = useState<any[]>([]);
   const [squadPlayers, setSquadPlayers] = useState<{ home: number[]; away: number[] } | null>(null);
@@ -5878,19 +5909,19 @@ function MatchPageInner() {
 
               {activeTab === "players" && status !== "UPCOMING" && playerSubTab === "all" && (
                 <section style={{ borderBottom: "1px solid var(--border-2)" }}>
-                  <StatTable stats={allMatchPlayers} isLive={isLiveGame} isFinal={status === "FINAL"} currentPeriod={currentPeriod} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} statMode={playerStatMode} sortKey={playerSortKey} sortDir={playerSortDir} onSort={(k) => { if(playerSortKey===k) setPlayerSortDir(d=>d==="desc"?"asc":"desc"); else{setPlayerSortKey(k);setPlayerSortDir("desc");} }} columns={statCols} />
+                  <StatTable stats={allMatchPlayers} isLive={isLiveGame} isFinal={status === "FINAL"} currentPeriod={currentPeriod} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} statMode={playerStatMode} sortKey={playerSortKey} sortDir={playerSortDir} onSort={(k) => { if(playerSortKey===k) setPlayerSortDir(d=>d==="desc"?"asc":"desc"); else{setPlayerSortKey(k);setPlayerSortDir("desc");} }} columns={statCols} showRating={showRating} />
                 </section>
               )}
 
               {activeTab === "players" && status !== "UPCOMING" && playerSubTab === "home" && (
                 <section style={{ borderBottom: "1px solid var(--border-2)" }}>
-                  <StatTable stats={displayHomeStats} isLive={isLiveGame} isFinal={status === "FINAL"} currentPeriod={currentPeriod} team={game.hteam} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} statMode={playerStatMode} sortKey={playerSortKey} sortDir={playerSortDir} onSort={(k) => { if(playerSortKey===k) setPlayerSortDir(d=>d==="desc"?"asc":"desc"); else{setPlayerSortKey(k);setPlayerSortDir("desc");} }} columns={statCols} />
+                  <StatTable stats={displayHomeStats} isLive={isLiveGame} isFinal={status === "FINAL"} currentPeriod={currentPeriod} team={game.hteam} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} statMode={playerStatMode} sortKey={playerSortKey} sortDir={playerSortDir} onSort={(k) => { if(playerSortKey===k) setPlayerSortDir(d=>d==="desc"?"asc":"desc"); else{setPlayerSortKey(k);setPlayerSortDir("desc");} }} columns={statCols} showRating={showRating} />
                 </section>
               )}
 
               {activeTab === "players" && status !== "UPCOMING" && playerSubTab === "away" && (
                 <section style={{ borderBottom: "1px solid var(--border-2)" }}>
-                  <StatTable stats={displayAwayStats} isLive={isLiveGame} isFinal={status === "FINAL"} currentPeriod={currentPeriod} team={game.ateam} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} statMode={playerStatMode} sortKey={playerSortKey} sortDir={playerSortDir} onSort={(k) => { if(playerSortKey===k) setPlayerSortDir(d=>d==="desc"?"asc":"desc"); else{setPlayerSortKey(k);setPlayerSortDir("desc");} }} columns={statCols} />
+                  <StatTable stats={displayAwayStats} isLive={isLiveGame} isFinal={status === "FINAL"} currentPeriod={currentPeriod} team={game.ateam} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} statMode={playerStatMode} sortKey={playerSortKey} sortDir={playerSortDir} onSort={(k) => { if(playerSortKey===k) setPlayerSortDir(d=>d==="desc"?"asc":"desc"); else{setPlayerSortKey(k);setPlayerSortDir("desc");} }} columns={statCols} showRating={showRating} />
                 </section>
               )}
 
@@ -5915,6 +5946,8 @@ function MatchPageInner() {
           <StatColumnsEditor
             selected={statCols}
             onChange={applyStatCols}
+            showRating={showRating}
+            onChangeShowRating={applyShowRating}
             onClose={() => setStatColsEditorOpen(false)}
           />
         )}
@@ -8156,7 +8189,7 @@ const tdNameInnerStyle: CSSProperties = { display: "flex", flexDirection: "colum
 // foopy rating instead of overlaid on the avatar.
 const statNameCommentStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 2, minHeight: 12, color: "rgba(148,163,184,0.9)", fontSize: 9.5, fontWeight: 800 };
 // Foopy rating badge shown next to the surname.
-const statNameRatingStyle: CSSProperties = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 2, minWidth: 14, padding: "0 3px", borderRadius: 4, border: "1px solid var(--bg)", color: "var(--text-1)", fontWeight: 900, fontSize: 9, lineHeight: 1.4 };
+const statNameRatingStyle: CSSProperties = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 3, minWidth: 20, padding: "1.5px 5px", borderRadius: 5, border: "1px solid var(--bg)", color: "var(--text-1)", fontWeight: 900, fontSize: 12, lineHeight: 1.4 };
 // "Edit stat columns" button + its bottom-sheet editor.
 const editStatColsBtnStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 18px", borderRadius: 999, background: "var(--surface-2)", border: "1px solid var(--border-2)", color: "var(--text-2)", fontSize: 13.5, fontWeight: 800, cursor: "pointer", WebkitTapHighlightColor: "transparent" };
 const statEditorBackdropStyle: CSSProperties = { position: "fixed", inset: 0, zIndex: 20000, background: "rgba(0,0,0,0.68)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: "0 10px", boxSizing: "border-box", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" };
