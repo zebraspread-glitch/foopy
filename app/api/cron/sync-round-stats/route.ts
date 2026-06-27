@@ -152,7 +152,10 @@ async function pollLiveGameStats(
   lastSeen: Map<string, Map<number, LivePlayerRow>>
 ) {
   const { apiId, resolveParams } = resolveApiId(game);
-  const matchId = String(game.id);
+  // Keyed by the API-Sports id (matches live_game_feed.api_game_id and what
+  // the client passes as apiSportsGameId) — NOT Squiggle's game.id, which is
+  // a different number space and would never match the client's lookup.
+  const matchId = apiId;
 
   try {
     const res = await fetch(
@@ -424,9 +427,9 @@ export async function GET(req: Request) {
           const { error: deleteError } = await supabase
             .from("live_player_stats")
             .delete()
-            .eq("match_id", String(game.id));
+            .eq("match_id", apiId);
           if (deleteError) {
-            console.error(`[sync-round-stats] live_player_stats cleanup failed for ${game.id}:`, deleteError.message);
+            console.error(`[sync-round-stats] live_player_stats cleanup failed for ${apiId}:`, deleteError.message);
           }
         }
 
