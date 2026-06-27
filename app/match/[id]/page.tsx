@@ -4018,7 +4018,12 @@ function MatchPageInner() {
     if (shared && shared.length) cachedAllGames = shared;
   }
 
-  const [mounted, setMounted] = useState(() => typeof window !== "undefined");
+  // Always starts false — matching the server's render — and flips true in
+  // the effect below, once hydration has settled. Initializing this to
+  // `typeof window !== "undefined"` (true during the client's first paint,
+  // false on the server) is the textbook hydration-mismatch trigger: React
+  // expects the same tree from both passes, and this guarantees it differs.
+  const [mounted, setMounted] = useState(false);
   // Only the admin sees raw player IDs for unidentified players; the state
   // change forces a re-render so the (module-flag-reading) name helpers update.
   const [, setAdminView] = useState(false);
@@ -4091,6 +4096,11 @@ function MatchPageInner() {
   const [loading, setLoading] = useState(() =>
     !cachedAllGames.some((g) => String(g.id) === id)
   );
+  // Whether the "Who will win?" poll has finished checking for an existing
+  // vote. Used below to keep the whole page on its loading skeleton a beat
+  // longer for upcoming games, so the poll never flashes its unvoted state
+  // before settling on the user's actual saved pick.
+  const [pollVoteResolved, setPollVoteResolved] = useState(false);
   const [error, setError] = useState("");
   const [now, setNow] = useState(Date.now());
   const [teamStats, setTeamStats] = useState<any[]>([]);
@@ -4257,6 +4267,7 @@ function MatchPageInner() {
       try {
         if (isFirst) {
           setError("");
+          setPollVoteResolved(false);
           // If we already have this game's data cached (e.g. switching between
           // games in the same round via the top strip), show it instantly
           // instead of blanking the whole page with a skeleton.
@@ -4374,6 +4385,21 @@ function MatchPageInner() {
 
   const status = getStatus(game);
   const isLiveGame = status === "LIVE";
+
+  // Same eligibility check WinnerPick's own mount condition uses below — if
+  // this game doesn't qualify for the poll, there's nothing to wait on.
+  const pollEligible =
+    status === "UPCOMING" && !!game?.date && (Date.parse(game.date) - Date.now()) < 10 * 24 * 60 * 60 * 1000;
+
+  // Safety net: WinnerPick only mounts on the "feed" or stats-comparison
+  // tabs, so a deep link straight to another tab (e.g. ?tab=players) would
+  // mean onReady never fires. Don't let that wedge the page on its skeleton
+  // forever — give it a few seconds, then proceed regardless.
+  useEffect(() => {
+    if (!pollEligible || pollVoteResolved) return;
+    const t = setTimeout(() => setPollVoteResolved(true), 4000);
+    return () => clearTimeout(t);
+  }, [pollEligible, pollVoteResolved]);
   const showStatsTabs = status === "LIVE" || status === "FINAL";
   const showPlayersTabs = status === "LIVE" || status === "FINAL" || status === "UPCOMING";
 
@@ -5671,7 +5697,19 @@ function MatchPageInner() {
           className={tabAnimDir > 0 ? "tab-slide-in-right" : "tab-slide-in-left"}
           onTouchStart={onTabTouchStart}
           onTouchEnd={onTabTouchEnd}
+          style={{ position: "relative" }}
         >
+        {/* The scoreboard header + tab bar above render the instant cached
+            game data is available — only this tab-content area waits an
+            extra beat for the "Who will win?" poll's vote-check, so it
+            never flashes its unvoted state before the saved pick loads. */}
+        {pollEligible && !pollVoteResolved && (
+          <div style={{ position: "absolute", inset: 0, zIndex: 5, background: "var(--bg)", padding: 16 }}>
+            <div className="skeleton" style={{ height: 90, borderRadius: 14, marginBottom: 10 }} />
+            <div className="skeleton" style={{ height: 90, borderRadius: 14, marginBottom: 10 }} />
+            <div className="skeleton" style={{ height: 90, borderRadius: 14 }} />
+          </div>
+        )}
         {activeTab === "feed" && (
           <section style={sectionStyle}>
             {status === "UPCOMING" && game.date && (Date.parse(game.date) - Date.now()) < 10 * 24 * 60 * 60 * 1000 && (
@@ -5683,6 +5721,7 @@ function MatchPageInner() {
                   gameStatus={status}
                   homeScore={game.hscore}
                   awayScore={game.ascore}
+                  onReady={() => setPollVoteResolved(true)}
                 />
               </div>
             )}
@@ -5929,6 +5968,7 @@ function MatchPageInner() {
                 gameStatus={status}
                 homeScore={game.hscore}
                 awayScore={game.ascore}
+                onReady={() => setPollVoteResolved(true)}
               />
             </div>
 

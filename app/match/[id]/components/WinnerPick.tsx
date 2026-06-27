@@ -13,12 +13,17 @@ type Props = {
   gameStatus?: string;
   homeScore?: number | string | null;
   awayScore?: number | string | null;
+  // Called once the initial vote-check (auth + existing pick) has resolved,
+  // so a parent page can hold its own loading state until this poll knows
+  // whether to show the vote buttons or the already-voted result — avoids
+  // a flash of the unvoted state for users who already voted.
+  onReady?: () => void;
 };
 
 type Side = "home" | "draw" | "away";
 type Votes = { home: number; draw: number; away: number; total: number };
 
-export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, homeScore, awayScore }: Props) {
+export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, homeScore, awayScore, onReady }: Props) {
   const router = useRouter();
 
   const [authed, setAuthed]         = useState<boolean | null>(null);
@@ -31,6 +36,11 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, ho
   // prevents the race condition where a fast tap submits before we know
   // the user already voted.
   const [loadingVotes, setLoadingVotes] = useState(true);
+
+  // Always call the latest onReady without making loadVotes depend on it
+  // (the parent typically passes a fresh inline arrow every render).
+  const onReadyRef = useRef(onReady);
+  onReadyRef.current = onReady;
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -47,21 +57,31 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, ho
       const res = await fetch(`/api/winner-picks?matchId=${matchId}`, {
         cache: "no-store", headers,
       });
-      if (!res.ok) return;
-      const data = await res.json();
-      setVotes({
-        home:  Number(data.home  ?? 0),
-        draw:  Number(data.draw  ?? 0),
-        away:  Number(data.away  ?? 0),
-        total: Number(data.total ?? 0),
-      });
-      // Restore pick from database — reliable across devices/browser clears
-      if (data.my_pick) {
-        setMyPick(data.my_pick as Side);
-        setHasVoted(true);
+      if (res.ok) {
+        const data = await res.json();
+        setVotes({
+          home:  Number(data.home  ?? 0),
+          draw:  Number(data.draw  ?? 0),
+          away:  Number(data.away  ?? 0),
+          total: Number(data.total ?? 0),
+        });
+        // Restore pick from database — reliable across devices/browser clears
+        if (data.my_pick) {
+          setMyPick(data.my_pick as Side);
+          setHasVoted(true);
+        }
       }
-    } catch {}
-    if (initial) setLoadingVotes(false);
+    } catch {
+      // Swallowed — a failed vote-check just means the buttons stay
+      // interactive rather than restoring a saved pick. Still must fall
+      // through to the `finally` below so `initial` callers (and the
+      // parent's page-load gate via onReady) are never left hanging.
+    } finally {
+      if (initial) {
+        setLoadingVotes(false);
+        onReadyRef.current?.();
+      }
+    }
   }, [matchId, authToken]);
 
   // Load votes once auth is resolved so we can restore the user's pick.
