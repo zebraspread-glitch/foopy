@@ -899,6 +899,19 @@ function saveShowRating(show: boolean) {
   try { localStorage.setItem(SHOW_RATING_KEY, show ? "1" : "0"); } catch { /* ignore */ }
 }
 
+const SHOW_COMMENTS_KEY = "foopy_stat_show_comments";
+function loadShowComments(): boolean {
+  try {
+    const raw = localStorage.getItem(SHOW_COMMENTS_KEY);
+    return raw === null ? true : raw === "1";
+  } catch {
+    return true;
+  }
+}
+function saveShowComments(show: boolean) {
+  try { localStorage.setItem(SHOW_COMMENTS_KEY, show ? "1" : "0"); } catch { /* ignore */ }
+}
+
 function numericValue(value: unknown): number | null {
   if (value == null || value === "") return null;
   const n = Number(value);
@@ -2033,7 +2046,7 @@ function useAxisLockedScroll<T extends HTMLElement>() {
   return ref;
 }
 
-function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameId, bestRating, stickyTop = 0, statMode: statModeProp, sortKey: sortKeyProp, sortDir: sortDirProp, onSort, columns, showRating = true }: { stats: PlayerStat[]; isLive?: boolean; isFinal?: boolean; currentPeriod?: number; team?: string; gameId: number; bestRating: number; stickyTop?: number; statMode?: StatMode; sortKey?: SortKey; sortDir?: "desc"|"asc"; onSort?: (k: SortKey) => void; columns?: SortKey[]; showRating?: boolean }) {
+function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameId, bestRating, stickyTop = 0, statMode: statModeProp, sortKey: sortKeyProp, sortDir: sortDirProp, onSort, columns, showRating = true, showComments = true }: { stats: PlayerStat[]; isLive?: boolean; isFinal?: boolean; currentPeriod?: number; team?: string; gameId: number; bestRating: number; stickyTop?: number; statMode?: StatMode; sortKey?: SortKey; sortDir?: "desc"|"asc"; onSort?: (k: SortKey) => void; columns?: SortKey[]; showRating?: boolean; showComments?: boolean }) {
   // Resolve the chosen stat columns (defaults to the standard set), preserving
   // the canonical STAT_COLUMNS order.
   const activeCols = STAT_COLUMNS.filter((c) => (columns ?? DEFAULT_STAT_COLS).includes(c.id));
@@ -2304,13 +2317,15 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
                             {rating}
                           </span>
                         )}
-                        {/* Icon always shown (matches the feed cards' "Open
-                            comments" affordance) — only the count is
-                            conditional. */}
-                        <span style={statNameCommentStyle}>
-                          <MessageCircle size={10} strokeWidth={2.3} />
-                          {count > 0 && count}
-                        </span>
+                        {/* Icon always shown when enabled (matches the feed
+                            cards' "Open comments" affordance) — only the
+                            count is conditional. */}
+                        {showComments && (
+                          <span style={statNameCommentStyle}>
+                            <MessageCircle size={10} strokeWidth={2.3} />
+                            {count > 0 && count}
+                          </span>
+                        )}
                       </span>
                     </span>
                   </td>
@@ -2329,7 +2344,7 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
 }
 
 // Bottom-sheet editor for choosing which stat columns the player tables show.
-function StatColumnsEditor({ selected, onChange, showRating, onChangeShowRating, onClose }: { selected: SortKey[]; onChange: (next: SortKey[]) => void; showRating: boolean; onChangeShowRating: (show: boolean) => void; onClose: () => void }) {
+function StatColumnsEditor({ selected, onChange, showRating, onChangeShowRating, showComments, onChangeShowComments, onClose }: { selected: SortKey[]; onChange: (next: SortKey[]) => void; showRating: boolean; onChangeShowRating: (show: boolean) => void; showComments: boolean; onChangeShowComments: (show: boolean) => void; onClose: () => void }) {
   const set = new Set(selected);
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
 
@@ -2367,6 +2382,21 @@ function StatColumnsEditor({ selected, onChange, showRating, onChangeShowRating,
             <span style={{ flex: 1, textAlign: "left", fontWeight: 700, color: showRating ? "var(--text-1)" : "var(--text-2)" }}>Foopy rating</span>
             <span style={{ width: 22, height: 22, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", border: showRating ? "none" : "2px solid var(--border-3)", background: showRating ? "#0ea5e9" : "transparent" }}>
               {showRating && (
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+              )}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onChangeShowComments(!showComments)}
+            style={{ ...statEditorRowStyle, ...(showComments ? statEditorRowOnStyle : null) }}
+          >
+            <span style={{ ...statEditorBadgeStyle, ...(showComments ? { background: "#0ea5e9", color: "#fff" } : null) }}>
+              <MessageCircle size={13} strokeWidth={2.6} style={{ display: "block", margin: "0 auto" }} />
+            </span>
+            <span style={{ flex: 1, textAlign: "left", fontWeight: 700, color: showComments ? "var(--text-1)" : "var(--text-2)" }}>Comment count</span>
+            <span style={{ width: 22, height: 22, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", border: showComments ? "none" : "2px solid var(--border-3)", background: showComments ? "#0ea5e9" : "transparent" }}>
+              {showComments && (
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
               )}
             </span>
@@ -4012,7 +4042,8 @@ function MatchPageInner() {
   const [statCols, setStatCols] = useState<SortKey[]>(DEFAULT_STAT_COLS);
   const [statColsEditorOpen, setStatColsEditorOpen] = useState(false);
   const [showRating, setShowRating] = useState<boolean>(true);
-  useEffect(() => { setStatCols(loadStatCols()); setShowRating(loadShowRating()); }, []);
+  const [showComments, setShowComments] = useState<boolean>(true);
+  useEffect(() => { setStatCols(loadStatCols()); setShowRating(loadShowRating()); setShowComments(loadShowComments()); }, []);
   const applyStatCols = useCallback((next: SortKey[]) => {
     const ordered = STAT_COLUMNS.filter((c) => next.includes(c.id)).map((c) => c.id);
     setStatCols(ordered);
@@ -4021,6 +4052,10 @@ function MatchPageInner() {
   const applyShowRating = useCallback((show: boolean) => {
     setShowRating(show);
     saveShowRating(show);
+  }, []);
+  const applyShowComments = useCallback((show: boolean) => {
+    setShowComments(show);
+    saveShowComments(show);
   }, []);
   const [seasonStats, setSeasonStats] = useState<any[]>([]);
   const [squadPlayers, setSquadPlayers] = useState<{ home: number[]; away: number[] } | null>(null);
@@ -5931,19 +5966,19 @@ function MatchPageInner() {
 
               {activeTab === "players" && status !== "UPCOMING" && playerSubTab === "all" && (
                 <section style={{ borderBottom: "1px solid var(--border-2)" }}>
-                  <StatTable stats={allMatchPlayers} isLive={isLiveGame} isFinal={status === "FINAL"} currentPeriod={currentPeriod} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} statMode={playerStatMode} sortKey={playerSortKey} sortDir={playerSortDir} onSort={(k) => { if(playerSortKey===k) setPlayerSortDir(d=>d==="desc"?"asc":"desc"); else{setPlayerSortKey(k);setPlayerSortDir("desc");} }} columns={statCols} showRating={showRating} />
+                  <StatTable stats={allMatchPlayers} isLive={isLiveGame} isFinal={status === "FINAL"} currentPeriod={currentPeriod} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} statMode={playerStatMode} sortKey={playerSortKey} sortDir={playerSortDir} onSort={(k) => { if(playerSortKey===k) setPlayerSortDir(d=>d==="desc"?"asc":"desc"); else{setPlayerSortKey(k);setPlayerSortDir("desc");} }} columns={statCols} showRating={showRating} showComments={showComments} />
                 </section>
               )}
 
               {activeTab === "players" && status !== "UPCOMING" && playerSubTab === "home" && (
                 <section style={{ borderBottom: "1px solid var(--border-2)" }}>
-                  <StatTable stats={displayHomeStats} isLive={isLiveGame} isFinal={status === "FINAL"} currentPeriod={currentPeriod} team={game.hteam} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} statMode={playerStatMode} sortKey={playerSortKey} sortDir={playerSortDir} onSort={(k) => { if(playerSortKey===k) setPlayerSortDir(d=>d==="desc"?"asc":"desc"); else{setPlayerSortKey(k);setPlayerSortDir("desc");} }} columns={statCols} showRating={showRating} />
+                  <StatTable stats={displayHomeStats} isLive={isLiveGame} isFinal={status === "FINAL"} currentPeriod={currentPeriod} team={game.hteam} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} statMode={playerStatMode} sortKey={playerSortKey} sortDir={playerSortDir} onSort={(k) => { if(playerSortKey===k) setPlayerSortDir(d=>d==="desc"?"asc":"desc"); else{setPlayerSortKey(k);setPlayerSortDir("desc");} }} columns={statCols} showRating={showRating} showComments={showComments} />
                 </section>
               )}
 
               {activeTab === "players" && status !== "UPCOMING" && playerSubTab === "away" && (
                 <section style={{ borderBottom: "1px solid var(--border-2)" }}>
-                  <StatTable stats={displayAwayStats} isLive={isLiveGame} isFinal={status === "FINAL"} currentPeriod={currentPeriod} team={game.ateam} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} statMode={playerStatMode} sortKey={playerSortKey} sortDir={playerSortDir} onSort={(k) => { if(playerSortKey===k) setPlayerSortDir(d=>d==="desc"?"asc":"desc"); else{setPlayerSortKey(k);setPlayerSortDir("desc");} }} columns={statCols} showRating={showRating} />
+                  <StatTable stats={displayAwayStats} isLive={isLiveGame} isFinal={status === "FINAL"} currentPeriod={currentPeriod} team={game.ateam} gameId={Number(id)} bestRating={bestRating} stickyTop={stickyHeaderH} statMode={playerStatMode} sortKey={playerSortKey} sortDir={playerSortDir} onSort={(k) => { if(playerSortKey===k) setPlayerSortDir(d=>d==="desc"?"asc":"desc"); else{setPlayerSortKey(k);setPlayerSortDir("desc");} }} columns={statCols} showRating={showRating} showComments={showComments} />
                 </section>
               )}
 
@@ -5970,6 +6005,8 @@ function MatchPageInner() {
             onChange={applyStatCols}
             showRating={showRating}
             onChangeShowRating={applyShowRating}
+            showComments={showComments}
+            onChangeShowComments={applyShowComments}
             onClose={() => setStatColsEditorOpen(false)}
           />
         )}
