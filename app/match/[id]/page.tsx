@@ -4076,7 +4076,11 @@ function MatchPageInner() {
   const [liveAwayStats, setLiveAwayStats] = useState<PlayerStat[]>([]);
   const [liveStatsError, setLiveStatsError] = useState("");
   const [liveEvents, setLiveEvents] = useState<LiveEvent[]>([]);
-  const [feedError, setFeedError] = useState("");
+  // Intentionally never set anymore — transient feed-load failures (e.g. a
+  // brief Supabase rate-limit) just keep feedLoading=true and retry on the
+  // next 10s poll instead of surfacing an error. Kept (always "") so the
+  // !feedError checks below stay harmless rather than ripping out branches.
+  const [feedError] = useState("");
   const [feedLoading, setFeedLoading] = useState(true);
   const [eventCommentCounts, setEventCommentCounts] = useState<Record<string, number>>({});
   const [eventTopComments, setEventTopComments] = useState<Record<string, { body: string; username: string; avatar: string | null }>>({});
@@ -4988,7 +4992,6 @@ function MatchPageInner() {
     });
 
     setLiveEvents(sorted);
-    setFeedError("");
   }, [game, status]);
 
   useEffect(() => {
@@ -5003,23 +5006,22 @@ function MatchPageInner() {
         if (cancelled) return;
         if (!res.ok) {
           const text = await res.text().catch(() => res.status.toString());
+          // Transient failures (e.g. a brief Supabase rate-limit) shouldn't
+          // surface an error to the user — just log it and keep the loading
+          // spinner up. The 10s poll below retries automatically, and the
+          // feed appears the moment a retry succeeds, with no error flash.
           console.error("[feed] API error:", res.status, text);
-          setFeedError(`Could not load feed. (${res.status}: ${text})`);
-          setFeedLoading(false);
           return;
         }
         const json = await res.json();
         if (json.error) {
           console.error("[feed] Supabase error:", json.error);
-          setFeedError(`Could not load feed. (${json.error})`);
-          setFeedLoading(false);
           return;
         }
         processSupabaseEvents(json.events ?? []);
         setFeedLoading(false);
       } catch (err) {
         console.error("[feed] fetch error:", err);
-        if (!cancelled) { setFeedError("Could not load feed."); setFeedLoading(false); }
       }
     }
 
