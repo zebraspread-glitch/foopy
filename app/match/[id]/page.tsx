@@ -2259,7 +2259,14 @@ function StatTable({ stats, isLive, isFinal, currentPeriod = 0, team = "", gameI
 
               return (
                 <tr
-                  key={`${name}-${index}`}
+                  // Keyed by player identity, NOT array index — the live 15s
+                  // refresh re-sorts this list as stats change, and an
+                  // index-based key would make React think a different
+                  // player now occupies that row, remounting the avatar
+                  // <Image> (and re-triggering its load) on every reorder.
+                  // Keying by identity lets React just reorder the existing
+                  // DOM node instead, so already-loaded images don't flicker.
+                  key={playerSlugUrl || `${name}-${index}`}
                   style={{ cursor: "pointer" }}
                   onClick={() => router.push(`/match/${gameId}/${playerSlugUrl}`)}
                 >
