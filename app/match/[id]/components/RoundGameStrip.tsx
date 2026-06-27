@@ -23,10 +23,23 @@ export function timeUntilStart(date?: string, now = Date.now()) {
   return `${totalHours}h ${minutes}m`;
 }
 
+// Mirrors the main scoreboard header's clock formatting (Squiggle's
+// "Q2 12:19" style timestr, with quarter-break labels spelled out).
+function formatLiveClock(timestr?: string) {
+  const t = (timestr ?? "").trim();
+  if (!t) return "Live";
+  const lower = t.toLowerCase();
+  if (lower.startsWith("1/4") || lower.includes("quarter time")) return "QTR TIME";
+  if (lower.startsWith("1/2") || lower.includes("half time")) return "HALF TIME";
+  if (lower.startsWith("3/4") || lower.includes("three quarter")) return "3QTR TIME";
+  if (lower.includes("full time")) return "FULL TIME";
+  return t.toUpperCase();
+}
+
 function roundStripStatus(game: MatchGame, now = Date.now()) {
   const status = getStatus(game);
   if (status === "FINAL") return "Final";
-  if (status === "LIVE") return "Live";
+  if (status === "LIVE") return formatLiveClock(game.timestr);
   return timeUntilStart(game.date, now);
 }
 
