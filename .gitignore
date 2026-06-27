@@ -12,3 +12,5 @@ public/players/
 
 # TypeScript incremental build cache
 tsconfig.tsbuildinfo
+
+.vercel
