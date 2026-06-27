@@ -4838,6 +4838,13 @@ function MatchPageInner() {
       .sort((a, b) => Number(a.id ?? 0) - Number(b.id ?? 0))
       .map((e: any) => ({
         rowKey: e.id ? `feed_${e.id}` : undefined,
+        // Real wall-clock moment this row was written to Supabase — used as
+        // an explicit tiebreaker below, since two events can legitimately
+        // share the same in-game period+minute (API-Sports' clock only has
+        // minute resolution) but still have a true order in which they
+        // actually got confirmed/synced.
+        insertedAt: e.inserted_at ? new Date(e.inserted_at).getTime() : null,
+        id: e.id ?? null,
         quarter: `Q${e.period ?? "-"}`,
         period: e.period,
         minute: e.minute,
@@ -4856,9 +4863,21 @@ function MatchPageInner() {
         playerHitouts: e.player_hitouts ?? null,
       }));
 
+    // Explicit, deterministic tiebreaker for two events sharing the same
+    // period+minute — prefer the real creation timestamp (insertedAt) over
+    // id, since insertedAt is what actually answers "which happened first"
+    // when a later sync confirms an event API-Sports published out of order.
+    const byCreatedAt = (a: any, b: any) => {
+      if (a.insertedAt != null && b.insertedAt != null && a.insertedAt !== b.insertedAt) {
+        return a.insertedAt - b.insertedAt;
+      }
+      return Number(a.id ?? 0) - Number(b.id ?? 0);
+    };
+
     const chronological = [...normalised].sort((a, b) => {
       if (Number(a.period) !== Number(b.period)) return Number(a.period) - Number(b.period);
-      return Number(a.minute ?? 0) - Number(b.minute ?? 0);
+      if (Number(a.minute ?? 0) !== Number(b.minute ?? 0)) return Number(a.minute ?? 0) - Number(b.minute ?? 0);
+      return byCreatedAt(a, b);
     });
 
     const withTeam = chronological.map((e: any) => {
@@ -4901,7 +4920,10 @@ function MatchPageInner() {
 
     const sorted = [...withTeam, ...derivedBreaks].sort((a, b) => {
       if (Number(a.period) !== Number(b.period)) return Number(b.period) - Number(a.period);
-      return Number(b.minute ?? 0) - Number(a.minute ?? 0);
+      if (Number(a.minute ?? 0) !== Number(b.minute ?? 0)) return Number(b.minute ?? 0) - Number(a.minute ?? 0);
+      // Newest-first overall, so within a tied minute the more-recently
+      // created event goes on top — reverse of the ascending tiebreaker.
+      return byCreatedAt(b, a);
     });
 
     setLiveEvents(sorted);
