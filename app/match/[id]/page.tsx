@@ -4674,11 +4674,45 @@ function MatchPageInner() {
       try {
         setLiveStatsError("");
 
-        const res = await fetch(`/api/afl/player-stats?id=${apiSportsGameId}`, { cache: "no-store" });
+        // Reads the live_player_stats cache (fed by the cron's 15s polling
+        // loop) — never calls API-Sports directly. Rebuild the same
+        // {teams:[{team:{id},players:[...]}]} shape API-Sports itself
+        // returns, so all the normalisation below stays unchanged.
+        const res = await fetch(`/api/afl/live-player-stats?id=${apiSportsGameId}`, { cache: "no-store" });
         if (!res.ok) throw new Error();
 
         const data = await res.json();
-        const apiMatch = data?.response?.[0];
+        const rows: any[] = data?.players ?? [];
+
+        const byTeam = new Map<number, any[]>();
+        for (const r of rows) {
+          const tid = Number(r.team_id ?? 0);
+          const list = byTeam.get(tid) ?? [];
+          list.push({
+            player: { id: r.player_id, name: r.player_name },
+            goals: { total: r.goals, assists: r.goal_assists },
+            behinds: r.behinds,
+            kicks: r.kicks,
+            handballs: r.handballs,
+            disposals: r.disposals,
+            marks: r.marks,
+            tackles: r.tackles,
+            hitouts: r.hitouts,
+            insides50: r.inside50s,
+            clearances: r.clearances,
+            clangers: r.clangers,
+            rebounds50: r.rebound50s,
+            free_kicks: { for: r.frees_for, against: r.frees_against },
+          });
+          byTeam.set(tid, list);
+        }
+
+        const apiMatch = {
+          teams: Array.from(byTeam.entries()).map(([teamId, players]) => ({
+            team: { id: teamId },
+            players,
+          })),
+        };
 
         if (!apiMatch?.teams?.length) {
           // The request SUCCEEDED, but API-Sports simply has no player stats
@@ -4717,6 +4751,8 @@ function MatchPageInner() {
     }
 
     loadLivePlayerStats();
+    // 10s poll is a fallback — Realtime below pushes updates as soon as the
+    // cron's 15s loop writes them, so this rarely has to do the work.
     const interval = setInterval(() => {
       if (document.hidden) return;
       loadLivePlayerStats();
@@ -4727,10 +4763,20 @@ function MatchPageInner() {
     };
     document.addEventListener("visibilitychange", handleVisibility);
 
+    const statsChannel = supabase
+      .channel(`live-player-stats-${apiSportsGameId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "live_player_stats", filter: `match_id=eq.${apiSportsGameId}` },
+        () => { if (!cancelled) loadLivePlayerStats(); }
+      )
+      .subscribe();
+
     return () => {
       cancelled = true;
       clearInterval(interval);
       document.removeEventListener("visibilitychange", handleVisibility);
+      supabase.removeChannel(statsChannel);
     };
   }, [mounted, game, apiSportsGameId]);
 

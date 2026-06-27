@@ -154,3 +154,37 @@ export async function claimSync(gameId: string, ttlSeconds: number): Promise<boo
 export async function markSyncFinal(gameId: string): Promise<void> {
   await writeRow(gameId, "sync", {}, true);
 }
+
+/**
+ * Atomic TTL lock (single row in `live_loop_lock`) so only one invocation of
+ * the live-stats polling loop can run at a time, even if two cron ticks
+ * overlap. The UPDATE...WHERE is a single statement, so Postgres serializes
+ * concurrent callers via the row lock — only one sees `locked_until < now()`
+ * and gets a row back.
+ */
+export async function acquireLiveLoopLock(ttlSeconds: number): Promise<boolean> {
+  const supabase = adminSupabase();
+  const nowIso = new Date().toISOString();
+  const until = new Date(Date.now() + ttlSeconds * 1000).toISOString();
+
+  const { data, error } = await supabase
+    .from("live_loop_lock")
+    .update({ locked_until: until })
+    .eq("id", 1)
+    .lt("locked_until", nowIso)
+    .select("id");
+
+  if (error) {
+    console.error("[liveLoopLock] acquire error:", error.message);
+    return false;
+  }
+  return (data ?? []).length > 0;
+}
+
+/** Release early (rather than waiting out the full TTL) once the loop ends. */
+export async function releaseLiveLoopLock(): Promise<void> {
+  await adminSupabase()
+    .from("live_loop_lock")
+    .update({ locked_until: new Date().toISOString() })
+    .eq("id", 1);
+}
