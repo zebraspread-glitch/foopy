@@ -268,7 +268,12 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const origin = new URL(req.url).origin;
+  // NOT new URL(req.url).origin — Vercel Cron invokes this route against the
+  // deployment's internal alias URL (e.g. foopyfootyapp-xxxx-...vercel.app),
+  // which has Vercel's deployment-protection wall in front of it. Self-fetches
+  // to that origin come back as an HTML auth page instead of JSON. The custom
+  // domain bypasses that wall, so route internal calls through it instead.
+  const origin = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
   const supabase = adminSupabase();
 
   let allGames: any[];
