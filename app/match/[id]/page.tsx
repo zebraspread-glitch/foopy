@@ -1287,7 +1287,9 @@ function PlayerAvatar({ name, team, size = 48, rating, ratingColor, isBest, unid
   const badgePad = small ? "0 1.5px" : "1px 3px";
   const badgeBorder = small ? 1 : 1.5;
   const badgeOffset = small ? -1 : -2;
-  const logoSize = small ? 10 : 22;
+  // Mid tier (the player-stats table, size 44) gets a smaller logo than the
+  // larger feed-card avatars (size 56) — same proportions, just dialed back.
+  const logoSize = small ? 10 : size <= 50 ? 17 : 22;
   const starSize = small ? 6 : 9;
   return (
     <span style={{ position: "relative", display: "inline-flex", flexShrink: 0, width: size, height: size, zIndex: 1 }}>

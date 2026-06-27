@@ -5638,8 +5638,8 @@
     "name": "Liam Puncher",
     "team": "Collingwood",
     "aliases": [],
-    "apiSportsId": null,
-    "eventIds": [],
+    "apiSportsId": 2128,
+    "eventIds": [2128],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-collingwood-magpies--liam-puncher"
   },
@@ -7428,7 +7428,7 @@
     "aliases": [],
     "apiSportsId": 2073,
     "eventIds": [
-      2073
+      1935
     ],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-richmond-tigers--patrick-retschko"
@@ -7729,7 +7729,7 @@
     "team": "Collingwood",
     "aliases": [],
     "apiSportsId": 1995,
-    "eventIds": [],
+    "eventIds": [1830],
     "statsIds": [],
     "footyWireUrl": "https://www.footywire.com/afl/footy/pp-collingwood-magpies--roan-steele"
   },
