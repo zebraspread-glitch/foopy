@@ -222,6 +222,7 @@ export default function DuelsTab({
 
   // Use match-page-derived stats when available; fall back to DuelsTab's own fetch
   const effectiveLiveStats = matchDerivedStats ?? liveGameStats;
+  const hasMatchDerivedStats = !!matchDerivedStats;
 
   // Get auth token
   useEffect(() => {
@@ -286,6 +287,11 @@ export default function DuelsTab({
   // Fetch live player stats while game is in progress so PicksLockedScreen can show them.
   // Re-runs whenever the resolved API Sports ID, game liveness, or duelGame changes.
   useEffect(() => {
+    if (hasMatchDerivedStats) {
+      setLiveGameStats(null);
+      return;
+    }
+
     // Prefer the apiSportsGameId prop (computed by parent with full fallback logic).
     // Fall back to the static mapping if prop not provided.
     const apiId =
@@ -347,7 +353,7 @@ export default function DuelsTab({
     fetchStats();
     const iv = setInterval(fetchStats, 15_000);
     return () => { cancelled = true; clearInterval(iv); };
-  }, [apiSportsGameId, duelGame?.game_id, gameStarted]);
+  }, [apiSportsGameId, duelGame?.game_id, gameStarted, hasMatchDerivedStats]);
 
   async function enterDuel() {
     if (!duelGame) { setEnterError("Duel not loaded yet — try again"); return; }

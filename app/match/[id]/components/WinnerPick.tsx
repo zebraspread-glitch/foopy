@@ -54,9 +54,7 @@ export default function WinnerPick({ matchId, homeTeam, awayTeam, gameStatus, ho
       const headers: Record<string, string> = {};
       const t = token ?? authToken;
       if (t) headers["Authorization"] = `Bearer ${t}`;
-      const res = await fetch(`/api/winner-picks?matchId=${matchId}`, {
-        cache: "no-store", headers,
-      });
+      const res = await fetch(`/api/winner-picks?matchId=${matchId}`, { headers });
       if (res.ok) {
         const data = await res.json();
         setVotes({

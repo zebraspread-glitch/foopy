@@ -14,6 +14,13 @@ import { createClient } from "@supabase/supabase-js";
 
 const UA = "Foopy AFL App (foopy.app)";
 const ROW_ID = "0"; // sentinel game_id; squiggle rows are distinguished by data_type
+const CACHE_READ_TIMEOUT_MS = 3_000;
+const CACHE_WRITE_TIMEOUT_MS = 3_000;
+const CACHE_FAILURE_COOLDOWN_MS = 30_000;
+const UPSTREAM_TIMEOUT_MS = 8_000;
+
+let cacheUnavailableUntil = 0;
+const lastCacheLog = new Map<string, number>();
 
 function adminSupabase() {
   return createClient(
@@ -29,23 +36,63 @@ interface CacheRow {
 
 const inFlight = new Map<string, Promise<unknown>>();
 
+function timeoutSignal(ms: number): AbortSignal | undefined {
+  return typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function"
+    ? AbortSignal.timeout(ms)
+    : undefined;
+}
+
+function cacheAvailable(): boolean {
+  return Date.now() >= cacheUnavailableUntil;
+}
+
+function noteCacheFailure(op: string, dataType: string, err: unknown) {
+  cacheUnavailableUntil = Date.now() + CACHE_FAILURE_COOLDOWN_MS;
+  const key = `${op}:${dataType}`;
+  const last = lastCacheLog.get(key) ?? 0;
+  if (Date.now() - last < CACHE_FAILURE_COOLDOWN_MS) return;
+  lastCacheLog.set(key, Date.now());
+  const message = err instanceof Error
+    ? err.message
+    : typeof err === "object" && err !== null
+      ? JSON.stringify(err)
+      : String(err);
+  console.error(`[squiggleCache] ${op} failed for ${dataType}: ${message}`);
+}
+
 async function readRow(dataType: string): Promise<CacheRow | null> {
-  const { data } = await adminSupabase()
-    .from("match_cache")
-    .select("payload, fetched_at")
-    .eq("game_id", ROW_ID)
-    .eq("data_type", dataType)
-    .maybeSingle();
-  return data ?? null;
+  if (!cacheAvailable()) return null;
+  try {
+    const signal = timeoutSignal(CACHE_READ_TIMEOUT_MS);
+    const query = adminSupabase()
+      .from("match_cache")
+      .select("payload, fetched_at")
+      .eq("game_id", ROW_ID)
+      .eq("data_type", dataType);
+    const { data, error } = await (signal ? query.abortSignal(signal) : query).maybeSingle();
+    if (error) throw error;
+    return data ?? null;
+  } catch (err) {
+    noteCacheFailure("read", dataType, err);
+    return null;
+  }
 }
 
 async function writeRow(dataType: string, payload: unknown): Promise<void> {
-  await adminSupabase()
-    .from("match_cache")
-    .upsert(
-      { game_id: ROW_ID, data_type: dataType, payload, fetched_at: new Date().toISOString(), is_final: false },
-      { onConflict: "game_id,data_type" }
-    );
+  if (!cacheAvailable()) return;
+  try {
+    const signal = timeoutSignal(CACHE_WRITE_TIMEOUT_MS);
+    const query = adminSupabase()
+      .from("match_cache")
+      .upsert(
+        { game_id: ROW_ID, data_type: dataType, payload, fetched_at: new Date().toISOString(), is_final: false },
+        { onConflict: "game_id,data_type" }
+      );
+    const { error } = await (signal ? query.abortSignal(signal) : query);
+    if (error) throw error;
+  } catch (err) {
+    noteCacheFailure("write", dataType, err);
+  }
 }
 
 function isFresh(row: CacheRow, ttlSeconds: number): boolean {
@@ -99,20 +146,22 @@ async function readOnly<T>(dataType: string): Promise<T | null> {
 
 // ── Upstream fetchers ────────────────────────────────────────────────────────
 
-async function fetchGames(year: number): Promise<any[]> {
+async function fetchGames(year: number, noStore = false): Promise<any[]> {
   const res = await fetch(`https://api.squiggle.com.au/?q=games;year=${year}`, {
     headers: { "User-Agent": UA },
-    cache: "no-store",
+    signal: timeoutSignal(UPSTREAM_TIMEOUT_MS),
+    ...(noStore ? { cache: "no-store" as const } : { next: { revalidate: 10 } }),
   });
   if (!res.ok) throw new Error(`Squiggle games ${year} failed: ${res.status}`);
   const data = await res.json();
   return data.games ?? [];
 }
 
-async function fetchStandings(year: number): Promise<any[]> {
+async function fetchStandings(year: number, noStore = false): Promise<any[]> {
   const res = await fetch(`https://api.squiggle.com.au/?q=standings;year=${year}`, {
     headers: { "User-Agent": UA },
-    cache: "no-store",
+    signal: timeoutSignal(UPSTREAM_TIMEOUT_MS),
+    ...(noStore ? { cache: "no-store" as const } : { next: { revalidate: 300 } }),
   });
   if (!res.ok) throw new Error(`Squiggle standings ${year} failed: ${res.status}`);
   const data = await res.json();
@@ -152,7 +201,7 @@ export async function getSeasonGamesCached(year: number = currentYear()): Promis
 
 /** Forced refresh used by the warming cron (ignores the TTL). */
 export async function refreshSeason(year: number = currentYear()): Promise<{ games: number; standings: number }> {
-  const [games, standings] = await Promise.all([fetchGames(year), fetchStandings(year)]);
+  const [games, standings] = await Promise.all([fetchGames(year, true), fetchStandings(year, true)]);
   await Promise.all([
     writeRow(`squiggle_games_${year}`, games),
     writeRow(`squiggle_standings_${year}`, standings),

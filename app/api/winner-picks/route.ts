@@ -4,12 +4,15 @@ import { awardAura } from "@/app/lib/aura";
 import { readJsonObject } from "@/app/lib/http";
 
 const db = supabaseServer;
+const WINNER_PICKS_GET_HEADERS = {
+  "Cache-Control": "private, max-age=5, stale-while-revalidate=10",
+};
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const matchId = searchParams.get("matchId");
 
-  if (!matchId) return NextResponse.json({ home: 0, away: 0, total: 0 });
+  if (!matchId) return NextResponse.json({ home: 0, away: 0, total: 0 }, { headers: WINNER_PICKS_GET_HEADERS });
 
   // Resolve authenticated user so we can return their existing pick
   let authedUserId: string | null = null;
@@ -27,7 +30,7 @@ export async function GET(req: Request) {
 
   if (error) {
     console.error("[winner-picks GET]", error.message);
-    return NextResponse.json({ home: 0, away: 0, total: 0 });
+    return NextResponse.json({ home: 0, away: 0, total: 0 }, { headers: WINNER_PICKS_GET_HEADERS });
   }
 
   const home = data.filter((v) => v.side === "home").length;
@@ -39,7 +42,10 @@ export async function GET(req: Request) {
     ? (data.find((v) => v.voter_id === authedUserId)?.side ?? null)
     : null;
 
-  return NextResponse.json({ home, away, draw, total: home + away + draw, my_pick: myPick });
+  return NextResponse.json(
+    { home, away, draw, total: home + away + draw, my_pick: myPick },
+    { headers: WINNER_PICKS_GET_HEADERS }
+  );
 }
 
 export async function POST(req: Request) {

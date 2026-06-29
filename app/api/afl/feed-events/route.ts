@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
+const FEED_EVENTS_CACHE = "public, max-age=2, s-maxage=5, stale-while-revalidate=10";
 
 // Service role bypasses RLS — server-side only, never exposed to the client
 function adminSupabase() {
@@ -40,5 +41,5 @@ export async function GET(req: Request) {
       return true;
     });
 
-  return NextResponse.json({ events });
+  return NextResponse.json({ events }, { headers: { "Cache-Control": FEED_EVENTS_CACHE } });
 }

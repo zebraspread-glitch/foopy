@@ -924,10 +924,27 @@ export default function HomePage() {
 
   // Live player stats: keyed by API-Sports game ID → flat array of player entries
   const [livePlayerStats, setLivePlayerStats] = useState<Record<string, any[]>>({});
+  const playerStatsGamesKey = useMemo(() => {
+    return shownGames
+      .map((g) => {
+        const status = getStatus(g);
+        if (status !== "LIVE" && status !== "COMPLETED") return null;
+        const apiId = (API_SPORTS_MATCH_IDS as Record<string, string>)[String(g.id)] ?? String(g.id);
+        return `${apiId}:${status}`;
+      })
+      .filter(Boolean)
+      .join("|");
+  }, [shownGames]);
 
   useEffect(() => {
-    const liveGames = shownGames.filter((g) => getStatus(g) === "LIVE");
-    const completedGames = shownGames.filter((g) => getStatus(g) === "COMPLETED");
+    const statGames = playerStatsGamesKey
+      ? playerStatsGamesKey.split("|").map((entry) => {
+          const [apiId, status] = entry.split(":");
+          return { apiId, status };
+        })
+      : [];
+    const liveGames = statGames.filter((g) => g.status === "LIVE");
+    const completedGames = statGames.filter((g) => g.status === "COMPLETED");
 
     if (liveGames.length === 0 && completedGames.length === 0) {
       setLivePlayerStats({});
@@ -939,28 +956,24 @@ export default function HomePage() {
       await Promise.all([
         // Live games — short-TTL live data
         ...liveGames.map(async (g) => {
-          const apiId =
-            (API_SPORTS_MATCH_IDS as Record<string, string>)[String(g.id)] ?? String(g.id);
           try {
-            const res = await fetch(`/api/afl/player-stats?id=${apiId}`);
+            const res = await fetch(`/api/afl/player-stats?id=${g.apiId}`);
             if (!res.ok) return;
             const data = await res.json();
             const teams: any[] = data?.response?.[0]?.teams ?? [];
             const players = teams.flatMap((t: any) => t.players ?? []);
-            if (players.length > 0) results[apiId] = players;
+            if (players.length > 0) results[g.apiId] = players;
           } catch {}
         }),
         // Completed games — fetch with ?final=true so server permanently caches
         ...completedGames.map(async (g) => {
-          const apiId =
-            (API_SPORTS_MATCH_IDS as Record<string, string>)[String(g.id)] ?? String(g.id);
           try {
-            const res = await fetch(`/api/afl/player-stats?id=${apiId}&final=true`);
+            const res = await fetch(`/api/afl/player-stats?id=${g.apiId}&final=true`);
             if (!res.ok) return;
             const data = await res.json();
             const teams: any[] = data?.response?.[0]?.teams ?? [];
             const players = teams.flatMap((t: any) => t.players ?? []);
-            if (players.length > 0) results[apiId] = players;
+            if (players.length > 0) results[g.apiId] = players;
           } catch {}
         }),
       ]);
@@ -972,7 +985,7 @@ export default function HomePage() {
     if (liveGames.length === 0) return;
     const interval = setInterval(fetchLive, 30_000);
     return () => clearInterval(interval);
-  }, [shownGames]);
+  }, [playerStatsGamesKey]);
 
   const topPlayers = useMemo(() => {
     type RawGameEntry = {

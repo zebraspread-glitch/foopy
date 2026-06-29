@@ -329,6 +329,10 @@ export async function GET(req: Request) {
     }
   }
 
+  if (liveGames.length > 0 && !lockAcquired) {
+    return NextResponse.json({ ok: true, skipped: "live loop lock held", live_games: liveGames.length });
+  }
+
   if (lockAcquired) {
     const loopStartedAt = Date.now();
     const lastSeenStore = new Map<string, Map<number, LivePlayerRow>>();
@@ -411,9 +415,8 @@ export async function GET(req: Request) {
           const statsUrl = `${origin}/api/afl/player-stats?id=${apiId}&final=true${resolveParams}`;
           fetches.push(fetch(statsUrl, { cache: "no-store", headers: syncHeaders }));
         } else if (status === "LIVE") {
-          // Feed events still get a once-per-tick sync here as a fallback —
-          // the client also triggers it directly every 10s.
-          fetches.push(fetch(`${origin}/api/afl/sync-events?id=${apiId}`, { cache: "no-store" }));
+          // Feed events sync only from cron/internal calls; browsers read cached rows.
+          fetches.push(fetch(`${origin}/api/afl/sync-events?id=${apiId}`, { cache: "no-store", headers: syncHeaders }));
         }
 
         const settled = await Promise.all(fetches);

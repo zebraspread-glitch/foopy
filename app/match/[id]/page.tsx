@@ -4145,6 +4145,11 @@ function MatchPageInner() {
     return String(mapped || getApiSportsGameId(savedMatch, id));
   }, [savedMatch, id]);
 
+  const status = getStatus(game);
+  const isLiveGame = status === "LIVE";
+  const currentHomeTeam = game?.hteam ?? "";
+  const currentAwayTeam = game?.ateam ?? "";
+
   useEffect(() => {
     const read = () => {
       try {
@@ -4165,7 +4170,7 @@ function MatchPageInner() {
   useEffect(() => {
     if (activeTab !== "game") return;
     if (!apiSportsGameId) return;
-    const isFinal = game && getStatus(game) === "FINAL";
+    const isFinal = status === "FINAL";
     fetch(`/api/afl/quarters?id=${apiSportsGameId}${isFinal ? "&final=true" : ""}`, { cache: "no-store" })
       .then(r => r.ok ? r.json() : null)
       .then(data => {
@@ -4190,7 +4195,7 @@ function MatchPageInner() {
       })
       .catch(() => {})
       .finally(() => setQuarterScoresLoading(false));
-  }, [activeTab, apiSportsGameId, game]);
+  }, [activeTab, apiSportsGameId, status]);
 
   useEffect(() => {
     if (!apiSportsGameId) return;
@@ -4387,9 +4392,6 @@ function MatchPageInner() {
     setAwayStats(split.away.length ? split.away : rawAway);
   }, [mounted, game, id]);
 
-  const status = getStatus(game);
-  const isLiveGame = status === "LIVE";
-
   // Same eligibility check WinnerPick's own mount condition uses below — if
   // this game doesn't qualify for the poll, there's nothing to wait on.
   const pollEligible =
@@ -4571,7 +4573,7 @@ function MatchPageInner() {
     if (!id) return;
     let cancelled = false;
     async function fetchCount() {
-      const currentStatus = game ? getStatus(game) : "UPCOMING";
+      const currentStatus = status;
 
       const { data: pollRows } = await supabase
         .from("match_polls")
@@ -4600,7 +4602,7 @@ function MatchPageInner() {
     }
     fetchCount();
     return () => { cancelled = true; };
-  }, [id, game, currentPeriod]);
+  }, [id, status, currentPeriod]);
 
   // Detect feed events the user hasn't seen yet and glow them once. "Seen"
   // is persisted to localStorage per game so the glow only fires for events
@@ -4713,8 +4715,10 @@ function MatchPageInner() {
 
   useEffect(() => {
     if (!mounted || !game || !apiSportsGameId) return;
+    if (!currentHomeTeam || !currentAwayTeam) return;
 
-    const status = getStatus(game);
+    const homeTeam = currentHomeTeam;
+    const awayTeam = currentAwayTeam;
 
     // ── Game is FINAL: keep re-fetching for up to 5 minutes so APISports has
     //    time to publish final stats before we permanently lock the cache. ──
@@ -4740,15 +4744,15 @@ function MatchPageInner() {
           const apiMatch = data?.response?.[0];
           if (!apiMatch?.teams?.length) return;
 
-          const homeApiTeamId = getApiTeamId(game.hteam);
-          const awayApiTeamId = getApiTeamId(game.ateam);
+          const homeApiTeamId = getApiTeamId(homeTeam);
+          const awayApiTeamId = getApiTeamId(awayTeam);
 
-          const homeTeamBlock = getPlayerTeamBlock(apiMatch.teams, homeApiTeamId, game.hteam, 0);
-          const awayTeamBlock = getPlayerTeamBlock(apiMatch.teams, awayApiTeamId, game.ateam, 1, homeTeamBlock);
+          const homeTeamBlock = getPlayerTeamBlock(apiMatch.teams, homeApiTeamId, homeTeam, 0);
+          const awayTeamBlock = getPlayerTeamBlock(apiMatch.teams, awayApiTeamId, awayTeam, 1, homeTeamBlock);
 
-          const home = (homeTeamBlock?.players || []).map((p: any) => normalizeApiSportsPlayer(p, game.hteam));
-          const away = (awayTeamBlock?.players || []).map((p: any) => normalizeApiSportsPlayer(p, game.ateam));
-          const split = mergeStatsByKnownTeam(game.hteam, game.ateam, home, away);
+          const home = (homeTeamBlock?.players || []).map((p: any) => normalizeApiSportsPlayer(p, homeTeam));
+          const away = (awayTeamBlock?.players || []).map((p: any) => normalizeApiSportsPlayer(p, awayTeam));
+          const split = mergeStatsByKnownTeam(homeTeam, awayTeam, home, away);
 
           if (!cancelled) {
             setLiveHomeStats(split.home.length ? split.home : home);
@@ -4835,15 +4839,15 @@ function MatchPageInner() {
           return;
         }
 
-        const homeApiTeamId = getApiTeamId(game.hteam);
-        const awayApiTeamId = getApiTeamId(game.ateam);
+        const homeApiTeamId = getApiTeamId(homeTeam);
+        const awayApiTeamId = getApiTeamId(awayTeam);
 
-        const homeTeamBlock = getPlayerTeamBlock(apiMatch.teams, homeApiTeamId, game.hteam, 0);
-        const awayTeamBlock = getPlayerTeamBlock(apiMatch.teams, awayApiTeamId, game.ateam, 1, homeTeamBlock);
+        const homeTeamBlock = getPlayerTeamBlock(apiMatch.teams, homeApiTeamId, homeTeam, 0);
+        const awayTeamBlock = getPlayerTeamBlock(apiMatch.teams, awayApiTeamId, awayTeam, 1, homeTeamBlock);
 
-        const home = (homeTeamBlock?.players || []).map((p: any) => normalizeApiSportsPlayer(p, game.hteam));
-        const away = (awayTeamBlock?.players || []).map((p: any) => normalizeApiSportsPlayer(p, game.ateam));
-        const split = mergeStatsByKnownTeam(game.hteam, game.ateam, home, away);
+        const home = (homeTeamBlock?.players || []).map((p: any) => normalizeApiSportsPlayer(p, homeTeam));
+        const away = (awayTeamBlock?.players || []).map((p: any) => normalizeApiSportsPlayer(p, awayTeam));
+        const split = mergeStatsByKnownTeam(homeTeam, awayTeam, home, away);
 
         if (!cancelled) {
           setLiveHomeStats(split.home.length ? split.home : home);
@@ -4884,18 +4888,20 @@ function MatchPageInner() {
       document.removeEventListener("visibilitychange", handleVisibility);
       supabase.removeChannel(statsChannel);
     };
-  }, [mounted, game, apiSportsGameId]);
+  }, [mounted, apiSportsGameId, status, currentHomeTeam, currentAwayTeam]);
 
   /** Process raw rows from Supabase into display-ready LiveEvents */
   const processSupabaseEvents = useCallback((rows: any[]) => {
-    if (!game) return;
+    const currentGame = gameRef.current;
+    if (!currentGame) return;
+    const currentStatus = getStatus(currentGame);
 
     function periodLabel(p: number) {
       return p === 1 ? "1/4 TIME" : p === 2 ? "HALF TIME" : p === 3 ? "3/4 TIME" : p === 4 ? "FULL TIME" : `Q${p} TIME`;
     }
 
-    const homeApiId = getApiTeamId(game.hteam);
-    const awayApiId = getApiTeamId(game.ateam);
+    const homeApiId = getApiTeamId(currentGame.hteam);
+    const awayApiId = getApiTeamId(currentGame.ateam);
 
     const normalised = [...(rows as any[])]
       // Inferred placeholders are no longer created; ignore any legacy rows.
@@ -4947,9 +4953,9 @@ function MatchPageInner() {
 
     const withTeam = chronological.map((e: any) => {
       const tid = Number(e.teamId);
-      const teamName = tid === homeApiId ? game.hteam : tid === awayApiId ? game.ateam : teamNameFromEvent(e);
+      const teamName = tid === homeApiId ? currentGame.hteam : tid === awayApiId ? currentGame.ateam : teamNameFromEvent(e);
       return { ...e, teamName };
-    }).filter((e: any) => eventBelongsToMatch(e, game.hteam, game.ateam));
+    }).filter((e: any) => eventBelongsToMatch(e, currentGame.hteam, currentGame.ateam));
 
     const derivedBreaks: any[] = [];
     for (let i = 1; i < chronological.length; i++) {
@@ -4965,12 +4971,12 @@ function MatchPageInner() {
       }
     }
 
-    const timestr = String(game?.timestr ?? "").toLowerCase();
+    const timestr = String(currentGame?.timestr ?? "").toLowerCase();
     const breakPeriod =
       (timestr.includes("quarter time") || timestr.startsWith("1/4")) ? 1
       : (timestr.includes("half time") || timestr.startsWith("1/2")) ? 2
       : (timestr.includes("three quarter") || timestr.startsWith("3/4")) ? 3
-      : status === "FINAL" ? 4 : 0;
+      : currentStatus === "FINAL" ? 4 : 0;
 
     if (breakPeriod > 0 && !derivedBreaks.some(b => b.period === breakPeriod)) {
       const ofPeriod = withTeam.filter(e => Number(e.period ?? 0) === breakPeriod);
@@ -4978,8 +4984,8 @@ function MatchPageInner() {
       derivedBreaks.push({
         type: "QUARTER_BREAK", quarter: `Q${breakPeriod}`, period: breakPeriod, minute: 999,
         label: periodLabel(breakPeriod),
-        homeScore: last?.homeScore ?? game?.hscore ?? 0,
-        awayScore: last?.awayScore ?? game?.ascore ?? 0,
+        homeScore: last?.homeScore ?? currentGame?.hscore ?? 0,
+        awayScore: last?.awayScore ?? currentGame?.ascore ?? 0,
       });
     }
 
@@ -4992,17 +4998,17 @@ function MatchPageInner() {
     });
 
     setLiveEvents(sorted);
-  }, [game, status]);
+  }, []);
 
   useEffect(() => {
-    if (!mounted || !apiSportsGameId || !game) return;
+    if (!mounted || !apiSportsGameId || !currentHomeTeam || !currentAwayTeam) return;
 
     let cancelled = false;
 
     // ── 1. Load existing events via server route (bypasses RLS) ─────────────
     async function loadFromSupabase() {
       try {
-        const res = await fetch(`/api/afl/feed-events?id=${apiSportsGameId}`, { cache: "no-store" });
+        const res = await fetch(`/api/afl/feed-events?id=${apiSportsGameId}`);
         if (cancelled) return;
         if (!res.ok) {
           const text = await res.text().catch(() => res.status.toString());
@@ -5025,31 +5031,18 @@ function MatchPageInner() {
       }
     }
 
-    // ── 2. Trigger a sync from APISports → Supabase ─────────────────────────
-    async function triggerSync() {
-      try {
-        await fetch(`/api/afl/sync-events?id=${apiSportsGameId}`, { cache: "no-store" });
-      } catch {}
-    }
-
+    // Initial read only; API-Sports syncing is cron/internal only.
     loadFromSupabase();
-    triggerSync().then(() => {
-      if (!cancelled) loadFromSupabase();
-    });
 
-    // Re-sync and reload every 10s while visible
-    const syncInterval = setInterval(() => {
+    // Reload cached feed rows every 10s while visible. API-Sports syncing is cron-only.
+    const feedInterval = setInterval(() => {
       if (document.hidden) return;
-      triggerSync().then(() => {
-        if (!cancelled) loadFromSupabase();
-      });
+      loadFromSupabase();
     }, 10_000);
 
     const handleVisibility = () => {
       if (document.hidden) return;
-      triggerSync().then(() => {
-        if (!cancelled) loadFromSupabase();
-      });
+      loadFromSupabase();
     };
     document.addEventListener("visibilitychange", handleVisibility);
 
@@ -5065,11 +5058,11 @@ function MatchPageInner() {
 
     return () => {
       cancelled = true;
-      clearInterval(syncInterval);
+      clearInterval(feedInterval);
       document.removeEventListener("visibilitychange", handleVisibility);
       supabase.removeChannel(channel);
     };
-  }, [mounted, apiSportsGameId, game, processSupabaseEvents]);
+  }, [mounted, apiSportsGameId, currentHomeTeam, currentAwayTeam, processSupabaseEvents]);
 
   // Track live viewers via Supabase Realtime Presence + persist to match_viewers
   useEffect(() => {
@@ -5116,7 +5109,7 @@ function MatchPageInner() {
     if (!id) return;
     async function fetchTotalViewers() {
       try {
-        const res = await fetch(`/api/afl/viewer-count?id=${id}`, { cache: "no-store" });
+        const res = await fetch(`/api/afl/viewer-count?id=${id}`);
         if (!res.ok) return;
         const json = await res.json();
         if (json.count != null) setTotalViewerCount(json.count);

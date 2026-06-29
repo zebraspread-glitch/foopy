@@ -84,6 +84,14 @@ export async function GET(req: Request) {
   const gameId = searchParams.get("id");
   const isFinal = searchParams.get("final") === "true";
 
+  const syncSecret = process.env.CRON_SECRET;
+  if (!syncSecret || req.headers.get("x-sync-secret") !== syncSecret) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401, headers: { "Cache-Control": "no-store" } }
+    );
+  }
+
   if (!gameId) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
   if (inFlightSync.has(gameId)) {

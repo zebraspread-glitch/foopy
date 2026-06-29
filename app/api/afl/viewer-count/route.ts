@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
+const VIEWER_COUNT_CACHE = "public, max-age=5, s-maxage=10, stale-while-revalidate=30";
 
 function adminSupabase() {
   return createClient(
@@ -13,7 +14,12 @@ function adminSupabase() {
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const gameId = searchParams.get("id");
-  if (!gameId) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+  if (!gameId) {
+    return NextResponse.json(
+      { error: "Missing id" },
+      { status: 400, headers: { "Cache-Control": "no-store" } }
+    );
+  }
 
   const { count, error } = await adminSupabase()
     .from("match_viewers")
@@ -25,5 +31,5 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ count: count ?? 0 });
+  return NextResponse.json({ count: count ?? 0 }, { headers: { "Cache-Control": VIEWER_COUNT_CACHE } });
 }
