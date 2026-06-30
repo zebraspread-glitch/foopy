@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import path from "path";
 import fs from "fs";
 import { createClient } from "@supabase/supabase-js";
+import { withSupabaseTimeout } from "@/app/lib/supabaseTimeout";
 
 export const dynamic = "force-dynamic";
 
@@ -36,19 +37,28 @@ export async function GET(req: Request) {
 
     const yesterdayStr = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
 
-    let rows: { game_id: string; payload: unknown }[];
+    type CacheRow = { game_id: string; payload: unknown };
+    let rows: CacheRow[];
 
     if (finalOnly) {
       // Streaks mode: only use verified-complete final stats
-      const { data: finalRows } = await supabase
-        .from("match_cache").select("game_id, payload")
-        .eq("data_type", "player_stats").eq("is_final", true);
+      const { data: finalRows } = await withSupabaseTimeout(
+        supabase.from("match_cache").select("game_id, payload")
+          .eq("data_type", "player_stats").eq("is_final", true),
+        { data: [] as CacheRow[] } as any,
+      );
       rows = finalRows ?? [];
     } else {
       const [{ data: finalRows }, { data: recentRows }] = await Promise.all([
-        supabase.from("match_cache").select("game_id, payload").eq("data_type", "player_stats").eq("is_final", true),
-        supabase.from("match_cache").select("game_id, payload").eq("data_type", "player_stats").eq("is_final", false)
-          .gte("fetched_at", yesterdayStr),
+        withSupabaseTimeout(
+          supabase.from("match_cache").select("game_id, payload").eq("data_type", "player_stats").eq("is_final", true),
+          { data: [] as CacheRow[] } as any,
+        ),
+        withSupabaseTimeout(
+          supabase.from("match_cache").select("game_id, payload").eq("data_type", "player_stats").eq("is_final", false)
+            .gte("fetched_at", yesterdayStr),
+          { data: [] as CacheRow[] } as any,
+        ),
       ]);
       rows = [
         ...(finalRows ?? []),

@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { withSupabaseTimeout } from "@/app/lib/supabaseTimeout";
 
 function adminSupabase() {
   return createClient(
@@ -25,12 +26,15 @@ interface CacheRow {
 }
 
 async function readRow(gameId: string, dataType: DataType): Promise<CacheRow | null> {
-  const { data } = await adminSupabase()
-    .from("match_cache")
-    .select("payload, fetched_at, is_final")
-    .eq("game_id", gameId)
-    .eq("data_type", dataType)
-    .single();
+  const { data } = await withSupabaseTimeout(
+    adminSupabase()
+      .from("match_cache")
+      .select("payload, fetched_at, is_final")
+      .eq("game_id", gameId)
+      .eq("data_type", dataType)
+      .single(),
+    { data: null as CacheRow | null } as any,
+  );
   return data ?? null;
 }
 
@@ -40,12 +44,15 @@ async function writeRow(
   payload: unknown,
   isFinal: boolean
 ): Promise<void> {
-  await adminSupabase()
-    .from("match_cache")
-    .upsert(
-      { game_id: gameId, data_type: dataType, payload, fetched_at: new Date().toISOString(), is_final: isFinal },
-      { onConflict: "game_id,data_type" }
-    );
+  await withSupabaseTimeout(
+    adminSupabase()
+      .from("match_cache")
+      .upsert(
+        { game_id: gameId, data_type: dataType, payload, fetched_at: new Date().toISOString(), is_final: isFinal },
+        { onConflict: "game_id,data_type" }
+      ),
+    null,
+  );
 }
 
 function isFresh(row: CacheRow, ttlSeconds: number): boolean {
