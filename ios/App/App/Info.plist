@@ -47,5 +47,7 @@
 	<string>Foopy needs access to your photos so you can set your profile picture and banner.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Foopy needs access to your camera so you can take a profile picture.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>
