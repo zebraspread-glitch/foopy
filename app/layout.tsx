@@ -11,6 +11,7 @@ import PassRewardCollector from "./components/PassRewardCollector";
 import DailyAuraCollector from "./components/DailyAuraCollector";
 import SplashScreen from "./components/SplashScreen";
 import OfflineBanner from "./components/OfflineBanner";
+import ServiceOutageBanner from "./components/ServiceOutageBanner";
 import { SessionProvider } from "./context/SessionProvider";
 
 export const metadata: Metadata = {
@@ -64,6 +65,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             globals.css); SplashScreen just toggles data-foopy-loaded when ready. */}
         <SplashScreen />
         <OfflineBanner />
+        <ServiceOutageBanner />
         <ThemeModeBootstrap />
         <HapticsProvider />
         <NavigationEvents />
