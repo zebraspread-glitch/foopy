@@ -1379,6 +1379,11 @@ free_kicks?: {
 
                   const homeLost = status === "COMPLETED" && homeScore < awayScore;
                   const awayLost = status === "COMPLETED" && awayScore < homeScore;
+                  const homeRecordText = isUpcoming ? getTeamRecord(homeId, games, game) : String(homeScore);
+                  const awayRecordText = isUpcoming ? getTeamRecord(awayId, games, game) : String(awayScore);
+                  // Long records ("10-4-1") crowd out the team abbreviation — shrink
+                  // both rows together so sizes stay consistent within the card.
+                  const longRecord = isUpcoming && Math.max(homeRecordText.length, awayRecordText.length) >= 5;
                   return (
                     <Link
                       key={game.id}
@@ -1394,26 +1399,28 @@ free_kicks?: {
                         <TeamRow
                           logo={homeStyle.logo}
                           name={homeName}
-                          scoreText={isUpcoming ? getTeamRecord(homeId, games, game) : String(homeScore)}
+                          scoreText={homeRecordText}
                           goalsText={isUpcoming ? "" : `${game.hgoals ?? 0}.${game.hbehinds ?? 0}`}
                           primaryColor={TEAM_BAR_COLORS[homeId] ?? homeStyle.colors[0]}
                           faded={homeLost}
                           scoreColor="white"
                           isRecord={isUpcoming}
                           compactRecord={!isLongCard && isUpcoming}
+                          longRecord={longRecord}
                           showBorder
                         />
 
                         <TeamRow
                           logo={awayStyle.logo}
                           name={awayName}
-                          scoreText={isUpcoming ? getTeamRecord(awayId, games, game) : String(awayScore)}
+                          scoreText={awayRecordText}
                           goalsText={isUpcoming ? "" : `${game.agoals ?? 0}.${game.abehinds ?? 0}`}
                           primaryColor={TEAM_BAR_COLORS[awayId] ?? awayStyle.colors[0]}
                           faded={awayLost}
                           scoreColor="white"
                           isRecord={isUpcoming}
                           compactRecord={!isLongCard && isUpcoming}
+                          longRecord={longRecord}
                         />
                       </section>
 
@@ -1872,6 +1879,9 @@ function MobileMatchRow({
   compactRecord: boolean;
   gameId: number;
 }) {
+  // Long records ("10-4-1") crowd out the team abbreviation — shrink both
+  // rows together so sizes stay consistent within the card.
+  const longRecord = isUpcoming && Math.max(homeScoreText.length, awayScoreText.length) >= 5;
   return (
     <div style={mobileMatchContentStyle}>
       <div style={mobileMatchInnerStyle}>
@@ -1885,6 +1895,7 @@ function MobileMatchRow({
           winning={!isUpcoming && Number(homeScoreText) > Number(awayScoreText)}
           isRecord={isUpcoming}
           compactRecord={compactRecord}
+          longRecord={longRecord}
           showBorder
         />
 
@@ -1898,6 +1909,7 @@ function MobileMatchRow({
           winning={!isUpcoming && Number(awayScoreText) > Number(homeScoreText)}
           isRecord={isUpcoming}
           compactRecord={compactRecord}
+          longRecord={longRecord}
         />
       </div>
 
@@ -1930,6 +1942,7 @@ function MobileStackedTeamRow({
   winning,
   isRecord,
   compactRecord,
+  longRecord,
   showBorder,
 }: {
   logo: string;
@@ -1941,6 +1954,7 @@ function MobileStackedTeamRow({
   winning: boolean;
   isRecord: boolean;
   compactRecord: boolean;
+  longRecord?: boolean;
   showBorder?: boolean;
 }) {
   return (
@@ -1957,7 +1971,7 @@ function MobileStackedTeamRow({
             style={{
               ...mobileStackedScoreStyle,
               color: isRecord ? "#d6d7e3" : "#ffffff",
-              fontSize: compactRecord ? "20px" : "23px",
+              fontSize: compactRecord ? (longRecord ? "16px" : "20px") : (longRecord ? "18px" : "23px"),
               fontWeight: 900,
               fontStyle: "normal",
             }}
@@ -1981,6 +1995,7 @@ function TeamRow({
   scoreColor,
   isRecord,
   compactRecord,
+  longRecord,
   showBorder,
 }: {
   logo: string;
@@ -1992,6 +2007,7 @@ function TeamRow({
   scoreColor: string;
   isRecord: boolean;
   compactRecord?: boolean;
+  longRecord?: boolean;
   showBorder?: boolean;
 }) {
   return (
@@ -2007,7 +2023,7 @@ function TeamRow({
           <strong
             style={{
               ...scoreStyle,
-              fontSize: compactRecord ? "23px" : "28px",
+              fontSize: compactRecord ? (longRecord ? "18px" : "23px") : (longRecord ? "22px" : "28px"),
               fontWeight: 900,
               fontStyle: "normal",
               color: isRecord ? "#d6d7e3" : scoreColor,
